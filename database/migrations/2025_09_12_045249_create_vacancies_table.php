@@ -19,8 +19,8 @@ return new class extends Migration
             $table->string('title')->nullable();
             $table->text('description')->nullable();
             $table->foreignId('area_id')->nullable()->constrained()->onDelete('cascade');
-            $table->foreignId('schedule_id')->nullable()->constrained()->onDelete('cascade');
-            $table->foreignId('employment_id')->nullable()->constrained()->onDelete('cascade');
+            $table->foreignId('schedule_id')->nullable()->constrained('hh_schedules')->onDelete('cascade');
+            $table->foreignId('employment_id')->nullable()->constrained('hh_employments')->onDelete('cascade');
             $table->decimal('salary_from', 15, 2)->nullable();
             $table->decimal('salary_to', 15, 2)->nullable();
             $table->string('salary_currency', 10)->nullable();

@@ -36,6 +36,9 @@ class UsersServiceProvider extends ServiceProvider
     {
         $this->app->register(EventServiceProvider::class);
         $this->app->register(RouteServiceProvider::class);
+
+        // Bind repositories
+        $this->app->bind(\Modules\Users\Repositories\HhAccountRepositoryInterface::class, \Modules\Users\Repositories\HhAccountRepository::class);
     }
 
     /**

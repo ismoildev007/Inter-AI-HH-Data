@@ -15,7 +15,7 @@ class ResumeAnalyze extends Model
         'weaknesses',
         'keywords',
         'language',
-        'model_version',
+        'skills',
     ];
 
     public function resume()
