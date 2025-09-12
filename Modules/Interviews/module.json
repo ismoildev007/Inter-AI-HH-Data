@@ -1,0 +1,11 @@
+{
+    "name": "Interviews",
+    "alias": "interviews",
+    "description": "",
+    "keywords": [],
+    "priority": 0,
+    "providers": [
+        "Modules\\Interviews\\Providers\\InterviewsServiceProvider"
+    ],
+    "files": []
+}

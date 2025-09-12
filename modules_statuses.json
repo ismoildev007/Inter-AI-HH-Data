@@ -1,0 +1,10 @@
+{
+    "Users": true,
+    "Resumes": true,
+    "Vacancies": true,
+    "Applications": true,
+    "Interviews": true,
+    "Payments": true,
+    "Dashboard": true,
+    "Admin": true
+}
