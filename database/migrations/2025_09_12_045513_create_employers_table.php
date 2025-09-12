@@ -13,7 +13,15 @@ return new class extends Migration
     {
         Schema::create('employers', function (Blueprint $table) {
             $table->id();
+            $table->string('source', 32)->nullable()->index();
+            $table->string('external_id', 64)->nullable();
+            $table->string('name')->nullable()->index();
+            $table->string('url')->nullable();
+            $table->json('raw_json')->nullable();
             $table->timestamps();
+
+            // Prevent duplicates coming from the same source
+            $table->unique(['source', 'external_id']);
         });
     }
 

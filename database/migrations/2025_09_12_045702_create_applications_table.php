@@ -13,7 +13,19 @@ return new class extends Migration
     {
         Schema::create('applications', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('user_id')->nullable()->constrained()->cascadeOnDelete();
+            $table->foreignId('vacancy_id')->nullable()->constrained('vacancies')->nullOnDelete();
+            $table->foreignId('resume_id')->nullable()->constrained('resumes')->nullOnDelete();
+            $table->string('status')->nullable()->index();
+            $table->decimal('match_score', 5, 2)->nullable();
+            $table->timestamp('submitted_at')->nullable()->index();
+            $table->string('external_id')->nullable()->unique();
+            $table->text('notes')->nullable();
+            $table->string('hh_status')->nullable()->index();
             $table->timestamps();
+
+            // Prevent duplicate applications to the same vacancy by the same user
+            $table->unique(['user_id', 'vacancy_id']);
         });
     }
 

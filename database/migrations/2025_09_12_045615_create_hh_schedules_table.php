@@ -13,6 +13,10 @@ return new class extends Migration
     {
         Schema::create('hh_schedules', function (Blueprint $table) {
             $table->id();
+            $table->string('external_id', 64)->nullable()->unique();
+            $table->string('name')->nullable();
+            $table->text('raw')->nullable();
+            $table->json('json')->nullable();
             $table->timestamps();
         });
     }
