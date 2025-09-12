@@ -13,7 +13,12 @@ return new class extends Migration
     {
         Schema::create('match_results', function (Blueprint $table) {
             $table->id();
+            $table->unsignedBigInteger('resume_id')->nullable();
+            $table->unsignedBigInteger('vacancy_id')->nullable();
+            $table->decimal('score_percent', 5, 2)->nullable();
+            $table->text('explanations')->nullable();
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 
