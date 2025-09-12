@@ -13,7 +13,14 @@ return new class extends Migration
     {
         Schema::create('resume_analyzes', function (Blueprint $table) {
             $table->id();
+            $table->unsignedBigInteger('resume_id')->nullable();
+            $table->text('strengths')->nullable();
+            $table->text('weaknesses')->nullable();
+            $table->text('keywords')->nullable();
+            $table->string('language')->nullable();
+            $table->string('model_version')->nullable();
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 

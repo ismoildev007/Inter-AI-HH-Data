@@ -13,7 +13,12 @@ return new class extends Migration
     {
         Schema::create('interviews', function (Blueprint $table) {
             $table->id();
+            $table->unsignedBigInteger('application_id')->nullable();
+            $table->unsignedBigInteger('scheduled_id')->nullable();
+            $table->string('status')->nullable();
+            $table->string('external_ref')->nullable();
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 

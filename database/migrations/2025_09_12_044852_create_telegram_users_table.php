@@ -13,7 +13,17 @@ return new class extends Migration
     {
         Schema::create('telegram_users', function (Blueprint $table) {
             $table->id();
+            $table->unsignedBigInteger('user_id')->nullable();
+            $table->string('chat_id')->nullable();
+            $table->string('first_name')->nullable();
+            $table->string('last_name')->nullable();
+            $table->string('username')->nullable();
+            $table->string('language_code')->nullable();
+            $table->boolean('is_premium')->nullable();
+            $table->timestamp('auth_date')->nullable();
+            $table->json('data_json')->nullable();
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 

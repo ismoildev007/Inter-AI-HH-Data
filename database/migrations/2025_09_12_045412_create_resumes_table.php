@@ -13,7 +13,16 @@ return new class extends Migration
     {
         Schema::create('resumes', function (Blueprint $table) {
             $table->id();
+            $table->unsignedBigInteger('user_id')->nullable();
+            $table->string('title')->nullable();
+            $table->text('description')->nullable();
+            $table->string('file_path')->nullable();
+            $table->string('file_mime')->nullable();
+            $table->integer('file_size')->nullable();
+            $table->longText('parsed_text')->nullable();
+            $table->boolean('is_primary')->nullable();
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 
