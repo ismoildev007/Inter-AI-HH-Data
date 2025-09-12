@@ -6,5 +6,6 @@
     "Interviews": true,
     "Payments": true,
     "Dashboard": true,
-    "Admin": true
+    "Admin": true,
+    "TelegramChannel": true
 }
