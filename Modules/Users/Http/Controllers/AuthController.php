@@ -13,15 +13,27 @@ class AuthController extends Controller
     public function register(Request $request)
     {
         $data = $request->validate([
-            'name'     => 'required|string|max:255',
-            'email'    => 'required|string|email|unique:users',
-            'password' => 'required|string|min:6',
+            'first_name'  => 'required|string|max:100',
+            'last_name'   => 'required|string|max:100',
+            'email'       => 'required|email|unique:users,email',
+            'phone'       => 'nullable|string|max:20|unique:users,phone',
+            'password'    => 'required|string|min:6',
+            'birth_date'  => 'nullable|date',
+            'avatar_path' => 'nullable|string',
+            'verify_code' => 'nullable|string|max:10',
+            'role_id'     => 'nullable|integer|exists:roles,id',
         ]);
 
         $user = User::create([
-            'name'     => $data['name'],
-            'email'    => $data['email'],
-            'password' => Hash::make($data['password']),
+            'first_name'  => $data['first_name'],
+            'last_name'   => $data['last_name'],
+            'email'       => $data['email'],
+            'phone'       => $data['phone'] ?? null,
+            'password'    => Hash::make($data['password']),
+            'birth_date'  => $data['birth_date'] ?? null,
+            'avatar_path' => $data['avatar_path'] ?? null,
+            'verify_code' => $data['verify_code'] ?? null,
+            'role_id'     => $data['role_id'] ?? null,
         ]);
 
         $token = $user->createToken('api_token')->plainTextToken;
