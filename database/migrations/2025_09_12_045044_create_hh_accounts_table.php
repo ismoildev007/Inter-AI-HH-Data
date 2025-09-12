@@ -13,6 +13,12 @@ return new class extends Migration
     {
         Schema::create('hh_accounts', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('user_id')->nullable()->constrained()->cascadeOnDelete()->unique();
+            $table->text('access_token')->nullable();
+            $table->text('refresh_token')->nullable();
+            $table->timestamp('expires_at')->nullable()->index();
+            $table->string('scope')->nullable();
+            $table->json('raw_json')->nullable();
             $table->timestamps();
         });
     }

@@ -13,6 +13,9 @@ return new class extends Migration
     {
         Schema::create('hh_employments', function (Blueprint $table) {
             $table->id();
+            $table->string('external_id', 64)->nullable()->unique();
+            $table->string('name')->nullable();
+            $table->json('raw_json')->nullable();
             $table->timestamps();
         });
     }

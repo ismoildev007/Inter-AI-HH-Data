@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::create('industries', function (Blueprint $table) {
             $table->id();
+            $table->string('name')->nullable()->unique();
             $table->timestamps();
         });
     }

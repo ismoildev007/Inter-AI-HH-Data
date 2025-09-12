@@ -13,7 +13,14 @@ return new class extends Migration
     {
         Schema::create('credit_transactions', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('user_id')->nullable()->constrained()->cascadeOnDelete();
+            $table->string('type')->nullable()->index();
+            $table->decimal('amount', 12, 2)->nullable();
+            $table->decimal('balance_after', 12, 2)->nullable();
+            $table->foreignId('related_application_id')->nullable()->constrained('applications')->nullOnDelete();
             $table->timestamps();
+
+            $table->index(['user_id', 'created_at']);
         });
     }
 
