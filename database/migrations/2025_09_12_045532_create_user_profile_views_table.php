@@ -13,6 +13,10 @@ return new class extends Migration
     {
         Schema::create('user_profile_views', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('user_id')->nullable()->constrained()->onDelete('cascade');
+            $table->foreignId('employer_id')->nullable()->constrained()->onDelete('cascade');
+            $table->dateTime('viewed_at')->nullable();
+            $table->string('source')->nullable();
             $table->timestamps();
         });
     }

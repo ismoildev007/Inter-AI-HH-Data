@@ -13,6 +13,10 @@ return new class extends Migration
     {
         Schema::create('user_locations', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('user_id')->nullable()->constrained()->onDelete('cascade');   
+            $table->text('text')->nullable();
+            $table->foreignId('area_id')->nullable()->constrained()->onDelete('cascade');
+            $table->boolean('is_primary')->default(false);
             $table->timestamps();
         });
     }

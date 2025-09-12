@@ -13,6 +13,24 @@ return new class extends Migration
     {
         Schema::create('vacancies', function (Blueprint $table) {
             $table->id();
+            $table->string('source')->nullable();
+            $table->string('external_id')->nullable();
+            $table->foreignId('employer_id')->nullable()->constrained()->onDelete('cascade');
+            $table->string('title')->nullable();
+            $table->text('description')->nullable();
+            $table->foreignId('area_id')->nullable()->constrained()->onDelete('cascade');
+            $table->foreignId('schedule_id')->nullable()->constrained()->onDelete('cascade');
+            $table->foreignId('employment_id')->nullable()->constrained()->onDelete('cascade');
+            $table->decimal('salary_from', 15, 2)->nullable();
+            $table->decimal('salary_to', 15, 2)->nullable();
+            $table->string('salary_currency', 10)->nullable();
+            $table->boolean('salary_gross')->default(true);
+            $table->date('published_at')->nullable();
+            $table->date('expies_at')->nullable();
+            $table->string('apply_url')->nullable();
+            $table->integer('views_count')->default(0);
+            $table->integer('responses_count')->default(0);
+            $table->text('raw_data')->nullable();
             $table->timestamps();
         });
     }

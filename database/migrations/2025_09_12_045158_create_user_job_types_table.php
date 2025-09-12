@@ -13,6 +13,8 @@ return new class extends Migration
     {
         Schema::create('user_job_types', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('user_id')->nullable()->constrained()->onDelete('cascade');
+            $table->string('job_type')->nullable();
             $table->timestamps();
         });
     }

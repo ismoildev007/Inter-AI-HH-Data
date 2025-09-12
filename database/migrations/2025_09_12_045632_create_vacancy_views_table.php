@@ -13,6 +13,9 @@ return new class extends Migration
     {
         Schema::create('vacancy_views', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('user_id')->nullable()->constrained()->onDelete('cascade');
+            $table->foreignId('vacancy_id')->nullable()->constrained()->onDelete('cascade');
+            $table->dateTime('viewed_at')->nullable();
             $table->timestamps();
         });
     }

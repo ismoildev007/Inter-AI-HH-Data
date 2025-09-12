@@ -19,9 +19,16 @@ class User extends Authenticatable
      * @var list<string>
      */
     protected $fillable = [
-        'name',
+        'first_name',
+        'last_name',
         'email',
+        'phone',
         'password',
+        'birth_date',
+        'avatar_path',
+        'verify_code',
+        'role_id',
+
     ];
 
     /**
@@ -45,5 +52,35 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    public function role()
+    {
+        return $this->belongsTo(Role::class);
+    }
+
+    public function preferences()
+    {
+        return $this->hasMany(UserPreference::class);
+    }
+    public function locations()
+    {
+        return $this->hasMany(UserLocation::class);
+    }
+    public function jobTypes()
+    {
+        return $this->hasMany(UserJobType::class);
+    }
+    public function credit()
+    {
+        return $this->hasOne(UserCredit::class);
+    }
+    public function profileViews()
+    {
+        return $this->hasMany(UserProfileView::class);
+    }
+    public function settings()
+    {
+        return $this->hasOne(UserSetting::class);
     }
 }

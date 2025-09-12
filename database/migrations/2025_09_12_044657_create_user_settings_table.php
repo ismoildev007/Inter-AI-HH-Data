@@ -13,6 +13,11 @@ return new class extends Migration
     {
         Schema::create('user_settings', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('user_id')->nullable()->constrained()->onDelete('cascade');
+            $table->boolean('auto_apply_enabled')->default(false);
+            $table->integer('auto_apply_limit')->default(0);
+            $table->boolean('notifications_enabled')->default(false);
+            $table->string('language')->default('en');
             $table->timestamps();
         });
     }

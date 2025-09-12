@@ -13,6 +13,15 @@ return new class extends Migration
     {
         Schema::create('user_preferences', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('user_id')->nullable()->constrained()->onDelete('cascade');
+            $table->foreignId('industry_id')->nullable()->constrained()->onDelete('cascade');
+            $table->string('experience_level')->nullable();
+            $table->decimal('desired_salary_from', 15, 2)->nullable();
+            $table->decimal('desired_salary_to', 15, 2)->nullable();
+            $table->string('currency', 10)->nullable();
+            $table->string('work_mode')->nullable();
+            $table->string('notes')->nullable();
+            $table->string('cover_letter')->nullable();
             $table->timestamps();
         });
     }
