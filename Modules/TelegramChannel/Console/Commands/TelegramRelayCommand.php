@@ -110,8 +110,16 @@ class TelegramRelayCommand extends Command
                             continue;
                         }
 
-                        // Duplicate description policy
-                        $descText = trim((string) ($msg['message'] ?? ''));
+                        // Normalize for special patterns and strip signatures
+                        $origText = (string) ($msg['message'] ?? '');
+                        [$vacTitle, $descText, $shouldSkip] = $this->processJobPost($origText);
+                        if ($shouldSkip) {
+                            $this->line('Skip by channel-specific rule, mid='.$mid);
+                            $processedMax = max($processedMax, $mid);
+                            continue;
+                        }
+
+                        // Duplicate description policy (normalized)
                         if ($descText !== '') {
                             $publishExists = Vacancy::where('description', $descText)
                                 ->where('status', \App\Models\Vacancy::STATUS_PUBLISH)
@@ -126,10 +134,11 @@ class TelegramRelayCommand extends Command
                         $result = null;
                         $this->line("About to relay (mode={$mode}) mid={$mid} text_len=".strlen((string)($msg['message'] ?? '')));
                         if ($mode === 'copy') {
-                            // Send text as new message (no source attribution)
+                            // Send normalized message (no source attribution)
+                            $outText = $vacTitle ? ($vacTitle.":\n".$descText) : $descText;
                             $result = $API->messages->sendMessage([
                                 'peer' => $targetPeer,
-                                'message' => (string) $msg['message'],
+                                'message' => $outText,
                             ]);
                         } else {
                             // Forward (shows Forwarded from ...)
@@ -180,7 +189,8 @@ class TelegramRelayCommand extends Command
                                 ['external_id' => $external],
                                 [
                                     'source' => 'Telegram',
-                                    'description' => (string) $msg['message'],
+                                    'title' => $vacTitle ?: null,
+                                    'description' => $descText,
                                     'apply_url' => $applyUrl,
                                     'status' => \App\Models\Vacancy::STATUS_PUBLISH,
                                     // For weekly (or longer) TTL we use date-based expies_at; for <1 day TTL we rely on created_at
@@ -235,6 +245,77 @@ class TelegramRelayCommand extends Command
 
         $this->info('Relay finished.');
         return self::SUCCESS;
+    }
+
+    /**
+     * Process job post text: extract title (e.g., "Xodim kerak"),
+     * remove signature lines (e.g., "👉 @UstozShogird kanaliga ulanish"), and
+     * decide if this post should be skipped for channel-specific rules.
+     *
+     * @return array{0:?string,1:string,2:bool} [$title, $description, $shouldSkip]
+     */
+    private function processJobPost(string $text): array
+    {
+        $lines = preg_split('/\R/', $text);
+        $clean = [];
+        foreach ($lines as $line) {
+            $ln = rtrim((string) $line);
+            // Strip signature lines like: "👉 @UstozShogird kanaliga ulanish"
+            if (preg_match('/@UstozShogird/i', $ln)) {
+                continue;
+            }
+            $clean[] = $ln;
+        }
+
+        // Remove leading/trailing blank lines
+        $clean = $this->trimEmptyLines($clean);
+
+        // Determine if this is a job post we want (must contain "Xodim kerak")
+        $containsTitle = (bool) preg_match('/Xodim\s+kerak/iu', $text);
+        $title = $containsTitle ? 'Xodim kerak' : null;
+
+        // If the first non-empty line itself is a title, drop it from description
+        if (!empty($clean)) {
+            $first = ltrim((string) $clean[0]);
+            if (preg_match('/^Xodim\s+kerak\s*:?/iu', $first)) {
+                array_shift($clean);
+            }
+        }
+
+        // If it doesn't contain the required marker at all, skip
+        $shouldSkip = !$containsTitle;
+
+        // Collapse multiple empty lines
+        $clean = $this->squeezeEmptyLines($clean);
+        $desc = trim(implode("\n", $clean));
+
+        return [$title, $desc, $shouldSkip];
+    }
+
+    private function trimEmptyLines(array $lines): array
+    {
+        // Trim leading empties
+        while (!empty($lines) && trim((string) $lines[0]) === '') { array_shift($lines); }
+        // Trim trailing empties
+        while (!empty($lines) && trim((string) end($lines)) === '') { array_pop($lines); }
+        return $lines;
+    }
+
+    private function squeezeEmptyLines(array $lines): array
+    {
+        $out = [];
+        $prevEmpty = false;
+        foreach ($lines as $ln) {
+            $isEmpty = trim((string) $ln) === '';
+            if ($isEmpty) {
+                if ($prevEmpty) { continue; }
+                $prevEmpty = true;
+            } else {
+                $prevEmpty = false;
+            }
+            $out[] = $ln;
+        }
+        return $out;
     }
 
     private function extractMessageId($result): int
