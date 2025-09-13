@@ -14,7 +14,7 @@ class VacancyMatchRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'query' => ['required', 'string', 'max:255'],
+            'query' => ['nullable', 'string', 'max:255'],
         ];
     }
 }
