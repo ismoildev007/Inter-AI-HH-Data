@@ -11,20 +11,37 @@ class AuthRepository
     public function register(array $data): array
     {
         return \DB::transaction(function () use ($data) {
+            // check email already exists
+            if (User::where('email', $data['email'])->exists()) {
+                return [
+                    'error' => true,
+                    'status' => 422,
+                    'message' => 'Email already exists',
+                ];
+            }
+
+            if (!empty($data['phone']) && User::where('phone', $data['phone'])->exists()) {
+                return [
+                    'error' => true,
+                    'status' => 422,
+                    'message' => 'Phone already exists',
+                ];
+            }
+
             // 1) User yaratamiz
             $user = User::create([
                 'first_name'  => $data['first_name'],
                 'last_name'   => $data['last_name'],
                 'email'       => $data['email'],
                 'phone'       => $data['phone'] ?? null,
-                'password'    => \Hash::make($data['password']),
+                'password'    => Hash::make($data['password']),
                 'birth_date'  => $data['birth_date'] ?? null,
                 'avatar_path' => $data['avatar_path'] ?? null,
                 'verify_code' => $data['verify_code'] ?? null,
                 'role_id'     => $data['role_id'] ?? null,
             ]);
 
-            // 2) Resume saqlash
+            // 2) Resume saqlash (file + text bo‘lsa ikkalasini ham saqlash)
             if (!empty($data['resume_file'])) {
                 $path = $data['resume_file']->store('resumes', 'public');
 
@@ -37,7 +54,9 @@ class AuthRepository
                     'parsed_text' => $data['parsed_text'] ?? null,
                     'is_primary'  => true,
                 ]);
-            } elseif (!empty($data['resume_text'])) {
+            }
+
+            if (!empty($data['resume_text'])) {
                 $user->resumes()->create([
                     'title'       => $data['resume_title'] ?? 'Text Resume',
                     'description' => $data['resume_text'],
@@ -45,7 +64,7 @@ class AuthRepository
                     'file_mime'   => null,
                     'file_size'   => null,
                     'parsed_text' => $data['resume_text'],
-                    'is_primary'  => true,
+                    'is_primary'  => empty($data['resume_file']), // faqat file yo‘q bo‘lsa asosiy
                 ]);
             }
 
@@ -133,6 +152,7 @@ class AuthRepository
         return [
             'user'  => $user,
             'token' => $token,
+            'expires_at' => now()->addHours(4)->toDateTimeString(),
         ];
     }
 }
