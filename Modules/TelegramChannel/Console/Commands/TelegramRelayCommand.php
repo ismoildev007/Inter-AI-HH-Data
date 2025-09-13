@@ -102,10 +102,9 @@ class TelegramRelayCommand extends Command
                             continue;
                         }
 
-                        // Skip service messages, media (if textOnly)
+                        // Skip service messages. If textOnly=true, require text (but allow previews/media alongside text).
                         $hasText = isset($msg['message']) && is_string($msg['message']) && strlen(trim($msg['message'])) > 0;
-                        $hasMedia = isset($msg['media']) && !empty($msg['media']);
-                        if ($textOnly && (!$hasText || $hasMedia)) {
+                        if ($textOnly && !$hasText) {
                             $processedMax = max($processedMax, $mid);
                             continue;
                         }
@@ -113,7 +112,10 @@ class TelegramRelayCommand extends Command
                         // Normalize for special patterns and strip signatures
                         $origText = (string) ($msg['message'] ?? '');
                         $replacementHandle = $target->username ? '@'.ltrim((string) $target->username, '@') : null;
-                        [$vacTitle, $descText, $shouldSkip] = $this->processJobPost($origText, $replacementHandle);
+                        $sourceHandle = strtolower(ltrim((string) ($source->username ?? $source->channel_id ?? ''), '@'));
+                        $strictSources = ['ustozshogird', 'ustozshogirdsohalar'];
+                        $strict = in_array($sourceHandle, $strictSources, true);
+                        [$vacTitle, $descText, $shouldSkip] = $this->processJobPost($origText, $strict, $replacementHandle);
                         if ($shouldSkip) {
                             $this->line('Skip by channel-specific rule, mid='.$mid);
                             $processedMax = max($processedMax, $mid);
@@ -255,22 +257,24 @@ class TelegramRelayCommand extends Command
      *
      * @return array{0:?string,1:string,2:bool} [$title, $description, $shouldSkip]
      */
-    private function processJobPost(string $text, ?string $replacementHandle = null): array
+    private function processJobPost(string $text, bool $strict, ?string $replacementHandle = null): array
     {
         $lines = preg_split('/\R/', $text);
         $clean = [];
         foreach ($lines as $line) {
             $ln = rtrim((string) $line);
-            // Replace signature lines like: "👉 @UstozShogird kanaliga ulanish" with our own handle
-            if (preg_match('/@UstozShogird/i', $ln)) {
-                if ($replacementHandle) {
-                    $ln = '👉 '.$replacementHandle.' kanaliga ulanish';
-                } else {
-                    continue;
+            if ($strict) {
+                // Replace signature lines like: "👉 @UstozShogird kanaliga ulanish" with our own handle
+                if (preg_match('/@UstozShogird/i', $ln)) {
+                    if ($replacementHandle) {
+                        $ln = '👉 '.$replacementHandle.' kanaliga ulanish';
+                    } else {
+                        continue;
+                    }
+                } else if ($replacementHandle) {
+                    // Also replace inline occurrences within the line
+                    $ln = preg_replace('/@UstozShogird/i', $replacementHandle, $ln);
                 }
-            } else if ($replacementHandle) {
-                // Also replace inline occurrences within the line
-                $ln = preg_replace('/@UstozShogird/i', $replacementHandle, $ln);
             }
             $clean[] = $ln;
         }
@@ -278,7 +282,7 @@ class TelegramRelayCommand extends Command
         // Remove leading/trailing blank lines
         $clean = $this->trimEmptyLines($clean);
 
-        // Determine if this is a job post we want (must contain "Xodim kerak")
+        // If strict source: must contain "Xodim kerak"; else accept any text
         $containsTitle = (bool) preg_match('/Xodim\s+kerak/iu', $text);
         $title = $containsTitle ? 'Xodim kerak' : null;
 
@@ -290,8 +294,8 @@ class TelegramRelayCommand extends Command
             }
         }
 
-        // If it doesn't contain the required marker at all, skip
-        $shouldSkip = !$containsTitle;
+        // If strict and it doesn't contain required marker, skip. Otherwise don't skip.
+        $shouldSkip = $strict ? !$containsTitle : false;
 
         // Collapse multiple empty lines
         $clean = $this->squeezeEmptyLines($clean);
