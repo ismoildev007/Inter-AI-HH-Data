@@ -4,12 +4,13 @@ namespace Modules\Resumes\Services;
 
 use App\Models\Resume;
 use App\Models\ResumeAnalyze;
+use App\Models\UserPreference;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Smalot\PdfParser\Parser as PdfParser;
 use PhpOffice\PhpWord\IOFactory as WordIO;
-use Modules\Vacancies\Interfaces\ResumeInterface;
+use Modules\Resumes\Interfaces\ResumeInterface;
 
 class ResumeService
 {
@@ -75,6 +76,8 @@ class ResumeService
             - "weaknesses": 2–4 short bullet points describing areas that might need improvement.
             - "keywords": A list of important keywords or technologies mentioned in the resume (useful for search/matching).
             - "language": Detect the main language of the resume text (e.g., "en", "ru", "uz").
+            - "cover_letter": Write a short professional cover letter (5–7 sentences) introducing the candidate,
+                          tailored for general job applications. Keep it polite, confident, and concise.
 
             Return only valid JSON. Do not include explanations outside the JSON.
 
@@ -101,11 +104,17 @@ class ResumeService
 
         $content = $response->json('choices.0.message.content');
 
+        $content = trim($content);
+        $content = preg_replace('/^```(json)?/i', '', $content); 
+        $content = preg_replace('/```$/', '', $content);         
+        $content = trim($content);
+
         $analysis = json_decode($content, true);
 
         if (json_last_error() !== JSON_ERROR_NONE || !is_array($analysis)) {
             throw new \RuntimeException("Invalid GPT response: " . $content);
         }
+
 
         ResumeAnalyze::updateOrCreate(
             ['resume_id' => $resume->id],
@@ -117,6 +126,13 @@ class ResumeService
                 'language'   => $analysis['language'] ?? 'en',
             ]
         );
+
+        if (!empty($analysis['cover_letter'])) {
+            UserPreference::updateOrCreate(
+                ['user_id' => $resume->user_id],
+                ['cover_letter' => $analysis['cover_letter']]
+            );
+        }
     }
 
     /**

@@ -17,9 +17,12 @@ class VacancyMatchingController extends Controller
         $this->service = $service;
     }
 
-    public function match(VacancyMatchRequest $request, int $resumeId)
+    public function match(VacancyMatchRequest $request)
     {
-        $resume = Resume::findOrFail($resumeId);
+        $resume = auth()->user()
+            ->resumes()
+            ->where('is_primary', true)
+            ->firstOrFail();
 
         $results = $this->service->matchResume($resume, $request->get('query'));
 

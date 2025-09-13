@@ -63,6 +63,11 @@ class User extends Authenticatable
     {
         return $this->hasMany(UserPreference::class);
     }
+    public function preference()
+    {
+        return $this->hasOne(UserPreference::class);
+    }
+
     public function locations()
     {
         return $this->hasMany(UserLocation::class);

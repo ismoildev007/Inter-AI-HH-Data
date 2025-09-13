@@ -1,6 +1,6 @@
 <?php 
 
-namespace Modules\Vacancies\Http\Requests;
+namespace Modules\Resumes\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
@@ -15,6 +15,7 @@ class ResumeStoreRequest extends FormRequest
     {
         return [
             'title' => 'nullable|string|max:255',
+            'description' => 'nullable|string',
             'file'        => 'nullable|file|mimes:pdf,doc,docx|max:2048',
         ];
 

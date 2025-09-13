@@ -1,6 +1,6 @@
 <?php 
 
-namespace Modules\Vacancies\Interfaces;
+namespace Modules\Resumes\Interfaces;
 
 use App\Models\Resume;
 

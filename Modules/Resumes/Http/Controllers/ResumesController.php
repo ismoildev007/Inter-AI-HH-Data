@@ -7,8 +7,7 @@ use Modules\Resumes\Http\Requests\ResumeUpdateRequest;
 use Modules\Resumes\Http\Resources\ResumeResource;
 use Modules\Resumes\Services\ResumeService;
 use App\Models\Resume;
-use Modules\Vacancies\Http\Requests\ResumeStoreRequest;
-use Illuminate\Http\Request;
+use Modules\Resumes\Http\Requests\ResumeStoreRequest;
 
 class ResumesController extends Controller
 {
@@ -21,10 +20,15 @@ class ResumesController extends Controller
 
     public function index()
     {
+        $userId = auth()->id();
+
         return ResumeResource::collection(
-            Resume::with('analysis')->paginate(10)
+            Resume::with('analysis')
+                ->where('user_id', $userId)
+                ->paginate(10)
         );
     }
+
 
     public function store(ResumeStoreRequest $request)
     {
@@ -47,10 +51,15 @@ class ResumesController extends Controller
 
     public function destroy(int $id)
     {
-        $resume = Resume::findOrFail($id);
+        $resume = Resume::where('user_id', auth()->id())->findOrFail($id);
+
         $resume->delete();
-        return response()->json(['message' => 'Resume deleted successfully.']);
+
+        return response()->json([
+            'message' => 'Resume deleted successfully.'
+        ]);
     }
+
 
     /**
      * Set a resume as primary for the authenticated user.

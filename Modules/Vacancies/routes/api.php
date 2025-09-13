@@ -18,7 +18,7 @@ Route::prefix('v1')
         /**
          * Resume → Vacancy matching
          */
-        Route::middleware(['auth:sanctum'])->prefix('resumes/{resumeId}')
+        Route::middleware(['auth:sanctum'])->prefix('vacancyresume/')
             ->name('resumes.')
             ->group(function () {
                 Route::post('match', [VacancyMatchingController::class, 'match'])

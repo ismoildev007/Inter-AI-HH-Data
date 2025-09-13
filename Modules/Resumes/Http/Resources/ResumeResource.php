@@ -3,6 +3,7 @@
 namespace Modules\Resumes\Http\Resources;
 
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\Storage;
 
 class ResumeResource extends JsonResource
 {
@@ -14,6 +15,10 @@ class ResumeResource extends JsonResource
             'description' => $this->description,
             'parsed_text' => $this->parsed_text,
             'is_primary'  => $this->is_primary,
+            'file_path'   => $this->file_path,
+            'file_url'    => $this->file_path 
+                                ? Storage::disk('public')->url($this->file_path) 
+                                : null,
             'skills'      => optional($this->analysis)->skills,
             'strengths'   => optional($this->analysis)->strengths,
             'weaknesses'  => optional($this->analysis)->weaknesses,

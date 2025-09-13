@@ -5,7 +5,6 @@ namespace Modules\Vacancies\Providers;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\ServiceProvider;
 use Modules\Vacancies\Interfaces\HHVacancyInterface;
-use Modules\Vacancies\Interfaces\HHVacancyRepositoryInterface;
 use Modules\Vacancies\Interfaces\VacancyInterface;
 use Modules\Vacancies\Repositories\HHVacancyRepository;
 use Modules\Vacancies\Repositories\VacancyRepository;

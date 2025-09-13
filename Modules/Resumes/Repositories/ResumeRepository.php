@@ -1,9 +1,9 @@
 <?php 
 
-namespace Modules\Vacancies\Repositories;
+namespace Modules\Resumes\Repositories;
 
 use App\Models\Resume;
-use Modules\Vacancies\Interfaces\ResumeInterface;
+use Modules\Resumes\Interfaces\ResumeInterface;
 
 class ResumeRepository implements ResumeInterface
 {

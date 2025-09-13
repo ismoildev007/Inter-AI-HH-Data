@@ -2,10 +2,9 @@
 
 namespace Modules\Vacancies\Interfaces;
 
-use app\Models\Vacancy;
+use App\Models\Vacancy;
 
 interface VacancyInterface
 {
     public function firstOrCreateFromHH(array $data): Vacancy;
-    
 }

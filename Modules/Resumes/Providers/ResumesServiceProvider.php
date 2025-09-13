@@ -36,6 +36,10 @@ class ResumesServiceProvider extends ServiceProvider
     {
         $this->app->register(EventServiceProvider::class);
         $this->app->register(RouteServiceProvider::class);
+        $this->app->bind(
+            \Modules\Resumes\Interfaces\ResumeInterface::class,
+            \Modules\Resumes\Repositories\ResumeRepository::class
+        );
     }
 
     /**
