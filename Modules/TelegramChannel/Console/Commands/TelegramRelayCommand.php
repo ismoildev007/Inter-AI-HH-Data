@@ -3,11 +3,13 @@
 namespace Modules\TelegramChannel\Console\Commands;
 
 use App\Models\TelegramChannel;
+use App\Models\Vacancy;
 use Illuminate\Console\Command;
 use Illuminate\Support\Str;
 use danog\MadelineProto\API;
 use danog\MadelineProto\Settings;
 use danog\MadelineProto\Logger;
+use Illuminate\Support\Facades\Log;
 
 class TelegramRelayCommand extends Command
 {
@@ -36,6 +38,7 @@ class TelegramRelayCommand extends Command
         }
 
         $this->info("Relay mode={$mode}, textOnly=".($textOnly ? 'true' : 'false'));
+        $this->line('Build: save-v1');
         $this->line('Sources: '.($sources->pluck('channel_id')->implode(', ') ?: 'none'));
         $this->line('Target: '.($target->channel_id ?: $target->username ?: 'unknown'));
 
@@ -107,21 +110,89 @@ class TelegramRelayCommand extends Command
                             continue;
                         }
 
+                        // Duplicate description policy
+                        $descText = trim((string) ($msg['message'] ?? ''));
+                        if ($descText !== '') {
+                            $publishExists = Vacancy::where('description', $descText)
+                                ->where('status', \App\Models\Vacancy::STATUS_PUBLISH)
+                                ->exists();
+                            if ($publishExists) {
+                                $this->line('Duplicate publish description detected, skipping relay/save for mid='.$mid);
+                                $processedMax = max($processedMax, $mid);
+                                continue;
+                            }
+                        }
+
+                        $result = null;
+                        $this->line("About to relay (mode={$mode}) mid={$mid} text_len=".strlen((string)($msg['message'] ?? '')));
                         if ($mode === 'copy') {
                             // Send text as new message (no source attribution)
-                            $API->messages->sendMessage([
+                            $result = $API->messages->sendMessage([
                                 'peer' => $targetPeer,
                                 'message' => (string) $msg['message'],
                             ]);
                         } else {
                             // Forward (shows Forwarded from ...)
-                            $API->messages->forwardMessages([
+                            $result = $API->messages->forwardMessages([
                                 'from_peer' => $sourcePeer,
                                 'id' => [$mid],
                                 'to_peer' => $targetPeer,
                                 'drop_author' => false,
                                 'drop_media_captions' => false,
                             ]);
+                        }
+
+                        // Try to extract new message id in target
+                        $newId = $this->extractMessageId($result);
+                        if (!$newId) {
+                            // Fallback: fetch latest message id from target
+                            try {
+                                $latest = $API->messages->getHistory([
+                                    'peer' => $targetPeer,
+                                    'offset_id' => 0,
+                                    'offset_date' => 0,
+                                    'add_offset' => 0,
+                                    'limit' => 1,
+                                    'max_id' => 0,
+                                    'min_id' => 0,
+                                    'hash' => 0,
+                                ]);
+                                $latestMsg = $latest['messages'][0] ?? null;
+                                $newId = (int) ($latestMsg['id'] ?? 0);
+                            } catch (\Throwable $e) {
+                                $newId = 0;
+                            }
+                        }
+
+                        // Save into vacancies with apply_url pointing to target message URL
+                        try {
+                            $applyUrl = $this->buildMessageUrl($target, $newId);
+                            $external = 'telegram:'.($source->channel_id ?? 'unknown').':'.$mid;
+                            $this->line('Saving vacancy external_id='.$external.' newId='.$newId.' apply_url='.(string)($applyUrl ?? 'null'));
+                            Log::info('Vacancy save attempt', ['external_id' => $external, 'apply_url' => $applyUrl, 'new_id' => $newId]);
+                            $ttl = (int) config('telegramchannel.vacancy_ttl_seconds', 604800);
+                            $expDate = null;
+                            if ($ttl >= 86400) {
+                                $days = (int) ceil($ttl / 86400);
+                                $expDate = now()->addDays($days)->toDateString();
+                            }
+                            $vac = Vacancy::updateOrCreate(
+                                ['external_id' => $external],
+                                [
+                                    'source' => 'Telegram',
+                                    'description' => (string) $msg['message'],
+                                    'apply_url' => $applyUrl,
+                                    'status' => \App\Models\Vacancy::STATUS_PUBLISH,
+                                    // For weekly (or longer) TTL we use date-based expies_at; for <1 day TTL we rely on created_at
+                                    'expies_at' => $expDate,
+                                    'raw_data' => json_encode($msg, JSON_UNESCAPED_UNICODE),
+                                ]
+                            );
+                            $this->line('Saved vacancy #'.$vac->id.' apply_url='.($applyUrl ?? 'null'));
+                            Log::info('Vacancy saved', ['id' => $vac->id]);
+                        } catch (\Throwable $e) {
+                            $this->warn('Vacancy save failed: '.$e->getMessage());
+                            Log::error('Vacancy save failed', ['error' => $e->getMessage()]);
                         }
 
                         $this->line("Relayed message #{$mid} from {$source->channel_id}");
@@ -132,6 +203,26 @@ class TelegramRelayCommand extends Command
                         $source->last_message_id = $processedMax;
                         $source->save();
                     }
+                }
+
+                // Mark expired vacancies as archived (do not delete)
+                try {
+                    $ttl = (int) config('telegramchannel.vacancy_ttl_seconds', 604800);
+                    if ($ttl < 86400) {
+                        $purged = Vacancy::where('status', '!=', \App\Models\Vacancy::STATUS_ARCHIVE)
+                            ->where('created_at', '<=', now()->subSeconds(max(1, $ttl)))
+                            ->update(['status' => \App\Models\Vacancy::STATUS_ARCHIVE]);
+                    } else {
+                        $purged = Vacancy::where('status', '!=', \App\Models\Vacancy::STATUS_ARCHIVE)
+                            ->whereNotNull('expies_at')
+                            ->where('expies_at', '<=', now()->toDateString())
+                            ->update(['status' => \App\Models\Vacancy::STATUS_ARCHIVE]);
+                    }
+                    if (!empty($purged)) {
+                        $this->line('Archived expired vacancies: '.$purged);
+                    }
+                } catch (\Throwable $e) {
+                    $this->warn('Purge failed: '.$e->getMessage());
                 }
             } catch (\Throwable $e) {
                 $this->error('Relay loop error: '.$e->getMessage());
@@ -144,6 +235,52 @@ class TelegramRelayCommand extends Command
 
         $this->info('Relay finished.');
         return self::SUCCESS;
+    }
+
+    private function extractMessageId($result): int
+    {
+        $id = 0;
+        $walker = function ($node) use (&$walker, &$id) {
+            if ($id) { return; }
+            if (is_array($node)) {
+                if (isset($node['message']) && is_array($node['message']) && isset($node['message']['id'])) {
+                    $id = (int) $node['message']['id'];
+                    return;
+                }
+                if (isset($node['id']) && is_int($node['id'])) {
+                    $id = (int) $node['id'];
+                    return;
+                }
+                foreach ($node as $v) { $walker($v); if ($id) return; }
+            }
+        };
+        $walker($result);
+        return $id;
+    }
+
+    private function buildMessageUrl(TelegramChannel $target, int $messageId): ?string
+    {
+        if (!$messageId) { return null; }
+        $username = $target->username ? ltrim($target->username, '@') : null;
+        if ($username) {
+            return 'https://t.me/'.$username.'/'.$messageId;
+        }
+        $cid = (string) ($target->channel_id ?? '');
+        if (str_starts_with($cid, '-100')) {
+            return 'https://t.me/c/'.substr($cid, 4).'/'.$messageId;
+        }
+        if ($cid !== '' && str_starts_with($cid, 'http')) {
+            if (preg_match('~t\.me/c/(\d+)/~', $cid, $m)) {
+                return 'https://t.me/c/'.$m[1].'/'.$messageId;
+            }
+            if (preg_match('~t\.me/([A-Za-z0-9_]+)/~', $cid, $m)) {
+                return 'https://t.me/'.$m[1].'/'.$messageId;
+            }
+        }
+        if ($cid !== '') {
+            return 'https://t.me/'.ltrim($cid, '@').'/'.$messageId;
+        }
+        return null;
     }
 
     private function resolvePeer(\danog\MadelineProto\API $API, TelegramChannel $channel)

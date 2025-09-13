@@ -27,6 +27,7 @@ return new class extends Migration
             $table->boolean('salary_gross')->default(true);
             $table->date('published_at')->nullable();
             $table->date('expies_at')->nullable();
+            $table->string('status', 32)->default('publish')->index();
             $table->string('apply_url')->nullable();
             $table->integer('views_count')->default(0);
             $table->integer('responses_count')->default(0);

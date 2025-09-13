@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class Vacancy extends Model
 {
+    public const STATUS_PUBLISH = 'publish';
+    public const STATUS_ARCHIVE = 'archive';
     protected $fillable = [
         'source',
         'external_id',
@@ -21,6 +23,7 @@ class Vacancy extends Model
         'salary_gross',
         'published_at',
         'expies_at',
+        'status',
         'apply_url',
         'views_count',
         'responses_count',
