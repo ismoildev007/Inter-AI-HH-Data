@@ -94,7 +94,11 @@ class AuthRepository
             ]);
 
             // 7) Token
-            $token = $user->createToken('api_token')->plainTextToken;
+            $token = $user->createToken(
+                'api_token',
+                ['*'],
+                now()->addHours(4)
+            )->plainTextToken;
 
             return [
                 'user'  => $user->load([
@@ -120,7 +124,11 @@ class AuthRepository
         }
 
         $user  = Auth::user();
-        $token = $user->createToken('api_token')->plainTextToken;
+        $token = $user->createToken(
+            'api_token',
+            ['*'],
+            now()->addHours(4)
+        )->plainTextToken;
 
         return [
             'user'  => $user,
