@@ -14,11 +14,11 @@ class HhSchedule extends Model
     protected $fillable = [
         'external_id',
         'name',
-        'raw',
-        'json',
+        'raw_json',
+        
     ];
 
     protected $casts = [
-        'json' => 'array',
+        'raw_json' => 'array',
     ];
 }

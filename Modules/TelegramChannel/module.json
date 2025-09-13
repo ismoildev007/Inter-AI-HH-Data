@@ -1,0 +1,12 @@
+{
+    "name": "TelegramChannel",
+    "alias": "telegramchannel",
+    "description": "Telegram userbot channel relay module",
+    "keywords": ["telegram", "userbot", "relay"],
+    "priority": 0,
+    "providers": [
+        "Modules\\TelegramChannel\\Providers\\TelegramChannelServiceProvider"
+    ],
+    "files": []
+}
+
