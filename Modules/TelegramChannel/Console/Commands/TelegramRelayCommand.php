@@ -112,7 +112,8 @@ class TelegramRelayCommand extends Command
 
                         // Normalize for special patterns and strip signatures
                         $origText = (string) ($msg['message'] ?? '');
-                        [$vacTitle, $descText, $shouldSkip] = $this->processJobPost($origText);
+                        $replacementHandle = $target->username ? '@'.ltrim((string) $target->username, '@') : null;
+                        [$vacTitle, $descText, $shouldSkip] = $this->processJobPost($origText, $replacementHandle);
                         if ($shouldSkip) {
                             $this->line('Skip by channel-specific rule, mid='.$mid);
                             $processedMax = max($processedMax, $mid);
@@ -254,15 +255,22 @@ class TelegramRelayCommand extends Command
      *
      * @return array{0:?string,1:string,2:bool} [$title, $description, $shouldSkip]
      */
-    private function processJobPost(string $text): array
+    private function processJobPost(string $text, ?string $replacementHandle = null): array
     {
         $lines = preg_split('/\R/', $text);
         $clean = [];
         foreach ($lines as $line) {
             $ln = rtrim((string) $line);
-            // Strip signature lines like: "👉 @UstozShogird kanaliga ulanish"
+            // Replace signature lines like: "👉 @UstozShogird kanaliga ulanish" with our own handle
             if (preg_match('/@UstozShogird/i', $ln)) {
-                continue;
+                if ($replacementHandle) {
+                    $ln = '👉 '.$replacementHandle.' kanaliga ulanish';
+                } else {
+                    continue;
+                }
+            } else if ($replacementHandle) {
+                // Also replace inline occurrences within the line
+                $ln = preg_replace('/@UstozShogird/i', $replacementHandle, $ln);
             }
             $clean[] = $ln;
         }
