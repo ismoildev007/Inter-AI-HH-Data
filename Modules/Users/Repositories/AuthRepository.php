@@ -17,24 +17,39 @@ class AuthRepository
                 'last_name'   => $data['last_name'],
                 'email'       => $data['email'],
                 'phone'       => $data['phone'] ?? null,
-                'password'    => Hash::make($data['password']),
+                'password'    => \Hash::make($data['password']),
                 'birth_date'  => $data['birth_date'] ?? null,
                 'avatar_path' => $data['avatar_path'] ?? null,
                 'verify_code' => $data['verify_code'] ?? null,
                 'role_id'     => $data['role_id'] ?? null,
             ]);
 
-            // 2) Resume saqlash (file yoki text)
+            // 2) Resume saqlash
             if (!empty($data['resume_file'])) {
                 $path = $data['resume_file']->store('resumes', 'public');
-                $user->resume_path = $path;
-                $user->save();
+
+                $user->resumes()->create([
+                    'title'       => $data['resume_title'] ?? 'My Resume',
+                    'description' => $data['resume_description'] ?? null,
+                    'file_path'   => $path,
+                    'file_mime'   => $data['resume_file']->getClientMimeType(),
+                    'file_size'   => $data['resume_file']->getSize(),
+                    'parsed_text' => $data['parsed_text'] ?? null,
+                    'is_primary'  => true,
+                ]);
             } elseif (!empty($data['resume_text'])) {
-                $user->resume_text = $data['resume_text'];
-                $user->save();
+                $user->resumes()->create([
+                    'title'       => $data['resume_title'] ?? 'Text Resume',
+                    'description' => $data['resume_text'],
+                    'file_path'   => null,
+                    'file_mime'   => null,
+                    'file_size'   => null,
+                    'parsed_text' => $data['resume_text'],
+                    'is_primary'  => true,
+                ]);
             }
 
-            // 3) Preferences saqlash
+            // 3) Preferences
             if (!empty($data['preferences'])) {
                 foreach ($data['preferences'] as $pref) {
                     $user->preferences()->create([
@@ -70,7 +85,7 @@ class AuthRepository
                 }
             }
 
-            // 6) Settings default
+            // 6) Settings
             $user->settings()->create([
                 'auto_apply_enabled'    => $data['auto_apply_enabled'] ?? false,
                 'auto_apply_limit'      => $data['auto_apply_limit'] ?? 0,
@@ -90,11 +105,13 @@ class AuthRepository
                     'locations.area',
                     'jobTypes',
                     'profileViews.employer',
+                    'resumes',
                 ]),
                 'token' => $token,
             ];
         });
     }
+
 
     public function login(array $credentials): ?array
     {
