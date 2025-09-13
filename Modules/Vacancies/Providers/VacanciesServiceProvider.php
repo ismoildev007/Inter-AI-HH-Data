@@ -4,6 +4,11 @@ namespace Modules\Vacancies\Providers;
 
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\ServiceProvider;
+use Modules\Vacancies\Interfaces\HHVacancyInterface;
+use Modules\Vacancies\Interfaces\HHVacancyRepositoryInterface;
+use Modules\Vacancies\Interfaces\VacancyInterface;
+use Modules\Vacancies\Repositories\HHVacancyRepository;
+use Modules\Vacancies\Repositories\VacancyRepository;
 use Nwidart\Modules\Traits\PathNamespace;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
@@ -36,6 +41,9 @@ class VacanciesServiceProvider extends ServiceProvider
     {
         $this->app->register(EventServiceProvider::class);
         $this->app->register(RouteServiceProvider::class);
+        $this->app->bind(HHVacancyInterface::class, HHVacancyRepository::class);
+        $this->app->bind(VacancyInterface::class, VacancyRepository::class);
+
     }
 
     /**

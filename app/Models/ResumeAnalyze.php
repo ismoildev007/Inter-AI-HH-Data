@@ -18,6 +18,14 @@ class ResumeAnalyze extends Model
         'model_version',
     ];
 
+    protected $casts = [
+        'skills'     => 'array',
+        'strengths'  => 'array',
+        'weaknesses' => 'array',
+        'keywords'   => 'array',
+    ];
+    
+
     public function resume()
     {
         return $this->belongsTo(Resume::class);

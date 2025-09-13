@@ -1,0 +1,10 @@
+<?php
+
+namespace Modules\Vacancies\Interfaces;
+
+interface HHVacancyInterface
+{
+    public function search(string $query, int $page = 0, int $perPage = 20): array;
+
+    public function getById(string $id): array;
+}

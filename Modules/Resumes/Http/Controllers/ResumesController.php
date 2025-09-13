@@ -3,54 +3,64 @@
 namespace Modules\Resumes\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use Modules\Resumes\Http\Requests\ResumeUpdateRequest;
+use Modules\Resumes\Http\Resources\ResumeResource;
+use Modules\Resumes\Services\ResumeService;
+use App\Models\Resume;
+use Modules\Vacancies\Http\Requests\ResumeStoreRequest;
 use Illuminate\Http\Request;
 
 class ResumesController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
+    protected ResumeService $service;
+
+    public function __construct(ResumeService $service)
+    {
+        $this->service = $service;
+    }
+
     public function index()
     {
-        return view('resumes::index');
+        return ResumeResource::collection(
+            Resume::with('analysis')->paginate(10)
+        );
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
+    public function store(ResumeStoreRequest $request)
     {
-        return view('resumes::create');
+        $resume = $this->service->create($request->validated() + ['user_id' => auth()->id()]);
+        return new ResumeResource($resume->load('analysis'));
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request) {}
-
-    /**
-     * Show the specified resource.
-     */
-    public function show($id)
+    public function show(int $id)
     {
-        return view('resumes::show');
+        $resume = Resume::with('analysis')->findOrFail($id);
+        return new ResumeResource($resume);
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit($id)
+    public function update(ResumeUpdateRequest $request, int $id)
     {
-        return view('resumes::edit');
+        $resume = Resume::findOrFail($id);
+        $resume = $this->service->update($resume, $request->validated());
+        return new ResumeResource($resume->load('analysis'));
+    }
+
+    public function destroy(int $id)
+    {
+        $resume = Resume::findOrFail($id);
+        $resume->delete();
+        return response()->json(['message' => 'Resume deleted successfully.']);
     }
 
     /**
-     * Update the specified resource in storage.
+     * Set a resume as primary for the authenticated user.
      */
-    public function update(Request $request, $id) {}
+    public function setPrimary(int $id)
+    {
+        $resume = Resume::where('user_id', auth()->id())->findOrFail($id);
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy($id) {}
+        $this->service->setPrimary($resume);
+
+        return new ResumeResource($resume->fresh()->load('analysis'));
+    }
 }

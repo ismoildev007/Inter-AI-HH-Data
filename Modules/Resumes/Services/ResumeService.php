@@ -1,0 +1,173 @@
+<?php
+
+namespace Modules\Resumes\Services;
+
+use App\Models\Resume;
+use App\Models\ResumeAnalyze;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
+use Smalot\PdfParser\Parser as PdfParser;
+use PhpOffice\PhpWord\IOFactory as WordIO;
+use Modules\Vacancies\Interfaces\ResumeInterface;
+
+class ResumeService
+{
+    protected ResumeInterface $repo;
+
+    public function __construct(ResumeInterface $repo)
+    {
+        $this->repo = $repo;
+    }
+
+    /**
+     * Store a new resume and trigger analysis.
+     */
+    public function create(array $data): Resume
+    {
+        if (isset($data['file'])) {
+            $path = $data['file']->store('resumes', 'public');
+            $data['file_path'] = $path;
+            $data['file_mime'] = $data['file']->getMimeType();
+            $data['file_size'] = $data['file']->getSize();
+            $absolutePath = Storage::disk('public')->path($path);
+            $data['parsed_text'] = $this->parseFile($absolutePath);
+        }
+
+        $resume = $this->repo->store($data);
+
+        $this->analyze($resume);
+
+        return $resume;
+    }
+
+    /**
+     * Update an existing resume and re-run analysis.
+     */
+    public function update(Resume $resume, array $data): Resume
+    {
+        if (isset($data['file'])) {
+            $path = $data['file']->store('resumes', 'public');
+            $data['file_path'] = $path;
+            $data['file_mime'] = $data['file']->getMimeType();
+            $data['file_size'] = $data['file']->getSize();
+            $data['parsed_text'] = $this->parseFile($data['file']->getPathname());
+        }
+
+        $resume = $this->repo->update($resume, $data);
+
+        $this->analyze($resume);
+
+        return $resume;
+    }
+
+    /**
+     * Call GPT API to analyze resume and store results.
+     */
+    public function analyze(Resume $resume): void
+    {
+        $prompt = <<<PROMPT
+            You are an expert HR assistant AI. 
+            Analyze the following resume text and return a structured JSON object with the following fields only:
+
+            - "skills": A list of the candidate's hard and soft skills (only relevant skills, no duplicates).
+            - "strengths": 3–5 short bullet points describing the candidate's main strengths.
+            - "weaknesses": 2–4 short bullet points describing areas that might need improvement.
+            - "keywords": A list of important keywords or technologies mentioned in the resume (useful for search/matching).
+            - "language": Detect the main language of the resume text (e.g., "en", "ru", "uz").
+
+            Return only valid JSON. Do not include explanations outside the JSON.
+
+            Resume text:
+            
+            " . ($resume->parsed_text ?? $resume->description) . "
+            
+            PROMPT;
+
+        $response = Http::withToken(env('OPENAI_API_KEY'))
+            ->post('https://api.openai.com/v1/chat/completions', [
+                'model' => env('OPENAI_MODEL', 'gpt-4o-mini'),
+                'messages' => [
+                    ['role' => 'system', 'content' => 'You are a helpful AI for analyzing resumes.'],
+                    ['role' => 'user', 'content' => $prompt],
+                ],
+                'temperature' => 0.2,
+            ]);
+
+        if (! $response->successful()) {
+            Log::error("GPT API failed: " . $response->body());
+            return;
+        }
+
+        $content = $response->json('choices.0.message.content');
+
+        $analysis = json_decode($content, true);
+
+        if (json_last_error() !== JSON_ERROR_NONE || !is_array($analysis)) {
+            throw new \RuntimeException("Invalid GPT response: " . $content);
+        }
+
+        ResumeAnalyze::updateOrCreate(
+            ['resume_id' => $resume->id],
+            [
+                'skills'     => $analysis['skills'] ?? null,
+                'strengths'  => $analysis['strengths'] ?? null,
+                'weaknesses' => $analysis['weaknesses'] ?? null,
+                'keywords'   => $analysis['keywords'] ?? null,
+                'language'   => $analysis['language'] ?? 'en',
+            ]
+        );
+    }
+
+    /**
+     * Example: Parse PDF/Docx file into plain text.
+     */
+    protected function parseFile(string $path): ?string
+    {
+        $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+
+        try {
+            switch ($ext) {
+                case 'pdf':
+                    $parser = new PdfParser();
+                    $pdf = $parser->parseFile($path);
+                    return trim($pdf->getText());
+
+                case 'docx':
+                case 'doc':
+                    $phpWord = WordIO::load($path);
+                    $text = '';
+                    foreach ($phpWord->getSections() as $section) {
+                        $elements = $section->getElements();
+                        foreach ($elements as $element) {
+                            if (method_exists($element, 'getText')) {
+                                $text .= $element->getText() . " ";
+                            }
+                        }
+                    }
+                    return trim($text);
+
+                case 'txt':
+                    return file_get_contents($path);
+
+                default:
+                    return null;
+            }
+        } catch (\Throwable $e) {
+            Log::error("Resume parsing failed: " . $e->getMessage());
+            return null;
+        }
+    }
+
+    public function setPrimary(Resume $resume): Resume
+    {
+        // Reset all other resumes for this user
+        Resume::where('user_id', $resume->user_id)
+            ->where('id', '!=', $resume->id)
+            ->update(['is_primary' => false]);
+
+        $resume->update(['is_primary' => true]);
+
+        return $resume;
+    }
+}
