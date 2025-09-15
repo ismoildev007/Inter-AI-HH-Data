@@ -46,12 +46,22 @@ class TelegramScanLoopCommand extends Command
                     $API = new API($session, $settings);
                     $API->start();
 
-                    $q = TelegramChannel::query()->where('is_source', true)->orderBy('id');
-                    $limit = (int) $this->option('limit');
-                    if ($limit > 0) { $q->limit($limit); }
-                    $channels = $q->get();
+                    // Sharding: 100+ source uchun har passda faqat 1 shardni skan qilamiz
+                    $shards = max(1, (int) config('telegramchannel.scan_shards', 10));
+                    $cursorKey = 'tg:scan:shard_idx';
+                    if (!Cache::has($cursorKey)) { Cache::put($cursorKey, 0, now()->addDay()); }
+                    $shardIdx = Cache::increment($cursorKey) % $shards;
+
+                    // Idlar ro'yxatini olib, shard bo'yicha filterlaymiz (DB portable)
+                    $allIds = TelegramChannel::query()->where('is_source', true)->orderBy('id')->pluck('id')->all();
+                    $ids = [];
+                    foreach ($allIds as $id) { if (((int)$id % $shards) === (int)$shardIdx) { $ids[] = $id; } }
+                    $limitOpt = (int) $this->option('limit');
+                    if ($limitOpt > 0) { $ids = array_slice($ids, 0, $limitOpt); }
+                    $channels = TelegramChannel::whereIn('id', $ids)->orderBy('id')->get();
 
                     $totalDispatched = 0;
+                    $scannedChannels = 0;
                     foreach ($channels as $channel) {
                         // Per-channel lock (avoid concurrent passes)
                         $chLock = Cache::lock('tg:scan:'.$channel->id, 10);
@@ -91,11 +101,12 @@ class TelegramScanLoopCommand extends Command
                                 $channel->last_message_id = $processedMax;
                                 $channel->save();
                             }
+                            $scannedChannels++;
                         } finally {
                             optional($chLock)->release();
                         }
                     }
-                    $this->line('Dispatched scans: '.$totalDispatched);
+                    $this->line('Shard '.$shardIdx.'/'.$shards.' scanned channels: '.$scannedChannels.'; dispatched messages: '.$totalDispatched);
                 } finally {
                     optional($lock)->release();
                 }

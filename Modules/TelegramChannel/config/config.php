@@ -1,6 +1,7 @@
 <?php
 
 return [
+    // Secrets/qimmatli ma'lumotlar ENV'da qoladi
     'relay_mode' => env('TG_RELAY_MODE', 'forward'),
     'text_only' => env('TG_TEXT_ONLY', true),
     'api_id' => env('TG_API_ID'),
@@ -11,19 +12,21 @@ return [
     ],
     'target' => env('TG_TARGET_CHANNEL'),
 
-    // TTL (seconds) for auto-archiving vacancies (default: 1 week = 604800)
-    'vacancy_ttl_seconds' => env('TG_VACANCY_TTL_SECONDS', 604800),
+    // TTL (seconds) for auto-archiving vacancies
+    'vacancy_ttl_seconds' => 604800,
 
     // Rate limiters
-    'global_rps' => env('TG_GLOBAL_RPS', 15),
-    'per_chat_rps' => env('TG_PER_CHAT_RPS', 1),
+    'global_rps' => 12,
+    'per_chat_rps' => 1,
 
     // Scan limit per channel per pass
-    'scan_limit' => env('TG_SCAN_LIMIT', 20),
+    'scan_limit' => 20,
 
     // Scan interval for scan-loop daemon (seconds)
-    'scan_interval_seconds' => env('TG_SCAN_INTERVAL_SECONDS', 15),
+    'scan_interval_seconds' => 5,
+    // Number of channel shards (per pass scans only 1 shard)
+    'scan_shards' => 10,
 
     // Queue name for sender
-    'send_queue' => env('TG_SEND_QUEUE', 'telegram'),
+    'send_queue' => 'telegram',
 ];
