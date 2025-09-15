@@ -2462,16 +2462,16 @@
         },
         {
             "name": "danog/madelineproto",
-            "version": "8.5.7",
+            "version": "8.5.8",
             "source": {
                 "type": "git",
                 "url": "https://github.com/danog/MadelineProto.git",
-                "reference": "bd1b7c96d96fcdcb7cb5e9d719f867f9f78e3ec4"
+                "reference": "0f231a5d94bbc40c1d2e8785529cee5a4649be33"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/danog/MadelineProto/zipball/bd1b7c96d96fcdcb7cb5e9d719f867f9f78e3ec4",
-                "reference": "bd1b7c96d96fcdcb7cb5e9d719f867f9f78e3ec4",
+                "url": "https://api.github.com/repos/danog/MadelineProto/zipball/0f231a5d94bbc40c1d2e8785529cee5a4649be33",
+                "reference": "0f231a5d94bbc40c1d2e8785529cee5a4649be33",
                 "shasum": ""
             },
             "require": {
@@ -2579,7 +2579,7 @@
             ],
             "support": {
                 "issues": "https://github.com/danog/MadelineProto/issues",
-                "source": "https://github.com/danog/MadelineProto/tree/8.5.7"
+                "source": "https://github.com/danog/MadelineProto/tree/8.5.8"
             },
             "funding": [
                 {
@@ -2587,7 +2587,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2025-09-01T12:46:28+00:00"
+            "time": "2025-09-14T12:58:33+00:00"
         },
         {
             "name": "danog/primemodule",
@@ -11103,16 +11103,16 @@
         },
         {
             "name": "phpunit/phpunit",
-            "version": "11.5.38",
+            "version": "11.5.39",
             "source": {
                 "type": "git",
                 "url": "https://github.com/sebastianbergmann/phpunit.git",
-                "reference": "5bd0e4f64a2261b7ade7054c51547beaf2d99e43"
+                "reference": "ad5597f79d8489d2870073ac0bc0dd0ad1fa9931"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sebastianbergmann/phpunit/zipball/5bd0e4f64a2261b7ade7054c51547beaf2d99e43",
-                "reference": "5bd0e4f64a2261b7ade7054c51547beaf2d99e43",
+                "url": "https://api.github.com/repos/sebastianbergmann/phpunit/zipball/ad5597f79d8489d2870073ac0bc0dd0ad1fa9931",
+                "reference": "ad5597f79d8489d2870073ac0bc0dd0ad1fa9931",
                 "shasum": ""
             },
             "require": {
@@ -11184,7 +11184,7 @@
             "support": {
                 "issues": "https://github.com/sebastianbergmann/phpunit/issues",
                 "security": "https://github.com/sebastianbergmann/phpunit/security/policy",
-                "source": "https://github.com/sebastianbergmann/phpunit/tree/11.5.38"
+                "source": "https://github.com/sebastianbergmann/phpunit/tree/11.5.39"
             },
             "funding": [
                 {
@@ -11208,7 +11208,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2025-09-11T10:34:07+00:00"
+            "time": "2025-09-14T06:20:41+00:00"
         },
         {
             "name": "sebastian/cli-parser",

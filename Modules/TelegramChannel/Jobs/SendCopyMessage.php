@@ -7,12 +7,14 @@ use App\Models\Vacancy;
 use danog\MadelineProto\API;
 use danog\MadelineProto\Settings;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Contracts\Cache\LockTimeoutException;
 
 class SendCopyMessage implements ShouldQueue
 {
@@ -28,7 +30,6 @@ class SendCopyMessage implements ShouldQueue
 
     public function handle(): void
     {
-        Log::info('jobga keldi 2');
         $source = TelegramChannel::find($this->channelDbId);
         $target = TelegramChannel::where('is_target', true)->first();
         if (!$source || !$target) return;
@@ -38,15 +39,43 @@ class SendCopyMessage implements ShouldQueue
             'mid' => $this->messageId,
         ]);
 
-        $api = $this->makeApi();
-        $api->start();
+        // Idempotent: shu xabar avval saqlanganmi?
+        $external = 'telegram:'.($source->channel_id ?? 'unknown').':'.$this->messageId;
+        $redis = app('redis')->connection();
+        $sentKey = 'tg:sent:'.$external;
+        if ($redis->exists($sentKey)) {
+            Log::info('SendCopyMessage skip already-sent', ['external' => $external]);
+            return;
+        }
+        if (Vacancy::where('external_id', $external)->exists()) {
+            Log::info('SendCopyMessage skip existed external', ['external' => $external]);
+            $ttl = (int) config('telegramchannel.vacancy_ttl_seconds', 604800);
+            $redis->setex($sentKey, max(60, $ttl), '1');
+            return;
+        }
 
-        $sourcePeer = $this->resolvePeer($api, $source);
-        $targetPeer = $this->resolvePeer($api, $target);
-        if (!$sourcePeer || !$targetPeer) return;
+        $api = null;
+        $sourcePeer = null;
+        $targetPeer = null;
+        // Global lock: MadelineProto sessiya bilan to'qnashuvni oldini olish
+        $lock = Cache::lock('tg:api:lock', 30);
+        try {
+            $lock->block(60);
+        } catch (LockTimeoutException $e) {
+            // API band: birozdan keyin yana urinib ko'ramiz
+            $this->release(5);
+            return;
+        }
+        try {
+            $api = $this->makeApi();
+            $api->start();
 
-        $msg = $this->raw ?? $this->fetchMessage($api, $sourcePeer, $this->messageId);
-        if (!$msg) { \Log::info('SendCopyMessage fetchMessage null', ['mid' => $this->messageId]); return; }
+            $sourcePeer = $this->resolvePeer($api, $source);
+            $targetPeer = $this->resolvePeer($api, $target);
+            if (!$sourcePeer || !$targetPeer) { Log::warning('SendCopyMessage peer resolve failed', ['mid' => $this->messageId]); return; }
+
+            $msg = $this->raw ?? $this->fetchMessage($api, $sourcePeer, $this->messageId);
+            if (!$msg) { \Log::info('SendCopyMessage fetchMessage null', ['mid' => $this->messageId]); return; }
 
         $textOnly = (bool) config('telegramchannel.text_only', true);
         $origText = $this->text ?? (string) ($msg['message'] ?? '');
@@ -72,7 +101,6 @@ class SendCopyMessage implements ShouldQueue
         $outText = $vacTitle ? ($vacTitle.":\n".$descText) : $descText;
         if (trim((string) $outText) === '') { \Log::info('SendCopyMessage skip empty outText', ['mid' => $this->messageId]); return; }
 
-        try {
             $result = $api->messages->sendMessage([
                 'peer' => $targetPeer,
                 'message' => $outText,
@@ -92,29 +120,6 @@ class SendCopyMessage implements ShouldQueue
                 ]);
                 $newId = (int) (($latest['messages'][0]['id'] ?? 0));
             }
-
-            $applyUrl = $this->buildMessageUrl($target, $newId);
-            $ttl = (int) config('telegramchannel.vacancy_ttl_seconds', 604800);
-            $expDate = null;
-            if ($ttl >= 86400) {
-                $days = (int) ceil($ttl / 86400);
-                $expDate = now()->addDays($days)->toDateString();
-            }
-
-            $external = 'telegram:'.($source->channel_id ?? 'unknown').':'.$this->messageId;
-            $vac = Vacancy::updateOrCreate(
-                ['external_id' => $external],
-                [
-                    'source' => 'Telegram',
-                    'title' => $vacTitle ?: null,
-                    'description' => $descText,
-                    'apply_url' => $applyUrl,
-                    'status' => \App\Models\Vacancy::STATUS_PUBLISH,
-                    'expires_at' => $expDate,
-                    'raw_data' => json_encode($msg, JSON_UNESCAPED_UNICODE),
-                ]
-            );
-            \Log::info('SendCopyMessage saved vacancy', ['id' => $vac->id, 'external' => $external]);
         } catch (\Throwable $e) {
             $sec = $this->parseFloodWait($e->getMessage());
             if ($sec > 0) {
@@ -122,6 +127,38 @@ class SendCopyMessage implements ShouldQueue
                 $this->release($sec + 1);
                 return;
             }
+            throw $e;
+        } finally {
+            // Lockni tezroq bo'shatamiz (saqlash DB da davom etadi)
+            optional($lock)->release();
+        }
+
+        try {
+            $applyUrl = $this->buildMessageUrl($target, $newId);
+            $ttl = (int) config('telegramchannel.vacancy_ttl_seconds', 604800);
+            // Mark as sent to prevent duplicates even if DB save fails
+            $redis->setex($sentKey, max(60, $ttl), (string) $newId);
+            $expDate = null;
+            if ($ttl >= 86400) {
+                $days = (int) ceil($ttl / 86400);
+                $expDate = now()->addDays($days)->toDateString();
+            }
+
+            $attrs = [
+                'source' => 'Telegram',
+                'title' => $vacTitle ?: null,
+                'description' => $descText,
+                'apply_url' => $applyUrl,
+                'status' => \App\Models\Vacancy::STATUS_PUBLISH,
+                'raw_data' => json_encode($msg, JSON_UNESCAPED_UNICODE),
+            ];
+            Log::info('SendCopyMessage saving', ['external' => $external, 'attrs' => $attrs]);
+            $vac = Vacancy::updateOrCreate(
+                ['external_id' => $external],
+                $attrs
+            );
+            \Log::info('SendCopyMessage saved vacancy', ['id' => $vac->id, 'external' => $external]);
+        } catch (\Throwable $e) {
             throw $e;
         }
     }

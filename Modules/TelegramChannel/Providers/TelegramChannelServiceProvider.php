@@ -23,32 +23,7 @@ class TelegramChannelServiceProvider extends ServiceProvider
         $this->loadMigrationsFrom(module_path($this->name, 'database/migrations'));
         $this->registerCommands();
 
-        // Register scheduler for continuous scan-dispatch
-        $this->app->booted(function () {
-            if (!config('telegramchannel.schedule_enabled', true)) {
-                return;
-            }
-            $interval = (int) config('telegramchannel.scan_interval_seconds', 15);
-            $schedule = $this->app->make(Schedule::class);
-            $event = $schedule->command('telegram:scan-dispatch');
-
-            // Map seconds to scheduler granularity (Laravel 12 supports sub-minute)
-            if ($interval <= 1) {
-                $event->everySecond();
-            } elseif ($interval <= 5) {
-                $event->everyFiveSeconds();
-            } elseif ($interval <= 10) {
-                $event->everyTenSeconds();
-            } elseif ($interval <= 15) {
-                $event->everyFifteenSeconds();
-            } elseif ($interval <= 30) {
-                $event->everyThirtySeconds();
-            } else {
-                $event->everyMinute();
-            }
-
-            $event->withoutOverlapping();
-        });
+        // scheduler no longer used for scanning; scan-loop daemon handles dispatching
     }
 
     public function register(): void
@@ -86,11 +61,11 @@ class TelegramChannelServiceProvider extends ServiceProvider
 
     protected function registerCommands(): void
     {
-        if ($this->app->runningInConsole()) {
+            if ($this->app->runningInConsole()) {
             $this->commands([
                 \Modules\TelegramChannel\Console\Commands\TelegramLoginCommand::class,
                 \Modules\TelegramChannel\Console\Commands\TelegramRelayCommand::class,
-                \Modules\TelegramChannel\Console\Commands\TelegramScanDispatchCommand::class,
+                \Modules\TelegramChannel\Console\Commands\TelegramScanLoopCommand::class,
             ]);
         }
     }

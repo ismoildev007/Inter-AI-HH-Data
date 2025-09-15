@@ -21,7 +21,9 @@ return [
     // Scan limit per channel per pass
     'scan_limit' => env('TG_SCAN_LIMIT', 20),
 
-    // Scheduler to auto-dispatch scans (requires running `php artisan schedule:work` or system cron)
-    'schedule_enabled' => env('TG_SCHEDULE_ENABLED', true),
+    // Scan interval for scan-loop daemon (seconds)
     'scan_interval_seconds' => env('TG_SCAN_INTERVAL_SECONDS', 15),
+
+    // Queue name for sender
+    'send_queue' => env('TG_SEND_QUEUE', 'telegram'),
 ];
