@@ -13,4 +13,15 @@ return [
 
     // TTL (seconds) for auto-archiving vacancies (default: 1 week = 604800)
     'vacancy_ttl_seconds' => env('TG_VACANCY_TTL_SECONDS', 604800),
+
+    // Rate limiters
+    'global_rps' => env('TG_GLOBAL_RPS', 15),
+    'per_chat_rps' => env('TG_PER_CHAT_RPS', 1),
+
+    // Scan limit per channel per pass
+    'scan_limit' => env('TG_SCAN_LIMIT', 20),
+
+    // Scheduler to auto-dispatch scans (requires running `php artisan schedule:work` or system cron)
+    'schedule_enabled' => env('TG_SCHEDULE_ENABLED', true),
+    'scan_interval_seconds' => env('TG_SCAN_INTERVAL_SECONDS', 15),
 ];
