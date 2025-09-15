@@ -20,4 +20,9 @@ class MatchResult extends Model
     {
         return $this->belongsTo(Resume::class);
     }
+
+    public function vacancy()
+    {
+        return $this->belongsTo(Vacancy::class);
+    }
 }

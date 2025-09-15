@@ -8,7 +8,7 @@ use Modules\Vacancies\Http\Controllers\VacancyMatchingController;
 Route::prefix('v1')
     ->name('v1.')
     ->group(function () {
-        
+
         /**
          * CRUD for internal vacancies (our DB)
          */
@@ -18,12 +18,16 @@ Route::prefix('v1')
         /**
          * Resume → Vacancy matching
          */
-        Route::middleware(['auth:sanctum'])->prefix('vacancyresume/')
-            ->name('resumes.')
+        Route::middleware(['auth:sanctum'])
+            ->prefix('vacancy-matches')
+            ->name('vacancy-matches.')
             ->group(function () {
-                Route::post('match', [VacancyMatchingController::class, 'match'])
-                    ->name('match');
+                Route::post('run', [VacancyMatchingController::class, 'match'])
+                    ->name('run'); 
+                Route::get('/', [VacancyMatchingController::class, 'myMatches'])
+                    ->name('index'); 
             });
+
 
         /**
          * HeadHunter API integration
@@ -32,9 +36,9 @@ Route::prefix('v1')
             ->name('hh.')
             ->group(function () {
                 Route::get('vacancies', [HHVacancyController::class, 'index'])
-                    ->name('vacancies.index'); 
+                    ->name('vacancies.index');
 
                 Route::get('vacancies/{id}', [HHVacancyController::class, 'show'])
-                    ->name('vacancies.show'); 
+                    ->name('vacancies.show');
             });
     });

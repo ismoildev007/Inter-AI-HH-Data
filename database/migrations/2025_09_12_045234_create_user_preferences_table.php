@@ -21,7 +21,7 @@ return new class extends Migration
             $table->string('currency', 10)->nullable();
             $table->string('work_mode')->nullable();
             $table->string('notes')->nullable();
-            $table->string('cover_letter')->nullable();
+            $table->text('cover_letter')->nullable();
             $table->timestamps();
         });
     }

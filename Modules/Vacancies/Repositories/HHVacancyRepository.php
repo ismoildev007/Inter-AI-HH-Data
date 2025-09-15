@@ -3,6 +3,7 @@
 namespace Modules\Vacancies\Repositories;
 
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Modules\Vacancies\Interfaces\HHVacancyInterface;
 
 class HHVacancyRepository implements HHVacancyInterface
@@ -16,13 +17,15 @@ class HHVacancyRepository implements HHVacancyInterface
         ]);
     }
 
-    public function search(string $query, int $page = 0, int $perPage = 20): array
+    public function search(string $query, int $page = 0, int $perPage = 40, array $options = []): array
     {
-        $response = $this->http()->get("{$this->baseUrl}/vacancies", [
-            'text' => $query,
-            'page' => $page,
+        $params = array_merge([
+            'text'     => $query,
+            'page'     => $page,
             'per_page' => $perPage,
-        ]);
+        ], $options);
+        $response = $this->http()->get("{$this->baseUrl}/vacancies", $params);
+        
 
         if ($response->failed()) {
             throw new \RuntimeException("HH API search failed: " . $response->body());
@@ -30,6 +33,7 @@ class HHVacancyRepository implements HHVacancyInterface
 
         return $response->json();
     }
+
 
     public function getById(string $id): array
     {

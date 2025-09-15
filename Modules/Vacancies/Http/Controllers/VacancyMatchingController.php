@@ -3,7 +3,9 @@
 namespace Modules\Vacancies\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Models\MatchResult;
 use App\Models\Resume;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Modules\Vacancies\Http\Requests\VacancyMatchRequest;
 use Modules\Vacancies\Http\Resources\VacancyMatchResource;
@@ -24,9 +26,26 @@ class VacancyMatchingController extends Controller
             ->resumes()
             ->where('is_primary', true)
             ->firstOrFail();
-        Log::info('Primary resume found', ['resume_id' => $resume->id]);
 
-        $results = $this->service->matchResume($resume, $resume->title);
+        \Modules\Vacancies\Jobs\MatchResumeJob::dispatch($resume, $resume->title ?? $resume->description);
+
+        return response()->json([
+            'status' => 'queued',
+            'message' => 'Resume matching started. Check back in a few moments.'
+        ]);
+    }
+
+
+    public function myMatches()
+    {
+        $user = Auth::user();
+
+        $resumeIds = $user->resumes()->pluck('id');
+
+        $results = MatchResult::with('vacancy.employer')
+            ->whereIn('resume_id', $resumeIds)
+            ->orderByDesc('score_percent')
+            ->get();
 
         return VacancyMatchResource::collection($results);
     }

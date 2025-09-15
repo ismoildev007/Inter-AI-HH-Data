@@ -13,15 +13,17 @@ class VacancyMatchResource extends JsonResource
             'vacancy_id'    => $this->vacancy_id,
             'score_percent' => $this->score_percent,
             'explanations'  => json_decode($this->explanations, true),
-            'vacancy'       => [
-                'title'       => $this->vacancy->title,
-                'description' => $this->vacancy->description_html,
+            'vacancy' => [
+                'id'          => optional($this->vacancy)->id,
+                'title'       => optional($this->vacancy)->title,
+                'description' => optional($this->vacancy)->description ?? null,
                 'salary'      => [
-                    'from' => $this->vacancy->salary_from,
-                    'to'   => $this->vacancy->salary_to,
-                    'currency' => $this->vacancy->salary_currency,
+                    'from'     => optional($this->vacancy)->salary_from,
+                    'to'       => optional($this->vacancy)->salary_to,
+                    'currency' => optional($this->vacancy)->salary_currency,
                 ],
             ],
+
         ];
     }
 }

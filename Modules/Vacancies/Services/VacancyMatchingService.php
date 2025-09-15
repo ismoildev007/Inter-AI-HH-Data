@@ -24,8 +24,9 @@ class VacancyMatchingService
 
     public function matchResume(Resume $resume, string $query): array
     {
-        Log::info('Starting vacancy match', ['resume_id' => $resume->id, 'query' => $query]);
-        $hhVacacnies = $this->hhRepository->search($query);
+        $hhVacacnies = $this->hhRepository->search($query, 0, 20, [
+            'area' => 97,
+        ]);
         $vacancies = $hhVacacnies['items'] ?? [];
 
         if (empty($vacancies)) {
@@ -36,16 +37,14 @@ class VacancyMatchingService
         $vacancyTexts = [];
         foreach ($vacancies as $v) {
             if (!empty($v['id'])) {
-                $full = $this->hhRepository->getById($v['id']); // fetch full vacancy
+                $full = $this->hhRepository->getById($v['id']);
                 if (!empty($full['description'])) {
-                    $vacancyTexts[] = strip_tags($full['description']); // clean HTML
+                    $vacancyTexts[] = strip_tags($full['description']); 
                 }
             }
         }
         $url = 'https://python.inter-ai.uz/bulk-match';
-        Log::info('Calling matcher API', ['url' => $url]);
-        Log::info('Number of vacancies to match', ['count' => count($vacancyTexts)]);
-        Log::info('Number of resumes to match', ['count' => count($resumes)]);
+        
 
 
         $response = Http::timeout(30)->post($url, [

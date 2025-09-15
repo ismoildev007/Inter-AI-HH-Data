@@ -24,7 +24,7 @@ return new class extends Migration
             $table->decimal('salary_from', 15, 2)->nullable();
             $table->decimal('salary_to', 15, 2)->nullable();
             $table->string('salary_currency', 10)->nullable();
-            $table->boolean('salary_gross')->default(true);
+            $table->string('salary_gross')->nullable();
             $table->date('published_at')->nullable();
             $table->date('expies_at')->nullable();
             $table->string('status', 32)->default('publish')->index();

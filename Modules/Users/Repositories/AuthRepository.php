@@ -2,6 +2,7 @@
 
 namespace Modules\Users\Repositories;
 
+use App\Models\Role;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -28,6 +29,7 @@ class AuthRepository
                 ];
             }
 
+            $role = Role::where('name', 'job_seeker')->first();
             // 1) User yaratamiz
             $user = User::create([
                 'first_name'  => $data['first_name'],
@@ -38,7 +40,7 @@ class AuthRepository
                 'birth_date'  => $data['birth_date'] ?? null,
                 'avatar_path' => $data['avatar_path'] ?? null,
                 'verify_code' => $data['verify_code'] ?? null,
-                'role_id'     => $data['role_id'] ?? null,
+                'role_id'     => $data['role_id'] ?? $role->id,
             ]);
 
             // 2) Resume saqlash (file + text bo‘lsa ikkalasini ham saqlash)
