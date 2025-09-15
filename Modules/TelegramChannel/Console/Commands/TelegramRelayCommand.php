@@ -139,6 +139,11 @@ class TelegramRelayCommand extends Command
                         if ($mode === 'copy') {
                             // Send normalized message (no source attribution)
                             $outText = $vacTitle ? ($vacTitle.":\n".$descText) : $descText;
+                            if (trim((string) $outText) === '') {
+                                $this->line('Skip empty outText, mid='.$mid);
+                                $processedMax = max($processedMax, $mid);
+                                continue;
+                            }
                             $result = $API->messages->sendMessage([
                                 'peer' => $targetPeer,
                                 'message' => $outText,
