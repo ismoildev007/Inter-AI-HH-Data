@@ -110,7 +110,7 @@ class SendCopyMessage implements ShouldQueue
                     'description' => $descText,
                     'apply_url' => $applyUrl,
                     'status' => \App\Models\Vacancy::STATUS_PUBLISH,
-                    'expies_at' => $expDate,
+                    'expires_at' => $expDate,
                     'raw_data' => json_encode($msg, JSON_UNESCAPED_UNICODE),
                 ]
             );

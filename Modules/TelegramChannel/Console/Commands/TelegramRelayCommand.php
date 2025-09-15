@@ -201,8 +201,8 @@ class TelegramRelayCommand extends Command
                                     'description' => $descText,
                                     'apply_url' => $applyUrl,
                                     'status' => \App\Models\Vacancy::STATUS_PUBLISH,
-                                    // For weekly (or longer) TTL we use date-based expies_at; for <1 day TTL we rely on created_at
-                                    'expies_at' => $expDate,
+                                    // For weekly (or longer) TTL we use date-based expires_at; for <1 day TTL we rely on created_at
+                                    'expires_at' => $expDate,
                                     'raw_data' => json_encode($msg, JSON_UNESCAPED_UNICODE),
                                 ]
                             );
@@ -232,8 +232,8 @@ class TelegramRelayCommand extends Command
                             ->update(['status' => \App\Models\Vacancy::STATUS_ARCHIVE]);
                     } else {
                         $purged = Vacancy::where('status', '!=', \App\Models\Vacancy::STATUS_ARCHIVE)
-                            ->whereNotNull('expies_at')
-                            ->where('expies_at', '<=', now()->toDateString())
+                            ->whereNotNull('expires_at')
+                            ->where('expires_at', '<=', now()->toDateString())
                             ->update(['status' => \App\Models\Vacancy::STATUS_ARCHIVE]);
                     }
                     if (!empty($purged)) {

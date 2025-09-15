@@ -22,7 +22,7 @@ class Vacancy extends Model
         'salary_currency',
         'salary_gross',
         'published_at',
-        'expies_at',
+        'expires_at',
         'status',
         'apply_url',
         'views_count',
