@@ -20,12 +20,12 @@ return [
     'per_chat_rps' => 1,
 
     // Scan limit per channel per pass
-    'scan_limit' => 20,
+    'scan_limit' => env('TG_SCAN_LIMIT', 20),
 
     // Scan interval for scan-loop daemon (seconds)
-    'scan_interval_seconds' => 5,
+    'scan_interval_seconds' => env('TG_SCAN_INTERVAL', 5),
     // Number of channel shards (per pass scans only 1 shard)
-    'scan_shards' => 10,
+    'scan_shards' => env('TG_SCAN_SHARDS', 10),
 
     // Queue name for sender
     'send_queue' => 'telegram',

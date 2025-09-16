@@ -67,6 +67,7 @@ class TelegramChannelServiceProvider extends ServiceProvider
                 \Modules\TelegramChannel\Console\Commands\TelegramRelayCommand::class,
                 \Modules\TelegramChannel\Console\Commands\TelegramScanLoopCommand::class,
                 \Modules\TelegramChannel\Console\Commands\TelegramOrchestratorCommand::class,
+                \Modules\TelegramChannel\Console\Commands\TelegramTestSendCommand::class,
             ]);
         }
     }

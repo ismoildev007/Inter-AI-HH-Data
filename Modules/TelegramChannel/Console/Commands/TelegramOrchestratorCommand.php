@@ -107,8 +107,8 @@ class TelegramOrchestratorCommand extends Command
         $php = PHP_BINARY;
         $artisan = base_path('artisan');
         $log = storage_path('logs/worker-telegram.log');
-        // Keep conservative flags; sleep=3, tries=1, timeout=120 to match job settings
-        $cmd = sprintf('%s %s queue:work --queue=%s --sleep=3 --tries=5 --timeout=120 >> %s 2>&1',
+        // Keep conservative flags; sleep=3, timeout=120; retries come from job's $tries
+        $cmd = sprintf('%s %s queue:work --queue=%s --sleep=3 --timeout=120 >> %s 2>&1',
             escapeshellcmd($php), escapeshellarg($artisan), escapeshellarg($queue), escapeshellarg($log)
         );
         $this->worker = Process::fromShellCommandline($cmd, base_path());

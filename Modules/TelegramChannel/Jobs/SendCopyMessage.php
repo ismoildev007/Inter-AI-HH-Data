@@ -6,6 +6,7 @@ use App\Models\TelegramChannel;
 use App\Models\Vacancy;
 use danog\MadelineProto\API;
 use danog\MadelineProto\Settings;
+use danog\MadelineProto\Logger;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Bus\Queueable;
@@ -168,6 +169,8 @@ class SendCopyMessage implements ShouldQueue
         $settings = new Settings;
         $settings->getAppInfo()->setApiId((int) config('telegramchannel.api_id'));
         $settings->getAppInfo()->setApiHash((string) config('telegramchannel.api_hash'));
+        // Lower MadelineProto verbosity to reduce log shovqin
+        $settings->getLogger()->setLevel(Logger::LEVEL_WARNING);
         return new API((string) config('telegramchannel.session'), $settings);
     }
 
