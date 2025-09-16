@@ -9,7 +9,7 @@ use Illuminate\Support\Str;
 use danog\MadelineProto\API;
 use danog\MadelineProto\Settings;
 use danog\MadelineProto\Logger;
-use Illuminate\Support\Facades\Log;
+// No file logging
 
 class TelegramRelayCommand extends Command
 {
@@ -46,7 +46,7 @@ class TelegramRelayCommand extends Command
         $settings = new Settings;
         $settings->getAppInfo()->setApiId($apiId);
         $settings->getAppInfo()->setApiHash($apiHash);
-        $settings->getLogger()->setLevel(Logger::LEVEL_VERBOSE);
+        $settings->getLogger()->setLevel(Logger::LEVEL_ERROR);
 
         try {
             $API = new API($session, $settings);
@@ -186,7 +186,6 @@ class TelegramRelayCommand extends Command
                             $applyUrl = $this->buildMessageUrl($target, $newId);
                             $external = 'telegram:'.($source->channel_id ?? 'unknown').':'.$mid;
                             $this->line('Saving vacancy external_id='.$external.' newId='.$newId.' apply_url='.(string)($applyUrl ?? 'null'));
-                            Log::info('Vacancy save attempt', ['external_id' => $external, 'apply_url' => $applyUrl, 'new_id' => $newId]);
                             $ttl = (int) config('telegramchannel.vacancy_ttl_seconds', 604800);
                             $expDate = null;
                             if ($ttl >= 86400) {
@@ -207,10 +206,8 @@ class TelegramRelayCommand extends Command
                                 ]
                             );
                             $this->line('Saved vacancy #'.$vac->id.' apply_url='.($applyUrl ?? 'null'));
-                            Log::info('Vacancy saved', ['id' => $vac->id]);
                         } catch (\Throwable $e) {
                             $this->warn('Vacancy save failed: '.$e->getMessage());
-                            Log::error('Vacancy save failed', ['error' => $e->getMessage()]);
                         }
 
                         $this->line("Relayed message #{$mid} from {$source->channel_id}");

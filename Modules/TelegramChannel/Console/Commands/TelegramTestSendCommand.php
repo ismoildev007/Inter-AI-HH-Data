@@ -5,7 +5,7 @@ namespace Modules\TelegramChannel\Console\Commands;
 use App\Models\TelegramChannel;
 use Illuminate\Console\Command;
 use Illuminate\Support\Str;
-use Illuminate\Support\Facades\Log;
+// No file logging
 use danog\MadelineProto\API;
 use danog\MadelineProto\Settings;
 use danog\MadelineProto\Logger;
@@ -73,11 +73,9 @@ class TelegramTestSendCommand extends Command
             $url = $this->buildMessageUrl($target, $newId);
             $this->info('Sent. New message id: '.($newId ?: 'unknown'));
             if ($url) { $this->info('URL: '.$url); }
-            Log::info('telegram:test-send success', ['id' => $newId, 'url' => $url]);
             return self::SUCCESS;
         } catch (\Throwable $e) {
             $this->error('Test send failed: '.$e->getMessage());
-            Log::error('telegram:test-send failed', ['error' => $e->getMessage()]);
             return self::FAILURE;
         }
     }
@@ -151,4 +149,3 @@ class TelegramTestSendCommand extends Command
         return null;
     }
 }
-

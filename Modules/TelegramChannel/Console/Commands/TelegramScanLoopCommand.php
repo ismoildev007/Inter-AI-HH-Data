@@ -5,7 +5,7 @@ namespace Modules\TelegramChannel\Console\Commands;
 use App\Models\TelegramChannel;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Log;
+// No file logging
 use Illuminate\Support\Str;
 use danog\MadelineProto\API;
 use danog\MadelineProto\Settings;
@@ -112,7 +112,6 @@ class TelegramScanLoopCommand extends Command
                             $scannedChannels++;
                         } catch (\Throwable $e) {
                             $this->warn('scan-loop pass error: '.$e->getMessage());
-                            Log::warning('scan-loop pass error', ['error' => $e->getMessage()]);
                         } finally {
                             optional($chLock)->release();
                         }
@@ -123,7 +122,6 @@ class TelegramScanLoopCommand extends Command
                 }
             } catch (\Throwable $e) {
                 $this->error('Scan loop error: '.$e->getMessage());
-                Log::error('scan-loop error', ['error' => $e->getMessage()]);
             }
 
             sleep($sleep);

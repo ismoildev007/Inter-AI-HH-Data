@@ -29,7 +29,7 @@ class TelegramLoginCommand extends Command
         $settings = new Settings;
         $settings->getAppInfo()->setApiId($apiId);
         $settings->getAppInfo()->setApiHash($apiHash);
-        $settings->getLogger()->setLevel(Logger::LEVEL_VERBOSE);
+        $settings->getLogger()->setLevel(Logger::LEVEL_ERROR);
 
         try {
             $API = new API($session, $settings);

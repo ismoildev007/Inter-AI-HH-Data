@@ -14,7 +14,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Support\Facades\Log;
+// No file logging
 use Illuminate\Contracts\Cache\LockTimeoutException;
 
 class SendCopyMessage implements ShouldQueue
@@ -35,21 +35,14 @@ class SendCopyMessage implements ShouldQueue
         $target = TelegramChannel::where('is_target', true)->first();
         if (!$source || !$target) return;
 
-        \Log::info('SendCopyMessage start', [
-            'source' => $source->username ?? $source->channel_id,
-            'mid' => $this->messageId,
-        ]);
+        // no log
 
         // Idempotent: shu xabar avval saqlanganmi?
         $external = 'telegram:'.($source->channel_id ?? 'unknown').':'.$this->messageId;
         $redis = app('redis')->connection();
         $sentKey = 'tg:sent:'.$external;
-        if ($redis->exists($sentKey)) {
-            Log::info('SendCopyMessage skip already-sent', ['external' => $external]);
-            return;
-        }
+        if ($redis->exists($sentKey)) { return; }
         if (Vacancy::where('external_id', $external)->exists()) {
-            Log::info('SendCopyMessage skip existed external', ['external' => $external]);
             $ttl = (int) config('telegramchannel.vacancy_ttl_seconds', 604800);
             $redis->setex($sentKey, max(60, $ttl), '1');
             return;
@@ -73,34 +66,34 @@ class SendCopyMessage implements ShouldQueue
 
             $sourcePeer = $this->resolvePeer($api, $source);
             $targetPeer = $this->resolvePeer($api, $target);
-            if (!$sourcePeer || !$targetPeer) { Log::warning('SendCopyMessage peer resolve failed', ['mid' => $this->messageId]); return; }
+            if (!$sourcePeer || !$targetPeer) { return; }
 
             $msg = $this->raw ?? $this->fetchMessage($api, $sourcePeer, $this->messageId);
-            if (!$msg) { \Log::info('SendCopyMessage fetchMessage null', ['mid' => $this->messageId]); return; }
+            if (!$msg) { return; }
 
         $textOnly = (bool) config('telegramchannel.text_only', true);
         $origText = $this->text ?? (string) ($msg['message'] ?? '');
         $hasText = strlen(trim($origText)) > 0;
-        if ($textOnly && !$hasText) { \Log::info('SendCopyMessage skip no-text', ['mid' => $this->messageId]); return; }
+        if ($textOnly && !$hasText) { return; }
 
         $replacementHandle = $target->username ? '@'.ltrim((string) $target->username, '@') : null;
         $sourceHandle = strtolower(ltrim((string) ($source->username ?? $source->channel_id ?? ''), '@'));
         $strictSources = ['ustozshogird', 'ustozshogirdsohalar'];
         $strict = in_array($sourceHandle, $strictSources, true);
         [$vacTitle, $descText, $shouldSkip] = $this->processJobPost($origText, $strict, $replacementHandle);
-        if ($shouldSkip) { \Log::info('SendCopyMessage skip by rule', ['mid' => $this->messageId]); return; }
+        if ($shouldSkip) { return; }
 
         if ($descText !== '') {
             $publishExists = Vacancy::where('description', $descText)
                 ->where('status', \App\Models\Vacancy::STATUS_PUBLISH)
                 ->exists();
-            if ($publishExists) { \Log::info('SendCopyMessage skip dup publish', ['mid' => $this->messageId]); return; }
+            if ($publishExists) { return; }
         }
 
-        if (!$this->acquireRateSlots((int) $this->getChatId($target))) { \Log::info('SendCopyMessage rate limited', ['mid' => $this->messageId]); $this->release(1); return; }
+        if (!$this->acquireRateSlots((int) $this->getChatId($target))) { $this->release(1); return; }
 
         $outText = $vacTitle ? ($vacTitle.":\n".$descText) : $descText;
-        if (trim((string) $outText) === '') { \Log::info('SendCopyMessage skip empty outText', ['mid' => $this->messageId]); return; }
+        if (trim((string) $outText) === '') { return; }
 
             $result = $api->messages->sendMessage([
                 'peer' => $targetPeer,
@@ -153,12 +146,11 @@ class SendCopyMessage implements ShouldQueue
                 'status' => \App\Models\Vacancy::STATUS_PUBLISH,
                 'raw_data' => json_encode($msg, JSON_UNESCAPED_UNICODE),
             ];
-            Log::info('SendCopyMessage saving', ['external' => $external, 'attrs' => $attrs]);
             $vac = Vacancy::updateOrCreate(
                 ['external_id' => $external],
                 $attrs
             );
-            \Log::info('SendCopyMessage saved vacancy', ['id' => $vac->id, 'external' => $external]);
+            // no log
         } catch (\Throwable $e) {
             throw $e;
         }
@@ -169,8 +161,8 @@ class SendCopyMessage implements ShouldQueue
         $settings = new Settings;
         $settings->getAppInfo()->setApiId((int) config('telegramchannel.api_id'));
         $settings->getAppInfo()->setApiHash((string) config('telegramchannel.api_hash'));
-        // Lower MadelineProto verbosity to reduce log shovqin
-        $settings->getLogger()->setLevel(Logger::LEVEL_WARNING);
+        // Lower MadelineProto verbosity
+        $settings->getLogger()->setLevel(Logger::LEVEL_ERROR);
         return new API((string) config('telegramchannel.session'), $settings);
     }
 

@@ -3,7 +3,7 @@
 namespace Modules\TelegramChannel\Console\Commands;
 
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Log;
+// No file logging
 use Symfony\Component\Process\Process;
 
 class TelegramOrchestratorCommand extends Command
@@ -30,7 +30,6 @@ class TelegramOrchestratorCommand extends Command
         if ($cycle < 0) { $cycle = 0; }
 
         $this->info('Orchestrator starting (queue='.$queue.', cycle='.($cycle ?: 'never').', delay='.$delay.'s)');
-        Log::info('telegram:orchestrate start', ['queue' => $queue, 'cycle' => $cycle, 'delay' => $delay]);
 
         // Try to ensure Redis is running (optional)
         if (!(bool) $this->option('no-redis')) {
@@ -93,29 +92,27 @@ class TelegramOrchestratorCommand extends Command
     {
         $php = PHP_BINARY;
         $artisan = base_path('artisan');
-        $log = storage_path('logs/scan-loop.log');
-        $cmd = sprintf('%s %s telegram:scan-loop >> %s 2>&1', escapeshellcmd($php), escapeshellarg($artisan), escapeshellarg($log));
+        $cmd = sprintf('%s %s telegram:scan-loop %s', escapeshellcmd($php), escapeshellarg($artisan), $this->silenceRedirect());
         $this->scan = Process::fromShellCommandline($cmd, base_path());
         $this->scan->setTimeout(null);
         $this->scan->start();
         $this->line('Started scan-loop (PID '.$this->scan->getPid().')');
-        Log::info('orchestrate: scan-loop started', ['pid' => $this->scan->getPid()]);
+        // no file logging
     }
 
     private function startWorker(string $queue): void
     {
         $php = PHP_BINARY;
         $artisan = base_path('artisan');
-        $log = storage_path('logs/worker-telegram.log');
         // Keep conservative flags; sleep=3, timeout=120; retries come from job's $tries
-        $cmd = sprintf('%s %s queue:work --queue=%s --sleep=3 --timeout=120 >> %s 2>&1',
-            escapeshellcmd($php), escapeshellarg($artisan), escapeshellarg($queue), escapeshellarg($log)
+        $cmd = sprintf('%s %s queue:work --queue=%s --sleep=3 --timeout=120 %s',
+            escapeshellcmd($php), escapeshellarg($artisan), escapeshellarg($queue), $this->silenceRedirect()
         );
         $this->worker = Process::fromShellCommandline($cmd, base_path());
         $this->worker->setTimeout(null);
         $this->worker->start();
         $this->line('Started queue:work (PID '.$this->worker->getPid().', queue='.$queue.')');
-        Log::info('orchestrate: queue:work started', ['pid' => $this->worker->getPid(), 'queue' => $queue]);
+        // no file logging
     }
 
     private function stopChild(?Process &$proc, string $name): void
@@ -167,7 +164,7 @@ class TelegramOrchestratorCommand extends Command
 
         if ($cmd !== '') {
             $this->line('Starting Redis: '.$cmd);
-            $this->runBackground($cmd, storage_path('logs/redis-orchestrator.log'));
+            $this->runBackground($cmd, null);
             // Re-check
             sleep(1);
             $pong2 = $this->runCheck('redis-cli ping');
@@ -192,12 +189,19 @@ class TelegramOrchestratorCommand extends Command
         return null;
     }
 
-    private function runBackground(string $cmd, string $logFile): void
+    private function runBackground(string $cmd, ?string $logFile): void
     {
-        // Run and detach: append output to log
-        $full = $cmd.' >> '.escapeshellarg($logFile).' 2>&1';
+        // Run and detach: append output to log or silence
+        $full = $cmd.' '.($logFile ? ('>> '.escapeshellarg($logFile).' 2>&1') : $this->silenceRedirect());
         $p = Process::fromShellCommandline($full, base_path());
         $p->setTimeout(null);
         $p->start();
+    }
+
+    private function silenceRedirect(): string
+    {
+        $isWindows = stripos(PHP_OS_FAMILY ?? php_uname('s'), 'Windows') === 0;
+        $devnull = $isWindows ? 'NUL' : '/dev/null';
+        return '>> '.escapeshellarg($devnull).' 2>&1';
     }
 }
