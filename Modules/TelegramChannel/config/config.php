@@ -3,7 +3,7 @@
 return [
     // Secrets/qimmatli ma'lumotlar ENV'da qoladi
     'relay_mode' => env('TG_RELAY_MODE', 'forward'),
-    'text_only' => env('TG_TEXT_ONLY', true),
+    'text_only' => env('TG_TEXT_ONLY', false),
     'api_id' => env('TG_API_ID'),
     'api_hash' => env('TG_API_HASH'),
     'session' => env('TG_SESSION_PATH', storage_path('app/telegram/session.madeline')),
@@ -29,4 +29,13 @@ return [
 
     // Queue name for sender
     'send_queue' => 'telegram',
+
+    // Orchestrator options
+    // How often to restart child processes (seconds). 0 = never.
+    'orchestrator_cycle_seconds' => env('TG_ORCHESTRATOR_CYCLE', 86400),
+    // Delay (seconds) between starting redis, scanner and worker
+    'orchestrator_start_delay' => env('TG_ORCHESTRATOR_DELAY', 2),
+    // Optional command to start redis if not running. Example: "redis-server --daemonize yes"
+    // Leave empty to auto-detect or skip.
+    'redis_start' => env('REDIS_START_CMD', ''),
 ];
