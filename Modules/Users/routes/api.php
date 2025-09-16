@@ -6,7 +6,7 @@ use Modules\Users\Http\Controllers\AuthController;
 use Modules\Users\Http\Controllers\HhAccountsController;
 
 // Public OAuth endpoints (no auth required yet)
-Route::prefix('v1')->group(function () {
+Route::middleware('auth:sanctum')->prefix('v1')->group(function () {
     Route::get('hh-accounts/authorize', [HhAccountsController::class, 'authorizeUrl']);
     Route::get('hh-accounts/callback', [HhAccountsController::class, 'callback']);
 });

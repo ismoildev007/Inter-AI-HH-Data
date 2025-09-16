@@ -40,6 +40,10 @@ class ResumesServiceProvider extends ServiceProvider
             \Modules\Resumes\Interfaces\ResumeInterface::class,
             \Modules\Resumes\Repositories\ResumeRepository::class
         );
+        $this->app->bind(
+            \Modules\Resumes\Interfaces\HhResumeInterface::class,
+            \Modules\Resumes\Repositories\HhResumeRepository::class
+        );
     }
 
     /**

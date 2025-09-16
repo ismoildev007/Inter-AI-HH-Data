@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Modules\Vacancies\Http\Requests\VacancyMatchRequest;
 use Modules\Vacancies\Http\Resources\VacancyMatchResource;
+use Modules\Vacancies\Jobs\MatchResumeJob;
 use Modules\Vacancies\Services\VacancyMatchingService;
 
 class VacancyMatchingController extends Controller
@@ -27,7 +28,7 @@ class VacancyMatchingController extends Controller
             ->where('is_primary', true)
             ->firstOrFail();
 
-        \Modules\Vacancies\Jobs\MatchResumeJob::dispatch($resume, $resume->title ?? $resume->description);
+        MatchResumeJob::dispatch($resume, $resume->title ?? $resume->description);
 
         return response()->json([
             'status' => 'queued',

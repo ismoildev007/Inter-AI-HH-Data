@@ -2,6 +2,7 @@
 
 namespace Modules\Vacancies\Repositories;
 
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Modules\Vacancies\Interfaces\HHVacancyInterface;
@@ -44,5 +45,43 @@ class HHVacancyRepository implements HHVacancyInterface
         }
 
         return $response->json();
+    }
+
+    public function applyToVacancy(string $vacancyId, string $resumeId, ?string $coverLetter = null): array
+    {
+        $user = Auth::user();
+
+        $token = optional($user->hhAccount)->access_token;
+
+        if (!$token) {
+            return [
+                'success' => false,
+                'message' => 'No HH account linked',
+            ];
+        }
+
+        $payload = [
+            'vacancy_id' => $vacancyId,
+            'resume_id'  => $resumeId,
+        ];
+
+        if ($coverLetter) {
+            $payload['cover_letter'] = $coverLetter;
+        }
+        dd($payload);
+        $response = $this->http($token)->post("{$this->baseUrl}/negotiations", $payload);
+
+        if ($response->failed()) {
+            return [
+                'success' => false,
+                'message' => 'HH API apply failed: ' . $response->body(),
+            ];
+        }
+
+        
+        return [
+            'success' => true,
+            'data'    => $response->json(),
+        ];
     }
 }

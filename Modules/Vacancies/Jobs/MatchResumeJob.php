@@ -32,7 +32,6 @@ class MatchResumeJob implements ShouldQueue
     {
         Log::info('Job started for resume', ['resume_id' => $this->resume->id]);
 
-        // ✅ Cache search results to avoid hitting HH API too often
         $cacheKey = "hh:search:{$this->query}:area97";
         $hhVacancies = cache()->remember($cacheKey, now()->addMinutes(10), function () use ($hhRepository) {
             return $hhRepository->search($this->query, 0, 40, ['area' => 97]);
@@ -44,7 +43,6 @@ class MatchResumeJob implements ShouldQueue
             return;
         }
 
-        // ✅ Cache full vacancy descriptions
         $vacancyTexts = [];
         foreach ($vacancies as $v) {
             if (empty($v['id'])) {
@@ -64,7 +62,6 @@ class MatchResumeJob implements ShouldQueue
             return;
         }
 
-        // ✅ Call Python matcher
         $url = config('services.matcher.url', 'https://python.inter-ai.uz/bulk-match');
         $response = Http::timeout(30)->post($url, [
             'resumes'   => [$this->resume->parsed_text ?? $this->resume->description],
@@ -82,34 +79,43 @@ class MatchResumeJob implements ShouldQueue
         $matches = $results['results'][0] ?? [];
 
         $savedData = [];
-
+        $matchedVacancies = [];
         foreach ($matches as $match) {
-            if ($match['score'] >= 70) {
-                $vacancyData = $vacancies[$match['vacancy_index']] ?? null;
-                if (!$vacancyData) {
-                    continue;
-                }
-
-                $vacancy = $vacancyRepository->firstOrCreateFromHH($vacancyData);
-
-                $savedData[] = [
-                    'resume_id'     => $this->resume->id,
-                    'vacancy_id'    => $vacancy->id,
-                    'score_percent' => $match['score'],
-                    'explanations'  => json_encode($match),
-                    'updated_at'    => now(),
-                    'created_at'    => now(),
-                ];
+            if ($match['score'] >= 70 && isset($vacancies[$match['vacancy_index']])) {
+                $matchedVacancies[] = $vacancies[$match['vacancy_index']];
             }
         }
 
-        if (!empty($savedData)) {
+        if (!empty($matchedVacancies)) {
+            $vacancyMap = $vacancyRepository->bulkUpsertFromHH($matchedVacancies);
+
+            $savedData = [];
+            foreach ($matches as $match) {
+                if ($match['score'] >= 70) {
+                    $vData = $vacancies[$match['vacancy_index']] ?? null;
+                    if (!$vData) continue;
+
+                    $vacancy = $vacancyMap[$vData['id']] ?? null;
+                    if (!$vacancy) continue;
+
+                    $savedData[] = [
+                        'resume_id'     => $this->resume->id,
+                        'vacancy_id'    => $vacancy->id,
+                        'score_percent' => $match['score'],
+                        'explanations'  => json_encode($match),
+                        'updated_at'    => now(),
+                        'created_at'    => now(),
+                    ];
+                }
+            }
+
             DB::table('match_results')->upsert(
                 $savedData,
-                ['resume_id', 'vacancy_id'],   
-                ['score_percent', 'explanations', 'updated_at'] 
+                ['resume_id', 'vacancy_id'],
+                ['score_percent', 'explanations', 'updated_at']
             );
         }
+
 
         Log::info('Job finished for resume', ['resume_id' => $this->resume->id]);
     }

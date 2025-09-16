@@ -17,6 +17,7 @@ return new class extends Migration
             $table->boolean('auto_apply_enabled')->default(false);
             $table->integer('auto_apply_limit')->default(0);
             $table->boolean('notifications_enabled')->default(false);
+            $table->string('resume_id')->nullable();
             $table->string('language')->default('en');
             $table->timestamps();
         });

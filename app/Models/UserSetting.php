@@ -11,6 +11,7 @@ class UserSetting extends Model
         'auto_apply_enabled',
         'auto_apply_limit',
         'notifications_enabled',
+        'resume_id',
         'language',
     ];
 

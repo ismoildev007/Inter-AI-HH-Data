@@ -38,10 +38,7 @@ class Application extends Model
         return $this->belongsTo(Vacancy::class);
     }
 
-    public function resume()
-    {
-        return $this->belongsTo(Resume::class);
-    }
+
 
     public function creditTransactions()
     {
