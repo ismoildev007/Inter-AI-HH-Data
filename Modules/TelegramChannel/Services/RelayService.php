@@ -4,6 +4,7 @@ namespace Modules\TelegramChannel\Services;
 
 use Modules\TelegramChannel\Actions\ExtractTextFromMessage;
 use Modules\TelegramChannel\Actions\ChannelRuleMatcher;
+use Modules\TelegramChannel\Actions\TransformMessageText;
 use Modules\TelegramChannel\Entities\TelegramVacancy;
 use Modules\TelegramChannel\Services\Telegram\MadelineClient;
 use App\Models\TelegramChannel; // Sizning Controller shuni ishlatyapti
@@ -15,6 +16,7 @@ class RelayService
         private MadelineClient $tg,
         private ExtractTextFromMessage $extract,
         private ChannelRuleMatcher $matcher,
+        private TransformMessageText $transform,
     ) {}
 
     public function syncOneByUsername(string $peer): void
@@ -91,8 +93,10 @@ class RelayService
                     $to = $target->channel_id ?: ($target->username ?? null);
                     if ($to) {
                         try {
+                            // Avval transformatsiyani qo'llaymiz (imzo almashtirish va h.k.)
+                            $out = $this->transform->handle($peer, $text, $target);
                             // Default: textni nusxalab yuborish (forward emas)
-                            $this->tg->sendMessage($to, $text);
+                            $this->tg->sendMessage($to, $out);
                         } catch (\Throwable $e) {
                             // Targetga yuborishda xatolik bo'lsa, tsiklni to'xtatmaymiz, lekin logga yozamiz
                             Log::warning('Telegram relay: sendMessage failed', [
