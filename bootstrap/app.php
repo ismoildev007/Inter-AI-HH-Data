@@ -14,6 +14,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'auth' => \App\Http\Middleware\Authenticate::class, // override qilamiz
+            'track.visits' => \App\Http\Middleware\TrackVisits::class,
         ]);
 
         $middleware->group('api', [

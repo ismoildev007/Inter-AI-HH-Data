@@ -26,5 +26,6 @@ Route::prefix('auth')->group(function () {
         Route::get('hh-accounts/me', [HhAccountsController::class, 'me']);
         Route::post('hh-accounts/attach', [HhAccountsController::class, 'attach']);
         Route::delete('hh-accounts/me', [HhAccountsController::class, 'disconnect']);
+        Route::post('hh-accounts/refresh', [HhAccountsController::class, 'refreshToken']);
     });
 });

@@ -8,6 +8,11 @@ use Modules\Vacancies\Http\Controllers\VacancyMatchingController;
 Route::prefix('v1')
     ->name('v1.')
     ->group(function () {
+        Route::middleware(['auth:sanctum'])->group(
+            function () {
+                Route::post('hh/vacancies/{vacancy}/apply', [HHVacancyController::class, 'apply'])->name('hh.vacancies.apply');
+            }
+        );
         /**
          * CRUD for internal vacancies (our DB)
          */
@@ -37,9 +42,5 @@ Route::prefix('v1')
                 Route::get('vacancies/{id}', [HHVacancyController::class, 'show'])
                     ->name('vacancies.show');
             });
-        Route::middleware(['auth:sanctum'])->group(
-            function () {
-                Route::post('hh/vacancies/{vacancy}/apply', [HHVacancyController::class, 'apply'])->name('hh.vacancies.apply');
-            }
-        );
+        
     });

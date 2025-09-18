@@ -146,5 +146,46 @@ class HhAccountRepository implements HhAccountRepositoryInterface
     {
         return HhAccount::where('user_id', $userId)->first();
     }
+
+    public function refreshToken(HhAccount $account): HhAccount
+    {
+        $clientId = $this->cfg('client_id');
+        $clientSecret = $this->cfg('client_secret');
+        $baseUrl = rtrim($this->cfg('base_url', 'https://hh.ru') ?? 'https://hh.ru', '/');
+        $tokenPath = ltrim($this->cfg('token_path', '/oauth/token') ?? '/oauth/token', '/');
+
+        $payload = [
+            'grant_type' => 'refresh_token',
+            'refresh_token' => $account->refresh_token,
+            'client_id' => $clientId,
+        ];
+
+        if ($clientSecret) {
+            $payload['client_secret'] = $clientSecret;
+        }
+
+        $resp = Http::asForm()->post($baseUrl . '/' . trim($tokenPath, '/'), $payload);
+
+        if (!$resp->ok()) {
+            throw new RuntimeException('Failed to refresh token: ' . $resp->status());
+        }
+
+        $data = $resp->json();
+        $accessToken = Arr::get($data, 'access_token');
+        $refreshToken = Arr::get($data, 'refresh_token');
+        $expiresIn = Arr::get($data, 'expires_in');
+
+        if (!$accessToken) {
+            throw new RuntimeException('Token response missing access_token');
+        }
+
+        $account->access_token = $accessToken;
+        $account->refresh_token = $refreshToken;
+        $account->expires_at = $expiresIn ? now()->addSeconds((int) $expiresIn) : null;
+        $account->raw_json = $data;
+        $account->save();
+
+        return $account;
+    }
 }
 

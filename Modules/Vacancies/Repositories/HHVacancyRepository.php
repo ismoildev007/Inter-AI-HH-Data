@@ -26,7 +26,7 @@ class HHVacancyRepository implements HHVacancyInterface
             'per_page' => $perPage,
         ], $options);
         $response = $this->http()->get("{$this->baseUrl}/vacancies", $params);
-        
+
 
         if ($response->failed()) {
             throw new \RuntimeException("HH API search failed: " . $response->body());
@@ -50,7 +50,6 @@ class HHVacancyRepository implements HHVacancyInterface
     public function applyToVacancy(string $vacancyId, string $resumeId, ?string $coverLetter = null): array
     {
         $user = Auth::user();
-
         $token = optional($user->hhAccount)->access_token;
 
         if (!$token) {
@@ -60,25 +59,39 @@ class HHVacancyRepository implements HHVacancyInterface
             ];
         }
 
-        $payload = [
-            'vacancy_id' => $vacancyId,
-            'resume_id'  => $resumeId,
+        $multipart = [
+            [
+                'name'     => 'vacancy_id',
+                'contents' => $vacancyId,
+            ],
+            [
+                'name'     => 'resume_id',
+                'contents' => $resumeId,
+            ],
         ];
 
         if ($coverLetter) {
-            $payload['cover_letter'] = $coverLetter;
+            $multipart[] = [
+                'name'     => 'message',
+                'contents' => $coverLetter,
+            ];
         }
-        dd($payload);
-        $response = $this->http($token)->post("{$this->baseUrl}/negotiations", $payload);
+
+        $response = Http::withHeaders([
+            'Authorization' => 'Bearer ' . $token,
+            'HH-User-Agent' => 'InterAI/1.0 (support@inter-ai.uz)',
+        ])->asMultipart()->post("{$this->baseUrl}/negotiations", $multipart);
 
         if ($response->failed()) {
+            Log::info('HH API apply failed', ['response' => $response->body()]);
             return [
                 'success' => false,
                 'message' => 'HH API apply failed: ' . $response->body(),
             ];
         }
 
-        
+        Log::info('HH API apply succeeded', ['response' => $response->body()]);
+
         return [
             'success' => true,
             'data'    => $response->json(),

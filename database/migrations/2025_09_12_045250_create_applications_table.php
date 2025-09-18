@@ -15,7 +15,8 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->nullable()->constrained()->cascadeOnDelete();
             $table->foreignId('vacancy_id')->nullable()->constrained('vacancies')->nullOnDelete();
-            $table->string('resume_id')->nullable();
+            $table->foreignId('resume_id')->nullable()->constrained('resumes')->nullOnDelete();
+            $table->string('hh_resume_id')->nullable()->index(); 
             $table->string('status')->nullable()->index();
             $table->decimal('match_score', 5, 2)->nullable();
             $table->timestamp('submitted_at')->nullable()->index();

@@ -15,6 +15,7 @@ class VacancyMatchResource extends JsonResource
             'explanations'  => json_decode($this->explanations, true),
             'vacancy' => [
                 'id'          => optional($this->vacancy)->id,
+                'external_id' => optional($this->vacancy)->external_id,
                 'title'       => optional($this->vacancy)->title,
                 'description' => optional($this->vacancy)->description ?? null,
                 'salary'      => [

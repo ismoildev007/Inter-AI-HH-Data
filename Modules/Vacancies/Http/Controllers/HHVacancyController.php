@@ -4,6 +4,7 @@ namespace Modules\Vacancies\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Models\Application;
+use App\Models\MatchResult;
 use App\Models\Resume;
 use App\Models\User;
 use App\Models\Vacancy;
@@ -23,7 +24,7 @@ class HHVacancyController extends Controller
 
     public function index(Request $request)
     {
-        $query   = $request->get('query', 'laravel developer');
+        $query   = $request->get('query');
         $page    = (int) $request->get('page', 0);
         $perPage = (int) $request->get('per_page', 20);
 
@@ -45,33 +46,59 @@ class HHVacancyController extends Controller
         ]);
     }
 
-    public function apply(Vacancy $vacancy)
+    public function apply($id)
     {
         $user = auth()->user();
 
-        $resumeId = $user->settings->resume_id;
+        $resumeId = $user->settings->resume_id; 
         if (!$resumeId) {
             return response()->json([
                 'success' => false,
                 'message' => 'No primary resume set. Please set a primary resume in your settings.',
             ], 400);
         }
+
+        $vacancy = Vacancy::where('external_id', $id)->firstOrFail();
+
+        $userResume = Resume::where('user_id', $user->id)
+            ->where('is_primary', true)
+            ->firstOrFail();
+
+        $matchResult = MatchResult::where('vacancy_id', $vacancy->id)
+            ->where('resume_id', $userResume->id)
+            ->first();
+
         $coverLetter = $user->preference->cover_letter ?? null;
-        return DB::transaction(function () use ($user, $vacancy, $resumeId, $coverLetter) {
-            $application = Application::updateOrCreate([
+
+        return DB::transaction(function () use ($user, $vacancy, $resumeId, $coverLetter, $matchResult, $userResume) {
+            $existing = Application::where('user_id', $user->id)
+                ->where('vacancy_id', $vacancy->id)
+                ->first();
+
+            if ($existing && $existing->status === 'applied') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'You have already applied to this vacancy.',
+                ], 409); 
+            }
+
+            $application = Application::updateOrCreate(
                 [
                     'user_id'    => $user->id,
                     'vacancy_id' => $vacancy->id,
-                    'resume_id'  => $resumeId,
+                    'resume_id'  => $userResume->id,
                 ],
                 [
-                    'status' => 'applied',
+                    'hh_resume_id' => $resumeId,
+                    'status'       => 'applied',
                     'submitted_at' => now(),
-                    'match_score' => $vacancy->pivot->score_percent ?? null,
-
+                    'match_score'  => $matchResult?->score_percent,
+                    'external_id'  => $vacancy->external_id,
                 ]
-            ]);
-            if ($vacancy->external_id && $resumeId) {
+            );
+
+            // Only call HH API if it's a new application or hh_status is null/failed
+            if ($vacancy->external_id && $resumeId && (!$existing || $existing->hh_status !== 'applied')) {
                 try {
                     app(\Modules\Vacancies\Interfaces\HHVacancyInterface::class)
                         ->applyToVacancy($vacancy->external_id, $resumeId, $coverLetter);
@@ -83,7 +110,11 @@ class HHVacancyController extends Controller
                 }
             }
 
-            return $application;
+            return response()->json([
+                'success' => true,
+                'message' => 'Application submitted successfully.',
+                'data'    => $application,
+            ]);
         });
     }
 }

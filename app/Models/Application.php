@@ -15,6 +15,7 @@ class Application extends Model
         'user_id',
         'vacancy_id',
         'resume_id',
+        'hh_resume_id',
         'status',
         'match_score',
         'submitted_at',
@@ -38,7 +39,10 @@ class Application extends Model
         return $this->belongsTo(Vacancy::class);
     }
 
-
+    public function resume()
+    {
+        return $this->belongsTo(Resume::class);
+    }
 
     public function creditTransactions()
     {

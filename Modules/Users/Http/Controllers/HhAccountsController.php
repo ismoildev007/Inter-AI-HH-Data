@@ -65,6 +65,9 @@ class HhAccountsController extends Controller
         if (!$account) {
             return response()->json(['data' => null]);
         }
+        if ($account) {
+            $account->load('user');
+        }
         return new HhAccountResource($account);
     }
 
@@ -80,6 +83,23 @@ class HhAccountsController extends Controller
             $account->delete();
         }
         return response()->noContent();
+    }
+
+
+    public function refreshToken()
+    {
+        $userId = Auth::id();
+        if (!$userId) {
+            throw ValidationException::withMessages(['user' => 'Authentication required']);
+        }
+
+        $account = $this->repo->findForUser((int) $userId);
+        if (!$account) {
+            throw ValidationException::withMessages(['account' => 'No HH account linked']);
+        }
+
+        $refreshed = $this->repo->refreshToken($account);
+        return new HhAccountResource($refreshed);
     }
 }
 

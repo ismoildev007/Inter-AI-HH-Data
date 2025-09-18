@@ -30,5 +30,7 @@ interface HhAccountRepositoryInterface
      * Find current user's HH account, if any.
      */
     public function findForUser(int $userId): ?HhAccount;
+
+    public function refreshToken(HhAccount $account): HhAccount;
 }
 

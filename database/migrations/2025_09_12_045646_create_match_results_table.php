@@ -19,6 +19,8 @@ return new class extends Migration
             $table->text('explanations')->nullable();
             $table->timestamps();
             $table->softDeletes();
+
+            $table->unique(['resume_id', 'vacancy_id']);
         });
     }
 
