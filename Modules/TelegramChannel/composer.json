@@ -15,7 +15,7 @@
     },
     "autoload": {
         "psr-4": {
-            "Modules\\TelegramChannel\\": "app/",
+            "Modules\\TelegramChannel\\": "",
             "Modules\\TelegramChannel\\Database\\Factories\\": "database/factories/",
             "Modules\\TelegramChannel\\Database\\Seeders\\": "database/seeders/"
         }
@@ -26,4 +26,3 @@
         }
     }
 }
-

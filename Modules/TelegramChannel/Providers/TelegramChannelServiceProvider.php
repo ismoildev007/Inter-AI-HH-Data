@@ -3,14 +3,9 @@
 namespace Modules\TelegramChannel\Providers;
 
 use Illuminate\Support\ServiceProvider;
-use Nwidart\Modules\Traits\PathNamespace;
-use RecursiveDirectoryIterator;
-use RecursiveIteratorIterator;
-use Illuminate\Console\Scheduling\Schedule;
 
 class TelegramChannelServiceProvider extends ServiceProvider
 {
-    use PathNamespace;
 
     protected string $name = 'TelegramChannel';
     protected string $nameLower = 'telegramchannel';
@@ -18,43 +13,43 @@ class TelegramChannelServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->registerTranslations();
-        $this->registerConfig();
+        //
         $this->registerViews();
-        $this->loadMigrationsFrom(module_path($this->name, 'database/migrations'));
+        $this->loadMigrationsFrom(__DIR__ . '/../database/migrations');
         $this->registerCommands();
 
-        // Register scheduler for continuous scan-dispatch
-        $this->app->booted(function () {
-            if (!config('telegramchannel.schedule_enabled', true)) {
-                return;
-            }
-            $interval = (int) config('telegramchannel.scan_interval_seconds', 15);
-            $schedule = $this->app->make(Schedule::class);
-            $event = $schedule->command('telegram:scan-dispatch');
-
-            // Map seconds to scheduler granularity (Laravel 12 supports sub-minute)
-            if ($interval <= 1) {
-                $event->everySecond();
-            } elseif ($interval <= 5) {
-                $event->everyFiveSeconds();
-            } elseif ($interval <= 10) {
-                $event->everyTenSeconds();
-            } elseif ($interval <= 15) {
-                $event->everyFifteenSeconds();
-            } elseif ($interval <= 30) {
-                $event->everyThirtySeconds();
-            } else {
-                $event->everyMinute();
-            }
-
-            $event->withoutOverlapping();
-        });
+        // scheduler no longer used for scanning; scan-loop daemon handles dispatching
     }
 
     public function register(): void
     {
+        $this->registerConfig();
         $this->app->register(RouteServiceProvider::class);
     }
+
+protected function registerConfig(): void
+{
+    $base  = __DIR__ . '/../config/config.php';
+    $relay = __DIR__ . '/../config/relay.php';
+
+    // 1) Runtime uchun MERGE (cache mavjud bo'lsa ham muammo bo'lmaydi)
+    if (is_file($base)) {
+        $this->mergeConfigFrom($base,  $this->nameLower);
+    }
+    if (is_file($relay)) {
+        $this->mergeConfigFrom($relay, $this->nameLower.'_relay');
+    }
+
+    // 2) PUBLISH faqat konsolda e'lon qilinadi (package:discover davrida ham OK)
+    if ($this->app->runningInConsole()) {
+        if (is_file($base)) {
+            $this->publishes([$base  => config_path($this->nameLower.'.php')], 'config');
+        }
+        if (is_file($relay)) {
+            $this->publishes([$relay => config_path($this->nameLower.'_relay.php')], 'config');
+        }
+    }
+}
 
     public function registerTranslations(): void
     {
@@ -63,34 +58,35 @@ class TelegramChannelServiceProvider extends ServiceProvider
             $this->loadTranslationsFrom($langPath, $this->nameLower);
             $this->loadJsonTranslationsFrom($langPath);
         } else {
-            $this->loadTranslationsFrom(module_path($this->name, 'lang'), $this->nameLower);
-            $this->loadJsonTranslationsFrom(module_path($this->name, 'lang'));
+            $moduleLang = __DIR__ . '/../lang';
+            if (is_dir($moduleLang)) {
+                $this->loadTranslationsFrom($moduleLang, $this->nameLower);
+                $this->loadJsonTranslationsFrom($moduleLang);
+            }
         }
     }
 
-    protected function registerConfig(): void
-    {
-        $configPath = module_path($this->name, 'config/config.php');
-        $this->publishes([$configPath => config_path($this->nameLower.'.php')], 'config');
-        $this->mergeConfigFrom($configPath, $this->nameLower);
-    }
+
 
     public function registerViews(): void
     {
         $viewPath = resource_path('views/modules/'.$this->nameLower);
-        $sourcePath = module_path($this->name, 'resources/views');
+        $sourcePath = __DIR__ . '/../resources/views';
 
-        $this->publishes([$sourcePath => $viewPath], ['views', $this->nameLower.'-module-views']);
-        $this->loadViewsFrom([$sourcePath], $this->nameLower);
+        if ($this->app->runningInConsole() && is_dir($sourcePath)) {
+            $this->publishes([$sourcePath => $viewPath], ['views', $this->nameLower.'-module-views']);
+        }
+        if (is_dir($sourcePath)) {
+            $this->loadViewsFrom([$sourcePath], $this->nameLower);
+        }
     }
 
     protected function registerCommands(): void
     {
-        if ($this->app->runningInConsole()) {
+            if ($this->app->runningInConsole()) {
             $this->commands([
                 \Modules\TelegramChannel\Console\Commands\TelegramLoginCommand::class,
-                \Modules\TelegramChannel\Console\Commands\TelegramRelayCommand::class,
-                \Modules\TelegramChannel\Console\Commands\TelegramScanDispatchCommand::class,
+                \Modules\TelegramChannel\Console\Commands\RelayRunCommand::class,
             ]);
         }
     }
