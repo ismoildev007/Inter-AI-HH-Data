@@ -13,30 +13,32 @@ class RelayRunCommand extends Command
 
     public function handle(): int
     {
-        $rules = (array) config('telegramchannel_relay.rules', []);
-        $usernames = array_keys($rules);
-
-        // DB'dan is_source kanallarni ham qo'shamiz (istisnosiz relaysiz)
-        $sources = TelegramChannel::query()
-            ->where('is_source', true)
-            ->get(['username', 'channel_id'])
-            ->map(function ($row) {
-                if (!empty($row->username)) {
-                    $u = ltrim((string) $row->username, '@');
-                    return '@'.$u; // peers sifatida '@username' ishlatamiz
-                }
-                return (string) $row->channel_id;
-            })
-            ->all();
-
-        $peers = array_values(array_unique(array_merge($usernames, $sources)));
-
-        if (empty($peers)) {
-            $this->warn('No source channels found (rules or DB).');
-            return self::SUCCESS;
-        }
-
         do {
+            // Har siklda yangidan o'qib, yangi qo'shilgan source kanallarni darrov olamiz
+            $rules = (array) config('telegramchannel_relay.rules', []);
+            $usernames = array_keys($rules);
+
+            $sources = TelegramChannel::query()
+                ->where('is_source', true)
+                ->get(['username', 'channel_id'])
+                ->map(function ($row) {
+                    if (!empty($row->username)) {
+                        $u = ltrim((string) $row->username, '@');
+                        return '@'.$u;
+                    }
+                    return (string) $row->channel_id;
+                })
+                ->all();
+
+            $peers = array_values(array_unique(array_merge($usernames, $sources)));
+
+            if (empty($peers)) {
+                $this->warn('No source channels found (rules or DB).');
+                if ($this->option('once')) break;
+                sleep(30);
+                continue;
+            }
+
             foreach ($peers as $peer) {
                 SyncSourceChannelJob::dispatch($peer);
                 $this->info('Dispatched sync job for '.$peer);
@@ -46,7 +48,6 @@ class RelayRunCommand extends Command
                 break;
             }
 
-            // Daemon rejimi: 30 soniyada yana job tashlaymiz
             sleep(30);
         } while (true);
 
