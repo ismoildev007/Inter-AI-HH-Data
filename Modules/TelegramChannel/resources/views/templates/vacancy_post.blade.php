@@ -18,15 +18,30 @@
     }
     $contactLine = trim(implode(' ', array_filter($contactParts)));
     $targetLink = $targetUsername ? ('https://t.me/'.ltrim($targetUsername, '@')) : null;
+    // HTML parse_mode: escape only &, <, > to keep quotes intact for Uzbek o'
+    $esc = fn($s) => str_replace(['&','<','>'], ['&amp;','&lt;','&gt;'], (string) $s);
+    $titleSafe = $esc($title);
+    $companySafe = $esc($company);
+    $descSafe = $esc($description);
 @endphp
 
-🫡title: {{ e($title) }}
-🏢company: {{ e($company) }}
+<!-- 🫡title: {!! $titleSafe !!}
+🏢company: {!! $companySafe !!}
 📞contact: {{ $contactLine }}
-📝description: {{ e($description) }}
+📝description: {!! $descSafe !!}
 @if($sourceLink && $plainSource)
 🔗manba: <a href="{{ $sourceLink }}">{{ '@'.$plainSource }}</a>
 @endif
 @if($targetLink && $targetUsername)
 ✅Bizning kanal: <a href="{{ $targetLink }}">{{ '@'.ltrim($targetUsername, '@') }}</a>
+@endif -->
+🫡 <b>Title:</b> {!! $titleSafe !!}
+🏢 <b>Company:</b> {!! $companySafe !!}
+📞 <b>Contact:</b> {{ $contactLine }}
+📝 <b>Description:</b> {!! $descSafe !!}
+@if($sourceLink && $plainSource)
+🔗 <b>Manba:</b> <a href="{{ $sourceLink }}">{{ '@'.$plainSource }}</a>
+@endif
+@if($targetLink && $targetUsername)
+✅ <b>Bizning kanal:</b> <a href="{{ $targetLink }}">{{ '@'.ltrim($targetUsername, '@') }}</a>
 @endif
