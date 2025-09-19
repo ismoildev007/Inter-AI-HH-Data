@@ -3,6 +3,7 @@
 namespace Modules\TelegramChannel\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Console\Scheduling\Schedule;
 
 class TelegramChannelServiceProvider extends ServiceProvider
 {
@@ -19,6 +20,18 @@ class TelegramChannelServiceProvider extends ServiceProvider
         $this->registerCommands();
 
         // scheduler no longer used for scanning; scan-loop daemon handles dispatching
+
+        // Register scheduler for short-running relay (idempotent, safe to run in prod)
+        $this->app->booted(function () {
+            try {
+                /** @var Schedule $schedule */
+                $schedule = $this->app->make(Schedule::class);
+                // Run one relay scan per minute, avoid overlapping runs
+                $schedule->command('relay:run --once')->everyMinute()->withoutOverlapping();
+            } catch (\Throwable $e) {
+                // Scheduling is best-effort; avoid failing the app boot
+            }
+        });
     }
 
     public function register(): void

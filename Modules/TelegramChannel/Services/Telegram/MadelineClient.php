@@ -5,6 +5,7 @@ namespace Modules\TelegramChannel\Services\Telegram;
 use danog\MadelineProto\API;
 use danog\MadelineProto\Settings;
 use danog\MadelineProto\Logger;
+use Illuminate\Support\Facades\Cache;
 
 class MadelineClient
 {
@@ -21,8 +22,15 @@ class MadelineClient
         $settings->getAppInfo()->setApiHash($apiHash);
         $settings->getLogger()->setLevel(Logger::LEVEL_ERROR);
 
-        $this->api = new API($session, $settings);
-        $this->api->start();
+        // Prevent concurrent starts on the same session file (avoid corruption)
+        $lock = Cache::lock('tg:madeline:session', 30);
+        $lock->block(10);
+        try {
+            $this->api = new API($session, $settings);
+            $this->api->start();
+        } finally {
+            optional($lock)->release();
+        }
     }
 
     public function getHistory(string $peer, int $minId, int $limit = 100): array

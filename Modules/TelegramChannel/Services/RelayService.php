@@ -56,6 +56,8 @@ class RelayService
         $limit = (int) config('telegramchannel_relay.fetch.batch_limit', 100);
         $sleep = (int) config('telegramchannel_relay.fetch.sleep_sec', 2);
 
+        $maxLoops = (int) config('telegramchannel_relay.fetch.max_loops_per_run', 1);
+        $loops = 0;
         while (true) {
             $hist = $this->tg->getHistory($peer, $lastId, $limit);
             $messages = $hist['messages'] ?? [];
@@ -238,6 +240,10 @@ class RelayService
             }
 
             $lastId = $maxId;
+            $loops++;
+            if ($loops >= $maxLoops) {
+                break;
+            }
             sleep($sleep);
         }
     }

@@ -88,5 +88,8 @@ return [
     'fetch' => [
         'batch_limit' => 100,
         'sleep_sec'   => 2,
+        // Short-running mode: how many while-loop cycles per run
+        // For scheduler-based execution, keep this 1 to minimize memory/time
+        'max_loops_per_run' => 1,
     ],
 ];
