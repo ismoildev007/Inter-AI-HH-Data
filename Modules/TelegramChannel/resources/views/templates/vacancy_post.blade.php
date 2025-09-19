@@ -45,3 +45,4 @@
 @if($targetLink && $targetUsername)
 ✅ <b>Bizning kanal:</b> <a href="{{ $targetLink }}">{{ '@'.ltrim($targetUsername, '@') }}</a>
 @endif
+

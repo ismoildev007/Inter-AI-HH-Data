@@ -5,7 +5,7 @@ return [
     'filtering' => [
         'use_channel_rules' => true,
         'classification_threshold' => 0.8,
-        'require_contact' => false,
+        'require_contact' => true,
         // Agar matn quyidagi iboralar bilan boshlansa — darhol SKIP (job seeker/rezyume postlari)
         // Case-insensitive, boshlanishiga mos kelish sinovi qilinadi
         'banned_phrases' => [

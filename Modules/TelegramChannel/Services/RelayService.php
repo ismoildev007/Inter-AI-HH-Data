@@ -144,6 +144,14 @@ class RelayService
                     }
                 }
 
+                // Require contact: at least one phone or telegram username must be present
+                $requireContact = (bool) config('telegramchannel_relay.filtering.require_contact', false);
+                $phones = (array) ($normalized['contact']['phones'] ?? []);
+                $users  = (array) ($normalized['contact']['telegram_usernames'] ?? []);
+                if ($requireContact && empty($phones) && empty($users)) {
+                    continue; // skip if no contacts provided
+                }
+
                 // Compute signature and cross-channel dedupe
                 $signature = \Modules\TelegramChannel\Support\Signature::fromNormalized($normalized);
                 if ($signature !== '') {
@@ -154,8 +162,7 @@ class RelayService
                 }
 
                 // Render post in your house style (Blade)
-                $phones = $normalized['contact']['phones'] ?? [];
-                $users  = $normalized['contact']['telegram_usernames'] ?? [];
+                // $phones and $users already prepared above
                 $targetUsername = $target?->username ? '@'.ltrim((string) $target->username, '@') : null;
                 $html = view('telegramchannel::templates.vacancy_post', [
                     'title' => $normalized['title'] ?? '',
