@@ -1,12 +1,44 @@
 <?php
 
 return [
-    'rules' => [
-        '@AaaaElnurbek' => [
-            'type' => 'starts_with',
-            'pattern' => 'salom',
-            'case_insensitive' => true,
+    // Filtering and dedupe policies
+    'filtering' => [
+        'use_channel_rules' => true,
+        'classification_threshold' => 0.8,
+        'require_contact' => false,
+        // Agar matn quyidagi iboralar bilan boshlansa — darhol SKIP (job seeker/rezyume postlari)
+        // Case-insensitive, boshlanishiga mos kelish sinovi qilinadi
+        'banned_phrases' => [
+            'ish joyi kerak',
+            'ish qidiryapman',
+            'ish qidirmoqdaman',
+            'ищу работу',
+            'резюме',
+            'ищу вакансию',
+            'resume',
+            'cv',
         ],
+        // Normalizatsiyadan so‘ng title shu qiymatlardan biri bo‘lsa — SKIP
+        'title_blacklist' => [
+            'ish joyi kerak',
+            'xodim kerak',
+            'vakansiya',
+            'резюме',
+            'ищу работу',
+            'resume',
+            'cv',
+        ],
+    ],
+    'dedupe' => [
+        // Your strict policy: never republish duplicates
+        'republish_archived' => false,
+    ],
+    'rules' => [
+        // '@AaaaElnurbek' => [
+        //     'type' => 'starts_with',
+        //     'pattern' => '',
+        //     'case_insensitive' => true,
+        // ],
         '@UstozShogird' => [
             // Faqat "Xodim kerak" bilan boshlanadigan e'lonlar
             'type' => 'starts_with',
@@ -43,15 +75,15 @@ return [
                 ],
             ],
         ],
-        '@AaaaElnurbek' => [
-            'replace' => [
-                [
-                    'type' => 'regex',
-                    'pattern' => '/^👉\s*@AaaaElnurbek.*$/mi',
-                    'to' => '👉 {target_username} kanaliga ulanish',
-                ],
-            ],
-        ],
+        // '@AaaaElnurbek' => [
+        //     'replace' => [
+        //         [
+        //             'type' => 'regex',
+        //             'pattern' => '/^👉\s*@AaaaElnurbek.*$/mi',
+        //             'to' => '👉 {target_username} kanaliga ulanish',
+        //         ],
+        //     ],
+        // ],
     ],
     'fetch' => [
         'batch_limit' => 100,

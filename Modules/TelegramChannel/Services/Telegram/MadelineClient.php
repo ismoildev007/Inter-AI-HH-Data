@@ -45,6 +45,7 @@ class MadelineClient
             'peer' => $peer,
             'message' => $message,
             'no_webpage' => true,
+            'parse_mode' => 'HTML',
         ];
         if ($replyToMessageId) {
             $params['reply_to'] = [
