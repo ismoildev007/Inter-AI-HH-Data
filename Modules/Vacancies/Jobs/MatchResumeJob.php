@@ -34,8 +34,8 @@ class MatchResumeJob implements ShouldQueue
         Log::info('Job started for resume', ['resume_id' => $this->resume->id]);
 
         $cacheKey = "hh:search:{$this->query}:area97";
-        $hhVacancies = cache()->remember($cacheKey, now()->addMinutes(1), function () use ($hhRepository) {
-            return $hhRepository->search($this->query, 0, 40, ['area' => 97]);
+        $hhVacancies = cache()->remember($cacheKey, now()->addMinutes(10), function () use ($hhRepository) {
+            return $hhRepository->search($this->query, 0, 100, ['area' => 97]);
         });
 
         $vacancies = $hhVacancies['items'] ?? [];

@@ -59,6 +59,7 @@ class RelayService
             $messages = $hist['messages'] ?? [];
             if (empty($messages)) break;
 
+            // gpt apiga sorov jonatiladi 
             $maxId = $lastId;
             foreach ($messages as $m) {
                 $id = (int) ($m['id'] ?? 0);

@@ -26,7 +26,7 @@ class HHVacancyController extends Controller
     {
         $query   = $request->get('query');
         $page    = (int) $request->get('page', 0);
-        $perPage = (int) $request->get('per_page', 20);
+        $perPage = (int) $request->get('per_page', 100);
 
         $vacancies = $this->hh->search($query, $page, $perPage);
 
