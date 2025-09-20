@@ -9,6 +9,8 @@ use Modules\TelegramChannel\Entities\TelegramVacancy;
 use Modules\TelegramChannel\Services\Telegram\MadelineClient;
 use App\Models\TelegramChannel; // Sizning Controller shuni ishlatyapti
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Redis;
+use Illuminate\Support\Facades\Cache;
 
 class RelayService
 {
@@ -21,7 +23,7 @@ class RelayService
         private VacancyNormalizationService $normalizer,
     ) {}
 
-    public function syncOneByUsername(string $peer): void
+    public function syncOneByUsername(string $peer): int
     {
         // DB da shu kanal bor deb faraz qilamiz (username yoki channel_id orqali)
         if (preg_match('/^-?\d+$/', (string) $peer)) {
@@ -38,7 +40,26 @@ class RelayService
 
         // Birinchi ishga tushirishda eski postlarni OLMASLIK: hozirgi eng so'nggi id ni anchor qilib qo'yamiz
         if ($lastId <= 0) {
-            $latest = $this->tg->getHistory($peer, 0, 1);
+            try {
+                $latest = $this->tg->getHistory($peer, 0, 1);
+            } catch (\Throwable $e) {
+                // Handle known transient / invalid peer cases
+                $delay = $this->parseFloodWait($e->getMessage());
+                if ($delay > 0) {
+                    Log::warning('Telegram relay: FLOOD_WAIT on initial getHistory', ['peer' => $peer, 'delay' => $delay]);
+                    return $delay;
+                }
+                if ($this->isChannelInvalid($e)) {
+                    Log::warning('Telegram relay: CHANNEL_INVALID on initial getHistory, disabling source', ['peer' => $peer]);
+                    if ($channel) {
+                        $channel->is_source = false;
+                        $channel->save();
+                    }
+                    return 0;
+                }
+                Log::warning('Telegram relay: getHistory failed (initial)', ['peer' => $peer, 'error' => $e->getMessage()]);
+                return 0;
+            }
             $messages = $latest['messages'] ?? [];
             $latestId = 0;
             foreach ($messages as $m) {
@@ -50,7 +71,7 @@ class RelayService
                 $channel->save();
             }
             // Eski postlarni relay qilmaymiz
-            return;
+            return 0;
         }
 
         $limit = (int) config('telegramchannel_relay.fetch.batch_limit', 100);
@@ -58,16 +79,59 @@ class RelayService
 
         $maxLoops = (int) config('telegramchannel_relay.fetch.max_loops_per_run', 1);
         $loops = 0;
+        $floodWait = 0;
+        $stopLoop = false;
         while (true) {
-            $hist = $this->tg->getHistory($peer, $lastId, $limit);
+            try {
+                $hist = $this->tg->getHistory($peer, $lastId, $limit);
+            } catch (\Throwable $e) {
+                $delay = $this->parseFloodWait($e->getMessage());
+                if ($delay > 0) {
+                    Log::warning('Telegram relay: FLOOD_WAIT on getHistory', ['peer' => $peer, 'delay' => $delay]);
+                    $floodWait = max($floodWait, $delay);
+                    break; // stop loop; job will be re-queued with delay
+                }
+                if ($this->isChannelInvalid($e)) {
+                    Log::warning('Telegram relay: CHANNEL_INVALID on getHistory, disabling source', ['peer' => $peer]);
+                    if ($channel) {
+                        $channel->is_source = false;
+                        $channel->save();
+                    }
+                    break;
+                }
+                Log::warning('Telegram relay: getHistory failed', ['peer' => $peer, 'error' => $e->getMessage()]);
+                break;
+            }
             $messages = $hist['messages'] ?? [];
+            // Drop large unused sections ASAP to reduce peak memory
+            if (isset($hist['users']) || isset($hist['chats']) || isset($hist['updates']) || isset($hist['users_nearby'])) {
+                unset($hist['users'], $hist['chats'], $hist['updates'], $hist['users_nearby']);
+            }
             if (empty($messages)) break;
+
+            // Optional memory diagnostics per loop
+            if ((bool) config('telegramchannel_relay.debug.log_memory', false)) {
+                $usage = round(memory_get_usage(true) / 1048576, 1);
+                $peak  = round(memory_get_peak_usage(true) / 1048576, 1);
+                Log::debug('Relay loop memory', [
+                    'peer' => $peer,
+                    'loop' => $loops,
+                    'messages' => count($messages),
+                    'usage_mb' => $usage,
+                    'peak_mb'  => $peak,
+                ]);
+            }
 
             // gpt apiga sorov jonatiladi 
             $maxId = $lastId;
+            $seenIds = [];
             foreach ($messages as $m) {
                 $id = (int) ($m['id'] ?? 0);
                 if ($id <= 0) continue;
+                if (isset($seenIds[$id])) {
+                    continue; // duplicate id within the same batch
+                }
+                $seenIds[$id] = true;
                 if ($id > $maxId) $maxId = $id;
 
                 $text = $this->extract->handle($m);
@@ -115,6 +179,8 @@ class RelayService
                     continue; // strict no-duplicate policy
                 }
 
+                // Note: lock for dedupe will be acquired right before sending
+
                 // Classify content to ensure it's an employer vacancy
                 try {
                     $cls = $this->classifier->classify($text);
@@ -154,12 +220,22 @@ class RelayService
                     continue; // skip if no contacts provided
                 }
 
-                // Compute signature and cross-channel dedupe
+                // Compute signature and dedupe by status policy
                 $signature = \Modules\TelegramChannel\Support\Signature::fromNormalized($normalized);
                 if ($signature !== '') {
-                    $existsBySig = \Modules\TelegramChannel\Entities\TelegramVacancy::where('signature', $signature)->exists();
-                    if ($existsBySig) {
-                        continue;
+                    $skipIfPublished = (bool) config('telegramchannel_relay.dedupe.skip_if_published', true);
+                    if ($skipIfPublished) {
+                        $existsPublished = \Modules\TelegramChannel\Entities\TelegramVacancy::where('signature', $signature)
+                            ->where('status', 'publish')
+                            ->exists();
+                        if ($existsPublished) {
+                            continue;
+                        }
+                    } else {
+                        $existsAny = \Modules\TelegramChannel\Entities\TelegramVacancy::where('signature', $signature)->exists();
+                        if ($existsAny) {
+                            continue;
+                        }
                     }
                 }
 
@@ -191,46 +267,80 @@ class RelayService
                         $to = (string) $target->channel_id;
                     }
                     if ($to) {
-                        try {
-                            $resp = $this->tg->sendMessage($to, $out);
-                            // Try to extract message id from response for target link
-                            $tUser = $target->username ? ltrim((string) $target->username, '@') : null;
-                            $tMsgId = $resp['id'] ?? ($resp['updates'][0]['message']['id'] ?? null);
-                            if ($tUser && $tMsgId) {
-                                $targetLink = 'https://t.me/' . $tUser . '/' . $tMsgId;
+                        // Acquire distributed lock to ensure only one send/save per message
+                        $lockKey = 'tg:msg:' . sha1($sourceId . '|' . $sourceLink);
+                        $lock = Cache::lock($lockKey, 600);
+                        if (!$lock->get()) {
+                            if ((bool) config('telegramchannel_relay.debug.log_memory', false)) {
+                                Log::debug('Dedup: message lock busy, skipping send', ['peer' => $peer, 'id' => $id, 'lock' => $lockKey]);
                             }
-                        } catch (\Throwable $e) {
-                            Log::warning('Telegram relay: sendMessage failed', [
-                                'error' => $e->getMessage(),
-                                'to' => $to,
-                                'source' => $peer,
-                                'message_id' => $id,
-                            ]);
-                            continue; // skip saving if sending failed
+                            // Another worker is processing the same message
+                            continue;
+                        }
+                        try {
+                            // Additionally, protect by signature lock to avoid double-send across sources
+                            $sigLock = null;
+                            if ($signature !== '') {
+                                $sigLock = Cache::lock('tg:sig:'. $signature, 600);
+                                if (!$sigLock->get()) {
+                                    if ((bool) config('telegramchannel_relay.debug.log_memory', false)) {
+                                        Log::debug('Dedup: signature lock busy, skipping send', ['peer' => $peer, 'id' => $id, 'sig' => $signature]);
+                                    }
+                                    continue; // another worker is handling this signature
+                                }
+                            }
+                            $thr = (array) config('telegramchannel_relay.throttle.publish', []);
+                            $tKey   = (string) ($thr['key'] ?? 'tg:publish');
+                            $tAllow = (int) ($thr['allow'] ?? 20);
+                            $tEvery = (int) ($thr['every'] ?? 60);
+                            $tBlock = (int) ($thr['block'] ?? 5);
+
+                            $acquired = false;
+                            Redis::throttle($tKey)->allow($tAllow)->every($tEvery)->block($tBlock)->then(function () use (&$acquired, $to, $out, $target, &$targetLink) {
+                                $acquired = true;
+                                $resp = $this->tg->sendMessage($to, $out);
+                                $tUser = $target->username ? ltrim((string) $target->username, '@') : null;
+                                $tMsgId = $resp['id'] ?? ($resp['updates'][0]['message']['id'] ?? null);
+                                if ($tUser && $tMsgId) {
+                                    $targetLink = 'https://t.me/' . $tUser . '/' . $tMsgId;
+                                }
+                            }, function () use (&$acquired) {
+                                $acquired = false;
+                            });
+
+                            if (!$acquired) {
+                                // Could not acquire throttle; stop this run, resume next tick
+                                $stopLoop = true;
+                                continue;
+                            }
+
+                            // Save to telegram_vacancies after successful send (or even if targetLink null)
+                            try {
+                                \Modules\TelegramChannel\Entities\TelegramVacancy::create([
+                                    'title' => $normalized['title'] ?? null,
+                                    'company' => $normalized['company'] ?? null,
+                                    'contact' => [
+                                        'phones' => $phones,
+                                        'telegram_usernames' => $users,
+                                    ],
+                                    'description' => $normalized['description'] ?? null,
+                                    'language' => $normalized['language'] ?? null,
+                                    'status' => 'publish',
+                                    'source_id' => $sourceId,
+                                    'source_message_id' => $sourceLink,
+                                    'target_message_id' => $targetLink,
+                                    'signature' => $signature,
+                                ]);
+                            } catch (\Throwable $e) {
+                                Log::error('Failed to save TelegramVacancy', ['err' => $e->getMessage()]);
+                            }
+                        } finally {
+                            optional($lock)->release();
+                            if (isset($sigLock)) optional($sigLock)->release();
                         }
                     }
                 }
 
-                // Save to telegram_vacancies (strict dedupe already passed)
-                try {
-                    \Modules\TelegramChannel\Entities\TelegramVacancy::create([
-                        'title' => $normalized['title'] ?? null,
-                        'company' => $normalized['company'] ?? null,
-                        'contact' => [
-                            'phones' => $phones,
-                            'telegram_usernames' => $users,
-                        ],
-                        'description' => $normalized['description'] ?? null,
-                        'language' => $normalized['language'] ?? null,
-                        'status' => 'publish',
-                        'source_id' => $sourceId,
-                        'source_message_id' => $sourceLink,
-                        'target_message_id' => $targetLink,
-                        'signature' => $signature,
-                    ]);
-                } catch (\Throwable $e) {
-                    Log::error('Failed to save TelegramVacancy', ['err' => $e->getMessage()]);
-                }
             }
 
             // Oxirgi ko'rilgan id ni saqlaymiz (agar kanal DB da bo'lsa)
@@ -241,10 +351,36 @@ class RelayService
 
             $lastId = $maxId;
             $loops++;
-            if ($loops >= $maxLoops) {
+            if ($loops >= $maxLoops || $stopLoop || $floodWait > 0) {
+                // Per-run cleanup to reduce retained memory in long workers
+                unset($hist, $messages);
+                gc_collect_cycles();
                 break;
             }
+            // Inter-loop cleanup and pacing
+            unset($hist, $messages);
+            gc_collect_cycles();
             sleep($sleep);
         }
+        return $floodWait;
+    }
+
+    private function parseFloodWait(?string $message): int
+    {
+        if (!$message) return 0;
+        if (preg_match('/FLOOD_WAIT_(\d+)/', $message, $m)) {
+            return (int) $m[1];
+        }
+        return 0;
+    }
+
+    private function isChannelInvalid(\Throwable $e): bool
+    {
+        $m = $e->getMessage();
+        if (!$m) return false;
+        foreach (['CHANNEL_INVALID', 'USERNAME_INVALID', 'CHANNEL_PRIVATE'] as $needle) {
+            if (str_contains($m, $needle)) return true;
+        }
+        return false;
     }
 }

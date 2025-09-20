@@ -193,6 +193,20 @@ return [
             'timeout' => 60,
             'nice' => 0,
         ],
+        // Telegram relay supervisors (dedicated queue)
+        'telegram-relay' => [
+            'connection' => 'redis',
+            'queue' => ['telegram-relay'],
+            'balance' => 'auto',
+            'autoScalingStrategy' => 'time',
+            'maxProcesses' => 2,
+            'maxTime' => 3600,
+            'maxJobs' => 100,
+            'memory' => 1024,
+            'tries' => 1,
+            'timeout' => 120,
+            'nice' => 0,
+        ],
     ],
 
     'environments' => [
@@ -202,11 +216,19 @@ return [
                 'balanceMaxShift' => 1,
                 'balanceCooldown' => 3,
             ],
+            'telegram-relay' => [
+                'maxProcesses' => 10,
+                'balanceMaxShift' => 1,
+                'balanceCooldown' => 3,
+            ],
         ],
 
         'local' => [
             'supervisor-1' => [
                 'maxProcesses' => 3,
+            ],
+            'telegram-relay' => [
+                'maxProcesses' => 2,
             ],
         ],
     ],

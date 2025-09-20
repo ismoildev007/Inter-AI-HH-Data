@@ -30,8 +30,12 @@ return [
         ],
     ],
     'dedupe' => [
-        // Your strict policy: never republish duplicates
-        'republish_archived' => false,
+        // Skip if there is already a PUBLISHED record with the same signature
+        'skip_if_published' => true,
+        // Allow multiple ARCHIVED rows with the same signature (requires dropping unique on signature)
+        'allow_multiple_archived' => true,
+        // Auto-archive after N days (affects PUBLISHED rows)
+        'auto_archive_days' => 7,
     ],
     'rules' => [
         // '@AaaaElnurbek' => [
@@ -86,10 +90,31 @@ return [
         // ],
     ],
     'fetch' => [
-        'batch_limit' => 100,
+        'batch_limit' => 50,
         'sleep_sec'   => 2,
         // Short-running mode: how many while-loop cycles per run
         // For scheduler-based execution, keep this 1 to minimize memory/time
         'max_loops_per_run' => 1,
+    ],
+    // Dispatch policy: round-robin per minute to smooth load
+    'dispatch' => [
+        // Nechta source har daqiqada ishga tushsin (round-robin)
+        // 500 source va 50 chunk => ~10 daqiqada to'liq aylanma
+        'chunk_size' => 50,
+        'offset_cache_key' => 'tg:relay:offset',
+    ],
+    'debug' => [
+        // Enable to log memory usage per fetch loop
+        'log_memory' => true,
+    ],
+    // Global publish throttle to reduce FLOOD_WAIT
+    'throttle' => [
+        'publish' => [
+            'key' => 'tg:publish',
+            // ruxsat etilgan yuborishlar soni / davr
+            'allow' => env('TG_PUBLISH_PER_MIN', 20), // per minute
+            'every' => 60, // seconds
+            'block' => 5,  // acquire up to N seconds, then skip current loop
+        ],
     ],
 ];

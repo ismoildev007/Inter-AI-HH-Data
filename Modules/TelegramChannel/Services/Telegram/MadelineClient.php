@@ -26,10 +26,22 @@ class MadelineClient
         $lock = Cache::lock('tg:madeline:session', 30);
         $lock->block(10);
         try {
-            $this->api = new API($session, $settings);
-            $this->api->start();
+            $api = new API($session, $settings);
+            $api->start();
+            $this->api = $api;
         } finally {
             optional($lock)->release();
+        }
+
+        // Optional: log memory right after start for diagnostics
+        if ((bool) config('telegramchannel_relay.debug.log_memory', false)) {
+            $usage = round(memory_get_usage(true) / 1048576, 1);
+            $peak  = round(memory_get_peak_usage(true) / 1048576, 1);
+            \Log::debug('MadelineClient started', [
+                'usage_mb' => $usage,
+                'peak_mb'  => $peak,
+                'session'  => $session,
+            ]);
         }
     }
 
