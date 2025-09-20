@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Cache;
 
 class MadelineClient
 {
+    private static ?API $shared = null;
     private API $api;
 
     public function __construct()
@@ -22,12 +23,19 @@ class MadelineClient
         $settings->getAppInfo()->setApiHash($apiHash);
         $settings->getLogger()->setLevel(Logger::LEVEL_ERROR);
 
+        if (self::$shared instanceof API) {
+            $this->api = self::$shared;
+            return;
+        }
+
         // Prevent concurrent starts on the same session file (avoid corruption)
         $lock = Cache::lock('tg:madeline:session', 30);
         $lock->block(10);
         try {
-            $this->api = new API($session, $settings);
-            $this->api->start();
+            $api = new API($session, $settings);
+            $api->start();
+            self::$shared = $api;
+            $this->api = $api;
         } finally {
             optional($lock)->release();
         }

@@ -25,27 +25,7 @@
     $descSafe = $esc($description);
 @endphp
 
-<!-- 🫡title: {!! $titleSafe !!}
-🏢company: {!! $companySafe !!}
-📞contact: {{ $contactLine }}
-📝description: {!! $descSafe !!}
-@if($sourceLink && $plainSource)
-🔗manba: <a href="{{ $sourceLink }}">{{ '@'.$plainSource }}</a>
-@endif
-@if($targetLink && $targetUsername)
-✅Bizning kanal: <a href="{{ $targetLink }}">{{ '@'.ltrim($targetUsername, '@') }}</a>
-@endif -->
-<!-- 🫡 <b>Title:</b> {!! $titleSafe !!}
-🏢 <b>Company:</b> {!! $companySafe !!}
-📞 <b>Contact:</b> {{ $contactLine }}
-📝 <b>Description:</b> {!! $descSafe !!}
-@if($sourceLink && $plainSource)
-🔗 <b>Manba:</b> <a href="{{ $sourceLink }}">{{ $plainSource }}</a>
-@endif
-@if($targetLink && $targetUsername)
-✅ <b>Bizning kanal:</b> <a href="{{ $targetLink }}">{{ '@'.ltrim($targetUsername, '@') }}</a>
-@endif -->
-
+<b>Yangi bo'sh ish o'rni e'lon qilindi!</b><br>
 🫡 <b>Lavozim:</b> {!! $titleSafe !!}<br>
 🏢 <b>Kompaniya:</b> {!! $companySafe !!}
 📞 <b>Bog’lanish:</b> {{ $contactLine }}

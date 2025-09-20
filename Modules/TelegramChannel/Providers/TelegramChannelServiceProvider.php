@@ -38,6 +38,11 @@ class TelegramChannelServiceProvider extends ServiceProvider
     {
         $this->registerConfig();
         $this->app->register(RouteServiceProvider::class);
+
+        // Reuse a single MadelineClient instance per PHP process (queue worker)
+        $this->app->singleton(\Modules\TelegramChannel\Services\Telegram\MadelineClient::class, function () {
+            return new \Modules\TelegramChannel\Services\Telegram\MadelineClient();
+        });
     }
 
 protected function registerConfig(): void
