@@ -10,16 +10,7 @@ class TelegramVacancy extends Model
 
     protected $fillable = [
         'description',
-
-        'title',
         'company',
-        'source',
-        'source_message_id',
-        'contact',
-        'target_message_id',
-
-        'company',
-
         'status',
         'title',
         'contact',

@@ -18,15 +18,21 @@ class HHVacancyRepository implements HHVacancyInterface
         ]);
     }
 
-    public function search(string $query, int $page = 0, int $perPage = 40, array $options = []): array
+    public function search(string $query, int $page = 0, int $perPage = 40, array $options = ['area' => 97]): array
     {
-        $params = array_merge([
-            'text'     => $query,
-            'page'     => $page,
-            'per_page' => $perPage,
-        ], $options);
-        $response = $this->http()->get("{$this->baseUrl}/vacancies", $params);
+        $dateFrom = now()->subMonth()->startOfDay()->toIso8601String(); 
+        $dateTo   = now()->endOfDay()->toIso8601String();               
 
+        $params = array_merge([
+            'text'      => $query,
+            'page'      => $page,
+            'per_page'  => $perPage,
+            'archived'  => false,
+            'date_from' => $dateFrom,
+            'date_to'   => $dateTo,
+        ], $options);
+
+        $response = $this->http()->get("{$this->baseUrl}/vacancies", $params);
 
         if ($response->failed()) {
             throw new \RuntimeException("HH API search failed: " . $response->body());
@@ -34,6 +40,7 @@ class HHVacancyRepository implements HHVacancyInterface
 
         return $response->json();
     }
+
 
 
     public function getById(string $id): array

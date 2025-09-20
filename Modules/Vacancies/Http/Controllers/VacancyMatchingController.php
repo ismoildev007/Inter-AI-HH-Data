@@ -27,9 +27,9 @@ class VacancyMatchingController extends Controller
             ->resumes()
             ->where('is_primary', true)
             ->firstOrFail();
-
+        Log::info('Starting match for user', ['user_id' => auth()->id(), 'resume_id' => $resume->id]);
         MatchResumeJob::dispatch($resume, $resume->title ?? $resume->description);
-
+        Log::info('Dispatched MatchResumeJob', ['user_id' => auth()->id(), 'resume_id' => $resume->id]);
         return response()->json([
             'status' => 'queued',
             'message' => 'Resume matching started. Check back in a few moments.'

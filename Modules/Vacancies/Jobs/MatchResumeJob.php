@@ -77,11 +77,11 @@ class MatchResumeJob implements ShouldQueue
         }
 
         // --- Send to matcher ---
-        $url = config('services.matcher.url', 'https://python.inter-ai.uz/bulk-match');
+        $url = config('services.matcher.url', 'http://0.0.0.0:8080/bulk-match-fast');
         $response = Http::timeout(30)->post($url, [
             'resumes'   => [$this->resume->parsed_text ?? $this->resume->description],
             'vacancies' => array_values($vacancyTexts),
-            'top_k'     => 20,
+            'top_k'     => 50,
             'min_score' => 0,
         ]);
 
