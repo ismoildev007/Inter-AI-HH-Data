@@ -22,24 +22,26 @@ class TelegramChannelServiceProvider extends ServiceProvider
         // scheduler no longer used for scanning; scan-loop daemon handles dispatching
 
         // Register scheduler for short-running relay (idempotent, safe to run in prod)
-        $this->app->booted(function () {
-            try {
-                /** @var Schedule $schedule */
-                $schedule = $this->app->make(Schedule::class);
-                // Run one relay scan per minute, avoid overlapping runs
-                $schedule->command('relay:run --once')->everyMinute()->withoutOverlapping();
-            } catch (\Throwable $e) {
-                // Scheduling is best-effort; avoid failing the app boot
-            }
-        });
-    }
+            $this->app->booted(function () {
+                try {
+                    /** @var Schedule $schedule */
+                    $schedule = $this->app->make(Schedule::class);
+                    // Run one relay scan per minute, avoid overlapping runs
+                    $schedule->command('relay:run --once')->everyMinute()->withoutOverlapping();
+                    // Auto-archive older vacancies hourly
+                    $schedule->command('telegram:vacancies:auto-archive')->hourly()->withoutOverlapping();
+                } catch (\Throwable $e) {
+                    // Scheduling is best-effort; avoid failing the app boot
+                }
+            });
+        }
 
     public function register(): void
     {
         $this->registerConfig();
         $this->app->register(RouteServiceProvider::class);
 
-        // Reuse a single MadelineClient instance per PHP process (queue worker)
+        // Reuse one MadelineClient per worker process (no static cache inside). Faster for 500+ sources.
         $this->app->singleton(\Modules\TelegramChannel\Services\Telegram\MadelineClient::class, function () {
             return new \Modules\TelegramChannel\Services\Telegram\MadelineClient();
         });
@@ -105,6 +107,7 @@ protected function registerConfig(): void
             $this->commands([
                 \Modules\TelegramChannel\Console\Commands\TelegramLoginCommand::class,
                 \Modules\TelegramChannel\Console\Commands\RelayRunCommand::class,
+                \Modules\TelegramChannel\Console\Commands\AutoArchiveVacanciesCommand::class,
             ]);
         }
     }

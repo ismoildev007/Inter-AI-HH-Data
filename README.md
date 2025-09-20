@@ -60,3 +60,36 @@ If you discover a security vulnerability within Laravel, please send an e-mail t
 
 The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
 # Inter-AI-Job
+
+## Telegram Relay Workers (recommended)
+
+To handle up to ~500 source channels reliably, run dedicated queue workers for the `telegram-relay` queue with rotation to keep memory stable and to avoid long-lived resource growth.
+
+- Start workers with rotation flags:
+
+  `php artisan queue:work --queue=telegram-relay --sleep=1 --memory=256 --max-jobs=100 --max-time=3600`
+
+- Run multiple workers in parallel (e.g., 5–15 processes) depending on message volume and OpenAI usage.
+
+- The `MadelineClient` is registered as a container singleton (one instance per worker process) to avoid repeated Telegram API session startups and reduce lock contention.
+
+- The relay scan is dispatched every minute by the scheduler: `relay:run --once` (non-overlapping). Ensure your scheduler (cron) is running: `* * * * * php /path/to/artisan schedule:run >> /dev/null 2>&1`.
+
+Supervisor example (Linux):
+
+```
+[program:telegram-relay]
+command=php /path/to/artisan queue:work --queue=telegram-relay --sleep=1 --memory=256 --max-jobs=100 --max-time=3600
+process_name=%(program_name)s_%(process_num)02d
+numprocs=10
+autostart=true
+autorestart=true
+stderr_logfile=/var/log/telegram-relay.err.log
+stdout_logfile=/var/log/telegram-relay.out.log
+stopwaitsecs=10
+```
+
+Notes:
+- Use Horizon if preferred; mirror the same memory/time limits and concurrency.
+- If you hit Telegram FLOOD_WAIT, consider limiting publish rate or adding a small delay between sends.
+- You can enable memory diagnostics per fetch loop by setting `telegramchannel_relay.debug.log_memory=true`.

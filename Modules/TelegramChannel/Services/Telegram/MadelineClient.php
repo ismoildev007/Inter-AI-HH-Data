@@ -9,7 +9,6 @@ use Illuminate\Support\Facades\Cache;
 
 class MadelineClient
 {
-    private static ?API $shared = null;
     private API $api;
 
     public function __construct()
@@ -23,21 +22,26 @@ class MadelineClient
         $settings->getAppInfo()->setApiHash($apiHash);
         $settings->getLogger()->setLevel(Logger::LEVEL_ERROR);
 
-        if (self::$shared instanceof API) {
-            $this->api = self::$shared;
-            return;
-        }
-
         // Prevent concurrent starts on the same session file (avoid corruption)
         $lock = Cache::lock('tg:madeline:session', 30);
         $lock->block(10);
         try {
             $api = new API($session, $settings);
             $api->start();
-            self::$shared = $api;
             $this->api = $api;
         } finally {
             optional($lock)->release();
+        }
+
+        // Optional: log memory right after start for diagnostics
+        if ((bool) config('telegramchannel_relay.debug.log_memory', false)) {
+            $usage = round(memory_get_usage(true) / 1048576, 1);
+            $peak  = round(memory_get_peak_usage(true) / 1048576, 1);
+            \Log::debug('MadelineClient started', [
+                'usage_mb' => $usage,
+                'peak_mb'  => $peak,
+                'session'  => $session,
+            ]);
         }
     }
 
