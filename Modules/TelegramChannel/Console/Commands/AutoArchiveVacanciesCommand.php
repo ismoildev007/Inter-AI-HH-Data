@@ -4,7 +4,7 @@ namespace Modules\TelegramChannel\Console\Commands;
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
-use Modules\TelegramChannel\Entities\TelegramVacancy;
+use App\Models\Vacancy;
 
 class AutoArchiveVacanciesCommand extends Command
 {
@@ -20,7 +20,7 @@ class AutoArchiveVacanciesCommand extends Command
         }
 
         $cutoff = now()->subDays($days);
-        $q = TelegramVacancy::query()->where('status', 'publish')->where('created_at', '<', $cutoff);
+        $q = Vacancy::query()->where('status', 'publish')->where('created_at', '<', $cutoff);
         $count = (clone $q)->count();
         $this->info("Eligible for archive (>{$days} days): {$count}");
 
@@ -34,4 +34,3 @@ class AutoArchiveVacanciesCommand extends Command
         return self::SUCCESS;
     }
 }
-

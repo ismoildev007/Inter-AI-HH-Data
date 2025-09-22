@@ -32,7 +32,20 @@ return new class extends Migration
             $table->integer('views_count')->default(0);
             $table->integer('responses_count')->default(0);
             $table->text('raw_data')->nullable();
+
+            $table->string('company')->nullable()->index();
+            $table->json('contact')->nullable();
+            $table->string('language', 8)->nullable();
+            $table->string('source_id')->index();
+            $table->string('source_message_id')->index();
+            $table->string('target_message_id')->nullable()->index();
+            $table->string('signature', 64)->nullable();
+
             $table->timestamps();
+
+            $table->unique(['source_id', 'source_message_id'], 'tg_vac_source_link_unique');
+            $table->unique('signature', 'tg_vac_signature_unique');
+
         });
     }
 

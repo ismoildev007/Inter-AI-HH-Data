@@ -5,7 +5,7 @@ namespace Modules\TelegramChannel\Services;
 use Modules\TelegramChannel\Actions\ExtractTextFromMessage;
 use Modules\TelegramChannel\Actions\ChannelRuleMatcher;
 use Modules\TelegramChannel\Actions\TransformMessageText;
-use Modules\TelegramChannel\Entities\TelegramVacancy;
+use App\Models\Vacancy;
 use Modules\TelegramChannel\Services\Telegram\MadelineClient;
 use App\Models\TelegramChannel; // Sizning Controller shuni ishlatyapti
 use Illuminate\Support\Facades\Log;
@@ -172,7 +172,7 @@ class RelayService
                 // Build source link and quick dedupe by (source_id, source_message_id)
                 $sourceId   = '@' . $plainSource;
                 $sourceLink = 'https://t.me/' . $plainSource . '/' . $id;
-                $existsByLink = \Modules\TelegramChannel\Entities\TelegramVacancy::where('source_id', $sourceId)
+                $existsByLink = Vacancy::where('source_id', $sourceId)
                     ->where('source_message_id', $sourceLink)
                     ->exists();
                 if ($existsByLink) {
@@ -225,14 +225,14 @@ class RelayService
                 if ($signature !== '') {
                     $skipIfPublished = (bool) config('telegramchannel_relay.dedupe.skip_if_published', true);
                     if ($skipIfPublished) {
-                        $existsPublished = \Modules\TelegramChannel\Entities\TelegramVacancy::where('signature', $signature)
+                        $existsPublished = Vacancy::where('signature', $signature)
                             ->where('status', 'publish')
                             ->exists();
                         if ($existsPublished) {
                             continue;
                         }
                     } else {
-                        $existsAny = \Modules\TelegramChannel\Entities\TelegramVacancy::where('signature', $signature)->exists();
+                        $existsAny =Vacancy::where('signature', $signature)->exists();
                         if ($existsAny) {
                             continue;
                         }
@@ -297,13 +297,32 @@ class RelayService
 
                             $acquired = false;
                             Redis::throttle($tKey)->allow($tAllow)->every($tEvery)->block($tBlock)->then(function () use (&$acquired, $to, $out, $target, &$targetLink) {
-                                $acquired = true;
+                            $acquired = true;
+                            // Try to send; handle FLOOD_WAIT and other errors gracefully
+                            try {
                                 $resp = $this->tg->sendMessage($to, $out);
                                 $tUser = $target->username ? ltrim((string) $target->username, '@') : null;
                                 $tMsgId = $resp['id'] ?? ($resp['updates'][0]['message']['id'] ?? null);
                                 if ($tUser && $tMsgId) {
                                     $targetLink = 'https://t.me/' . $tUser . '/' . $tMsgId;
                                 }
+                            } catch (\Throwable $e) {
+                                $delay = $this->parseFloodWait($e->getMessage());
+                                if ($delay > 0) {
+                                    Log::warning('Telegram relay: FLOOD_WAIT on sendMessage', ['peer' => $peer, 'delay' => $delay]);
+                                    $floodWait = max($floodWait, $delay);
+                                    $stopLoop = true;
+                                } else {
+                                    Log::warning('Telegram relay: sendMessage failed', [
+                                        'error' => $e->getMessage(),
+                                        'to' => $to,
+                                        'source' => $peer,
+                                        'message_id' => $id,
+                                    ]);
+                                }
+                                // On send failure, skip saving
+                                return;
+                            }
                             }, function () use (&$acquired) {
                                 $acquired = false;
                             });
@@ -314,9 +333,9 @@ class RelayService
                                 continue;
                             }
 
-                            // Save to telegram_vacancies after successful send (or even if targetLink null)
+                            // Save after successful send (or even if targetLink null)
                             try {
-                                \Modules\TelegramChannel\Entities\TelegramVacancy::create([
+                                Vacancy::create([
                                     'title' => $normalized['title'] ?? null,
                                     'company' => $normalized['company'] ?? null,
                                     'contact' => [
@@ -332,7 +351,7 @@ class RelayService
                                     'signature' => $signature,
                                 ]);
                             } catch (\Throwable $e) {
-                                Log::error('Failed to save TelegramVacancy', ['err' => $e->getMessage()]);
+                                Log::error('Failed to save Vacancy', ['err' => $e->getMessage()]);
                             }
                         } finally {
                             optional($lock)->release();
