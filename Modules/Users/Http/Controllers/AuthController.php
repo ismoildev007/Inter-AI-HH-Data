@@ -9,16 +9,20 @@ use Illuminate\Http\Request;
 use Modules\Users\Http\Requests\LoginRequest;
 use Modules\Users\Http\Requests\RegisterRequest;
 use Modules\Users\Http\Resources\User\UserResource;
+use Modules\Users\Http\Resources\User\UserSettingResource;
 use Modules\Users\Repositories\AuthRepository;
+use Modules\Users\Services\AutoApplySettingsService;
 
 class AuthController extends Controller
 {
     use ApiResponseTrait;
     protected AuthRepository $repo;
+    protected AutoApplySettingsService $autoApplySettingsService;
 
-    public function __construct(AuthRepository $repo)
+    public function __construct(AuthRepository $repo, AutoApplySettingsService $autoApplySettingsService)
     {
         $this->repo = $repo;
+        $this->autoApplySettingsService = $autoApplySettingsService;
     }
 
     public function register(RegisterRequest $request)
@@ -86,5 +90,45 @@ class AuthController extends Controller
         $request->user()->tokens()->delete();
 
         return response()->json(['message' => 'Logged out successfully']);
+    }
+
+    // Create auto-apply settings for the authenticated user
+    public function createAutoApply(Request $request)
+    {
+        $user = $request->user();
+        if (!$user) {
+            return $this->error('Unauthenticated', 401);
+        }
+
+        $validated = $request->validate([
+            'auto_apply_enabled' => 'required|boolean',
+            'auto_apply_limit'   => 'required|integer|min:0',
+        ]);
+
+        $setting = $this->autoApplySettingsService->create($user, $validated);
+
+        return $this->success(new UserSettingResource($setting), 'Created', 201);
+    }
+
+    // Update auto-apply settings for the authenticated user
+    public function updateAutoApply(Request $request)
+    {
+        $user = $request->user();
+        if (!$user) {
+            return $this->error('Unauthenticated', 401);
+        }
+
+        $validated = $request->validate([
+            'auto_apply_enabled' => 'sometimes|boolean',
+            'auto_apply_limit'   => 'sometimes|integer|min:0',
+        ]);
+
+        if (empty($validated)) {
+            return $this->error('No fields to update', 422);
+        }
+
+        $setting = $this->autoApplySettingsService->update($user, $validated);
+
+        return $this->success(new UserSettingResource($setting), 'Updated', 200);
     }
 }

@@ -179,8 +179,8 @@ class AuthRepository
 
             if (!empty($data['settings'])) {
                 $user->settings()->updateOrCreate([], [
-                    'auto_apply_enabled'    => $data['settings']['auto_apply_enabled'] ?? $user->settings->auto_apply_enabled,
-                    'auto_apply_limit'      => $data['settings']['auto_apply_limit'] ?? $user->settings->auto_apply_limit,
+                    //'auto_apply_enabled'    => $data['settings']['auto_apply_enabled'] ?? $user->settings->auto_apply_enabled,
+                    //'auto_apply_limit'      => $data['settings']['auto_apply_limit'] ?? $user->settings->auto_apply_limit,
                     'notifications_enabled' => $data['settings']['notifications_enabled'] ?? $user->settings->notifications_enabled,
                     'language'              => $data['settings']['language'] ?? $user->settings->language,
                 ]);
