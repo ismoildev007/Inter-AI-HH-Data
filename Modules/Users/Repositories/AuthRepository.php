@@ -82,6 +82,11 @@ class AuthRepository
                 'language'              => 'uz',
             ]);
 
+            // Initial credit balance
+            $user->credit()->create([
+                'balance' => 50,
+            ]);
+
             // ✅ Token yaratish (login bilan bir xil)
             $token = $user->createToken(
                 'api_token',
@@ -96,6 +101,7 @@ class AuthRepository
                     'user'       => $user->load([
                         'role',
                         'settings',
+                        'credit',
                         'preferences',
                         'locations',
                         'jobTypes',
