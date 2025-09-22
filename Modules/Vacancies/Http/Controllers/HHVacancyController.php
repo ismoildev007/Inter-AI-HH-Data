@@ -75,11 +75,11 @@ class HHVacancyController extends Controller
                 ->where('vacancy_id', $vacancy->id)
                 ->first();
 
-            if ($existing && $existing->status === 'applied') {
+            if ($existing && $existing->status === 'response') {
                 return response()->json([
                     'success' => false,
-                    'message' => 'You have already applied to this vacancy.',
-                ], 409); 
+                    'message' => 'You have already responded to this vacancy.',
+                ], 409);
             }
 
             $application = Application::updateOrCreate(
@@ -90,7 +90,7 @@ class HHVacancyController extends Controller
                 ],
                 [
                     'hh_resume_id' => $resumeId,
-                    'status'       => 'applied',
+                    'status'       => 'response',
                     'submitted_at' => now(),
                     'match_score'  => $matchResult?->score_percent,
                     'external_id'  => $vacancy->external_id,
@@ -98,12 +98,12 @@ class HHVacancyController extends Controller
             );
 
             // Only call HH API if it's a new application or hh_status is null/failed
-            if ($vacancy->external_id && $resumeId && (!$existing || $existing->hh_status !== 'applied')) {
+            if ($vacancy->external_id && $resumeId && (!$existing || $existing->hh_status !== 'response')) {
                 try {
                     app(\Modules\Vacancies\Interfaces\HHVacancyInterface::class)
                         ->applyToVacancy($vacancy->external_id, $resumeId, $coverLetter);
 
-                    $application->update(['hh_status' => 'applied']);
+                    $application->update(['hh_status' => 'response']);
                 } catch (\Throwable $e) {
                     Log::error("HH apply failed", ['error' => $e->getMessage()]);
                     $application->update(['hh_status' => 'failed']);
@@ -118,18 +118,5 @@ class HHVacancyController extends Controller
         });
     }
 
-    public function negotiations(Request $request)
-    {
-        $page    = (int) $request->get('page', 0);
-        $perPage = (int) $request->get('per_page', 100);
-
-        $result = $this->hh->listNegotiations($page, $perPage);
-        $status = $result['status'] ?? 200;
-
-        return response()->json([
-            'success' => $result['success'] ?? false,
-            'data'    => $result['data'] ?? null,
-            'message' => $result['message'] ?? null,
-        ], $status);
-    }
+    
 }

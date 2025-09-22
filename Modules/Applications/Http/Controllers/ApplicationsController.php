@@ -4,9 +4,11 @@ namespace Modules\Applications\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Modules\Vacancies\Interfaces\HHVacancyInterface;
 
 class ApplicationsController extends Controller
 {
+    public function __construct(private readonly HHVacancyInterface $hh) {}
     /**
      * Display a listing of the resource.
      */
@@ -53,4 +55,22 @@ class ApplicationsController extends Controller
      * Remove the specified resource from storage.
      */
     public function destroy($id) {}
+
+    /**
+     * Return HH negotiations for the authenticated user.
+     */
+    public function negotiations(Request $request)
+    {
+        $page    = (int) $request->get('page', 0);
+        $perPage = (int) $request->get('per_page', 100);
+
+        $result = $this->hh->listNegotiations($page, $perPage);
+        $status = $result['status'] ?? 200;
+
+        return response()->json([
+            'success' => $result['success'] ?? false,
+            'data'    => $result['data'] ?? null,
+            'message' => $result['message'] ?? null,
+        ], $status);
+    }
 }

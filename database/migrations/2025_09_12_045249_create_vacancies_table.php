@@ -36,8 +36,8 @@ return new class extends Migration
             $table->string('company')->nullable()->index();
             $table->json('contact')->nullable();
             $table->string('language', 8)->nullable();
-            $table->string('source_id')->index();
-            $table->string('source_message_id')->index();
+            $table->string('source_id')->nullable()->index();
+            $table->string('source_message_id')->nullable()->index();
             $table->string('target_message_id')->nullable()->index();
             $table->string('signature', 64)->nullable();
 

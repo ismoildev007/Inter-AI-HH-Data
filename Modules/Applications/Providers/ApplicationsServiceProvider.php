@@ -2,6 +2,7 @@
 
 namespace Modules\Applications\Providers;
 
+use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\ServiceProvider;
 use Nwidart\Modules\Traits\PathNamespace;
@@ -43,7 +44,9 @@ class ApplicationsServiceProvider extends ServiceProvider
      */
     protected function registerCommands(): void
     {
-        // $this->commands([]);
+        $this->commands([
+            \Modules\Applications\Console\Commands\SyncHhNegotiationsCommand::class,
+        ]);
     }
 
     /**
@@ -51,10 +54,11 @@ class ApplicationsServiceProvider extends ServiceProvider
      */
     protected function registerCommandSchedules(): void
     {
-        // $this->app->booted(function () {
-        //     $schedule = $this->app->make(Schedule::class);
-        //     $schedule->command('inspire')->hourly();
-        // });
+        $this->app->booted(function () {
+            $schedule = $this->app->make(Schedule::class);
+            // Test schedule: run every minute (adjust later to daily)
+            $schedule->command('hh:sync-negotiations')->everyMinute();
+        });
     }
 
     /**

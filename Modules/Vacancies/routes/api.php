@@ -36,8 +36,6 @@ Route::prefix('v1')
         Route::prefix('hh')
             ->name('hh.')
             ->group(function () {
-                Route::middleware(['auth:sanctum'])->get('negotiations', [HHVacancyController::class, 'negotiations'])
-                    ->name('negotiations.index');
                 Route::get('vacancies', [HHVacancyController::class, 'index'])
                     ->name('vacancies.index');
 

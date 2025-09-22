@@ -1,6 +1,6 @@
 <?php
 
-namespace Modules\Vacancies\Console\Commands;
+namespace Modules\Applications\Console\Commands;
 
 use App\Models\Application;
 use App\Models\HhAccount;
