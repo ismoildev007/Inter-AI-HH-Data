@@ -68,7 +68,7 @@ class HHVacancyController extends Controller
             ->where('resume_id', $userResume->id)
             ->first();
 
-        $coverLetter = $user->preference->cover_letter ?? null;
+        $coverLetter = $user->preference?->cover_letter ?? null;
 
         return DB::transaction(function () use ($user, $vacancy, $resumeId, $coverLetter, $matchResult, $userResume) {
             $existing = Application::where('user_id', $user->id)
@@ -116,5 +116,20 @@ class HHVacancyController extends Controller
                 'data'    => $application,
             ]);
         });
+    }
+
+    public function negotiations(Request $request)
+    {
+        $page    = (int) $request->get('page', 0);
+        $perPage = (int) $request->get('per_page', 100);
+
+        $result = $this->hh->listNegotiations($page, $perPage);
+        $status = $result['status'] ?? 200;
+
+        return response()->json([
+            'success' => $result['success'] ?? false,
+            'data'    => $result['data'] ?? null,
+            'message' => $result['message'] ?? null,
+        ], $status);
     }
 }

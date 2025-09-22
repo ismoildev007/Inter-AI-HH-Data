@@ -2,10 +2,12 @@
 
 namespace Modules\Vacancies\Repositories;
 
+use App\Models\HhAccount;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Modules\Vacancies\Interfaces\HHVacancyInterface;
+use Modules\Users\Repositories\HhAccountRepositoryInterface;
 
 class HHVacancyRepository implements HHVacancyInterface
 {
@@ -98,6 +100,59 @@ class HHVacancyRepository implements HHVacancyInterface
         }
 
         Log::info('HH API apply succeeded', ['response' => $response->body()]);
+
+        return [
+            'success' => true,
+            'data'    => $response->json(),
+        ];
+    }
+
+    public function listNegotiations(int $page = 0, int $perPage = 100, ?HhAccount $account = null): array
+    {
+        $account = $account ?: optional(Auth::user())->hhAccount;
+        if (!$account || !$account->access_token) {
+            return [
+                'success' => false,
+                'message' => 'No HH account linked for negotiations',
+                'status'  => 401,
+            ];
+        }
+
+        $makeRequest = function (HhAccount $acc) use ($page, $perPage) {
+            return Http::withHeaders([
+                'Authorization' => 'Bearer ' . $acc->access_token,
+                'HH-User-Agent' => 'InterAI/1.0 (support@inter-ai.uz)',
+                'User-Agent'    => 'InterAI/1.0 (+support@inter-ai.uz)',
+            ])->get("{$this->baseUrl}/negotiations", [
+                'page' => $page,
+                'per_page' => $perPage,
+            ]);
+        };
+
+        $response = $makeRequest($account);
+
+        if ($response->status() === 401) {
+            try {
+                /** @var HhAccountRepositoryInterface $repo */
+                $repo = app(HhAccountRepositoryInterface::class);
+                $account = $repo->refreshToken($account);
+                $response = $makeRequest($account);
+            } catch (\Throwable $e) {
+                Log::warning('HH negotiations token refresh failed', ['error' => $e->getMessage()]);
+            }
+        }
+
+        if ($response->failed()) {
+            Log::info('HH API negotiations fetch failed', [
+                'status' => $response->status(),
+                'body' => $response->body(),
+            ]);
+            return [
+                'success' => false,
+                'message' => 'HH API negotiations failed: ' . $response->status(),
+                'status'  => $response->status(),
+            ];
+        }
 
         return [
             'success' => true,

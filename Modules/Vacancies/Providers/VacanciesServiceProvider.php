@@ -2,6 +2,7 @@
 
 namespace Modules\Vacancies\Providers;
 
+use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\ServiceProvider;
 use Modules\Vacancies\Interfaces\HHVacancyInterface;
@@ -50,7 +51,9 @@ class VacanciesServiceProvider extends ServiceProvider
      */
     protected function registerCommands(): void
     {
-        // $this->commands([]);
+        $this->commands([
+            \Modules\Vacancies\Console\Commands\SyncHhNegotiationsCommand::class,
+        ]);
     }
 
     /**
@@ -58,10 +61,11 @@ class VacanciesServiceProvider extends ServiceProvider
      */
     protected function registerCommandSchedules(): void
     {
-        // $this->app->booted(function () {
-        //     $schedule = $this->app->make(Schedule::class);
-        //     $schedule->command('inspire')->hourly();
-        // });
+        $this->app->booted(function () {
+            $schedule = $this->app->make(Schedule::class);
+            // For testing: run every minute. Can be adjusted later to daily or specific time.
+            $schedule->command('hh:sync-negotiations')->everyMinute();
+        });
     }
 
     /**
