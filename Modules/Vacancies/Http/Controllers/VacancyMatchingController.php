@@ -21,18 +21,25 @@ class VacancyMatchingController extends Controller
         $this->service = $service;
     }
 
-    public function match(VacancyMatchRequest $request)
+    public function match(VacancyMatchRequest $request, VacancyMatchingService $service)
     {
         $resume = auth()->user()
             ->resumes()
             ->where('is_primary', true)
             ->firstOrFail();
-        Log::info('Starting match for user', ['user_id' => auth()->id(), 'resume_id' => $resume->id]);
-        MatchResumeJob::dispatch($resume, $resume->title ?? $resume->description);
-        Log::info('Dispatched MatchResumeJob', ['user_id' => auth()->id(), 'resume_id' => $resume->id]);
+        // Log::info('Starting match for user', ['user_id' => auth()->id(), 'resume_id' => $resume->id]);
+        // MatchResumeJob::dispatch($resume, $resume->title ?? $resume->description);
+        // Log::info('Dispatched MatchResumeJob', ['user_id' => auth()->id(), 'resume_id' => $resume->id]);
+        $savedData = $service->matchResume($resume, $resume->title ?? $resume->description);
+        $results = MatchResult::with('vacancy.area', 'vacancy.employer')
+            ->where('resume_id', $resume->id)
+            ->orderByDesc('score_percent')
+            ->get();
+
         return response()->json([
-            'status' => 'queued',
-            'message' => 'Resume matching started. Check back in a few moments.'
+            'status'  => 'success',
+            'message' => 'Matching finished successfully.',
+            'data'    => VacancyMatchResource::collection($results),
         ]);
     }
 
