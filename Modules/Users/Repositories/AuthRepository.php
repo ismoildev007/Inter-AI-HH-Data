@@ -82,6 +82,11 @@ class AuthRepository
                 'language'              => 'uz',
             ]);
 
+            // Initial credit balance
+            $user->credit()->create([
+                'balance' => 50,
+            ]);
+
             // ✅ Token yaratish (login bilan bir xil)
             $token = $user->createToken(
                 'api_token',
@@ -96,6 +101,7 @@ class AuthRepository
                     'user'       => $user->load([
                         'role',
                         'settings',
+                        'credit',
                         'preferences',
                         'locations',
                         'jobTypes',
@@ -179,8 +185,8 @@ class AuthRepository
 
             if (!empty($data['settings'])) {
                 $user->settings()->updateOrCreate([], [
-                    'auto_apply_enabled'    => $data['settings']['auto_apply_enabled'] ?? $user->settings->auto_apply_enabled,
-                    'auto_apply_limit'      => $data['settings']['auto_apply_limit'] ?? $user->settings->auto_apply_limit,
+                    //'auto_apply_enabled'    => $data['settings']['auto_apply_enabled'] ?? $user->settings->auto_apply_enabled,
+                    //'auto_apply_limit'      => $data['settings']['auto_apply_limit'] ?? $user->settings->auto_apply_limit,
                     'notifications_enabled' => $data['settings']['notifications_enabled'] ?? $user->settings->notifications_enabled,
                     'language'              => $data['settings']['language'] ?? $user->settings->language,
                 ]);

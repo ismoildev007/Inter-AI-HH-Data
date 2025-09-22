@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('telegram_channels', function (Blueprint $table) {
             $table->id();
-            $table->string('username')->nullable()->index();
+            $table->string('username')->nullable()->unique()->index();
             $table->string('channel_id')->unique();
             $table->string('title')->nullable();
             $table->boolean('is_source')->default(true)->index();

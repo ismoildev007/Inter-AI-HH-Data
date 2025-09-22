@@ -28,7 +28,7 @@ class ChannelRuleMatcher
         $pattern = (string) ($rule['pattern'] ?? '');
         $ci = !empty($rule['case_insensitive']);
 
-        // Case normalizatsiya kerak bo'lsa:
+        // Case normalizatsiya
         $haystack = $ci ? mb_strtolower($text) : $text;
         $needle   = $ci ? mb_strtolower($pattern) : $pattern;
 

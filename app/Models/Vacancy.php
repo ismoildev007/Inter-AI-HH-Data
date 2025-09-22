@@ -28,6 +28,18 @@ class Vacancy extends Model
         'views_count',
         'responses_count',
         'raw_data',
+        'company',
+        'contact',
+        'language',
+        'signature',
+        'source_id',
+        'source_message_id',
+        'target_message_id',
+
+    ];
+
+    protected $casts = [
+        'contact' => 'array',
     ];
 
     public function employer()

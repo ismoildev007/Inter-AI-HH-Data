@@ -23,6 +23,10 @@ Route::prefix('auth')->group(function () {
 
         // Authenticated endpoints (will work when user/auth ready)
 
+        // Auto-apply settings (authenticated user)
+        Route::post('settings/auto-apply', [AuthController::class, 'createAutoApply']);
+        Route::patch('settings/auto-apply', [AuthController::class, 'updateAutoApply']);
+
         Route::apiResource('users', UsersController::class)->names('users');
         Route::get('hh-accounts/me', [HhAccountsController::class, 'me']);
         Route::post('hh-accounts/attach', [HhAccountsController::class, 'attach']);
