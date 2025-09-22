@@ -185,6 +185,7 @@ class AuthRepository
                     'language'              => $data['settings']['language'] ?? $user->settings->language,
                 ]);
             }
+            
 
             return [
                 'status' => 'success',

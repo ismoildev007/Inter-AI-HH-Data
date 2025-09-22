@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\DB;
 
 class VacancyRepository implements VacancyInterface
 {
-    
+
 
     public function firstOrCreateFromHH(array $data): Vacancy
     {
@@ -148,8 +148,117 @@ class VacancyRepository implements VacancyInterface
                 'updated_at'
             ]
         );
-    
+
         $ids = array_column($vacancies, 'external_id');
         return Vacancy::whereIn('external_id', $ids)->get()->keyBy('external_id')->all();
+    }
+
+
+    public function createFromHH(array $hhVacancy): Vacancy
+    {
+        $now = now();
+
+        // Employer
+        $employerId = null;
+        if (!empty($hhVacancy['employer'])) {
+            $employer = Employer::updateOrCreate(
+                [
+                    'source'      => 'hh',
+                    'external_id' => $hhVacancy['employer']['id'],
+                ],
+                [
+                    'name'     => $hhVacancy['employer']['name'] ?? '',
+                    'url'      => $hhVacancy['employer']['url'] ?? null,
+                    'raw_json' => json_encode($hhVacancy['employer'], JSON_UNESCAPED_UNICODE),
+                ]
+            );
+            $employerId = $employer->id;
+        }
+
+        // Area
+        $areaId = null;
+        if (!empty($hhVacancy['area'])) {
+            $area = Area::updateOrCreate(
+                [
+                    'source'      => 'hh',
+                    'external_id' => $hhVacancy['area']['id'],
+                ],
+                [
+                    'name'     => $hhVacancy['area']['name'] ?? '',
+                    'raw_json' => json_encode($hhVacancy['area'], JSON_UNESCAPED_UNICODE),
+                ]
+            );
+            $areaId = $area->id;
+        }
+
+        // Schedule
+        $scheduleId = null;
+        if (!empty($hhVacancy['schedule'])) {
+            $schedule = HhSchedule::updateOrCreate(
+                [
+                    'external_id' => $hhVacancy['schedule']['id'],
+                ],
+                [
+                    'name'     => $hhVacancy['schedule']['name'] ?? '',
+                    'raw_json' => json_encode($hhVacancy['schedule'], JSON_UNESCAPED_UNICODE),
+                ]
+            );
+            $scheduleId = $schedule->id;
+        }
+
+        // Employment
+        $employmentId = null;
+        if (!empty($hhVacancy['employment'])) {
+            $employment = HhEmployment::updateOrCreate(
+                [
+                    'external_id' => $hhVacancy['employment']['id'],
+                ],
+                [
+                    'name'     => $hhVacancy['employment']['name'] ?? '',
+                    'raw_json' => json_encode($hhVacancy['employment'], JSON_UNESCAPED_UNICODE),
+                ]
+            );
+            $employmentId = $employment->id;
+        }
+
+        // Salary
+        $salary = is_array($hhVacancy['salary'] ?? null) ? $hhVacancy['salary'] : [];
+
+        // Published date
+        $publishedAt = null;
+        if (!empty($hhVacancy['published_at'])) {
+            try {
+                $publishedAt = \Carbon\Carbon::parse($hhVacancy['published_at'])->format('Y-m-d H:i:s');
+            } catch (\Exception $e) {
+                Log::warning('Invalid published_at format', ['value' => $hhVacancy['published_at']]);
+            }
+        }
+
+        // Create or update vacancy
+        $vacancy = Vacancy::updateOrCreate(
+            [
+                'source'      => 'hh',
+                'external_id' => $hhVacancy['id'],
+            ],
+            [
+                'employer_id'     => $employerId,
+                'area_id'         => $areaId,
+                'schedule_id'     => $scheduleId,
+                'employment_id'   => $employmentId,
+                'title'           => $hhVacancy['name'] ?? '',
+                'description'     => $hhVacancy['description']
+                    ?? (($hhVacancy['snippet']['requirement'] ?? '') . "\n" . ($hhVacancy['snippet']['responsibility'] ?? '')),
+                'salary_from'     => $salary['from'] ?? null,
+                'salary_to'       => $salary['to'] ?? null,
+                'salary_currency' => $salary['currency'] ?? null,
+                'salary_gross'    => $salary['gross'] ?? false,
+                'published_at'    => $publishedAt,
+                'apply_url'       => $hhVacancy['alternate_url'] ?? null,
+                'raw_data'        => json_encode($hhVacancy, JSON_UNESCAPED_UNICODE),
+                'updated_at'      => $now,
+            ]
+        );
+
+        return $vacancy;
     }
 }
