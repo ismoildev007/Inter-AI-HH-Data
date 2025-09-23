@@ -1,0 +1,107 @@
+<?php
+
+namespace Modules\Applications\Console\Commands;
+
+use App\Models\Application;
+use App\Models\HhAccount;
+use App\Models\Vacancy;
+use Illuminate\Console\Command;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Log;
+use Modules\Users\Repositories\HhAccountRepositoryInterface;
+use Modules\Vacancies\Interfaces\HHVacancyInterface;
+
+class SyncHhNegotiationsCommand extends Command
+{
+    protected $signature = 'hh:sync-negotiations {--per-page=100} {--max-pages=10} {--user-id=}';
+    protected $description = 'Sync HH negotiations and update applications.hh_status for users with HH accounts';
+
+    public function handle(): int
+    {
+        $perPage = (int) $this->option('per-page');
+        $maxPages = (int) $this->option('max-pages');
+        $filterUserId = $this->option('user-id') ? (int) $this->option('user-id') : null;
+
+        /** @var HHVacancyInterface $hh */
+        $hh = app(HHVacancyInterface::class);
+        /** @var HhAccountRepositoryInterface $acctRepo */
+        $acctRepo = app(HhAccountRepositoryInterface::class);
+
+        $accountsQuery = HhAccount::query()->whereNotNull('access_token');
+        if ($filterUserId) {
+            $accountsQuery->where('user_id', $filterUserId);
+        }
+
+        $updatedCount = 0;
+        $scannedCount = 0;
+
+        $accountsQuery->orderBy('id')->chunk(50, function ($accounts) use ($hh, $acctRepo, $perPage, $maxPages, &$updatedCount, &$scannedCount) {
+            foreach ($accounts as $account) {
+                $this->info("Syncing negotiations for user_id={$account->user_id} (account_id={$account->id})");
+
+                // Try refresh if expired
+                if ($account->expires_at && $account->expires_at->isPast()) {
+                    try {
+                        $acctRepo->refreshToken($account);
+                    } catch (\Throwable $e) {
+                        Log::warning('HH token refresh failed (pre-fetch)', ['account_id' => $account->id, 'error' => $e->getMessage()]);
+                    }
+                }
+
+                $page = 0;
+                $pagesDone = 0;
+                do {
+                    $resp = $hh->listNegotiations($page, $perPage, $account);
+                    if (!($resp['success'] ?? false)) {
+                        $this->warn("Negotiations fetch failed for account {$account->id}: " . ($resp['message'] ?? 'unknown'));
+                        break;
+                    }
+                    $data = $resp['data'] ?? [];
+                    $items = $data['items'] ?? $data['negotiations'] ?? [];
+                    if (empty($items)) {
+                        break;
+                    }
+                    foreach ($items as $item) {
+                        $scannedCount++;
+                        $vacancyExternalId = Arr::get($item, 'vacancy.id');
+                        $resumeId = (string) (Arr::get($item, 'resume.id') ?? '');
+                        $stateId = Arr::get($item, 'state.id') ?? Arr::get($item, 'state.name') ?? Arr::get($item, 'status');
+                        if (!$vacancyExternalId || !$stateId) {
+                            continue;
+                        }
+
+                        $vacancy = Vacancy::where('external_id', $vacancyExternalId)->first();
+                        if (!$vacancy) {
+                            continue; // Unknown locally, skip
+                        }
+
+                        $app = Application::where('user_id', $account->user_id)
+                            ->where('vacancy_id', $vacancy->id)
+                            ->first();
+                        if (!$app) {
+                            continue;
+                        }
+
+                        if ($resumeId !== '' && $app->hh_resume_id && (string) $app->hh_resume_id !== $resumeId) {
+                            // If resume ids are present and do not match, skip this negotiation for this app
+                            continue;
+                        }
+
+                        if ($app->hh_status !== $stateId) {
+                            $app->update(['hh_status' => $stateId]);
+                            $updatedCount++;
+                        }
+                    }
+
+                    $page++;
+                    $pagesDone++;
+                } while ($pagesDone < max(1, $maxPages));
+            }
+        });
+
+        $this->info("Negotiations scanned: {$scannedCount}, applications updated: {$updatedCount}");
+        Log::info('HH negotiations sync done', ['scanned' => $scannedCount, 'updated' => $updatedCount]);
+        return self::SUCCESS;
+    }
+}
+

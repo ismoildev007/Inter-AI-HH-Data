@@ -58,10 +58,7 @@ class VacanciesServiceProvider extends ServiceProvider
      */
     protected function registerCommandSchedules(): void
     {
-        // $this->app->booted(function () {
-        //     $schedule = $this->app->make(Schedule::class);
-        //     $schedule->command('inspire')->hourly();
-        // });
+        // moved scheduling to Applications module
     }
 
     /**
@@ -159,3 +156,4 @@ class VacanciesServiceProvider extends ServiceProvider
         return $paths;
     }
 }
+
