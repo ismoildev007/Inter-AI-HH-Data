@@ -12,11 +12,12 @@ use Illuminate\Support\Facades\Log;
 class AutoApplyCommand extends Command
 {
 
-    protected $signature = 'autoapply:run';
+    protected $signature = 'autoapply:start';
     protected $description = 'Automatically apply to HH vacancies for eligible users';
 
     public function handle()
     {
+        Log::info('auto apply');
         $settings = UserSetting::where('auto_apply_enabled', true)
             ->where('auto_apply_limit', '>', 0)
             ->with(['user.credit', 'user.hhAccount', 'user.resumes.matchResults.vacancy'])
@@ -26,7 +27,10 @@ class AutoApplyCommand extends Command
 
         foreach ($settings as $setting) {
             $user = $setting->user;
-
+            Log::info([
+                'user credit' => $user->credit,
+                'balance' => $user->credit->balance
+            ]);
             if (!$user->credit || $user->credit->balance <= 0) {
                 continue;
             }
@@ -36,6 +40,7 @@ class AutoApplyCommand extends Command
             }
 
             $matches = $user->resumes->flatMap->matchResults->where('score_percent', '>=', 70);
+            Log::info(['matches' => $matches]);
             foreach ($matches as $match) {
                 $exists = Application::where('user_id', $user->id)
                     ->where('vacancy_id', $match->vacancy_id)

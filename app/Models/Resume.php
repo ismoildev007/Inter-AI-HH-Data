@@ -29,4 +29,9 @@ class Resume extends Model
     {
         return $this->hasOne(ResumeAnalyze::class);
     }
+
+    public function matchResults()
+    {
+        return $this->hasMany(MatchResult::class);
+    }
 }

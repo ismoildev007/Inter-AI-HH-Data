@@ -22,9 +22,7 @@ class SyncHhNegotiationsCommand extends Command
         $maxPages = (int) $this->option('max-pages');
         $filterUserId = $this->option('user-id') ? (int) $this->option('user-id') : null;
 
-        /** @var HHVacancyInterface $hh */
         $hh = app(HHVacancyInterface::class);
-        /** @var HhAccountRepositoryInterface $acctRepo */
         $acctRepo = app(HhAccountRepositoryInterface::class);
 
         $accountsQuery = HhAccount::query()->whereNotNull('access_token');
@@ -39,7 +37,6 @@ class SyncHhNegotiationsCommand extends Command
             foreach ($accounts as $account) {
                 $this->info("Syncing negotiations for user_id={$account->user_id} (account_id={$account->id})");
 
-                // Try refresh if expired
                 if ($account->expires_at && $account->expires_at->isPast()) {
                     try {
                         $acctRepo->refreshToken($account);
@@ -72,7 +69,7 @@ class SyncHhNegotiationsCommand extends Command
 
                         $vacancy = Vacancy::where('external_id', $vacancyExternalId)->first();
                         if (!$vacancy) {
-                            continue; // Unknown locally, skip
+                            continue; 
                         }
 
                         $app = Application::where('user_id', $account->user_id)
@@ -83,13 +80,17 @@ class SyncHhNegotiationsCommand extends Command
                         }
 
                         if ($resumeId !== '' && $app->hh_resume_id && (string) $app->hh_resume_id !== $resumeId) {
-                            // If resume ids are present and do not match, skip this negotiation for this app
                             continue;
                         }
 
                         if ($app->hh_status !== $stateId) {
                             $app->update(['hh_status' => $stateId]);
                             $updatedCount++;
+
+                            if ($stateId === 'interview') {
+                                // Example: dispatch a job
+                                // \Modules\Applications\Jobs\HandleInterviewApplication::dispatch($app);
+                            }
                         }
                     }
 
