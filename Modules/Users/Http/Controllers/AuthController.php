@@ -138,7 +138,7 @@ class AuthController extends Controller
     }
 
     // Update auto-apply settings for the authenticated user
-    public function updateAutoApply(Request $request)
+    public function updateAutoApply(Request $request, $id)
     {
         $user = $request->user();
         if (!$user) {
