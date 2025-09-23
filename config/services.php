@@ -35,4 +35,9 @@ return [
         ],
     ],
 
+    'hh' => [
+        'client_id'     => env('HH_CLIENT_ID'),
+        'client_secret' => env('HH_CLIENT_SECRET'),
+    ],
+
 ];
