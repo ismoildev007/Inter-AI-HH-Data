@@ -13,7 +13,8 @@ return new class extends Migration
     {
         Schema::create('interview_preparations', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('interview_id')->nullable();
+            // Each row holds a single question for one interview
+            $table->foreignId('interview_id')->nullable()->constrained('interviews')->cascadeOnDelete();
             $table->text('question')->nullable();
             $table->timestamps();
             $table->softDeletes();

@@ -36,6 +36,9 @@ class InterviewsServiceProvider extends ServiceProvider
     {
         $this->app->register(EventServiceProvider::class);
         $this->app->register(RouteServiceProvider::class);
+
+        // Bind AI generator interface to OpenAI implementation
+        $this->app->bind(\Modules\Interviews\Services\AiQuestionGeneratorInterface::class, \Modules\Interviews\Services\OpenAiQuestionGenerator::class);
     }
 
     /**
