@@ -24,6 +24,7 @@ Route::prefix('auth')->group(function () {
         // Authenticated endpoints (will work when user/auth ready)
 
         // Auto-apply settings (authenticated user)
+        Route::get('settings/auto-apply', [AuthController::class, 'getAutoApply']);
         Route::post('settings/auto-apply', [AuthController::class, 'createAutoApply']);
         Route::patch('settings/auto-apply', [AuthController::class, 'updateAutoApply']);
 

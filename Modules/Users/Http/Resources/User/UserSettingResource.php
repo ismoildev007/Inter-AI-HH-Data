@@ -13,6 +13,7 @@ class UserSettingResource extends JsonResource
             'auto_apply_enabled'   => (bool) $this->auto_apply_enabled,
             'auto_apply_limit'     => $this->auto_apply_limit,
             'notifications_enabled'=> (bool) $this->notifications_enabled,
+            'auto_apply_count'   => $this->auto_apply_count,
             'language'             => $this->language,
         ];
     }

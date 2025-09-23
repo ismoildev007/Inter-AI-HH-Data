@@ -10,6 +10,7 @@ class UserSetting extends Model
         'user_id',
         'auto_apply_enabled',
         'auto_apply_limit',
+        'auto_apply_count',
         'notifications_enabled',
         'resume_id',
         'language',
