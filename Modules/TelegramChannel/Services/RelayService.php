@@ -296,17 +296,34 @@ class RelayService
                             $tBlock = (int) ($thr['block'] ?? 5);
 
                             $acquired = false;
-                            Redis::throttle($tKey)->allow($tAllow)->every($tEvery)->block($tBlock)->then(function () use (&$acquired, $to, $out, $target, &$targetLink) {
-                            $acquired = true;
-                            // Try to send; handle FLOOD_WAIT and other errors gracefully
-                            try {
+                            Redis::throttle($tKey)->allow($tAllow)->every($tEvery)->block($tBlock)->then(function () use (&$acquired, $to, $out, $target, &$targetLink, &$tMsgId) {
+                                $acquired = true;
+                                // Try to send; handle FLOOD_WAIT and other errors gracefully
+                                try {
                                 $resp = $this->tg->sendMessage($to, $out);
+                                // Extract message id robustly
+                                $tMsgId = $resp['id'] ?? null;
+                                if (!$tMsgId && isset($resp['message']['id'])) {
+                                    $tMsgId = $resp['message']['id'];
+                                }
+                                if (!$tMsgId && isset($resp['updates']) && is_array($resp['updates'])) {
+                                    foreach ($resp['updates'] as $u) {
+                                        if (isset($u['message']['id'])) { $tMsgId = $u['message']['id']; break; }
+                                        if (isset($u['update']['message']['id'])) { $tMsgId = $u['update']['message']['id']; break; }
+                                    }
+                                }
+                                $tMsgId = $tMsgId ? (int) $tMsgId : null;
+                                // Build link by username or /c/ internal id
                                 $tUser = $target->username ? ltrim((string) $target->username, '@') : null;
-                                $tMsgId = $resp['id'] ?? ($resp['updates'][0]['message']['id'] ?? null);
                                 if ($tUser && $tMsgId) {
                                     $targetLink = 'https://t.me/' . $tUser . '/' . $tMsgId;
+                                } elseif ($tMsgId && !empty($target->channel_id)) {
+                                    $cid = (string) $target->channel_id;
+                                    $cid = ltrim($cid, '-');
+                                    if (str_starts_with($cid, '100')) { $cid = substr($cid, 3); }
+                                    $targetLink = 'https://t.me/c/' . $cid . '/' . $tMsgId;
                                 }
-                            } catch (\Throwable $e) {
+                                } catch (\Throwable $e) {
                                 $delay = $this->parseFloodWait($e->getMessage());
                                 if ($delay > 0) {
                                     Log::warning('Telegram relay: FLOOD_WAIT on sendMessage', ['peer' => $peer, 'delay' => $delay]);
@@ -322,7 +339,7 @@ class RelayService
                                 }
                                 // On send failure, skip saving
                                 return;
-                            }
+                                }
                             }, function () use (&$acquired) {
                                 $acquired = false;
                             });
@@ -348,6 +365,7 @@ class RelayService
                                     'source_id' => $sourceId,
                                     'source_message_id' => $sourceLink,
                                     'target_message_id' => $targetLink,
+                                    'target_msg_id' => $tMsgId,
                                     'signature' => $signature,
                                 ]);
                             } catch (\Throwable $e) {
