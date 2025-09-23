@@ -92,6 +92,33 @@ class AuthController extends Controller
         return response()->json(['message' => 'Logged out successfully']);
     }
 
+    public function getAutoApply(Request $request)
+    {
+        $user = $request->user();
+        if (!$user) {
+            return $this->error('Unauthenticated', 401);
+        }
+
+        $setting = $user->settings()->first();
+        if (!$setting) {
+            return $this->error('Setting not found', 404);
+        }
+
+        return $this->success(new UserSettingResource($setting));
+    }
+
+    public function incrementAutoApply(Request $request)
+    {
+        $user = $request->user();
+        if (!$user) {
+            return $this->error('Unauthenticated', 401);
+        }
+
+        $setting = $this->autoApplySettingsService->incrementCount($user);
+
+        return $this->success(new UserSettingResource($setting), 'Count incremented');
+    }
+
     // Create auto-apply settings for the authenticated user
     public function createAutoApply(Request $request)
     {

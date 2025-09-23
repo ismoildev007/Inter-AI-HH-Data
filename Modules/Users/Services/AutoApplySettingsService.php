@@ -27,6 +27,12 @@ class AutoApplySettingsService
 
         return $user->settings()->create($payload);
     }
+    public function incrementCount(User $user): UserSetting
+    {
+        $setting = $user->settings()->firstOrFail();
+        $setting->increment('auto_apply_count');
+        return $setting->refresh();
+    }
 
     /**
      * Update only provided auto apply fields; create if missing.
