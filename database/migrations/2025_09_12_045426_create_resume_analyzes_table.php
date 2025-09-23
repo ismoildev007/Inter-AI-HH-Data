@@ -18,7 +18,7 @@ return new class extends Migration
             $table->text('weaknesses')->nullable();
             $table->text('keywords')->nullable();
             $table->string('language')->nullable();
-            $table->string('skills')->nullable();
+            $table->text('skills')->nullable();
             $table->timestamps();
             $table->softDeletes();
         });
