@@ -160,14 +160,16 @@ class AuthRepository
             }
 
             if (!empty($data['experience']) || !empty($data['salary_from']) || !empty($data['salary_to'])) {
+                $pref = $user->preferences()->first();
+
                 $user->preferences()->updateOrCreate(
                     ['user_id' => $user->id],
                     [
-                        'experience_level'    => $data['experience'] ?? $user->preferences->experience_level ?? null,
-                        'desired_salary_from' => $data['salary_from'] ?? $user->preferences->desired_salary_from ?? null,
-                        'desired_salary_to'   => $data['salary_to'] ?? $user->preferences->desired_salary_to ?? null,
+                        'experience_level'    => $data['experience'] ?? $pref?->experience_level,
+                        'desired_salary_from' => $data['salary_from'] ?? $pref?->desired_salary_from,
+                        'desired_salary_to'   => $data['salary_to'] ?? $pref?->desired_salary_to,
                         'currency'            => 'USD',
-                        'work_mode'           => $data['employment_type'] ?? $user->preferences->work_mode ?? null,
+                        'work_mode'           => $data['employment_type'] ?? $pref?->work_mode,
                     ]
                 );
             }
@@ -194,7 +196,7 @@ class AuthRepository
                     'locations',
                     'jobTypes',
                     'resumes',
-                ]),
+                ])->toArray(),
             ];
         });
     }

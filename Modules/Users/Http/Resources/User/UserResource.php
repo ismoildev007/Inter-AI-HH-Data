@@ -3,6 +3,7 @@
 namespace Modules\Users\Http\Resources\User;
 
 use Illuminate\Http\Resources\Json\JsonResource;
+use Modules\Resumes\Http\Resources\ResumeResource;
 use Modules\Users\Http\Resources\RoleResource;
 
 class UserResource extends JsonResource
@@ -18,6 +19,7 @@ class UserResource extends JsonResource
             'birth_date' => $this->birth_date,
             'avatar'     => $this->avatar_path,
             'role'       => new RoleResource($this->whenLoaded('role')),
+            'resumes' => ResumeResource::collection($this->whenLoaded('resumes')),
             'settings'   => new UserSettingResource($this->whenLoaded('settings')),
             'credit'     => new UserCreditResource($this->whenLoaded('credit')),
             'preferences'=> UserPreferenceResource::collection($this->whenLoaded('preferences')),
