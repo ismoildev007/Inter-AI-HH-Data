@@ -157,20 +157,15 @@ class AuthController extends Controller
             return $this->error('No fields to update', 422);
         }
 
-        if (isset($validated['auto_apply_limit'])) {
-            $balance = optional($user->credit)->balance ?? 0;
-            if ($validated['auto_apply_limit'] > $balance) {
-                return $this->error(
-                    "You only have {$balance} credits, so you cannot set auto apply limit higher than that.",
-                    422
-                );
-            }
-        }
-
         $setting = $this->autoApplySettingsService->update($user, $validated);
+
+        if (is_array($setting) && isset($setting['error'])) {
+            return $this->error($setting['message'], 422);
+        }
 
         return $this->success(new UserSettingResource($setting), 'Updated', 200);
     }
+
 
 
     public function balance(Request $request)
@@ -181,14 +176,20 @@ class AuthController extends Controller
         }
 
         $balance = UserCredit::where('user_id', $user->id)->first();
-        $credit = UserSetting::where('user_id', $user->id)->first();
+        $credit  = UserSetting::where('user_id', $user->id)->first();
+
+        $remaining = min(
+            $balance->balance,
+            max(0, $credit->auto_apply_limit - $credit->auto_apply_count)
+        );
 
         return response()->json([
-            'status' => true,
+            'status'  => true,
             'balance' => $balance->balance,
-            'credit' => [
-                'limit' => $credit->auto_apply_limit,
-                'count' => $credit->auto_apply_count ?? 0
+            'credit'  => [
+                'limit'     => $credit->auto_apply_limit,
+                'count'     => $credit->auto_apply_count ?? 0,
+                'remaining' => $remaining
             ]
         ]);
     }

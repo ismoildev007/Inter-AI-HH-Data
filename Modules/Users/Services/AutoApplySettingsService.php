@@ -37,23 +37,46 @@ class AutoApplySettingsService
     /**
      * Update only provided auto apply fields; create if missing.
      */
-    public function update(User $user, array $data): UserSetting
+    public function update(User $user, array $data): UserSetting|array
     {
         $setting = $user->settings()->first();
+        $balance = optional($user->credit)->balance ?? 0;
 
+        // Agar foydalanuvchi uchun hali setting yo'q bo'lsa
         if (!$setting) {
+            $limit = isset($data['auto_apply_limit']) ? (int)$data['auto_apply_limit'] : 0;
+
+            if ($limit > $balance) {
+                return [
+                    'error'   => true,
+                    'message' => "Limit cannot be higher than current balance ({$balance})."
+                ];
+            }
+
             return $user->settings()->create([
                 'auto_apply_enabled' => isset($data['auto_apply_enabled']) ? (bool)$data['auto_apply_enabled'] : false,
-                'auto_apply_limit'   => isset($data['auto_apply_limit']) ? (int)$data['auto_apply_limit'] : 0,
+                'auto_apply_limit'   => $limit,
             ]);
         }
 
         $payload = [];
+
         if (array_key_exists('auto_apply_enabled', $data)) {
             $payload['auto_apply_enabled'] = (bool)$data['auto_apply_enabled'];
         }
+
         if (array_key_exists('auto_apply_limit', $data)) {
-            $payload['auto_apply_limit'] = (int)$data['auto_apply_limit'];
+            $addLimit = (int)$data['auto_apply_limit'];
+            $newLimit = $setting->auto_apply_limit + $addLimit;
+
+            if ($newLimit > $balance) {
+                return [
+                    'error'   => true,
+                    'message' => "Limit cannot be higher than current balance ({$balance})."
+                ];
+            }
+
+            $payload['auto_apply_limit'] = $newLimit;
         }
 
         if (!empty($payload)) {
@@ -63,4 +86,3 @@ class AutoApplySettingsService
         return $setting->refresh();
     }
 }
-

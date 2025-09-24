@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Models\Application;
+use App\Models\CreditTransaction;
 use App\Services\HhApiService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -38,6 +39,15 @@ class AutoApplyJob implements ShouldQueue
 
                 $setting->increment('auto_apply_count');
                 $user->credit->decrement('balance');
+                $newBalance = $user->credit->fresh()->balance;
+
+                CreditTransaction::create([
+                    'user_id' => $user->id,
+                    'type'    => 'spend', 
+                    'amount'  => -1,
+                    'balance_after' => $newBalance,
+                    'related_application_id' => $application->id,
+                ]);
 
                 $application->update(['status' => 'response']);
             });
