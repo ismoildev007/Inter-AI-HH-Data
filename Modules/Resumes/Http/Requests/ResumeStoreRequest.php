@@ -1,4 +1,4 @@
-<?php 
+<?php
 
 namespace Modules\Resumes\Http\Requests;
 
@@ -16,7 +16,7 @@ class ResumeStoreRequest extends FormRequest
         return [
             'title' => 'nullable|string|max:255',
             'description' => 'nullable|string',
-            'file'        => 'nullable|file|mimes:pdf,doc,docx|max:2048',
+            'file'        => 'nullable|file|mimes:pdf,doc,docx|max:4048',
         ];
 
     }
