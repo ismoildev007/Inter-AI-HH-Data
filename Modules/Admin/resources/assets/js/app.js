@@ -20,3 +20,13 @@ if (document.querySelector('#payment-records-chart') || document.querySelector('
   import('../js/dashboard-init.min.js');
   import('../js/analytics-init.min.js');
 }
+
+// Ensure header account dropdown items navigate properly
+document.addEventListener('click', (e) => {
+  const link = e.target && e.target.closest('.nxl-account-dropdown .dropdown-item[href]');
+  if (link) {
+    // In case any vendor script prevented default on dropdown items
+    e.preventDefault();
+    window.location.assign(link.getAttribute('href'));
+  }
+});

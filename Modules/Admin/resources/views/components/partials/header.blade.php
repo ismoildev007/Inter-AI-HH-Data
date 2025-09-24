@@ -15,7 +15,7 @@
         </div>
 
         <div class="header-right ms-auto d-flex align-items-center gap-3">
-            <div class="dropdown nxl-h-item nxl-header-language d-none d-sm-flex">
+            <!-- <div class="dropdown nxl-h-item nxl-header-language d-none d-sm-flex">
                 <a href="javascript:void(0);" class="nxl-head-link me-0 nxl-language-link" data-bs-toggle="dropdown" data-bs-auto-close="outside">
                     <img src="{{ module_vite('build-admin', 'resources/assets/js/app.js')->asset('resources/assets/vendors/img/flags/4x3/us.svg') }}" alt="lang" class="img-fluid wd-20">
                 </a>
@@ -54,31 +54,17 @@
                         </div>
                     </div>
                 </div>
-            </div>
+            </div> -->
 
-            <div class="dropdown nxl-h-item nxl-header-profile">
-                <a href="javascript:void(0);" class="nxl-head-link me-0" data-bs-toggle="dropdown" data-bs-auto-close="outside">
+            <div class="nxl-h-item d-flex align-items-center gap-2">
+                <a href="{{ route('admin.profile') }}" class="nxl-head-link me-0" title="Profile">
                     <div class="avatar-text avatar-md">
                         <img src="{{ module_vite('build-admin', 'resources/assets/js/app.js')->asset('resources/assets/images/avatar/1.png') }}" alt="" class="img-fluid">
                     </div>
                 </a>
-                <div class="dropdown-menu dropdown-menu-end nxl-h-dropdown nxl-account-dropdown">
-                    <div class="dropdown-item">
-                        <div class="d-flex align-items-center gap-3">
-                            <div class="avatar-text avatar-md">
-                                <img src="{{ module_vite('build-admin', 'resources/assets/js/app.js')->asset('resources/assets/images/avatar/1.png') }}" alt="" class="img-fluid">
-                            </div>
-                            <div>
-                                <h6 class="mb-0">{{ auth()->user()->name ?? 'Admin' }}</h6>
-                                <span class="fs-11 text-muted">{{ auth()->user()->email ?? '' }}</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="dropdown-divider"></div>
-                    <a href="{{ route('admin.profile') }}" class="dropdown-item"><i class="feather-user"></i><span>Profile</span></a>
-                    <div class="dropdown-divider"></div>
-                    <a href="{{ route('admin.logout') }}" class="dropdown-item"><i class="feather-log-out"></i><span>Logout</span></a>
-                </div>
+                <a href="{{ route('admin.logout') }}" class="nxl-head-link" title="Logout">
+                    <i class="feather-log-out"></i>
+                </a>
             </div>
         </div>
     </div>

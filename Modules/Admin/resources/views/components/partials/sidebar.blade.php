@@ -42,32 +42,15 @@
                     </a>
                 </li>
 
-                <li class="nxl-item nxl-hasmenu">
-                    <a href="javascript:void(0);" class="nxl-link">
+                <li class="nxl-item">
+                    <a href="{{ route('admin.telegram_channels.index') }}" class="nxl-link">
                         <span class="nxl-micon"><i class="feather-send"></i></span>
-                        <span class="nxl-mtext">Telegram Channels</span><span class="nxl-arrow"><i class="feather-chevron-right"></i></span>
-                    </a>
-                    <ul class="nxl-submenu">
-                        <li class="nxl-item"><a class="nxl-link" href="{{ route('admin.telegram_channels.index') }}">List</a></li>
-                        <li class="nxl-item"><a class="nxl-link" href="{{ route('admin.telegram_channels.create') }}">Create</a></li>
-                    </ul>
-                </li>
-
-                <li class="nxl-item">
-                    <a href="{{ route('admin.profile') }}" class="nxl-link">
-                        <span class="nxl-micon"><i class="feather-user"></i></span>
-                        <span class="nxl-mtext">Profile</span>
+                        <span class="nxl-mtext">Telegram Channels</span>
                     </a>
                 </li>
 
-                <li class="nxl-item">
-                    <a href="{{ route('admin.logout') }}" class="nxl-link">
-                        <span class="nxl-micon"><i class="feather-log-out"></i></span>
-                        <span class="nxl-mtext">Logout</span>
-                    </a>
-                </li>
+                
             </ul>
         </div>
     </div>
 </nav>
-
