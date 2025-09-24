@@ -29,7 +29,7 @@ class User extends Authenticatable
         'avatar_path',
         'verify_code',
         'role_id',
-
+        'chat_id'
     ];
 
     /**
@@ -97,5 +97,10 @@ class User extends Authenticatable
     public function hhAccount()
     {
         return $this->hasOne(HhAccount::class);
+    }
+
+    public function matchResults()
+    {
+        return $this->hasManyThrough(MatchResult::class, Resume::class);
     }
 }

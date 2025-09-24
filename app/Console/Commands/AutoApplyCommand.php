@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Jobs\AutoApplyJob;
 use App\Models\Application;
 use App\Models\UserSetting;
 use App\Services\HhApiService;
@@ -19,9 +20,12 @@ class AutoApplyCommand extends Command
     {
         Log::info('auto apply');
         $settings = UserSetting::where('auto_apply_enabled', true)
-            ->where('auto_apply_limit', '>', 0)
             ->with(['user.credit', 'user.hhAccount', 'user.resumes.matchResults.vacancy'])
-            ->get();
+            ->get()
+            ->filter(function ($setting) {
+                return $setting->auto_apply_count < $setting->auto_apply_limit;
+            });
+
 
         $hhService = new HhApiService();
 
@@ -49,27 +53,14 @@ class AutoApplyCommand extends Command
                         'user_id'     => $user->id,
                         'vacancy_id'  => $match->vacancy_id,
                         'resume_id'   => $match->resume_id,
-                        'hh_resume_id'=> $setting->resume_id,
+                        'hh_resume_id' => $setting->resume_id,
                         'status'      => 'pending',
                         'match_score' => $match->score_percent,
-                        'submitted_at'=> now(),
+                        'submitted_at' => now(),
                     ]);
 
-                    try {
-                        $hhService->apply($application);
-
-                        $setting->decrement('auto_apply_limit');
-                        $user->credit->decrement('balance');
-
-                        $application->update(['status' => 'response']);
-                    } catch (\Exception $e) {
-                        $application->update(['status' => 'failed']);
-                        Log::error("Auto apply failed", [
-                            'user_id' => $user->id,
-                            'vacancy_id' => $match->vacancy_id,
-                            'error' => $e->getMessage(),
-                        ]);
-                    }
+                    AutoApplyJob::dispatch($application)
+                        ->onQueue('autoapply');
                 });
             }
         }

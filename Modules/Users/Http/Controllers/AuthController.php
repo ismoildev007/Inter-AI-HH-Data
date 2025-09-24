@@ -4,6 +4,8 @@ namespace Modules\Users\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Models\UserCredit;
+use App\Models\UserSetting;
 use App\Traits\ApiResponseTrait;
 use Illuminate\Http\Request;
 use Modules\Users\Http\Requests\LoginRequest;
@@ -154,8 +156,39 @@ class AuthController extends Controller
             return $this->error('No fields to update', 422);
         }
 
+        if (isset($validated['auto_apply_limit'])) {
+            $balance = optional($user->credit)->balance ?? 0;
+            if ($validated['auto_apply_limit'] > $balance) {
+                return $this->error(
+                    "You only have {$balance} credits, so you cannot set auto apply limit higher than that.",
+                    422
+                );
+            }
+        }
+
         $setting = $this->autoApplySettingsService->update($user, $validated);
 
         return $this->success(new UserSettingResource($setting), 'Updated', 200);
+    }
+
+
+    public function balance(Request $request)
+    {
+        $user = $request->user();
+        if (!$user) {
+            return $this->error('Unauthenticated', 401);
+        }
+
+        $balance = UserCredit::where('user_id', $user->id)->first();
+        $credit = UserSetting::where('user_id', $user->id)->first();
+
+        return response()->json([
+            'status' => true,
+            'balance' => $balance->balance,
+            'credit' => [
+                'limit' => $credit->auto_apply_limit,
+                'count' => $credit->auto_apply_count ?? 0
+            ]
+        ]);
     }
 }

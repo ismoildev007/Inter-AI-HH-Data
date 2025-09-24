@@ -9,6 +9,8 @@ use Modules\Users\Http\Controllers\HhAccountsController;
 Route::middleware('auth:sanctum')->prefix('v1')->group(function () {
     Route::get('hh-accounts/authorize', [HhAccountsController::class, 'authorizeUrl']);
     Route::get('hh-accounts/callback', [HhAccountsController::class, 'callback']);
+    Route::get('balance', [AuthController::class, 'balance']);
+
 });
 
 
@@ -27,6 +29,7 @@ Route::prefix('auth')->group(function () {
         Route::get('settings/auto-apply', [AuthController::class, 'getAutoApply']);
         Route::post('settings/auto-apply', [AuthController::class, 'createAutoApply']);
         Route::patch('settings/auto-apply', [AuthController::class, 'updateAutoApply']);
+
 
         Route::apiResource('users', UsersController::class)->names('users');
         Route::get('hh-accounts/me', [HhAccountsController::class, 'me']);
