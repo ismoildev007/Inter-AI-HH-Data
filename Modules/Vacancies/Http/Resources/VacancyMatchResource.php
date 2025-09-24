@@ -6,6 +6,7 @@ namespace Modules\Vacancies\Http\Resources;
 
 use App\Models\Application;
 use App\Models\Vacancy;
+use Carbon\Carbon;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\Auth;
 
@@ -35,6 +36,9 @@ class VacancyMatchResource extends JsonResource
                     ?? ($raw['area']['name'] ?? null),
                 'experience'  => $raw['experience']['name'] ?? null,
                 'salary'      => $raw['salary'] ?? null,
+                'published_at' => isset($raw['published_at'])
+                    ? Carbon::parse($raw['published_at'])->format('Y-m-d H:i:s')
+                    : null,
             ],
         ];
     }
