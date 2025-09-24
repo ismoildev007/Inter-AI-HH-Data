@@ -5,6 +5,8 @@ namespace Modules\Applications\Http\Controllers;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Modules\Vacancies\Interfaces\HHVacancyInterface;
+use App\Models\Application;
+use Illuminate\Support\Facades\Auth;
 
 class ApplicationsController extends Controller
 {
@@ -12,9 +14,51 @@ class ApplicationsController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        return view('applications::index');
+        $user = $request->user();
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthenticated',
+            ], 401);
+        }
+
+        $perPage = (int) $request->get('per_page', 15);
+
+        $paginator = Application::query()
+            ->where('user_id', $user->id)
+            ->with(['vacancy:id,title,company,source'])
+            ->orderByDesc('id')
+            ->paginate($perPage);
+
+        $data = $paginator->getCollection()->map(function (Application $app) {
+            $vac = optional($app->vacancy);
+            return [
+                'id' => $app->id,
+                'status' => $app->status,
+                'hh_status' => $app->hh_status,
+                'match_score' => $app->match_score,
+                'submitted_at' => $app->submitted_at,
+                'external_id' => $app->external_id,
+                'vacancy' => [
+                    'id' => $app->vacancy_id,
+                    'title' => $vac->title,
+                    'company' => $vac->company,
+                    'source' => $vac->source,
+                ],
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'data' => $data,
+            'meta' => [
+                'current_page' => $paginator->currentPage(),
+                'per_page' => $paginator->perPage(),
+                'total' => $paginator->total(),
+            ],
+        ]);
     }
 
     /**

@@ -13,8 +13,11 @@ return new class extends Migration
     {
         Schema::create('interviews', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('application_id')->nullable();
+            // Link to applications (nullable for safety), enforce referential integrity
+            $table->foreignId('application_id')->nullable()->constrained('applications')->nullOnDelete();
+            // Optional external scheduling/meeting id (kept as-is, may be linked later)
             $table->unsignedBigInteger('scheduled_id')->nullable();
+            // pending | ready | failed
             $table->string('status')->nullable();
             $table->string('external_ref')->nullable();
             $table->timestamps();

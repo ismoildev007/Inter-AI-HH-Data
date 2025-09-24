@@ -39,6 +39,7 @@ return new class extends Migration
             $table->string('source_id')->nullable()->index();
             $table->string('source_message_id')->nullable()->index();
             $table->string('target_message_id')->nullable()->index();
+            $table->unsignedBigInteger('target_msg_id')->nullable()->index();
             $table->string('signature', 64)->nullable();
 
             $table->timestamps();

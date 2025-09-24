@@ -35,6 +35,7 @@ class Vacancy extends Model
         'source_id',
         'source_message_id',
         'target_message_id',
+        'target_msg_id',
 
     ];
 

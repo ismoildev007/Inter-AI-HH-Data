@@ -74,6 +74,7 @@ class AuthController extends Controller
         }
 
         $user->load([
+            'resumes',
             'role',
             'settings',
             'credit',

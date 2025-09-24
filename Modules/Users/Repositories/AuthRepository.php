@@ -36,7 +36,7 @@ class AuthRepository
                 'email'       => $data['email'],
                 'phone'       => $data['phone'] ?? null,
                 'password'    => Hash::make($data['password']),
-                'birth_date'  => $data['birthDate'] ?? null,
+                'birth_date'  => $data['birth_date'] ?? null,
                 'role_id'     => $role?->id ?? null,
             ]);
 
@@ -139,7 +139,7 @@ class AuthRepository
                 'email'       => $data['email'] ?? $user->email,
                 'phone'       => $data['phone'] ?? $user->phone,
                 'password'    => !empty($data['password']) ? Hash::make($data['password']) : $user->password,
-                'birth_date'  => $data['birthDate'] ?? $user->birth_date,
+                'birth_date'  => $data['birth_date'] ?? $user->birth_date,
             ]);
 
             if (!empty($data['resume_text'])) {
@@ -160,13 +160,18 @@ class AuthRepository
             }
 
             if (!empty($data['experience']) || !empty($data['salary_from']) || !empty($data['salary_to'])) {
-                $user->preferences()->updateOrCreate([], [
-                    'experience_level'    => $data['experience'] ?? $user->preferences->experience_level ?? null,
-                    'desired_salary_from' => $data['salary_from'] ?? $user->preferences->desired_salary_from ?? null,
-                    'desired_salary_to'   => $data['salary_to'] ?? $user->preferences->desired_salary_to ?? null,
-                    'currency'            => 'USD',
-                    'work_mode'           => $data['employment_type'] ?? $user->preferences->work_mode ?? null,
-                ]);
+                $pref = $user->preferences()->first();
+
+                $user->preferences()->updateOrCreate(
+                    ['user_id' => $user->id],
+                    [
+                        'experience_level'    => $data['experience'] ?? $pref?->experience_level,
+                        'desired_salary_from' => $data['salary_from'] ?? $pref?->desired_salary_from,
+                        'desired_salary_to'   => $data['salary_to'] ?? $pref?->desired_salary_to,
+                        'currency'            => 'USD',
+                        'work_mode'           => $data['employment_type'] ?? $pref?->work_mode,
+                    ]
+                );
             }
 
             if (!empty($data['location'])) {
@@ -183,26 +188,15 @@ class AuthRepository
                 ]);
             }
 
-            if (!empty($data['settings'])) {
-                $user->settings()->updateOrCreate([], [
-                    //'auto_apply_enabled'    => $data['settings']['auto_apply_enabled'] ?? $user->settings->auto_apply_enabled,
-                    //'auto_apply_limit'      => $data['settings']['auto_apply_limit'] ?? $user->settings->auto_apply_limit,
-                    'notifications_enabled' => $data['settings']['notifications_enabled'] ?? $user->settings->notifications_enabled,
-                    'language'              => $data['settings']['language'] ?? $user->settings->language,
-                ]);
-            }
-            
-
             return [
                 'status' => 'success',
                 'data'   => $user->load([
                     'role',
-                    'settings',
                     'preferences',
                     'locations',
                     'jobTypes',
                     'resumes',
-                ]),
+                ])->toArray(),
             ];
         });
     }

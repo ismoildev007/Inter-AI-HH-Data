@@ -40,4 +40,8 @@ return [
         'client_secret' => env('HH_CLIENT_SECRET'),
     ],
 
+    'openai' => [
+        'key' => env('OPENAI_API_KEY'),
+    ],
+
 ];

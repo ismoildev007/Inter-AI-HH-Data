@@ -48,4 +48,9 @@ class Application extends Model
     {
         return $this->hasMany(CreditTransaction::class, 'related_application_id');
     }
+
+    public function interviews()
+    {
+        return $this->hasMany(Interview::class);
+    }
 }
