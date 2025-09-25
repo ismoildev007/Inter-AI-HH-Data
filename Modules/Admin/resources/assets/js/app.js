@@ -1,4 +1,5 @@
 import "./dashboard-custom.js";
+import "./visitors-custom.js";
 
 // Ensure these assets are included in the manifest for Blade asset() usage
 import "../images/logo-abbr.png";

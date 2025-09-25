@@ -89,7 +89,7 @@
         <div class="col-xxl-8">
             <div class="card h-100">
                 <div class="card-header"><h5 class="mb-0">Visitors Overview</h5></div>
-                <div class="card-body"><div id="visitors-overview-statistics-chart"></div></div>
+                <div class="card-body"><div id="visitors-overview-chart"></div></div>
             </div>
         </div>
         <div class="col-xxl-4">
@@ -233,5 +233,13 @@
             </div>
         </div>
     </div>
+<script>
+    window.visitorsChart = {
+        labels: @json($visitorsLabels ?? []),
+        series: @json($visitorsSeries ?? [])
+    };
+    // Optional: expose total visits if needed later
+    window.totalVisits = (window.visitorsChart.series || []).reduce((a,b)=>a+(+b||0),0);
+</script>
 </div><!-- /.main-content -->
 @endsection
