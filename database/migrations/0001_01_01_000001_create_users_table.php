@@ -22,7 +22,8 @@ return new class extends Migration
             $table->string('birth_date')->nullable();
             $table->string('avatar_path')->nullable();
             $table->foreignId('role_id')->nullable()->constrained()->onDelete('cascade');
-            $table->string('verify_code')->nullable();
+            $table->string('chat_id')->nullable();
+            $table->string('verify_code')->nullable(); 
             $table->rememberToken();
             $table->timestamps();
         });
