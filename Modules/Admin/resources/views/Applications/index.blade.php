@@ -80,7 +80,7 @@
             </div>
         </div>
         @if($applications instanceof \Illuminate\Contracts\Pagination\Paginator || $applications instanceof \Illuminate\Contracts\Pagination\LengthAwarePaginator)
-            <div class="card-footer">
+            <div class="card-footer d-flex justify-content-center">
                 {{ $applications->links() }}
             </div>
         @endif

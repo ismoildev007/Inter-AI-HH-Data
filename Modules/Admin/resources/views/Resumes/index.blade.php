@@ -71,7 +71,7 @@
             </div>
         </div>
         @if($resumes instanceof \Illuminate\Contracts\Pagination\Paginator || $resumes instanceof \Illuminate\Contracts\Pagination\LengthAwarePaginator)
-            <div class="card-footer">
+            <div class="card-footer d-flex justify-content-center">
                 {{ $resumes->links() }}
             </div>
         @endif
