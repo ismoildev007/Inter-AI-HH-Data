@@ -3,6 +3,7 @@
 namespace Modules\Vacancies\Repositories;
 
 use App\Models\HhAccount;
+use App\Models\Vacancy;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -22,8 +23,8 @@ class HHVacancyRepository implements HHVacancyInterface
 
     public function search(string $query, int $page = 0, int $perPage = 40, array $options = ['area' => 97]): array
     {
-        $dateFrom = now()->subMonth()->startOfDay()->toIso8601String(); 
-        $dateTo   = now()->endOfDay()->toIso8601String();               
+        $dateFrom = now()->subMonth()->startOfDay()->toIso8601String();
+        $dateTo   = now()->endOfDay()->toIso8601String();
 
         $params = array_merge([
             'text'      => $query,
@@ -45,15 +46,11 @@ class HHVacancyRepository implements HHVacancyInterface
 
 
 
-    public function getById(string $id): array
+    public function getById(string $id)
     {
-        $response = $this->http()->get("{$this->baseUrl}/vacancies/{$id}");
-
-        if ($response->failed()) {
-            throw new \RuntimeException("HH API getById failed: " . $response->body());
-        }
-
-        return $response->json();
+        return Vacancy::with(['employer', 'area', 'schedule', 'employment'])
+            ->where('external_id', $id)
+            ->first();
     }
 
     public function applyToVacancy(string $vacancyId, string $resumeId, ?string $coverLetter = null): array

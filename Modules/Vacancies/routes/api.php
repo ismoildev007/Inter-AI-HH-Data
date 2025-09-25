@@ -33,7 +33,7 @@ Route::prefix('v1')
         /**
          * HeadHunter API integration
          */
-        Route::prefix('hh')
+        Route::middleware(['auth:sanctum'])->prefix('hh')
             ->name('hh.')
             ->group(function () {
                 Route::get('vacancies', [HHVacancyController::class, 'index'])

@@ -40,9 +40,29 @@ class HHVacancyController extends Controller
     {
         $vacancy = $this->hh->getById($id);
 
+        if (!$vacancy) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Vacancy not found',
+            ], 404);
+        }
+
+        $user = auth()->user();
+
+        $applied = false;
+        if ($user) {
+            $applied = \App\Models\Application::where('user_id', $user->id)
+                ->where('vacancy_id', $vacancy->id)
+                ->exists();
+        }
+
         return response()->json([
             'success' => true,
-            'data'    => $vacancy,
+            'data'    => [
+                'vacancy' => $vacancy->id,
+                'raw'     => json_decode($vacancy->raw_data, true), 
+                'status' => $applied, 
+            ],
         ]);
     }
 
@@ -50,7 +70,7 @@ class HHVacancyController extends Controller
     {
         $user = auth()->user();
 
-        $resumeId = $user->settings->resume_id; 
+        $resumeId = $user->settings->resume_id;
         if (!$resumeId) {
             return response()->json([
                 'success' => false,
@@ -117,6 +137,4 @@ class HHVacancyController extends Controller
             ]);
         });
     }
-
-    
 }
