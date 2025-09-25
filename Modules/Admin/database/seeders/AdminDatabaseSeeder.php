@@ -3,6 +3,7 @@
 namespace Modules\Admin\Database\Seeders;
 
 use Illuminate\Database\Seeder;
+use Modules\Admin\Database\Seeders\AdminUserSeeder;
 
 class AdminDatabaseSeeder extends Seeder
 {
@@ -11,6 +12,8 @@ class AdminDatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // $this->call([]);
+        $this->call([
+            AdminUserSeeder::class,
+        ]);
     }
 }

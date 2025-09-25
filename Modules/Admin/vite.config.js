@@ -14,6 +14,7 @@ export default defineConfig({
         laravel({
             publicDirectory: '../../public',
             buildDirectory: 'build-admin',
+            hotFile: '../../storage/vite.hot',
             input: [
                 __dirname + '/resources/assets/sass/app.scss',
                 __dirname + '/resources/assets/js/app.js'
