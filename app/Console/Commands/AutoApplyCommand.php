@@ -41,8 +41,16 @@ class AutoApplyCommand extends Command
                 continue;
             }
 
+            $remaining = $setting->auto_apply_limit - $setting->auto_apply_count;
+            if ($remaining <= 0) {
+                continue; 
+            }
+
             $matches = $user->resumes->flatMap->matchResults->where('score_percent', '>=', 70);
             foreach ($matches as $match) {
+                if ($remaining <= 0) {
+                    break; 
+                }
                 $exists = Application::where('user_id', $user->id)
                     ->where('vacancy_id', $match->vacancy_id)
                     ->exists();
@@ -62,6 +70,8 @@ class AutoApplyCommand extends Command
                     AutoApplyJob::dispatch($application)
                         ->onQueue('autoapply');
                 });
+
+                $remaining--; 
             }
         }
     }

@@ -22,24 +22,32 @@ class VacancyMatchResource extends JsonResource
             ->where('vacancy_id', $this->vacancy_id)
             ->exists();
 
+        $vacancyData = [
+            'id'          => $vacancy?->id,
+            'source'      => $vacancy->source ?? 'telegram',
+            'external_id' => $vacancy?->external_id ?? null,
+            'company'     => $raw['employer']['name'] ?? null,
+            'title'       => $vacancy?->title,
+            'location'    => $vacancy?->area?->name
+                ?? ($raw['area']['name'] ?? null),
+            'experience'  => $raw['experience']['name'] ?? null,
+            'salary'      => $raw['salary'] ?? null,
+            'published_at' => isset($raw['published_at'])
+                ? Carbon::parse($raw['published_at'])->format('Y-m-d H:i:s')
+                : null,
+        ];
+
+        // faqat telegram bo'lsa message_id qo‘shamiz
+        if ($vacancy?->source === 'telegram') {
+            $vacancyData['message_id'] = $vacancy->target_message_id;
+        }
+
         return [
             'resume_id'     => $this->resume_id,
             'vacancy_id'    => $this->vacancy_id,
             'score_percent' => (int) round($this->score_percent),
-            'status'       => $applied,
-            'vacancy' => [
-                'id'          => $vacancy?->id,
-                'external_id' => $vacancy?->external_id,
-                'company'     => $raw['employer']['name'] ?? null,
-                'title'       => $vacancy?->title,
-                'location'    => $vacancy?->area?->name
-                    ?? ($raw['area']['name'] ?? null),
-                'experience'  => $raw['experience']['name'] ?? null,
-                'salary'      => $raw['salary'] ?? null,
-                'published_at' => isset($raw['published_at'])
-                    ? Carbon::parse($raw['published_at'])->format('Y-m-d H:i:s')
-                    : null,
-            ],
+            'status'        => $applied,
+            'vacancy'       => $vacancyData,
         ];
     }
 }

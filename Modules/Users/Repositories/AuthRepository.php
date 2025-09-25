@@ -93,6 +93,11 @@ class AuthRepository
                 ['*'],
                 now()->addHours(4)
             )->plainTextToken;
+            $verifyCode = rand(100000, 999999);
+            $user->update(['verify_code' => $verifyCode]);
+
+            $user->notify(new \App\Notifications\VerifyEmailCodeNotification($verifyCode));
+
 
             // ✅ Avtomatik login qilingan formatda qaytarish
             return [

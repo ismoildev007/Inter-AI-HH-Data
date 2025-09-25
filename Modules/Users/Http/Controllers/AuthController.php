@@ -193,4 +193,33 @@ class AuthController extends Controller
             ]
         ]);
     }
+
+    public function verifyEmail(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email',
+            'code'  => 'required|integer',
+        ]);
+
+        $user = User::where('email', $request->email)
+            ->where('verify_code', $request->code)
+            ->first();
+
+        if (!$user) {
+            return response()->json([
+                'status'  => false,
+                'message' => 'Invalid verification code'
+            ], 422);
+        }
+
+        $user->update([
+            'email_verified_at' => now(),
+            'verify_code'       => null,
+        ]);
+
+        return response()->json([
+            'status'  => true,
+            'message' => 'Email verified successfully'
+        ]);
+    }
 }

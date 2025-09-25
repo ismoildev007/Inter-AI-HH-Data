@@ -1,4 +1,4 @@
-<?php 
+<?php
 
 namespace Modules\Resumes\Repositories;
 
@@ -19,10 +19,12 @@ class ResumeRepository implements ResumeInterface
         // Ensure only one primary resume per user
         if (! empty($data['is_primary']) && $data['is_primary'] === true) {
             $this->setPrimary($resume);
+            $resume->refresh(); // 🟢 bu yerda yangilab olish kerak
         }
 
         return $resume;
     }
+
 
     public function update(Resume $resume, array $data): Resume
     {

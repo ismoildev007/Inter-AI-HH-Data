@@ -44,7 +44,6 @@ class ApplicationsController extends Controller
                 'vacancy' => [
                     'id' => $app->vacancy_id,
                     'title' => $vac->title,
-                    'company' => $vac->company,
                     'source' => $vac->source,
                 ],
             ];

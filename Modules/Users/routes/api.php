@@ -5,6 +5,8 @@ use Modules\Users\Http\Controllers\UsersController;
 use Modules\Users\Http\Controllers\AuthController;
 use Modules\Users\Http\Controllers\HhAccountsController;
 
+Route::post('/verify-email', [AuthController::class, 'verifyEmail']);
+
 // Public OAuth endpoints (no auth required yet)
 Route::middleware('auth:sanctum')->prefix('v1')->group(function () {
     Route::get('hh-accounts/authorize', [HhAccountsController::class, 'authorizeUrl']);
@@ -38,3 +40,4 @@ Route::prefix('auth')->group(function () {
         Route::post('hh-accounts/refresh', [HhAccountsController::class, 'refreshToken']);
     });
 });
+
