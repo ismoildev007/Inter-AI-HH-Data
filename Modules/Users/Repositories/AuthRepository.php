@@ -6,11 +6,14 @@ use App\Models\Role;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Notification;
+use App\Notifications\VerifyEmailCodeNotification;
 
 class AuthRepository
 {
     public function register(array $data): array
     {
+        
         return \DB::transaction(function () use ($data) {
             if (User::where('email', $data['email'])->exists()) {
                 return [
@@ -87,16 +90,14 @@ class AuthRepository
                 'balance' => 50,
             ]);
 
-            // ✅ Token yaratish (login bilan bir xil)
+
+
             $token = $user->createToken(
                 'api_token',
                 ['*'],
                 now()->addHours(4)
             )->plainTextToken;
-            $verifyCode = rand(100000, 999999);
-            $user->update(['verify_code' => $verifyCode]);
-
-            $user->notify(new \App\Notifications\VerifyEmailCodeNotification($verifyCode));
+            
 
 
             // ✅ Avtomatik login qilingan formatda qaytarish
@@ -211,7 +212,9 @@ class AuthRepository
             return null;
         }
 
-        $user  = Auth::user();
+        $user = Auth::user();
+
+        // 🔑 2. Create token
         $token = $user->createToken(
             'api_token',
             ['*'],
@@ -219,9 +222,37 @@ class AuthRepository
         )->plainTextToken;
 
         return [
-            'user'       => $user,
-            'token'      => $token,
-            'expires_at' => now()->addHours(4)->toDateTimeString(),
+            'status' => 'success',
+            'data'   => [
+                'user'       => $user,
+                'token'      => $token,
+                'expires_at' => now()->addHours(4)->toDateTimeString(),
+            ]
+        ];
+    }
+
+    public function requestVerificationCode(string $email): array
+    {
+        if (User::where('email', $email)->exists()) {
+            return [
+                'status'  => 'error',
+                'message' => 'Email already exists',
+                'code'    => 422,
+            ];
+        }
+
+        $code = rand(100000, 999999);
+
+        // Cache ga saqlash (10 daqiqa amal qiladi)
+        cache()->put("verify_code:$email", $code, now()->addMinutes(10));
+
+        // Emailga yuborish
+        Notification::route('mail', $email)
+        ->notify(new VerifyEmailCodeNotification($code));
+
+        return [
+            'status'  => 'success',
+            'message' => 'Verification code sent to your email',
         ];
     }
 }

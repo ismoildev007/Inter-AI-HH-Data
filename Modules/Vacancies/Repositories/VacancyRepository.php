@@ -195,9 +195,7 @@ class VacancyRepository implements VacancyInterface
         $scheduleId = null;
         if (!empty($hhVacancy['schedule'])) {
             $schedule = HhSchedule::updateOrCreate(
-                [
-                    'external_id' => $hhVacancy['schedule']['id'],
-                ],
+                ['external_id' => $hhVacancy['schedule']['id']],
                 [
                     'name'     => $hhVacancy['schedule']['name'] ?? '',
                     'raw_json' => json_encode($hhVacancy['schedule'], JSON_UNESCAPED_UNICODE),
@@ -210,9 +208,7 @@ class VacancyRepository implements VacancyInterface
         $employmentId = null;
         if (!empty($hhVacancy['employment'])) {
             $employment = HhEmployment::updateOrCreate(
-                [
-                    'external_id' => $hhVacancy['employment']['id'],
-                ],
+                ['external_id' => $hhVacancy['employment']['id']],
                 [
                     'name'     => $hhVacancy['employment']['name'] ?? '',
                     'raw_json' => json_encode($hhVacancy['employment'], JSON_UNESCAPED_UNICODE),
@@ -234,30 +230,31 @@ class VacancyRepository implements VacancyInterface
             }
         }
 
-        // Create or update vacancy
-        $vacancy = Vacancy::updateOrCreate(
-            [
-                'source'      => 'hh',
-                'external_id' => $hhVacancy['id'],
-            ],
-            [
-                'employer_id'     => $employerId,
-                'area_id'         => $areaId,
-                'schedule_id'     => $scheduleId,
-                'employment_id'   => $employmentId,
-                'title'           => $hhVacancy['name'] ?? '',
-                'description'     => $hhVacancy['description']
-                    ?? (($hhVacancy['snippet']['requirement'] ?? '') . "\n" . ($hhVacancy['snippet']['responsibility'] ?? '')),
-                'salary_from'     => $salary['from'] ?? null,
-                'salary_to'       => $salary['to'] ?? null,
-                'salary_currency' => $salary['currency'] ?? null,
-                'salary_gross'    => $salary['gross'] ?? false,
-                'published_at'    => $publishedAt,
-                'apply_url'       => $hhVacancy['alternate_url'] ?? null,
-                'raw_data'        => json_encode($hhVacancy, JSON_UNESCAPED_UNICODE),
-                'updated_at'      => $now,
-            ]
-        );
+        // ⚡ Eng muhim qism: updateOrCreate o‘rniga firstOrNew
+        $vacancy = Vacancy::firstOrNew([
+            'source'      => 'hh',
+            'external_id' => $hhVacancy['id'],
+        ]);
+
+        $vacancy->fill([
+            'employer_id'     => $employerId,
+            'area_id'         => $areaId,
+            'schedule_id'     => $scheduleId,
+            'employment_id'   => $employmentId,
+            'title'           => $hhVacancy['name'] ?? '',
+            'description'     => $hhVacancy['description']
+                ?? (($hhVacancy['snippet']['requirement'] ?? '') . "\n" . ($hhVacancy['snippet']['responsibility'] ?? '')),
+            'salary_from'     => $salary['from'] ?? null,
+            'salary_to'       => $salary['to'] ?? null,
+            'salary_currency' => $salary['currency'] ?? null,
+            'salary_gross'    => $salary['gross'] ?? false,
+            'published_at'    => $publishedAt,
+            'apply_url'       => $hhVacancy['alternate_url'] ?? null,
+            'raw_data'        => json_encode($hhVacancy, JSON_UNESCAPED_UNICODE),
+            'updated_at'      => $now,
+        ]);
+
+        $vacancy->save();
 
         return $vacancy;
     }

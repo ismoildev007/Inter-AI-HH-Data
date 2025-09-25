@@ -17,7 +17,6 @@ class VacancyMatchResource extends JsonResource
         $vacancy = Vacancy::find($this->vacancy_id);
         $raw = $vacancy?->raw_data ? json_decode($vacancy->raw_data, true) : [];
 
-        // 🔎 Check if applied
         $applied = Application::where('user_id', Auth::id())
             ->where('vacancy_id', $this->vacancy_id)
             ->exists();
@@ -37,12 +36,12 @@ class VacancyMatchResource extends JsonResource
                 : null,
         ];
 
-        // faqat telegram bo'lsa message_id qo‘shamiz
         if ($vacancy?->source === 'telegram') {
             $vacancyData['message_id'] = $vacancy->target_message_id;
         }
 
         return [
+            // 'id' => $this->id,
             'resume_id'     => $this->resume_id,
             'vacancy_id'    => $this->vacancy_id,
             'score_percent' => (int) round($this->score_percent),

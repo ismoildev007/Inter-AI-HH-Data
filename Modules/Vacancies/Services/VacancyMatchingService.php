@@ -39,6 +39,7 @@ class VacancyMatchingService
             Log::info('No HH vacancies found', ['query' => $query]);
         }
 
+
         // --- Fetch from local DB (own vacancies) ---
         $localVacancies = \App\Models\Vacancy::where('title', 'like', "%{$query}%")
             ->get()
@@ -80,7 +81,9 @@ class VacancyMatchingService
                     'raw'  => $full,
                 ];
             }
-        }
+        }      
+        
+
 
         if (empty($vacanciesPayload)) {
             Log::info('No vacancies to match for resume', ['resume_id' => $resume->id]);
@@ -121,7 +124,13 @@ class VacancyMatchingService
                 } else {
                     $payload = $vacancyMap["new_{$match['vacancy_index']}"] ?? null;
                     if ($payload && isset($payload['external_id'])) {
-                        $vac = $this->vacancyRepository->createFromHH($payload['raw']);
+                        $vac = \App\Models\Vacancy::where('source', 'hh')
+                            ->where('external_id', $payload['external_id'])
+                            ->first();
+
+                        if (!$vac) {
+                            $vac = $this->vacancyRepository->createFromHH($payload['raw']);
+                        }
                     }
                 }
 

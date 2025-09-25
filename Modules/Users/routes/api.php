@@ -5,6 +5,7 @@ use Modules\Users\Http\Controllers\UsersController;
 use Modules\Users\Http\Controllers\AuthController;
 use Modules\Users\Http\Controllers\HhAccountsController;
 
+Route::post('/sending-code', [AuthController::class, 'requestVerificationCode']);
 Route::post('/verify-email', [AuthController::class, 'verifyEmail']);
 
 // Public OAuth endpoints (no auth required yet)

@@ -194,32 +194,40 @@ class AuthController extends Controller
         ]);
     }
 
+    public function requestVerificationCode(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email'
+        ]);
+
+        return response()->json(
+            $this->repo->requestVerificationCode($request->email)
+        );
+    }
+
+
+
     public function verifyEmail(Request $request)
     {
         $request->validate([
             'email' => 'required|email',
-            'code'  => 'required|integer',
+            'code'  => 'required|digits:6',
         ]);
 
-        $user = User::where('email', $request->email)
-            ->where('verify_code', $request->code)
-            ->first();
+        $cachedCode = cache()->get("verify_code:{$request->email}");
 
-        if (!$user) {
+        if (!$cachedCode || $cachedCode != $request->code) {
             return response()->json([
                 'status'  => false,
-                'message' => 'Invalid verification code'
+                'message' => 'Invalid or expired verification code'
             ], 422);
         }
 
-        $user->update([
-            'email_verified_at' => now(),
-            'verify_code'       => null,
-        ]);
+        cache()->forget("verify_code:{$request->email}");
 
         return response()->json([
             'status'  => true,
-            'message' => 'Email verified successfully'
+            'message' => 'Email verified successfully, you can now complete registration'
         ]);
     }
 }
