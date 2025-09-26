@@ -157,6 +157,7 @@ class VacancyRepository implements VacancyInterface
     public function createFromHH(array $hhVacancy): Vacancy
     {
         $now = now();
+        Log::info('repository is coming');
 
         // Employer
         $employerId = null;

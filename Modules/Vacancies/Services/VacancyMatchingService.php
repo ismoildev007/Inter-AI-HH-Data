@@ -25,6 +25,7 @@ class VacancyMatchingService
 
     public function matchResume(Resume $resume, string $query): array
     {
+       
         Log::info(['resume info' => $query]);
         Log::info('Job started for resume', ['resume_id' => $resume->id]);
 
@@ -67,8 +68,12 @@ class VacancyMatchingService
             if ($localVacancies->has($extId)) {
                 continue; // skip duplicate
             }
-dd($item['id']);
-            $full =  $this->hhRepository->getById($item['id']);
+            
+
+            $full = cache()->remember("hh:vacancy:{$extId}", now()->addMinutes(10), function () use ($item) {
+                return $this->hhRepository->getById($item['id']);
+            });
+            
 
             if (!empty($full['description'])) {
                 $vacanciesPayload[] = [
@@ -83,7 +88,6 @@ dd($item['id']);
             Log::info('No vacancies to match for resume', ['resume_id' => $resume->id]);
             return [];
         }
-dd('tets');
         // --- Call Python matcher ---
         $url = config('services.matcher.url', 'https://python.inter-ai.uz/bulk-match-fast');
         $response = Http::timeout(60)->post($url, [
@@ -97,7 +101,6 @@ dd('tets');
             Log::error('Matcher API failed', ['resume_id' => $resume->id, 'body' => $response->body()]);
             return [];
         }
-        dd('salom');
         Log::info($response->json());
         $results = $response->json();
         $matches = $results['results'][0] ?? [];
@@ -124,7 +127,6 @@ dd('tets');
                         $vac = \App\Models\Vacancy::where('source', 'hh')
                             ->where('external_id', $payload['external_id'])
                             ->first();
-                            
                         if (!$vac) {
                             Log::info(['payload' => $payload['raw']]);
                             $vac = $this->vacancyRepository->createFromHH($payload['raw']);

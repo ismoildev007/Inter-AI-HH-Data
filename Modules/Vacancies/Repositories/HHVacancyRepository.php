@@ -46,11 +46,15 @@ class HHVacancyRepository implements HHVacancyInterface
 
 
 
-    public function getById(string $id)
+    public function getById(string $id): array
     {
-        return Vacancy::with(['employer', 'area', 'schedule', 'employment'])
-            ->where('external_id', $id)
-            ->first();
+        $response = $this->http()->get("{$this->baseUrl}/vacancies/{$id}");
+
+        if ($response->failed()) {
+            throw new \RuntimeException("HH API getById failed: " . $response->body());
+        }
+
+        return $response->json();
     }
 
     public function applyToVacancy(string $vacancyId, string $resumeId, ?string $coverLetter = null): array
