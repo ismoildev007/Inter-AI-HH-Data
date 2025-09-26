@@ -155,13 +155,13 @@
         <div class="col-xxl-3 col-md-6">
             <div class="card h-100"><div class="card-body"><h6>Conversions Rate</h6><div id="conversions-rate"></div></div></div>
         </div>
-        <div class="col-xxl-8 col-12">
+        <!-- <div class="col-xxl-8 col-12">
             <div class="card h-100">
                 <div class="card-header"><h5 class="mb-0">Leads Overview</h5></div>
                 <div class="card-body"><div id="leads-overview-donut"></div></div>
             </div>
-        </div>
-        <div class="col-xxl-4 col-12">
+        </div> -->
+        <!-- <div class="col-xxl-4 col-12">
             <div class="card h-100">
                 <div class="card-header"><h5 class="mb-0">Team Progress</h5></div>
                 <div class="card-body">
@@ -195,7 +195,7 @@
                     </div>
                 </div>
             </div>
-        </div>
+        </div> -->
     </div>
 
     <!-- Upcoming Schedule + Social Radar -->

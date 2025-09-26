@@ -26,12 +26,12 @@ class ChannelsPageController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
-        $data = $request->validate([
-            'channel_id' => ['required', 'string'],
-            'username' => ['nullable', 'string'],
-            'is_source' => ['nullable', 'boolean'],
-            'is_target' => ['nullable', 'boolean'],
-        ]);
+$data = $request->validate([
+    'channel_id' => ['required', 'string', 'unique:channels,channel_id'],
+    'username'   => ['nullable', 'string', 'unique:channels,username'],
+    'is_source'  => ['nullable', 'boolean'],
+    'is_target'  => ['nullable', 'boolean'],
+]);
 
         $isSource = (bool) ($data['is_source'] ?? false);
         $isTarget = (bool) ($data['is_target'] ?? false);
