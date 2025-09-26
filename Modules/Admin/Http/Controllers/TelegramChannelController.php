@@ -26,7 +26,10 @@ class TelegramChannelController extends Controller
      */
     public function create()
     {
-        return view('admin::TelegramChannels.create');
+        $target = TelegramChannel::where('is_target', true)
+            ->first(['id','channel_id','username']);
+        $hasTarget = (bool) $target;
+        return view('admin::TelegramChannels.create', compact('hasTarget','target'));
     }
 
     /**
@@ -70,5 +73,17 @@ class TelegramChannelController extends Controller
 
         return redirect()->route('admin.telegram_channels.index')
             ->with('status', 'Channel saved: #'.$channel->id);
+    }
+
+    /**
+     * Delete a telegram channel.
+     */
+    public function destroy(TelegramChannel $channel): RedirectResponse
+    {
+        $id = $channel->id;
+        $channel->delete();
+
+        return redirect()->route('admin.telegram_channels.index')
+            ->with('status', "Channel #{$id} deleted.");
     }
 }

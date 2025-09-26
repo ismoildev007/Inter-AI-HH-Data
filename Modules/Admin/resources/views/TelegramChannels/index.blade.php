@@ -37,7 +37,7 @@
                             <th class="text-muted">Channel ID</th>
                             <th class="text-muted">Username</th>
                             <th class="text-muted">Role</th>
-                           
+                            <th class="text-end text-muted" style="width: 1%; white-space: nowrap;">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -55,7 +55,18 @@
                                         <span class="badge bg-light text-dark">—</span>
                                     @endif
                                 </td>
-                                
+<td class="text-end">
+    <form action="{{ route('admin.telegram_channels.destroy', $ch->id) }}"
+          method="POST"
+          onsubmit="return confirm('Delete channel #{{ $ch->id }}?');"
+          class="d-inline">
+        @csrf
+        @method('DELETE')
+        <button type="submit" class="btn btn-sm btn-danger">
+            <i class="feather-trash-2"></i> Delete
+        </button>
+    </form>
+</td>
                             </tr>
                         @empty
                             <tr>
