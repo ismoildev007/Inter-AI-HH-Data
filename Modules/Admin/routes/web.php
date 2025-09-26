@@ -40,5 +40,6 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('telegram-channels', [TelegramChannelController::class, 'index'])->name('telegram_channels.index');
         Route::get('telegram-channels/create', [TelegramChannelController::class, 'create'])->name('telegram_channels.create');
         Route::post('telegram-channels', [TelegramChannelController::class, 'store'])->name('telegram_channels.store');
+        Route::delete('telegram-channels/{channel}', [TelegramChannelController::class, 'destroy'])->name('telegram_channels.destroy');
     });
 });

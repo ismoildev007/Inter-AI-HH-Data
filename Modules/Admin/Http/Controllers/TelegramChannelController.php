@@ -71,4 +71,16 @@ class TelegramChannelController extends Controller
         return redirect()->route('admin.telegram_channels.index')
             ->with('status', 'Channel saved: #'.$channel->id);
     }
+
+    /**
+     * Delete a telegram channel.
+     */
+    public function destroy(TelegramChannel $channel): RedirectResponse
+    {
+        $id = $channel->id;
+        $channel->delete();
+
+        return redirect()->route('admin.telegram_channels.index')
+            ->with('status', "Channel #{$id} deleted.");
+    }
 }
