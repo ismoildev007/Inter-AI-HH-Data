@@ -3,9 +3,11 @@
 namespace Modules\Users\Repositories;
 
 use App\Models\HhAccount;
+use App\Models\UserSetting;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use RuntimeException;
 
@@ -130,6 +132,24 @@ class HhAccountRepository implements HhAccountRepositoryInterface
             'raw_json' => $data,
         ]);
 
+        $resumesResp = Http::withToken($accessToken)
+            ->get($baseUrl . '/api/resumes/mine');
+            Log::info(['resumes' => $resumesResp]);
+
+        if ($resumesResp->ok()) {
+            $resumes = $resumesResp->json()['items'] ?? [];
+
+            // find active resume
+            $activeResume = collect($resumes)->firstWhere('status', 'active');
+            Log::info(['active resume' => $activeResume]);
+            if ($activeResume) {
+                UserSetting::updateOrCreate(
+                    ['user_id' => $oauth['user_id']],
+                    ['resume_id' => $activeResume['id']]
+                );
+            }
+        }
+
         Cache::forget('hh:oauth:state:' . $state);
         return $account;
     }
@@ -176,7 +196,7 @@ class HhAccountRepository implements HhAccountRepositoryInterface
         $expiresIn = Arr::get($data, 'expires_in');
 
         if (!$accessToken) {
-             throw new RuntimeException('Token response missing access_token');
+            throw new RuntimeException('Token response missing access_token');
         }
 
         $account->access_token = $accessToken;
@@ -188,4 +208,3 @@ class HhAccountRepository implements HhAccountRepositoryInterface
         return $account;
     }
 }
-

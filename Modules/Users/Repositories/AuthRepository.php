@@ -43,15 +43,7 @@ class AuthRepository
                 'role_id'     => $role?->id ?? null,
             ]);
 
-            // Resume (agar matn bo‘lsa)
-            if (!empty($data['resume_text'])) {
-                $user->resumes()->create([
-                    'title'       => 'Text Resume',
-                    'description' => $data['resume_text'],
-                    'parsed_text' => $data['resume_text'],
-                    'is_primary'  => true,
-                ]);
-            }
+            
 
             // Preferences
             $user->preferences()->create([
