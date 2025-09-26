@@ -39,7 +39,6 @@ class VacancyMatchingService
             Log::info('No HH vacancies found', ['query' => $query]);
         }
 
-
         // --- Fetch from local DB (own vacancies) ---
         $localVacancies = \App\Models\Vacancy::where('title', 'like', "%{$query}%")
             ->get()
@@ -49,15 +48,15 @@ class VacancyMatchingService
 
         // --- Prepare merged vacancies ---
         $vacanciesPayload = [];
-
         // Add local vacancies first
+
         foreach ($localVacancies as $v) {
             $vacanciesPayload[] = [
                 'id'   => $v->id,
                 'text' => strip_tags($v->description),
             ];
         }
-
+        
         // Add HH vacancies if not already in local
         foreach ($hhItems as $item) {
             $extId = $item['id'] ?? null;
@@ -68,10 +67,8 @@ class VacancyMatchingService
             if ($localVacancies->has($extId)) {
                 continue; // skip duplicate
             }
-
-            $full = cache()->remember("hh:vacancy:{$extId}", now()->addHours(6), function () use ($item) {
-                return $this->hhRepository->getById($item['id']);
-            });
+dd($item['id']);
+            $full =  $this->hhRepository->getById($item['id']);
 
             if (!empty($full['description'])) {
                 $vacanciesPayload[] = [
@@ -82,14 +79,11 @@ class VacancyMatchingService
                 ];
             }
         }
-
-
-
         if (empty($vacanciesPayload)) {
             Log::info('No vacancies to match for resume', ['resume_id' => $resume->id]);
             return [];
         }
-
+dd('tets');
         // --- Call Python matcher ---
         $url = config('services.matcher.url', 'https://python.inter-ai.uz/bulk-match-fast');
         $response = Http::timeout(60)->post($url, [
@@ -103,6 +97,7 @@ class VacancyMatchingService
             Log::error('Matcher API failed', ['resume_id' => $resume->id, 'body' => $response->body()]);
             return [];
         }
+        dd('salom');
         Log::info($response->json());
         $results = $response->json();
         $matches = $results['results'][0] ?? [];
@@ -129,9 +124,8 @@ class VacancyMatchingService
                         $vac = \App\Models\Vacancy::where('source', 'hh')
                             ->where('external_id', $payload['external_id'])
                             ->first();
-                            dd($payload['raw']);
+                            
                         if (!$vac) {
-                            dd($payload['raw']);
                             Log::info(['payload' => $payload['raw']]);
                             $vac = $this->vacancyRepository->createFromHH($payload['raw']);
                         }
