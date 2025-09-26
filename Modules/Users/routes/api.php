@@ -13,7 +13,10 @@ Route::middleware('auth:sanctum')->prefix('v1')->group(function () {
     Route::get('hh-accounts/authorize', [HhAccountsController::class, 'authorizeUrl']);
     Route::get('hh-accounts/callback', [HhAccountsController::class, 'callback']);
     Route::get('balance', [AuthController::class, 'balance']);
-
+    Route::get('hh-accounts/me', [HhAccountsController::class, 'me']);
+    Route::post('hh-accounts/attach', [HhAccountsController::class, 'attach']);
+    Route::delete('hh-accounts/me', [HhAccountsController::class, 'disconnect']);
+    Route::post('hh-accounts/refresh', [HhAccountsController::class, 'refreshToken']);
 });
 
 
@@ -24,7 +27,7 @@ Route::prefix('auth')->group(function () {
     Route::middleware('auth:sanctum')->group(function () {
         Route::get('me', [AuthController::class, 'me']);
         Route::post('logout', [AuthController::class, 'logout']);
-        Route::match(['put','patch'], 'users/{id}', [AuthController::class, 'update']);
+        Route::match(['put', 'patch'], 'users/{id}', [AuthController::class, 'update']);
 
         // Authenticated endpoints (will work when user/auth ready)
 
@@ -35,10 +38,5 @@ Route::prefix('auth')->group(function () {
 
 
         Route::apiResource('users', UsersController::class)->names('users');
-        Route::get('hh-accounts/me', [HhAccountsController::class, 'me']);
-        Route::post('hh-accounts/attach', [HhAccountsController::class, 'attach']);
-        Route::delete('hh-accounts/me', [HhAccountsController::class, 'disconnect']);
-        Route::post('hh-accounts/refresh', [HhAccountsController::class, 'refreshToken']);
     });
 });
-

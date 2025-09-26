@@ -123,24 +123,30 @@ class HhAccountRepository implements HhAccountRepositoryInterface
 
         $expiresAt = $expiresIn ? now()->addSeconds((int) $expiresIn) : null;
 
-        $account = HhAccount::create([
-            'user_id' => $oauth['user_id'] ?? null,
-            'access_token' => $accessToken,
-            'refresh_token' => $refreshToken,
-            'expires_at' => $expiresAt,
-            'scope' => is_array($scope) ? implode(' ', $scope) : (string) $scope,
-            'raw_json' => $data,
-        ]);
+        $account = HhAccount::updateOrCreate(
+            ['user_id' => $oauth['user_id'] ?? null], 
+            [
+                'access_token'  => $accessToken,
+                'refresh_token' => $refreshToken,
+                'expires_at'    => $expiresAt,
+                'scope'         => is_array($scope) ? implode(' ', $scope) : (string) $scope,
+                'raw_json'      => $data,
+            ]
+        );
 
-        $resumesResp = Http::withToken($accessToken)
-            ->get($baseUrl . '/api/resumes/mine');
-            Log::info(['resumes' => $resumesResp]);
+        $url = 'https://api.hh.ru/resumes/mine';
+
+        $resumesResp = Http::withHeaders([
+            'Authorization' => 'Bearer ' . $accessToken,
+            'User-Agent' => 'InterAi/1.0 (+support@inter-ai.uz',
+        ])->get($url);
+        Log::info(['resume' => $resumesResp->json()]);
 
         if ($resumesResp->ok()) {
             $resumes = $resumesResp->json()['items'] ?? [];
 
             // find active resume
-            $activeResume = collect($resumes)->firstWhere('status', 'active');
+            $activeResume = collect($resumes)->firstWhere('status.id', 'published');
             Log::info(['active resume' => $activeResume]);
             if ($activeResume) {
                 UserSetting::updateOrCreate(
@@ -173,7 +179,6 @@ class HhAccountRepository implements HhAccountRepositoryInterface
         $clientSecret = $this->cfg('client_secret');
         $baseUrl = rtrim($this->cfg('base_url', 'https://hh.ru') ?? 'https://hh.ru', '/');
         $tokenPath = ltrim($this->cfg('token_path', '/oauth/token') ?? '/oauth/token', '/');
-
         $payload = [
             'grant_type' => 'refresh_token',
             'refresh_token' => $account->refresh_token,
@@ -183,7 +188,6 @@ class HhAccountRepository implements HhAccountRepositoryInterface
         if ($clientSecret) {
             $payload['client_secret'] = $clientSecret;
         }
-
         $resp = Http::asForm()->post($baseUrl . '/' . trim($tokenPath, '/'), $payload);
 
         if (!$resp->ok()) {

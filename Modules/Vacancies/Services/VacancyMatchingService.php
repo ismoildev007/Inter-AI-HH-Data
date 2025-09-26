@@ -81,8 +81,8 @@ class VacancyMatchingService
                     'raw'  => $full,
                 ];
             }
-        }      
-        
+        }
+
 
 
         if (empty($vacanciesPayload)) {
@@ -103,7 +103,7 @@ class VacancyMatchingService
             Log::error('Matcher API failed', ['resume_id' => $resume->id, 'body' => $response->body()]);
             return [];
         }
-
+        Log::info($response->json());
         $results = $response->json();
         $matches = $results['results'][0] ?? [];
 
@@ -115,20 +115,24 @@ class VacancyMatchingService
         // --- Save results ---
         $savedData = [];
         foreach ($matches as $match) {
+            
             if ($match['score'] >= 70) {
                 $vacId = $match['vacancy_id'] ?? null;
                 $vac = null;
-
                 if ($vacId) {
                     $vac = \App\Models\Vacancy::find($vacId);
                 } else {
+                    
                     $payload = $vacancyMap["new_{$match['vacancy_index']}"] ?? null;
                     if ($payload && isset($payload['external_id'])) {
+
                         $vac = \App\Models\Vacancy::where('source', 'hh')
                             ->where('external_id', $payload['external_id'])
                             ->first();
-
+                            dd($payload['raw']);
                         if (!$vac) {
+                            dd($payload['raw']);
+                            Log::info(['payload' => $payload['raw']]);
                             $vac = $this->vacancyRepository->createFromHH($payload['raw']);
                         }
                     }
