@@ -176,7 +176,7 @@ class HhAccountRepository implements HhAccountRepositoryInterface
         $expiresIn = Arr::get($data, 'expires_in');
 
         if (!$accessToken) {
-            throw new RuntimeException('Token response missing access_token');
+             throw new RuntimeException('Token response missing access_token');
         }
 
         $account->access_token = $accessToken;
