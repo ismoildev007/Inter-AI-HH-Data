@@ -4,7 +4,10 @@
     "type": "module",
     "scripts": {
         "build": "vite build",
-        "dev": "vite"
+        "dev:root": "vite",
+        "dev:admin": "npm --prefix Modules/Admin run dev",
+        "build:admin": "npm --prefix Modules/Admin run build",
+        "dev": "npm --prefix Modules/Admin run dev"
     },
     "devDependencies": {
         "@tailwindcss/vite": "^4.0.0",
