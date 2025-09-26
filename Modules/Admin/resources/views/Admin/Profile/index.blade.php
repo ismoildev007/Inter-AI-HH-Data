@@ -18,7 +18,7 @@
             <div class="card stretch">
                 <div class="card-body text-center">
                     <div class="avatar-text avatar-xxl mx-auto mb-3">
-                        <img src="{{ $user->avatar_path ? asset($user->avatar_path) : module_vite('build-admin', 'resources/assets/js/app.js')->asset('resources/assets/images/avatar/1.png') }}" alt="" class="img-fluid">
+                        <img src="{{ $user->avatar_path ? asset($user->avatar_path) : module_vite('build-admin', 'resources/assets/js/app.js')->asset('resources/assets/images/avatar/5.svg') }}" alt="" class="img-fluid">
                     </div>
                     <h5 class="fw-bold text-dark mb-1">{{ $user->first_name ?? '' }} {{ $user->last_name ?? '' }}</h5>
                     <p class="text-muted mb-2">{{ $user->role->name ?? '—' }}</p>

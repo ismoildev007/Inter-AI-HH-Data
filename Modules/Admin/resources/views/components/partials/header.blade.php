@@ -56,16 +56,48 @@
                 </div>
             </div> -->
 
-            <div class="nxl-h-item d-flex align-items-center gap-2">
-                <a href="{{ route('admin.profile') }}" class="nxl-head-link me-0" title="Profile">
+            <<div class="nxl-h-item d-flex align-items-center gap-2">
+                <a href="{{ route('admin.profile') }}"
+                    class="nxl-head-link profile-link me-0 text-white"
+                    title="Profile">
+                    Profil・
                     <div class="avatar-text avatar-md">
-                        <img src="{{ module_vite('build-admin', 'resources/assets/js/app.js')->asset('resources/assets/images/avatar/1.png') }}" alt="" class="img-fluid">
+                        <img src="{{ module_vite('build-admin', 'resources/assets/js/app.js')->asset('resources/assets/images/avatar/5.svg') }}"
+                            alt=""
+                            class="img-fluid">
                     </div>
                 </a>
-                <a href="{{ route('admin.logout') }}" class="nxl-head-link" title="Logout">
+                <a href="{{ route('admin.logout') }}"
+                    class="nxl-head-link logout-link text-white"
+                    title="Logout">
                     <i class="feather-log-out"></i>
                 </a>
-            </div>
         </div>
     </div>
+    </div>
 </header>
+<style>
+    /* Faqat profil uchun qoida */
+    .nxl-h-item .nxl-head-link.profile-link {
+        background-color: #3b82f6 !important;
+        /* blue-500 */
+        transition: background-color 0.3s ease;
+    }
+
+    .nxl-h-item .nxl-head-link.profile-link:hover {
+        background-color: #1d4ed8 !important;
+        /* blue-700 */
+    }
+
+    /* Logout tugmasi uchun qoida */
+    .nxl-h-item .nxl-head-link.logout-link {
+        background-color: #ef4444 !important;
+        /* red-500 */
+        transition: background-color 0.3s ease;
+    }
+
+    .nxl-h-item .nxl-head-link.logout-link:hover {
+        background-color: #b91c1c !important;
+        /* red-700 */
+    }
+</style>

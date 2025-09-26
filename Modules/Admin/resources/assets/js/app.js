@@ -5,7 +5,7 @@ import "./visitors-custom.js";
 import "../images/logo-abbr.png";
 import "../images/favicon.ico";
 import "../images/logo-full.png";
-import "../images/avatar/1.png";
+import "../images/avatar/5.svg";
 import "../images/avatar/2.png";
 import "../images/avatar/3.png";
 import "../images/avatar/4.png";

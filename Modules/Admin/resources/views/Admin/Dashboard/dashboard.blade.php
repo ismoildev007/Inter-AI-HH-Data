@@ -167,7 +167,7 @@
                 <div class="card-body">
                     <div class="hstack justify-content-between border rounded-3 p-2 mb-2">
                         <div class="d-flex gap-2 align-items-center">
-                            <img src="{{ module_vite('build-admin','resources/assets/js/app.js')->asset('resources/assets/images/avatar/1.png') }}" class="img-fluid rounded-circle" width="35">
+                            <img src="{{ module_vite('build-admin','resources/assets/js/app.js')->asset('resources/assets/images/avatar/5.svg') }}" class="img-fluid rounded-circle" width="35">
                             <div><b>James Cameron</b><br><small class="text-muted">Frontend</small></div>
                         </div>
                         <div class="team-progress-1"></div>
