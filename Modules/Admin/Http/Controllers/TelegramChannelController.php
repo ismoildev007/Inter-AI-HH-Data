@@ -26,7 +26,10 @@ class TelegramChannelController extends Controller
      */
     public function create()
     {
-        return view('admin::TelegramChannels.create');
+        $target = TelegramChannel::where('is_target', true)
+            ->first(['id','channel_id','username']);
+        $hasTarget = (bool) $target;
+        return view('admin::TelegramChannels.create', compact('hasTarget','target'));
     }
 
     /**

@@ -49,28 +49,39 @@
 
                         <div class="col-12">
                             <label class="form-label">Role <span class="text-danger">*</span></label>
-                            <div class="row g-2">
-                                <div class="col-sm-6">
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="radio" name="role" id="role_source" value="source" {{ old('role', 'source') === 'source' ? 'checked' : '' }}>
-                                        <label class="form-check-label" for="role_source">
-                                            Source (incoming: manba shuyerdan olinadi) 
-                                        </label>
+                            @if(!empty($hasTarget) && $hasTarget)
+                                <div class="alert alert-info py-2">
+                                    Target channel already exists.
+                                    @if(!empty($target))
+                                        <span class="ms-2">#{{ $target->id }} ({{ $target->username ?: $target->channel_id }})</span>
+                                    @endif
+                                    — You can only add Source.
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="role" id="role_source" value="source" checked>
+                                    <label class="form-check-label" for="role_source">Source (incoming)</label>
+                                </div>
+                                <input type="hidden" name="role" value="source">
+                            @else
+                                <div class="row g-2">
+                                    <div class="col-sm-6">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="role" id="role_source" value="source" {{ old('role', 'source') === 'source' ? 'checked' : '' }}>
+                                            <label class="form-check-label" for="role_source">Source (incoming)</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="role" id="role_target" value="target" {{ old('role') === 'target' ? 'checked' : '' }}>
+                                            <label class="form-check-label" for="role_target">Target (outgoing)</label>
+                                        </div>
                                     </div>
                                 </div>
-                                <div class="col-sm-6">
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="radio" name="role" id="role_target" value="target" {{ old('role') === 'target' ? 'checked' : '' }}>
-                                        <label class="form-check-label" for="role_target">
-                                            Target (outgoing: manba shuyerga yuboriladi)
-                                        </label>
-                                    </div>
-                                </div>
-                            </div>
+                            @endif
                             @error('role')
                                 <div class="text-danger small mt-1">{{ $message }}</div>
                             @enderror
-                            <div class="form-text">Only one Target is allowed. Saving a new target will unset the previous.</div>
+                            <div class="form-text">Only one Target is allowed.</div>
                         </div>
 
                         <div class="col-12">
