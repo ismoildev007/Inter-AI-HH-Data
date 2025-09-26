@@ -17,7 +17,7 @@
         </div>
     </div>
 
-    <div class="row g-3">
+    <div class="row g-3 mt-1 ms-4 me-4">
         <div class="col-xxl-4 col-lg-5">
             <div class="card stretch">
                 <div class="card-header align-items-center justify-content-between">
@@ -36,7 +36,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-xxl-8 col-lg-7">
+        <div class="col-xxl-8 col-lg-7 mt-3">
             <div class="card stretch">
                 <div class="card-header align-items-center justify-content-between">
                     <div class="card-title"><h6 class="mb-0">Application</h6></div>
@@ -76,8 +76,8 @@
                 </div>
             </div>
 
-            <div class="row g-3 mt-1">
-                <div class="col-xxl-6">
+            <div class="row g-3 mb-5">
+                <div class="col-xxl-6 mb-3">
                     <div class="card stretch">
                         <div class="card-header align-items-center justify-content-between">
                             <div class="card-title"><h6 class="mb-0">Vacancy</h6></div>
@@ -107,7 +107,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="col-xxl-6">
+                <div class="col-xxl-6 mb-3">
                     <div class="card stretch">
                         <div class="card-header align-items-center justify-content-between">
                             <div class="card-title"><h6 class="mb-0">Resume</h6></div>

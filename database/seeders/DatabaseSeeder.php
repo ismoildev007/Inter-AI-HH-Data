@@ -22,10 +22,10 @@ class DatabaseSeeder extends Seeder
 
         $this->call([
             RoleSeeder::class,
-            \Modules\Admin\Database\Seeders\AdminDatabaseSeeder::class,
-            UsersTableSeeder::class,
-            ResumesTableSeeder::class,
-            ApplicationsTableSeeder::class,
+            //\Modules\Admin\Database\Seeders\AdminDatabaseSeeder::class,
+            //UsersTableSeeder::class,
+           // ResumesTableSeeder::class,
+           // ApplicationsTableSeeder::class,
         ]);
     }
 }

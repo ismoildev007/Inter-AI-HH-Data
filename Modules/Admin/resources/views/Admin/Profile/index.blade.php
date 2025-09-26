@@ -13,8 +13,8 @@
         </div>
     </div>
 
-    <div class="row g-3">
-        <div class="col-xxl-4 col-lg-5">
+    <div class=" mb-5 mt-1 ms-4 me-4">
+        <div class=" mt-4">
             <div class="card stretch">
                 <div class="card-body text-center">
                     <div class="avatar-text avatar-xxl mx-auto mb-3">
@@ -53,7 +53,7 @@
             </div>
         </div>
 
-        <div class="col-xxl-8 col-lg-7">
+        <div class=" mt-4">
             <div class="card stretch">
                 <div class="card-header align-items-center justify-content-between">
                     <div class="card-title"><h6 class="mb-0">Account Details</h6></div>
@@ -88,11 +88,11 @@
                 </div>
             </div>
 
-            <div class="card stretch mt-3">
+            <div class="card stretch mb-4">
                 <div class="card-header align-items-center justify-content-between">
                     <div class="card-title"><h6 class="mb-0">Settings</h6></div>
                 </div>
-                <div class="card-body">
+                <div class="card-body mb-4">
                     <div class="row g-3">
                         <div class="col-md-6">
                             <label class="form-label text-muted">Language</label>
