@@ -15,7 +15,7 @@
       yaxis: { labels:{ formatter:(v)=> (+v)+'', style:{ fontSize:'11px', color:'#64748b' } } },
       stroke: { curve: 'smooth', width: 2 },
       fill: { type: 'gradient', gradient:{ shadeIntensity:1, opacityFrom:.4, opacityTo:.3, stops:[0,90,100] } },
-      colors: ['#3454d1'], dataLabels:{ enabled:false }, grid:{ strokeDashArray:3, borderColor:'#ebebf3' },
+      colors: ['#e49e3d'], dataLabels:{ enabled:false }, grid:{ strokeDashArray:3, borderColor:'#ebebf3' },
       tooltip:{ y:{ formatter:(v)=> (+v)+' visits' }, style:{ fontSize:'12px', fontFamily:'Inter' } },
       animations:{ enabled:true }
     };
