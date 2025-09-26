@@ -32,11 +32,11 @@
                     <div class="d-flex gap-3 align-items-center">
                         <div class="avatar-text avatar-lg bg-gray-200"><i class="feather-users"></i></div>
                         <div>
-                            <h4 class="fw-bold mb-0">1,250</h4>
+                            <h4 class="fw-bold mb-0">{{ $usersCount }}</h4>
                             <small class="text-muted">Users</small>
                         </div>
                     </div>
-                    <span class="badge bg-primary">72%</span>
+                    
                 </div>
             </div>
         </div>
@@ -46,11 +46,11 @@
                     <div class="d-flex gap-3 align-items-center">
                         <div class="avatar-text avatar-lg bg-gray-200"><i class="feather-file-text"></i></div>
                         <div>
-                            <h4 class="fw-bold mb-0">840</h4>
+                            <h4 class="fw-bold mb-0">{{ $resumesCount }}</h4>
                             <small class="text-muted">Resumes</small>
                         </div>
                     </div>
-                    <span class="badge bg-warning">58%</span>
+                    
                 </div>
             </div>
         </div>
@@ -60,11 +60,11 @@
                     <div class="d-flex gap-3 align-items-center">
                         <div class="avatar-text avatar-lg bg-gray-200"><i class="feather-briefcase"></i></div>
                         <div>
-                            <h4 class="fw-bold mb-0">365</h4>
+                            <h4 class="fw-bold mb-0">{{ $applicationsCount }}</h4>
                             <small class="text-muted">Applications</small>
                         </div>
                     </div>
-                    <span class="badge bg-success">44%</span>
+                    
                 </div>
             </div>
         </div>
@@ -74,11 +74,11 @@
                     <div class="d-flex gap-3 align-items-center">
                         <div class="avatar-text avatar-lg bg-gray-200"><i class="feather-send"></i></div>
                         <div>
-                            <h4 class="fw-bold mb-0">26</h4>
+                            <h4 class="fw-bold mb-0">{{ $telegramChannelsCount }}</h4>
                             <small class="text-muted">Telegram Channels</small>
                         </div>
                     </div>
-                    <span class="badge bg-danger">4%</span>
+                    
                 </div>
             </div>
         </div>
@@ -98,8 +98,8 @@
                     <div class="card h-100">
                         <div class="card-body">
                             <div class="d-flex justify-content-between">
-                                <span class="text-muted">Task Completed</span>
-                                <span class="fw-bold">44</span>
+                                <span class="text-muted">Users (7d)</span>
+                                <span class="fw-bold">{{ $miniTotals['users'] ?? 0 }}</span>
                             </div>
                             <div id="task-completed-area-chart"></div>
                         </div>
@@ -109,8 +109,8 @@
                     <div class="card h-100">
                         <div class="card-body">
                             <div class="d-flex justify-content-between">
-                                <span class="text-muted">New Tasks</span>
-                                <span class="fw-bold">55</span>
+                                <span class="text-muted">Applications (7d)</span>
+                                <span class="fw-bold">{{ $miniTotals['applications'] ?? 0 }}</span>
                             </div>
                             <div id="new-tasks-area-chart"></div>
                         </div>
@@ -120,8 +120,8 @@
                     <div class="card h-100">
                         <div class="card-body">
                             <div class="d-flex justify-content-between">
-                                <span class="text-muted">Project Done</span>
-                                <span class="fw-bold">60</span>
+                                <span class="text-muted">Resumes (7d)</span>
+                                <span class="fw-bold">{{ $miniTotals['resumes'] ?? 0 }}</span>
                             </div>
                             <div id="project-done-area-chart"></div>
                         </div>
@@ -132,14 +132,14 @@
     </div>
 
     <!-- Campaign -->
-    <div class="row g-3 mt-1">
+    <!-- <div class="row g-3 mt-1">
         <div class="col-xxl-4">
             <div class="card h-100">
                 <div class="card-header"><h5 class="mb-0">Campaign Analytics</h5></div>
                 <div class="card-body"><div id="campaign-alytics-bar-chart"></div></div>
             </div>
         </div>
-    </div>
+    </div> -->
 
     <!-- Metrics + Leads + Team -->
     <div class="row g-3 mt-1">
@@ -155,13 +155,13 @@
         <div class="col-xxl-3 col-md-6">
             <div class="card h-100"><div class="card-body"><h6>Conversions Rate</h6><div id="conversions-rate"></div></div></div>
         </div>
-        <div class="col-xxl-8 col-12">
+        <!-- <div class="col-xxl-8 col-12">
             <div class="card h-100">
                 <div class="card-header"><h5 class="mb-0">Leads Overview</h5></div>
                 <div class="card-body"><div id="leads-overview-donut"></div></div>
             </div>
-        </div>
-        <div class="col-xxl-4 col-12">
+        </div> -->
+        <!-- <div class="col-xxl-4 col-12">
             <div class="card h-100">
                 <div class="card-header"><h5 class="mb-0">Team Progress</h5></div>
                 <div class="card-body">
@@ -195,7 +195,7 @@
                     </div>
                 </div>
             </div>
-        </div>
+        </div> -->
     </div>
 
     <!-- Upcoming Schedule + Social Radar -->
@@ -238,8 +238,15 @@
         labels: @json($visitorsLabels ?? []),
         series: @json($visitorsSeries ?? [])
     };
-    // Optional: expose total visits if needed later
     window.totalVisits = (window.visitorsChart.series || []).reduce((a,b)=>a+(+b||0),0);
-</script>
+    window.dashboardMini = {
+        labels: @json($dayLabels ?? []),
+        series: {
+            users: @json($miniUsers ?? []),
+            applications: @json($miniApplications ?? []),
+            resumes: @json($miniResumes ?? []),
+        }
+    };
+  </script>
 </div><!-- /.main-content -->
 @endsection
