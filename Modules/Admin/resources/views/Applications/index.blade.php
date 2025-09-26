@@ -13,7 +13,7 @@
         </div>
     </div>
 
-    <div class="card stretch">
+    <div class="card stretch mt-4 ms-4 me-4">
         <div class="card-header align-items-center justify-content-between">
             <div class="card-title">
                 <h6 class="mb-0">All Applications</h6>

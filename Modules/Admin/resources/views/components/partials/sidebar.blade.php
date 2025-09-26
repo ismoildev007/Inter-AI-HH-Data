@@ -2,8 +2,8 @@
     <div class="navbar-wrapper">
         <div class="m-header">
             <a href="{{ route('admin.dashboard') }}" class="b-brand">
-                <img src="{{ module_vite('build-admin', 'resources/assets/js/app.js')->asset('resources/assets/images/logo-full.png') }}" alt="" class="logo logo-lg">
-                <img src="{{ module_vite('build-admin', 'resources/assets/js/app.js')->asset('resources/assets/images/logo-abbr.png') }}" alt="" class="logo logo-sm">
+                <img src="https://www.inter-ai.uz/Logo1.svg" alt="" class="logo logo-lg">
+                <img src="https://www.inter-ai.uz/Logo1.svg" alt="" class="logo logo-sm">
             </a>
         </div>
         <div class="navbar-content">

@@ -6,8 +6,8 @@
         <meta name="csrf-token" content="{{ csrf_token() }}">
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
 
-        <title>Admin - {{ config('app.name', 'Laravel') }}</title>
-        <link rel="icon" type="image/x-icon" href="{{ module_vite('build-admin', 'resources/assets/js/app.js')->asset('resources/assets/images/favicon.ico') }}">
+        <title>Elnurbek - InterAI 🇺🇿</title>
+        <link rel="icon" type="image/x-icon" href="{{ module_vite('build-admin', 'resources/assets/js/app.js')->asset('resources/assets/images/avatar/5.svg') }}">
 
         {{ module_vite('build-admin', 'resources/assets/sass/app.scss') }}
     </head>

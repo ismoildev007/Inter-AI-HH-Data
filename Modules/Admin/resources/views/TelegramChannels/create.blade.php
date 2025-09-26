@@ -20,10 +20,10 @@
     </div>
 
     <div class="row g-3">
-        <div class="col-xxl-6 col-lg-7">
+        <div class="col-xxl-6 col-lg-7 justify-content-center mx-auto mt-5">
             <div class="card stretch">
                 <div class="card-header align-items-center justify-content-between">
-                    <div class="card-title"><h6 class="mb-0">Channel Info</h6></div>
+                    <div class="card-title"><h6 class="mb-0">Add Channel </h6></div>
                 </div>
                 <div class="card-body">
                     @if ($errors->any())
@@ -33,7 +33,7 @@
                     <form action="{{ route('admin.telegram_channels.store') }}" method="POST" class="row g-3">
                         @csrf
                         <div class="col-12">
-                            <label class="form-label">Channel ID <span class="text-danger">*</span></label>
+                            <label class="form-label">Channel ID or Username<span class="text-danger">*</span></label>
                             <input type="text" name="channel_id" class="form-control @error('channel_id') is-invalid @enderror" value="{{ old('channel_id') }}" placeholder="e.g. -1001234567890" required>
                             @error('channel_id')
                                 <div class="invalid-feedback">{{ $message }}</div>
@@ -54,7 +54,7 @@
                                     <div class="form-check">
                                         <input class="form-check-input" type="radio" name="role" id="role_source" value="source" {{ old('role', 'source') === 'source' ? 'checked' : '' }}>
                                         <label class="form-check-label" for="role_source">
-                                            Source (incoming)
+                                            Source (incoming: manba shuyerdan olinadi) 
                                         </label>
                                     </div>
                                 </div>
@@ -62,7 +62,7 @@
                                     <div class="form-check">
                                         <input class="form-check-input" type="radio" name="role" id="role_target" value="target" {{ old('role') === 'target' ? 'checked' : '' }}>
                                         <label class="form-check-label" for="role_target">
-                                            Target (outgoing)
+                                            Target (outgoing: manba shuyerga yuboriladi)
                                         </label>
                                     </div>
                                 </div>
