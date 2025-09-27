@@ -72,7 +72,8 @@ class ApplicationsController extends Controller
         });
 
         return response()->json([
-            'success' => true,
+            'status'  => 'success',
+            'message' => 'Matching finished successfully.',
             'data' => $data,
             'meta' => [
                 'current_page' => $paginator->currentPage(),
