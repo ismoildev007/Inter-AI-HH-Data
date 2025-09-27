@@ -2,7 +2,6 @@
 
 namespace Modules\Applications\Providers;
 
-use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\ServiceProvider;
 use Nwidart\Modules\Traits\PathNamespace;
@@ -23,7 +22,6 @@ class ApplicationsServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->registerCommands();
-        $this->registerCommandSchedules();
         $this->registerTranslations();
         $this->registerConfig();
         $this->registerViews();
@@ -49,17 +47,7 @@ class ApplicationsServiceProvider extends ServiceProvider
         ]);
     }
 
-    /**
-     * Register command Schedules.
-     */
-    protected function registerCommandSchedules(): void
-    {
-        $this->app->booted(function () {
-            $schedule = $this->app->make(Schedule::class);
-            // Test schedule: run every minute (adjust later to daily)
-            $schedule->command('hh:sync-negotiations')->everyMinute();
-        });
-    }
+    
 
     /**
      * Register translations.
