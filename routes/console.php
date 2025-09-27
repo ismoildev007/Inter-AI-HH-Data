@@ -2,19 +2,13 @@
 
 // ---------------------
 // Scheduler (php artisan schedule:work) ishga tushirganda:
-// - hh:sync-negotiations → doimiy ravishda HH dan holatlarni olib keladi.
-//   * Agar holat 'interview' bo‘lsa: intervyu job(lar) dispatch qilinadi.
-//   * Bu job(lar)ni qayta ishlash uchun Horizon/queue:work KERAK (default queue).
-// - autoapply:start → avtomatik apply qiladi.
-//   * Queue ishlatmaydi, Horizon KERAK EMAS.
-// - (ixtiyoriy) telegram:vacancies:auto-archive → hozir schedule qilinmagan.
-//   * Xohlasangiz, schedule ga qo‘shish mumkin (masalan, har kuni 03:00). Queue KERAK EMAS.
+// - hh:sync-negotiations → HH dan holatlarni olib keladi (5 daqiqada 1 marta).
+//   * Agar holat 'interview' bo‘lsa: intervyu job(lar) dispatch qilinadi (queue: default, Horizon/queue:work KERAK).
+// - autoapply:start → avtomatik apply (har daqiqa). Queue talab qilmaydi.
+// - relay:run --once → Telegram sinxronlash (har daqiqa). (queue: telegram-relay, Horizon/queue:work KERAK).
+// - telegram:vacancies:auto-archive → eski vakansiyalarni arxivlash (soatlik). Queue talab qilmaydi.
 //
-// Qo‘lda ishga tushiriladigan va queue talab qiladiganlar:
-// - relay:run {--once} → Telegram sinxronlash uchun job(lar) yuboradi (queue: telegram-relay).
-//   * Ishlashi uchun Horizon/queue:work KERAK (telegram-relay queue ni iste’mol qilishi kerak).
-// php artisan schedule:work bilan shunda php artisan relay:run --once ishga tushirilishi mumkin doimiy ishlab turadi.
-//php artisan horizon bilan birga queue worker ishlaydi telegramniki.
+// Eslatma: php artisan schedule:work (scheduler) va php artisan horizon yoki queue:work ishlashi kerak.
 // Qo‘lda, interaktiv:
 // - telegram:login → Telegramga login (telefon/QR). Scheduler/Queue talab qilmaydi.
 // ---------------------
@@ -39,3 +33,15 @@ Schedule::command('autoapply:start')
     ->withoutOverlapping();
 
 Schedule::call(fn() => \Log::info('Autoapply schedule hit'))->everyMinute();
+
+// TelegramChannel schedules (migrated from module provider)
+if (Artisan::has('relay:run')) {
+    Schedule::command('relay:run --once')
+        ->everyMinute()
+        ->withoutOverlapping();
+}
+if (Artisan::has('telegram:vacancies:auto-archive')) {
+    Schedule::command('telegram:vacancies:auto-archive')
+        ->hourly()
+        ->withoutOverlapping();
+}

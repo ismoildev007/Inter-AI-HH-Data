@@ -21,19 +21,7 @@ class TelegramChannelServiceProvider extends ServiceProvider
 
         // scheduler no longer used for scanning; scan-loop daemon handles dispatching
 
-        // Register scheduler for short-running relay (idempotent, safe to run in prod)
-            $this->app->booted(function () {
-                try {
-                    /** @var Schedule $schedule */
-                    $schedule = $this->app->make(Schedule::class);
-                    // Run one relay scan per minute, avoid overlapping runs
-                    $schedule->command('relay:run --once')->everyMinute()->withoutOverlapping();
-                    // Auto-archive older vacancies hourly
-                    $schedule->command('telegram:vacancies:auto-archive')->hourly()->withoutOverlapping();
-                } catch (\Throwable $e) {
-                    // Scheduling is best-effort; avoid failing the app boot
-                }
-            });
+        // Register scheduler moved to routes/console.php
         }
 
     public function register(): void
