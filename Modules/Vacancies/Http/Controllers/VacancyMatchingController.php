@@ -34,6 +34,7 @@ class VacancyMatchingController extends Controller
         // MatchResumeJob::dispatch($resume, $resume->title ?? $resume->description);
         // Log::info('Dispatched MatchResumeJob', ['user_id' => auth()->id(), 'resume_id' => $resume->id]);
         $savedData = $service->matchResume($resume, $resume->title ?? $resume->description);
+        
         $results = MatchResult::with('vacancy.employer')
             ->leftJoin('applications', function ($join) use ($user) {
                 $join->on('applications.vacancy_id', '=', 'match_results.vacancy_id')

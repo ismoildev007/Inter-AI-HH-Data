@@ -39,7 +39,6 @@ class HHVacancyController extends Controller
     public function show(string $id)
     {
         $vacancy = $this->hh->getById($id);
-
         if (!$vacancy) {
             return response()->json([
                 'success' => false,
@@ -48,19 +47,18 @@ class HHVacancyController extends Controller
         }
 
         $user = auth()->user();
-
+        $vacancyData = Vacancy::where('external_id', $vacancy['id'])->first();
         $applied = false;
-        if ($user) {
-            $applied = \App\Models\Application::where('user_id', $user->id)
-                ->where('vacancy_id', $vacancy->id)
+        if ($user && $vacancyData) {
+            $applied = Application::where('user_id', $user->id)
+                ->where('vacancy_id', $vacancyData->id)
                 ->exists();
         }
-
         return response()->json([
             'success' => true,
             'data'    => [
-                'vacancy' => $vacancy->id,
-                'raw'     => json_decode($vacancy->raw_data, true), 
+                'vacancy' => $vacancy['id'],
+                'raw'     => $vacancy, 
                 'status' => $applied, 
             ],
         ]);

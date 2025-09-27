@@ -49,7 +49,6 @@ class HHVacancyRepository implements HHVacancyInterface
     public function getById(string $id): array
     {
         $response = $this->http()->get("{$this->baseUrl}/vacancies/{$id}");
-
         if ($response->failed()) {
             throw new \RuntimeException("HH API getById failed: " . $response->body());
         }
