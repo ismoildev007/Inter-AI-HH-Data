@@ -35,6 +35,7 @@ Schedule::command('autoapply:start')
 
 // TelegramChannel schedules (migrated from module provider)
 
+
 Schedule::command('relay:run --once')
     ->everyMinute()
     ->withoutOverlapping();
@@ -43,11 +44,14 @@ Schedule::command('relay:run --once')
 // - Horizon/queue:work --queue=telegram-relay kerak
 
 
+
 //----------------------------
+
 
 
 Schedule::command('telegram:vacancies:auto-archive')
     ->hourly()
     ->withoutOverlapping();
 // Workers/queues: yo'q (queue ishlatilmaydi; to'g'ridan-to'g'ri DB update)
+
 
