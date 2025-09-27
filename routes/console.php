@@ -13,6 +13,8 @@ Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
 
+//----------------------------
+
 Schedule::command('hh:sync-negotiations')
     ->everyFiveMinutes()
     ->withoutOverlapping();
@@ -20,12 +22,16 @@ Schedule::command('hh:sync-negotiations')
 // - queue: default (jobs: Modules\Interviews\Jobs\HandleInterviewApplication → GenerateInterviewQuestionsJob)
 // - Horizon/queue:work default kerak
 
+//----------------------------
+
 Schedule::command('autoapply:start')
     ->everyMinute()
     ->withoutOverlapping();
 // Workers/queues:
 // - queue: autoapply (job: App\Jobs\AutoApplyJob)
 // - Horizon/queue:work --queue=autoapply kerak
+
+//----------------------------
 
 // TelegramChannel schedules (migrated from module provider)
 if (Artisan::has('relay:run')) {
@@ -36,6 +42,9 @@ if (Artisan::has('relay:run')) {
     // - queue: telegram-relay (job: Modules\TelegramChannel\Jobs\SyncSourceChannelJob)
     // - Horizon/queue:work --queue=telegram-relay kerak
 }
+
+//----------------------------
+
 if (Artisan::has('telegram:vacancies:auto-archive')) {
     Schedule::command('telegram:vacancies:auto-archive')
         ->hourly()
