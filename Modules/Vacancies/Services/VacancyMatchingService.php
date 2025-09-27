@@ -3,6 +3,7 @@
 namespace Modules\Vacancies\Services;
 
 use App\Models\Resume;
+use App\Models\Vacancy;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -43,6 +44,7 @@ class VacancyMatchingService
                         : "local_{$v->id}"
                 ),
         ]);
+        
 
         $hhItems = $hhVacancies['items'] ?? [];
         // --- Prepare merged vacancies payload ---
@@ -54,34 +56,10 @@ class VacancyMatchingService
                 'text' => mb_substr(strip_tags($v->description), 0, 2000),
             ];
         }
-
         // --- Fetch HH vacancy details concurrently ---
         $toFetch = collect($hhItems)
             ->filter(fn($item) => isset($item['id']) && !$localVacancies->has($item['id']))
             ->take(70); 
-            // $responses = Concurrency::run(
-            //     $toFetch->map(function ($item) {
-            //         return function () use ($item) {
-            //             return cache()->remember(
-            //                 "hh:vacancy:{$item['id']}",
-            //                 now()->addMinutes(30),
-            //                 fn() => $this->hhRepository->getById($item['id'])
-            //             );
-            //         };
-            //     })->toArray()
-            // );
-            // Log::info('Fetch HH details took: ' . (microtime(true) - $start) . 's');
-    
-            // foreach ($responses as $extId => $full) {
-            //     if (!empty($full['description'])) {
-            //         $vacanciesPayload[] = [
-            //             'id'          => null,
-            //             'text'        => mb_substr(strip_tags($full['description']), 0, 2000),
-            //             'external_id' => $full['id'],
-            //             'raw'         => $full,
-            //         ];
-            //     }
-            // }
         Log::info('Fetch HH details took: ' . (microtime(true) - $start) . 's');
 
         foreach ($toFetch as $item) {
@@ -102,7 +80,6 @@ class VacancyMatchingService
                 ];
             }
         }
-
         if (empty($vacanciesPayload)) {
             Log::info('No vacancies to match for resume', ['resume_id' => $resume->id]);
             return [];
@@ -111,19 +88,22 @@ class VacancyMatchingService
         $url = config('services.matcher.url', 'https://python.inter-ai.uz/bulk-match-fast');
         $response = Http::timeout(30)->post($url, [
             'resumes'   => [mb_substr($resume->description, 0, 3000)],
-            'vacancies' => array_map(fn($v) => ['id' => $v['id'], 'text' => $v['text']], $vacanciesPayload),
+            'vacancies' => array_map(fn($v) => [
+                'id'   => $v['id'] ? (string) $v['id'] : null, // force string
+                'text' => $v['text'],
+            ], $vacanciesPayload),
             'top_k'     => 100,
             'min_score' => 0,
         ]);
         
-
+        
         if ($response->failed()) {
             Log::error('Matcher API failed', ['resume_id' => $resume->id, 'body' => $response->body()]);
             return [];
         }
+
         $results = $response->json();
         $matches = $results['results'][0] ?? [];
-
         // --- Map extId to payload ---
         $vacancyMap = collect($vacanciesPayload)->keyBy(fn($v, $k) => $v['id'] ?? "new_{$k}");
 
@@ -133,12 +113,12 @@ class VacancyMatchingService
             if ($match['score'] < 70) continue;
 
             $vacId = $match['vacancy_id'] ?? null;
-            $vac   = $vacId ? \App\Models\Vacancy::find($vacId) : null;
+            $vac   = $vacId ? Vacancy::find($vacId) : null;
 
             if (!$vac) {
                 $payload = $vacancyMap["new_{$match['vacancy_index']}"] ?? null;
                 if ($payload && isset($payload['external_id'])) {
-                    $vac = \App\Models\Vacancy::where('source', 'hh')
+                    $vac = Vacancy::where('source', 'hh')
                         ->where('external_id', $payload['external_id'])
                         ->first();
 
