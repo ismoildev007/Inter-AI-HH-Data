@@ -34,20 +34,20 @@ Schedule::command('autoapply:start')
 //----------------------------
 
 // TelegramChannel schedules (migrated from module provider)
-if (Artisan::has('relay:run')) {
+
     Schedule::command('relay:run --once')
         ->everyMinute()
         ->withoutOverlapping();
     // Workers/queues:
     // - queue: telegram-relay (job: Modules\TelegramChannel\Jobs\SyncSourceChannelJob)
     // - Horizon/queue:work --queue=telegram-relay kerak
-}
+
 
 //----------------------------
 
-if (Artisan::has('telegram:vacancies:auto-archive')) {
+
     Schedule::command('telegram:vacancies:auto-archive')
         ->hourly()
         ->withoutOverlapping();
     // Workers/queues: yo'q (queue ishlatilmaydi; to'g'ridan-to'g'ri DB update)
-}
+
