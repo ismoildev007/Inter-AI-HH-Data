@@ -53,11 +53,7 @@ class VacancyMatchingService
                 fn() => $this->hhRepository->search($query, 0, 100, ['area' => 97])
             ),
             fn() => Vacancy::query()
-                ->where(function ($q) use ($words) {
-                    foreach ($words as $word) {
-                        $q->whereRaw("title REGEXP ?", ['[[:<:]]' . $word . '[[:>:]]']);
-                    }
-                })
+                ->where('title', 'like', "%{$query}%")
                 ->get()
                 ->keyBy(
                     fn($v) => $v->source === 'hh' && $v->external_id
