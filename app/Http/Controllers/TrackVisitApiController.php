@@ -49,6 +49,7 @@ class TrackVisitApiController extends Controller
         $sessionId = $request->cookie('visitor_id') ?? ($request->query('visitor_id') ?: Str::uuid()->toString());
 
         $uid = Auth::id();
+        
         if (!$uid) {
             $raw = $request->query('user_id', $request->query('uid'));
             if (is_numeric($raw) && (int)$raw > 0) { $uid = (int)$raw; }
