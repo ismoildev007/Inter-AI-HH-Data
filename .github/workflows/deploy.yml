@@ -1,0 +1,104 @@
+# name: "🚀 Deploy Laravel API"
+
+# on:
+#   push:
+#     branches: [ main ]
+
+# env:
+#   PHP_VERSION: "8.3"
+#   PROJECT_DIR: "/var/www/laravel"   # serverdagi loyihangiz joylashgan papka
+#   BRANCH: "main"
+#   REPO_URL: "git@github.com/QuvonchbekJalilov/Inter-AI-Job.git"
+
+# jobs:
+#   deploy:
+#     runs-on: ubuntu-latest
+
+#     steps:
+#     # 1 – checkout
+#     - uses: actions/checkout@v3
+#       with:
+#         fetch-depth: 1
+
+#     # 2 – PHP setup (faqat composer ishlatish uchun)
+#     - name: "Set up PHP"
+#       uses: shivammathur/setup-php@v2
+#       with:
+#         php-version: ${{ env.PHP_VERSION }}
+#         extensions: mbstring, bcmath, pdo_pgsql, pgsql, zip, curl
+#         tools: composer
+
+#     # 3 – composer install (faqat CI runnerda test uchun)
+#     - run: composer install --no-dev --prefer-dist --optimize-autoloader
+
+#     # 4 – Deploy to server (via SSH)
+#     - name: "🚢 Ship & deploy on server"
+#       env:
+#         SERVER_SSH_KEY: ${{ secrets.SERVER_SSH_KEY }}
+#       uses: appleboy/ssh-action@v1.0.0
+#       with:
+#         host:         ${{ secrets.SERVER_IP }}
+#         username:     ${{ secrets.SERVER_USER }}
+#         key:          ${{ secrets.SERVER_SSH_KEY }}
+#         script_stop:  true
+#         envs:         PHP_VERSION,PROJECT_DIR,BRANCH,REPO_URL,SERVER_SSH_KEY
+
+#         script: |
+#           set -Eeuo pipefail
+#           set -x
+#           echo "🔑 Connected to server"
+
+#           # 0. SSH setup for GitHub
+#           install -d -m 700 ~/.ssh
+#           printf '%s\n' "$SERVER_SSH_KEY" > ~/.ssh/id_ci_deploy
+#           chmod 600 ~/.ssh/id_ci_deploy
+#           {
+#             echo "Host github.com"
+#             echo "  IdentityFile ~/.ssh/id_ci_deploy"
+#             echo "  IdentitiesOnly yes"
+#           } >> ~/.ssh/config
+#           ssh-keyscan -H github.com >> ~/.ssh/known_hosts 2>/dev/null
+
+#           # 1. clone/update repo
+#           if [ ! -d "$PROJECT_DIR/.git" ]; then
+#             sudo install -d -o "$USER" -g "$USER" "$PROJECT_DIR"
+#             git clone --depth 1 --branch "$BRANCH" "$REPO_URL" "$PROJECT_DIR"
+#           else
+#             git -C "$PROJECT_DIR" fetch origin "$BRANCH"
+#             git -C "$PROJECT_DIR" reset --hard "origin/$BRANCH"
+#           fi
+
+#           cd "$PROJECT_DIR"
+
+#           # 2. install PHP deps
+#           export COMPOSER_ALLOW_SUPERUSER=1
+#           composer install --no-dev --prefer-dist --optimize-autoloader
+
+#           # 3. env file & migration
+#           if [ ! -f .env ]; then
+#             cp .env.example .env
+#             php artisan key:generate --ansi
+#           fi
+
+#           php artisan migrate --force
+#           php artisan storage:link || true
+
+#           # 4. clear & cache
+#           php artisan optimize:clear
+#           php artisan config:cache
+#           php artisan route:cache
+#           php artisan view:cache
+
+#           # 5. permissions
+#           sudo chown -R www-data:www-data storage bootstrap/cache
+
+#           # 6. reload services
+#           sudo systemctl reload "php${PHP_VERSION}-fpm"
+#           sudo systemctl reload nginx || true
+
+#           echo "✅ Deploy complete"
+
+#     # 5 – success log
+#     - name: "✅ Deployment finished"
+#       if: success()
+#       run: echo "🎉 Pipeline finished successfully!"

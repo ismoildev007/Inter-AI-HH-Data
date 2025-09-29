@@ -25,7 +25,7 @@ class VacancyMatchResource extends JsonResource
             'id'          => $vacancy?->id,
             'source'      => $vacancy->source ?? 'telegram',
             'external_id' => $vacancy?->external_id ?? null,
-            'company'     => $raw['employer']['name'] ?? null,
+            'company'     => $raw['employer']['name'] ?? $vacancy->company,
             'title'       => $vacancy?->title,
             'location'    => $vacancy?->area?->name
                 ?? ($raw['area']['name'] ?? null),
@@ -38,6 +38,10 @@ class VacancyMatchResource extends JsonResource
 
         if ($vacancy?->source === 'telegram') {
             $vacancyData['message_id'] = $vacancy->target_message_id;
+            $vacancyData['source_id'] = $vacancy->source_id;
+            $vacancyData['source_message_id'] = $vacancy->source_message_id;
+            $vacancyData['target_message_id'] = $vacancy->target_message_id;
+
         }
 
         return [

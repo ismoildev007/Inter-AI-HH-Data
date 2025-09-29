@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Models\Application;
 use App\Models\MatchResult;
 use App\Models\Resume;
-use App\Models\User;
 use App\Models\Vacancy;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -58,8 +57,30 @@ class HHVacancyController extends Controller
             'success' => true,
             'data'    => [
                 'vacancy' => $vacancy['id'],
-                'raw'     => $vacancy, 
-                'status' => $applied, 
+                'raw'     => $vacancy,
+                'status' => $applied,
+            ],
+        ]);
+    }
+
+    public function telegramShow($id)
+    {
+        $user = auth()->user();
+        $vacancy = Vacancy::where('id', $id)->first();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'id' => $vacancy->id,
+                'description' => $vacancy->description,
+                'company' => $vacancy->company,
+                'contact' => $vacancy->contact,
+                'language' => $vacancy->language,
+                'signature' => $vacancy->signature,
+                'source_id' => $vacancy->source_id,
+                'source_message_id' => $vacancy->source_message_id,
+                'target_message_id' => $vacancy->target_message_id,
+                'target_msg_id' => $vacancy->target_msg_id,
             ],
         ]);
     }
@@ -73,7 +94,7 @@ class HHVacancyController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'No primary resume set. Please set a primary resume in your settings.',
-            ], 400);
+            ], 200);
         }
 
         $vacancy = Vacancy::where('external_id', $id)->firstOrFail();

@@ -11,6 +11,7 @@ Route::prefix('v1')
         Route::middleware(['auth:sanctum'])->group(
             function () {
                 Route::post('hh/vacancies/{vacancy}/apply', [HHVacancyController::class, 'apply'])->name('hh.vacancies.apply');
+                Route::get('/telegram/vacancies/{id}', [HHVacancyController::class, 'telegramShow']);
             }
         );
         /**

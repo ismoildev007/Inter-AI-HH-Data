@@ -50,7 +50,10 @@ class HHVacancyRepository implements HHVacancyInterface
     {
         $response = $this->http()->get("{$this->baseUrl}/vacancies/{$id}");
         if ($response->failed()) {
-            throw new \RuntimeException("HH API getById failed: " . $response->body());
+            return [
+                'status' => false,
+                'message' => 'vacancy not found'
+            ];
         }
 
         return $response->json();

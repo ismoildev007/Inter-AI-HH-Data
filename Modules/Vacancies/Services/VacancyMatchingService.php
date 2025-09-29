@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Concurrency;
 use Modules\Vacancies\Interfaces\HHVacancyInterface;
 use Modules\Vacancies\Interfaces\VacancyInterface;
+use Spatie\Async\Pool;
 
 class VacancyMatchingService
 {
@@ -29,14 +30,34 @@ class VacancyMatchingService
         Log::info('Job started for resume', ['resume_id' => $resume->id, 'query' => $query]);
         $start = microtime(true);
 
-        // --- Fetch HH and local vacancies in parallel ---
+        // $pool = Pool::create();
+
+        // $pool[] = async(fn() => cache()->remember(
+        //     "hh:search:{$query}:area97",
+        //     now()->addMinutes(30),
+        //     fn() => $this->hhRepository->search($query, 0, 100, ['area' => 97])
+        // ));
+        // $pool[] = async(
+        //     fn() => Vacancy::where('title', 'like', "%{$query}%")
+        //         ->get()
+        //         ->keyBy(fn($v) => $v->source === 'hh' && $v->external_id ? $v->external_id : "local_{$v->id}")
+        // );
+
+        // $results = await($pool);
+        $words = explode(' ', $query);
+        
         [$hhVacancies, $localVacancies] = Concurrency::run([
             fn() => cache()->remember(
                 "hh:search:{$query}:area97",
                 now()->addMinutes(30),
                 fn() => $this->hhRepository->search($query, 0, 100, ['area' => 97])
             ),
-            fn() => \App\Models\Vacancy::where('title', 'like', "%{$query}%")
+            fn() => Vacancy::query()
+                ->where(function ($q) use ($words) {
+                    foreach ($words as $word) {
+                        $q->whereRaw("title REGEXP ?", ['[[:<:]]' . $word . '[[:>:]]']);
+                    }
+                })
                 ->get()
                 ->keyBy(
                     fn($v) => $v->source === 'hh' && $v->external_id
@@ -44,39 +65,33 @@ class VacancyMatchingService
                         : "local_{$v->id}"
                 ),
         ]);
-        
 
         $hhItems = $hhVacancies['items'] ?? [];
-        // --- Prepare merged vacancies payload ---
         $vacanciesPayload = [];
-        // Local vacancies
         foreach ($localVacancies as $v) {
             $vacanciesPayload[] = [
                 'id'   => $v->id,
                 'text' => mb_substr(strip_tags($v->description), 0, 2000),
             ];
         }
-        // --- Fetch HH vacancy details concurrently ---
         $toFetch = collect($hhItems)
             ->filter(fn($item) => isset($item['id']) && !$localVacancies->has($item['id']))
-            ->take(70); 
-        Log::info('Fetch HH details took: ' . (microtime(true) - $start) . 's');
-
+            ->take(70);
         foreach ($toFetch as $item) {
             $extId = $item['id'] ?? null;
             if (!$extId || $localVacancies->has($extId)) {
                 continue;
             }
-        
+
             $text = ($item['snippet']['requirement'] ?? '') . "\n" .
-                    ($item['snippet']['responsibility'] ?? '');
-        
+                ($item['snippet']['responsibility'] ?? '');
+
             if (!empty(trim($text))) {
                 $vacanciesPayload[] = [
                     'id'          => null,
-                    'text'        => mb_substr(strip_tags($text), 0, 1000), // shorter for speed
+                    'text'        => mb_substr(strip_tags($text), 0, 1000),
                     'external_id' => $extId,
-                    'raw'         => $item, // raw item, not full vacancy
+                    'raw'         => $item,
                 ];
             }
         }
@@ -84,19 +99,19 @@ class VacancyMatchingService
             Log::info('No vacancies to match for resume', ['resume_id' => $resume->id]);
             return [];
         }
-        // --- Call Python matcher ---
         $url = config('services.matcher.url', 'https://python.inter-ai.uz/bulk-match-fast');
-        $response = Http::timeout(30)->post($url, [
+        $response = Http::retry(3, 200)->timeout(30)->post($url, [
             'resumes'   => [mb_substr($resume->description, 0, 3000)],
             'vacancies' => array_map(fn($v) => [
-                'id'   => $v['id'] ? (string) $v['id'] : null, // force string
+                'id'   => $v['id'] ? (string) $v['id'] : null,
                 'text' => $v['text'],
             ], $vacanciesPayload),
             'top_k'     => 100,
             'min_score' => 0,
         ]);
-        
-        
+
+        Log::info('Fetch HH details took: ' . (microtime(true) - $start) . 's');
+
         if ($response->failed()) {
             Log::error('Matcher API failed', ['resume_id' => $resume->id, 'body' => $response->body()]);
             return [];
@@ -104,13 +119,11 @@ class VacancyMatchingService
 
         $results = $response->json();
         $matches = $results['results'][0] ?? [];
-        // --- Map extId to payload ---
         $vacancyMap = collect($vacanciesPayload)->keyBy(fn($v, $k) => $v['id'] ?? "new_{$k}");
 
-        // --- Save results ---
         $savedData = [];
         foreach ($matches as $match) {
-            if ($match['score'] < 70) continue;
+            if ($match['score'] < 50) continue;
 
             $vacId = $match['vacancy_id'] ?? null;
             $vac   = $vacId ? Vacancy::find($vacId) : null;
