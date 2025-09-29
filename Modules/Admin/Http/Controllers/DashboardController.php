@@ -233,6 +233,7 @@ class DashboardController extends Controller
      */
     public function topVisitors()
     {
+        $sourceFilter = config('analytics.visits_source', 'api'); // 'api' | 'web' | 'all'
         $rows = DB::table('visits')
             ->leftJoin('users', 'users.id', '=', 'visits.user_id')
             ->whereNotNull('visits.user_id')
