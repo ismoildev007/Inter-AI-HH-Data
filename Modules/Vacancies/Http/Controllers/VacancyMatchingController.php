@@ -34,7 +34,7 @@ class VacancyMatchingController extends Controller
         // MatchResumeJob::dispatch($resume, $resume->title ?? $resume->description);
         // Log::info('Dispatched MatchResumeJob', ['user_id' => auth()->id(), 'resume_id' => $resume->id]);
         $savedData = $service->matchResume($resume, $resume->title ?? $resume->description);
-        
+
         $results = MatchResult::with('vacancy.employer')
             ->leftJoin('applications', function ($join) use ($user) {
                 $join->on('applications.vacancy_id', '=', 'match_results.vacancy_id')
@@ -71,6 +71,10 @@ class VacancyMatchingController extends Controller
             ->select('match_results.*')
             ->get();
 
-        return VacancyMatchResource::collection($results);
+        return response()->json([
+            'status'  => 'success',
+            'message' => 'Matching finished successfully.',
+            'data'    => VacancyMatchResource::collection($results),
+        ]);
     }
 }
