@@ -11,6 +11,7 @@ class Visit extends Model
         'session_id',
         'ip_address',
         'user_agent',
+        'source',
         'visited_at',
     ];
 

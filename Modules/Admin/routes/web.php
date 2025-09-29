@@ -17,9 +17,11 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::get('logout', [AdminController::class, 'logout'])->name('logout');
 
     // Protected admin pages
-    Route::middleware(['auth.admin'])->group(function () {
+    // TrackVisits middleware here to record authenticated admin user page hits
+    Route::middleware(['auth.admin', 'track.visits'])->group(function () {
         // Dashboard
         Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+        Route::get('/visits/top-users', [DashboardController::class, 'topVisitors'])->name('visits.top_users');
 
         // Profile
         Route::get('profile', [ProfileController::class, 'index'])->name('profile');

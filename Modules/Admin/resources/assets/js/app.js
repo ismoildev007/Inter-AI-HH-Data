@@ -1,6 +1,7 @@
 import "./dashboard-custom.js";
 import "./visitors-custom.js";
 import "./mini-charts-custom.js";
+import "./analytics-custom.js";
 
 // Ensure these assets are included in the manifest for Blade asset() usage
 import "../images/logo-abbr.png";
@@ -70,8 +71,37 @@ if (legacyNeeded) {
       // Load the same timeTo plugin bundled with the template to avoid API mismatches
       await loadScript(new URL('../vendors/js/jquery.time-to.min.js', import.meta.url).href);
     }
+    // Do NOT import the theme's analytics-init (it draws default demo charts)
+    // Instead, initialize only the date range picker, our custom charts handle rendering
     if (needsAnalytics) {
-      ensureApexCharts(() => import('../js/analytics-init.min.js'));
+      const initRange = () => {
+        const $ = window.jQuery;
+        const el = $('#reportrange');
+        if (!el.length || !window.moment) return;
+        const start = window.moment().subtract(29, 'days');
+        const end = window.moment();
+        function cb(s, e) {
+          $('#reportrange span').html(s.format('MMM D, YY') + ' - ' + e.format('MMM D, YY'));
+        }
+        el.daterangepicker({
+          startDate: start,
+          endDate: end,
+          ranges: {
+            'Today': [window.moment(), window.moment()],
+            'Yesterday': [window.moment().subtract(1, 'days'), window.moment().subtract(1, 'days')],
+            'Last 7 Days': [window.moment().subtract(6, 'days'), window.moment()],
+            'Last 30 Days': [window.moment().subtract(29, 'days'), window.moment()],
+            'This Month': [window.moment().startOf('month'), window.moment().endOf('month')],
+            'Last Month': [window.moment().subtract(1, 'month').startOf('month'), window.moment().subtract(1, 'month').endOf('month')]
+          }
+        }, cb);
+        cb(start, end);
+      };
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initRange, { once: true });
+      } else {
+        initRange();
+      }
     }
     // Theme common init after jQuery
     await import('../js/common-init.min.js');

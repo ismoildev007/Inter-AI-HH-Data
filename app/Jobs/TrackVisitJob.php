@@ -30,6 +30,7 @@ class TrackVisitJob implements ShouldQueue
             'session_id' => $this->data['session_id'],
             'ip_address' => $this->data['ip_address'],
             'user_agent' => $this->data['user_agent'],
+            'source'     => $this->data['source'] ?? null,
             'visited_at' => $this->data['visited_at'],
             'created_at' => now(),
         ]);
