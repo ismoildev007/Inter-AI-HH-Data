@@ -18,6 +18,7 @@ class DashboardController extends Controller
      */
     public function index()
     {
+        $sourceFilter = config('analytics.visits_source', 'api'); // 'api' | 'web' | 'all'
         $usersCount = User::count();
         $resumesCount = Resume::count();
         $applicationsCount = Application::count();
@@ -54,6 +55,7 @@ class DashboardController extends Controller
         };
 
         $rows = Visit::query()
+            ->when($sourceFilter !== 'all', function ($q) use ($sourceFilter) { $q->where('source', $sourceFilter); })
             ->whereBetween('visited_at', [$start, $end])
             ->selectRaw($expr." as ym, COUNT(*) as c")
             ->groupBy('ym')
@@ -112,6 +114,100 @@ class DashboardController extends Controller
             'resumes' => array_sum($miniResumes),
         ];
 
+        // Analytics (Bounce/Page Views/Impressions/Conversions) based on actual visits
+        // 1) Bounce rate chart -> last 24 hours, hourly buckets
+        $hourNow = Carbon::now()->startOfHour();
+        $hourStart = (clone $hourNow)->subHours(23); // inclusive range of 24 hours
+        $hourKeys = [];
+        $hourLabels = [];
+        for ($i = 0; $i < 24; $i++) {
+            $dt = (clone $hourStart)->copy()->addHours($i);
+            $hourKeys[] = $dt->format('Y-m-d H:00');
+            $hourLabels[] = $dt->format('H').':00';
+        }
+        $hourExpr = match ($driver) {
+            'pgsql' => "to_char(date_trunc('hour', visited_at), 'YYYY-MM-DD HH24:00')",
+            'sqlite' => "strftime('%Y-%m-%d %H:00', visited_at)",
+            default => "DATE_FORMAT(visited_at, '%Y-%m-%d %H:00')",
+        };
+        $hourRows = Visit::query()
+            ->when($sourceFilter !== 'all', function ($q) use ($sourceFilter) { $q->where('source', $sourceFilter); })
+            ->whereBetween('visited_at', [$hourStart, (clone $hourNow)->endOfHour()])
+            ->selectRaw($hourExpr." as h, COUNT(*) as c")
+            ->groupBy('h')
+            ->orderBy('h')
+            ->get();
+        $hourMap = array_fill_keys($hourKeys, 0);
+        foreach ($hourRows as $r) { if (isset($hourMap[$r->h])) { $hourMap[$r->h] = (int) $r->c; } }
+        $bounceSeries = array_values($hourMap);
+
+        // 2) Page views -> last 30 days, daily buckets
+        $pvNow = Carbon::now()->startOfDay();
+        $pvStart = (clone $pvNow)->subDays(29);
+        $pvKeys = [];
+        $pvLabels = [];
+        for ($i = 0; $i < 30; $i++) {
+            $d = (clone $pvStart)->copy()->addDays($i);
+            $pvKeys[] = $d->format('Y-m-d');
+            $pvLabels[] = $d->format('M d');
+        }
+        $pvExpr = match ($driver) {
+            'pgsql' => "to_char(visited_at, 'YYYY-MM-DD')",
+            'sqlite' => "strftime('%Y-%m-%d', visited_at)",
+            default => "DATE(visited_at)",
+        };
+        $pvRows = Visit::query()
+            ->when($sourceFilter !== 'all', function ($q) use ($sourceFilter) { $q->where('source', $sourceFilter); })
+            ->whereBetween('visited_at', [$pvStart, (clone $pvNow)->endOfDay()])
+            ->selectRaw($pvExpr." as d, COUNT(*) as c")
+            ->groupBy('d')
+            ->orderBy('d')
+            ->get();
+        $pvMap = array_fill_keys($pvKeys, 0);
+        foreach ($pvRows as $r) { if (isset($pvMap[$r->d])) { $pvMap[$r->d] = (int) $r->c; } }
+        $pageViewsSeries = array_values($pvMap);
+
+        // 3) Site impressions -> last 12 months monthly buckets (reuse visitors monthly buckets)
+        $impressionsLabels = $visitorsLabels;
+        $impressionsSeries = $visitorsSeries;
+
+        // 4) Conversion Rate -> last 12 months monthly buckets as well (could be same underlying visits metric)
+        $conversionsLabels = $visitorsLabels;
+        $conversionsSeries = $visitorsSeries;
+
+        $analyticsData = [
+            'bounce' => [
+                'labels' => $hourLabels,
+                'series' => $bounceSeries,
+            ],
+            'pageViews' => [
+                'labels' => $pvLabels,
+                'series' => $pageViewsSeries,
+            ],
+            'impressions' => [
+                'labels' => $impressionsLabels,
+                'series' => $impressionsSeries,
+            ],
+            'conversions' => [
+                'labels' => $conversionsLabels,
+                'series' => $conversionsSeries,
+            ],
+        ];
+
+        // Top visitors (all-time), only authenticated users (user_id not null)
+        // Use LEFT JOIN + COALESCE id fallback so rows remain even if user record missing
+        $topUsers = DB::table('visits')
+            ->leftJoin('users', 'users.id', '=', 'visits.user_id')
+            ->whereNotNull('visits.user_id')
+            ->when($sourceFilter !== 'all', function ($q) use ($sourceFilter) { $q->where('visits.source', $sourceFilter); })
+            ->selectRaw('COALESCE(users.id, visits.user_id) as id')
+            ->selectRaw('users.first_name, users.last_name, users.email')
+            ->selectRaw('COUNT(*) as visits_count')
+            ->groupBy(DB::raw('COALESCE(users.id, visits.user_id)'), 'users.first_name', 'users.last_name', 'users.email')
+            ->orderByDesc('visits_count')
+            ->limit(10)
+            ->get();
+
         return view('admin::Admin.Dashboard.dashboard', compact(
             'usersCount',
             'resumesCount',
@@ -126,7 +222,31 @@ class DashboardController extends Controller
             'miniUsers',
             'miniApplications',
             'miniResumes',
-            'miniTotals'
+            'miniTotals',
+            'analyticsData',
+            'topUsers'
         ));
+    }
+
+    /**
+     * Full listing of users ordered by total visits.
+     */
+    public function topVisitors()
+    {
+        $sourceFilter = config('analytics.visits_source', 'api'); // 'api' | 'web' | 'all'
+        $rows = DB::table('visits')
+            ->leftJoin('users', 'users.id', '=', 'visits.user_id')
+            ->whereNotNull('visits.user_id')
+            ->when($sourceFilter !== 'all', function ($q) use ($sourceFilter) { $q->where('visits.source', $sourceFilter); })
+            ->selectRaw('COALESCE(users.id, visits.user_id) as id')
+            ->selectRaw('users.first_name, users.last_name, users.email')
+            ->selectRaw('COUNT(*) as visits_count')
+            ->groupBy(DB::raw('COALESCE(users.id, visits.user_id)'), 'users.first_name', 'users.last_name', 'users.email')
+            ->orderByDesc('visits_count')
+            ->paginate(50);
+
+        return view('admin::Admin.Dashboard.top-visitors', [
+            'rows' => $rows,
+        ]);
     }
 }

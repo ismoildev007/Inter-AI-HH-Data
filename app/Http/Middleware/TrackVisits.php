@@ -20,8 +20,9 @@ class TrackVisits
             'session_id' => $sessionId,
             'ip_address' => $request->ip(),
             'user_agent' => $request->userAgent(),
+            'source'     => 'web',
             'visited_at' => now(),
-        ])->onQueue('tracking');
+        ]);
 
         return $next($request)->withCookie(cookie('visitor_id', $sessionId, 60 * 24 * 30));
     }

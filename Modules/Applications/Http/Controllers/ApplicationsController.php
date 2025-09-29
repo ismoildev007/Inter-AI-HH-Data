@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Modules\Vacancies\Interfaces\HHVacancyInterface;
 use App\Models\Application;
+use App\Models\Vacancy;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 
 class ApplicationsController extends Controller
@@ -28,29 +30,50 @@ class ApplicationsController extends Controller
 
         $paginator = Application::query()
             ->where('user_id', $user->id)
-            ->with(['vacancy:id,title,company,source'])
+            ->with(['vacancy' => function ($q) {
+                $q->select('id', 'source', 'external_id', 'title', 'raw_data', 'target_message_id', 'area_id');
+            }, 'vacancy.area:id,name'])
             ->orderByDesc('id')
             ->paginate($perPage);
 
-        $data = $paginator->getCollection()->map(function (Application $app) {
-            $vac = optional($app->vacancy);
+        $data = $paginator->getCollection()->map(function (Application $app) use ($user) {
+            $vacancy = $app->vacancy ?: Vacancy::find($app->vacancy_id);
+            $raw = $vacancy?->raw_data ? json_decode($vacancy->raw_data, true) : [];
+
+            // In applications list, user has already applied => true
+            $applied = true;
+
+            $vacancyData = [
+                'id'          => $vacancy?->id,
+                'source'      => $vacancy->source ?? 'telegram',
+                'external_id' => $vacancy?->external_id ?? null,
+                'company'     => $raw['employer']['name'] ?? null,
+                'title'       => $vacancy?->title,
+                'location'    => $vacancy?->area?->name
+                    ?? ($raw['area']['name'] ?? null),
+                'experience'  => $raw['experience']['name'] ?? null,
+                'salary'      => $raw['salary'] ?? null,
+                'published_at' => isset($raw['published_at'])
+                    ? Carbon::parse($raw['published_at'])->format('Y-m-d H:i:s')
+                    : null,
+            ];
+
+            if (($vacancy?->source ?? null) === 'telegram') {
+                $vacancyData['message_id'] = $vacancy->target_message_id;
+            }
+
             return [
-                'id' => $app->id,
-                'status' => $app->status,
-                'hh_status' => $app->hh_status,
-                'match_score' => $app->match_score,
-                'submitted_at' => $app->submitted_at,
-                'external_id' => $app->external_id,
-                'vacancy' => [
-                    'id' => $app->vacancy_id,
-                    'title' => $vac->title,
-                    'source' => $vac->source,
-                ],
+                'resume_id'     => $app->resume_id,
+                'vacancy_id'    => $app->vacancy_id,
+                'score_percent' => (int) round((float) ($app->match_score ?? 0)),
+                'status'        => $applied,
+                'vacancy'       => $vacancyData,
             ];
         });
 
         return response()->json([
-            'success' => true,
+            'status'  => 'success',
+            'message' => 'Matching finished successfully.',
             'data' => $data,
             'meta' => [
                 'current_page' => $paginator->currentPage(),

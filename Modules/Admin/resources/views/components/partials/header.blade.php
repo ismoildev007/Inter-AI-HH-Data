@@ -21,7 +21,7 @@
 
                 <a href="javascript:void(0);" 
                    onclick="window.location.reload();" 
-                   class="nxl-head-link refresh-link text-white ms-5 me-5" 
+                   class="nxl-head-link  text-black ms-5 me-5" 
                    title="Refresh">
                    Refresh・
                     <i class="feather-refresh-cw"></i>
@@ -30,7 +30,8 @@
 
                 <!-- Profil -->
                 <a href="{{ route('admin.profile') }}"
-                    class="nxl-head-link profile-link me-0 text-white"
+                     
+                     class="nxl-head-link  me-0 text-black"
                     title="Profile">
                     Profil・
                     <div class="avatar-text avatar-md">
@@ -45,7 +46,7 @@
 
                 <!-- Logout -->
                 <a href="{{ route('admin.logout') }}"
-                    class="nxl-head-link logout-link text-white"
+                    class="nxl-head-link  text-black"
                     title="Logout">
                     <i class="feather-log-out"></i>
                 </a>

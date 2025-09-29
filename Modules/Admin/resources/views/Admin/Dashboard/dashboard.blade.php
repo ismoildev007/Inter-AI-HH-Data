@@ -144,16 +144,16 @@
     <!-- Metrics + Leads + Team -->
     <div class="row g-3 mt-1">
         <div class="col-xxl-3 col-md-6">
-            <div class="card h-100"><div class="card-body"><h6>Bounce Rate</h6><div id="bounce-rate"></div></div></div>
+            <div class="card h-100"><div class="card-body"><h6>Hourly Visitors</h6><div id="bounce-rate"></div></div></div>
         </div>
         <div class="col-xxl-3 col-md-6">
-            <div class="card h-100"><div class="card-body"><h6>Page Views</h6><div id="page-views"></div></div></div>
+            <div class="card h-100"><div class="card-body"><h6>Daily Visitors</h6><div id="page-views"></div></div></div>
         </div>
         <div class="col-xxl-3 col-md-6">
-            <div class="card h-100"><div class="card-body"><h6>Site Impressions</h6><div id="site-impressions"></div></div></div>
+            <div class="card h-100"><div class="card-body"><h6>Monthly Visitors</h6><div id="site-impressions"></div></div></div>
         </div>
         <div class="col-xxl-3 col-md-6">
-            <div class="card h-100"><div class="card-body"><h6>Conversions Rate</h6><div id="conversions-rate"></div></div></div>
+            <div class="card h-100"><div class="card-body"><h6>Yearly Visitors</h6><div id="conversions-rate"></div></div></div>
         </div>
         <!-- <div class="col-xxl-8 col-12">
             <div class="card h-100">
@@ -202,28 +202,24 @@
     <div class="row g-3 mt-1">
         <div class="col-xxl-4">
             <div class="card h-100">
-                <div class="card-header"><h5 class="mb-0">Upcoming Schedule</h5></div>
+                <div class="card-header"><h5 class="mb-0">Top Visitors</h5></div>
                 <div class="card-body">
-                    <div class="d-flex justify-content-between border-bottom py-2">
-                        <div class="d-flex gap-2 align-items-center">
-                            <div class="avatar-text bg-primary text-white"><i class="feather-calendar"></i></div>
-                            <div><b>Sprint Planning</b><br><small class="text-muted">Tomorrow • 10:00</small></div>
+                    @forelse($topUsers as $u)
+                        <div class="d-flex justify-content-between border-bottom py-2 align-items-center">
+                            <div class="d-flex gap-2 align-items-center">
+                                <div class="avatar-text bg-primary text-white"><i class="feather-user"></i></div>
+                                <div>
+                                    <b>{{ trim(($u->first_name ?? '').' '.($u->last_name ?? '')) ?: ($u->email ?? 'User #'.$u->id) }}</b><br>
+                                    <small class="text-muted">{{ $u->email }}</small>
+                                </div>
+                            </div>
+                            <div class="text-end"><b>{{ $u->visits_count }}</b></div>
                         </div>
-                    </div>
-                    <div class="d-flex justify-content-between border-bottom py-2">
-                        <div class="d-flex gap-2 align-items-center">
-                            <div class="avatar-text bg-warning text-white"><i class="feather-briefcase"></i></div>
-                            <div><b>Client Demo</b><br><small class="text-muted">Fri • 2:30</small></div>
-                        </div>
-                    </div>
-                    <div class="d-flex justify-content-between py-2">
-                        <div class="d-flex gap-2 align-items-center">
-                            <div class="avatar-text bg-success text-white"><i class="feather-users"></i></div>
-                            <div><b>Team Retro</b><br><small class="text-muted">Mon • 4:00</small></div>
-                        </div>
-                    </div>
+                    @empty
+                        <div class="text-muted">No visitor data yet</div>
+                    @endforelse
                 </div>
-                <a href="#" class="card-footer text-center">View All</a>
+                <a href="{{ route('admin.visits.top_users') }}" class="card-footer text-center">View All</a>
             </div>
         </div>
         <div class="col-xxl-8">
@@ -233,7 +229,7 @@
             </div>
         </div>
     </div>
-<script>
+  <script>
     window.visitorsChart = {
         labels: @json($visitorsLabels ?? []),
         series: @json($visitorsSeries ?? [])
@@ -247,6 +243,7 @@
             resumes: @json($miniResumes ?? []),
         }
     };
+    window.analyticsData = @json($analyticsData ?? []);
   </script>
 </div><!-- /.main-content -->
 @endsection
