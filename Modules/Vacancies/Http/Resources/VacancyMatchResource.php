@@ -27,8 +27,6 @@ class VacancyMatchResource extends JsonResource
             'external_id' => $vacancy?->external_id ?? null,
             'company'     => $raw['employer']['name'] ?? $vacancy->company,
             'title'       => $vacancy?->title,
-            'location'    => $vacancy?->area?->name
-                ?? ($raw['area']['name'] ?? null),
             'experience'  => $raw['experience']['name'] ?? null,
             'salary'      => $raw['salary'] ?? null,
             'published_at' => isset($raw['published_at'])

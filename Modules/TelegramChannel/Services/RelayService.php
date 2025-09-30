@@ -353,6 +353,7 @@ class RelayService
                             // Save after successful send (or even if targetLink null)
                             try {
                                 Vacancy::create([
+                                    'source' => 'telegram',
                                     'title' => $normalized['title'] ?? null,
                                     'company' => $normalized['company'] ?? null,
                                     'contact' => [
