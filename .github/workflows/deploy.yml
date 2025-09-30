@@ -27,6 +27,10 @@ jobs:
         username: ${{ secrets.SERVER_USER }}
         key: ${{ secrets.SERVER_SSH_KEY_1 }}
         script: |
+          # ✅ GitHub host key’ni oldindan qo‘shib qo‘yish
+          mkdir -p ~/.ssh
+          ssh-keyscan github.com >> ~/.ssh/known_hosts
+
           if [ ! -d /var/www/app/.git ]; then
             sudo mkdir -p /var/www/app
             sudo chown -R $USER:$USER /var/www/app
@@ -35,6 +39,7 @@ jobs:
             cd /var/www/app
             git pull origin main
           fi
+
           cd /var/www/app
           cp .env.test .env   # ✅ artisan ishlashidan oldin .env tayyor
           composer install --no-interaction --prefer-dist --optimize-autoloader
@@ -45,6 +50,7 @@ jobs:
           php artisan route:cache
           sudo systemctl restart php8.4-fpm
           sudo systemctl restart nginx
+
 
 
     # 🚀 Deploy to App Server 2
