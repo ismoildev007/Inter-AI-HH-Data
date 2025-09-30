@@ -27,7 +27,6 @@ jobs:
         username: ${{ secrets.SERVER_USER }}
         key: ${{ secrets.SERVER_SSH_KEY_1 }}
         script: |
-          # ✅ GitHub host key’ni oldindan qo‘shib qo‘yish
           mkdir -p ~/.ssh
           ssh-keyscan github.com >> ~/.ssh/known_hosts
 
@@ -41,7 +40,7 @@ jobs:
           fi
 
           cd /var/www/app
-          cp .env.test .env   # ✅ artisan ishlashidan oldin .env tayyor
+          cp .env.test .env   
           composer install --no-interaction --prefer-dist --optimize-autoloader
           php artisan migrate --force
           php artisan config:clear
