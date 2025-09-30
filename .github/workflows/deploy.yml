@@ -41,7 +41,6 @@ jobs:
           git pull origin main
           cp .env.test .env     # ✅ .env.test → .env
           composer install --no-interaction --prefer-dist --optimize-autoloader
-          php artisan migrate --force
           php artisan config:cache
           php artisan route:cache
           sudo systemctl restart php8.4-fpm
@@ -64,7 +63,6 @@ jobs:
           git pull origin main
           cp .env.test .env     # ✅ .env.test → .env
           composer install --no-interaction --prefer-dist --optimize-autoloader
-          php artisan migrate --force
           php artisan config:cache
           php artisan route:cache
           sudo systemctl restart php8.4-fpm
