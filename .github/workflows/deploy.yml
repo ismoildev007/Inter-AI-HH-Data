@@ -32,7 +32,12 @@ jobs:
         username: ${{ secrets.SERVER_USER }}
         key: ${{ secrets.SERVER_SSH_KEY_1 }}
         script: |
-          cd /var/www/app || exit
+          if [ ! -d /var/www/app ]; then
+            sudo mkdir -p /var/www/app
+            sudo chown -R $USER:$USER /var/www/app
+            git clone https://github.com/QuvonchbekJalilov/Inter-AI-Job.git /var/www/app
+          fi
+          cd /var/www/app
           git pull origin main
           cp .env.test .env     # ✅ .env.test → .env
           composer install --no-interaction --prefer-dist --optimize-autoloader
@@ -50,7 +55,12 @@ jobs:
         username: ${{ secrets.SERVER_USER }}
         key: ${{ secrets.SERVER_SSH_KEY_2 }}
         script: |
-          cd /var/www/app || exit
+          if [ ! -d /var/www/app ]; then
+            sudo mkdir -p /var/www/app
+            sudo chown -R $USER:$USER /var/www/app
+            git clone https://github.com/QuvonchbekJalilov/Inter-AI-Job.git /var/www/app
+          fi
+          cd /var/www/app
           git pull origin main
           cp .env.test .env     # ✅ .env.test → .env
           composer install --no-interaction --prefer-dist --optimize-autoloader
