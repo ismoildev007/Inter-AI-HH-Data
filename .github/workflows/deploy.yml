@@ -18,11 +18,11 @@ jobs:
       with:
         php-version: '8.4'
 
-    - name: Install dependencies (local check)
-      run: |
-        composer install --no-interaction --prefer-dist --optimize-autoloader
-        php artisan config:clear
-        php artisan cache:clear
+    # - name: Install dependencies (local check)
+    #   run: |
+    #     composer install --no-interaction --prefer-dist --optimize-autoloader
+    #     php artisan config:clear
+    #     php artisan cache:clear
 
     # 🚀 Deploy to App Server 1
     - name: Deploy to App Server 1
