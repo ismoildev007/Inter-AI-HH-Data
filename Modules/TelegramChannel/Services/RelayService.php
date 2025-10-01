@@ -124,6 +124,8 @@ class RelayService
 
             // gpt apiga sorov jonatiladi 
             $maxId = $lastId;
+            // Track highest successfully SENT message id (for optional retry policy)
+            $maxDeliveredId = $lastId;
             $seenIds = [];
             foreach ($messages as $m) {
                 $id = (int) ($m['id'] ?? 0);
@@ -397,6 +399,8 @@ class RelayService
                                 } catch (\Throwable $e) {
                                     Log::error('Failed to save Vacancy', ['err' => $e->getMessage()]);
                                 }
+                                // Mark delivery progress for optional retry policy
+                                if ($id > $maxDeliveredId) { $maxDeliveredId = $id; }
                             } else {
                                 if ((bool) config('telegramchannel_relay.debug.log_memory', false)) {
                                     Log::debug('Skip save: send not successful', ['peer' => $ruleKey ?? null, 'id' => $id ?? null]);
@@ -411,13 +415,16 @@ class RelayService
 
             }
 
-            // Oxirgi ko'rilgan id ni saqlaymiz (agar kanal DB da bo'lsa)
-            if ($channel && $maxId > $lastId) {
-                $channel->last_message_id = $maxId;
+            // Oxirgi ko'rilgan id ni saqlash siyosati:
+            // Agar reprocess_on_send_failure yoqilgan bo'lsa, faqat muvaffaqiyatli yuborilgan eng katta id gacha suramiz.
+            // Aks holda avvalgidek $maxId gacha suramiz.
+            $advanceOnFailure = !(bool) config('telegramchannel_relay.fetch.reprocess_on_send_failure', false);
+            $newLastId = $advanceOnFailure ? $maxId : $maxDeliveredId;
+            if ($channel && $newLastId > $lastId) {
+                $channel->last_message_id = $newLastId;
                 $channel->save();
             }
-
-            $lastId = $maxId;
+            $lastId = $newLastId;
             $loops++;
             if ($loops >= $maxLoops || $stopLoop || $floodWait > 0) {
                 // Per-run cleanup to reduce retained memory in long workers
