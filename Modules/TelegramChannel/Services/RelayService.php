@@ -296,7 +296,13 @@ class RelayService
                             $tBlock = (int) ($thr['block'] ?? 5);
 
                             $acquired = false;
-                            Redis::throttle($tKey)->allow($tAllow)->every($tEvery)->block($tBlock)->then(function () use (&$acquired, $to, $out, $target, &$targetLink, &$tMsgId) {
+                            // Initialize here so it's defined even if send fails
+                            $tMsgId = $tMsgId ?? null;
+                            Redis::throttle($tKey)
+                                ->allow($tAllow)
+                                ->every($tEvery)
+                                ->block($tBlock)
+                                ->then(function () use (&$acquired, $to, $out, $target, &$targetLink, &$tMsgId, $peer, $id, &$floodWait, &$stopLoop) {
                                 $acquired = true;
                                 // Try to send; handle FLOOD_WAIT and other errors gracefully
                                 try {
@@ -326,14 +332,15 @@ class RelayService
                                 } catch (\Throwable $e) {
                                 $delay = $this->parseFloodWait($e->getMessage());
                                 if ($delay > 0) {
-                                    Log::warning('Telegram relay: FLOOD_WAIT on sendMessage', ['peer' => $peer, 'delay' => $delay]);
+                                    // Avoid capturing outer $peer inside limiter closure to prevent scope issues
+                                    Log::warning('Telegram relay: FLOOD_WAIT on sendMessage', ['delay' => $delay]);
                                     $floodWait = max($floodWait, $delay);
                                     $stopLoop = true;
                                 } else {
                                     Log::warning('Telegram relay: sendMessage failed', [
                                         'error' => $e->getMessage(),
                                         'to' => $to,
-                                        'source' => $peer,
+                                        // do not reference $peer inside this closure
                                         'message_id' => $id,
                                     ]);
                                 }
