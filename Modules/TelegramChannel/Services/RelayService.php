@@ -156,22 +156,36 @@ class RelayService
                     }
                 }
 
-                // Require username for source link; skip numeric-only without username
-                $plainSource = null;
+                // Build source link and quick dedupe by (source_id, source_message_id)
+                // Support both public (@username) and private (-100...) sources
+                $plainSource   = null; // username without @ if available
+                $channelIdRaw  = null; // string like -100xxxxxxxxxxxx if available
                 if (preg_match('/^-?\d+$/', (string) $peer)) {
-                    $plainSource = $channel?->username ? ltrim((string) $channel->username, '@') : null;
+                    // numeric peer: prefer DB channel username if present
+                    $plainSource  = $channel?->username ? ltrim((string) $channel->username, '@') : null;
+                    $channelIdRaw = (string) ($channel?->channel_id ?: $peer);
                 } else {
-                    $plainSource = ltrim((string) $peer, '@');
-                }
-                if (!$plainSource) {
-                    // Username is required to build a clickable source link
-                    Log::warning('Skipping message without source username', ['peer' => $peer, 'message_id' => $id]);
-                    continue;
+                    // username peer
+                    $plainSource  = ltrim((string) $peer, '@');
+                    $channelIdRaw = (string) ($channel->channel_id ?? '');
                 }
 
-                // Build source link and quick dedupe by (source_id, source_message_id)
-                $sourceId   = '@' . $plainSource;
-                $sourceLink = 'https://t.me/' . $plainSource . '/' . $id;
+                $sourceId  = null;
+                $sourceLink= null;
+                if ($plainSource) {
+                    // Public channel: use @username link
+                    $sourceId   = '@' . $plainSource;
+                    $sourceLink = 'https://t.me/' . $plainSource . '/' . $id;
+                } elseif ($channelIdRaw !== '' && preg_match('/^-?\d+$/', (string) $channelIdRaw)) {
+                    // Private channel: use t.me/c/<internalId>/<id>
+                    $sourceId = 'cid:' . (string) $channelIdRaw;
+                    $cid = ltrim((string) $channelIdRaw, '-');
+                    if (str_starts_with($cid, '100')) { $cid = substr($cid, 3); }
+                    $sourceLink = 'https://t.me/c/' . $cid . '/' . $id;
+                } else {
+                    Log::warning('Skipping message: cannot build source link', ['peer' => $peer, 'message_id' => $id]);
+                    continue;
+                }
                 $existsByLink = Vacancy::where('source_id', $sourceId)
                     ->where('source_message_id', $sourceLink)
                     ->exists();
