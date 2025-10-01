@@ -298,11 +298,12 @@ class RelayService
                             $acquired = false;
                             // Initialize here so it's defined even if send fails
                             $tMsgId = $tMsgId ?? null;
+                            $sent = false;
                             Redis::throttle($tKey)
                                 ->allow($tAllow)
                                 ->every($tEvery)
                                 ->block($tBlock)
-                                ->then(function () use (&$acquired, $to, $out, $target, &$targetLink, &$tMsgId, $peer, $id, &$floodWait, &$stopLoop) {
+                                ->then(function () use (&$acquired, $to, $out, $target, &$targetLink, &$tMsgId, $peer, $id, &$floodWait, &$stopLoop, &$sent) {
                                 $acquired = true;
                                 // Try to send; handle FLOOD_WAIT and other errors gracefully
                                 try {
@@ -329,6 +330,8 @@ class RelayService
                                     if (str_starts_with($cid, '100')) { $cid = substr($cid, 3); }
                                     $targetLink = 'https://t.me/c/' . $cid . '/' . $tMsgId;
                                 }
+                                // Mark send as successful
+                                $sent = true;
                                 } catch (\Throwable $e) {
                                 $delay = $this->parseFloodWait($e->getMessage());
                                 if ($delay > 0) {
@@ -357,27 +360,33 @@ class RelayService
                                 continue;
                             }
 
-                            // Save after successful send (or even if targetLink null)
-                            try {
-                                Vacancy::create([
-                                    'source' => 'telegram',
-                                    'title' => $normalized['title'] ?? null,
-                                    'company' => $normalized['company'] ?? null,
-                                    'contact' => [
-                                        'phones' => $phones,
-                                        'telegram_usernames' => $users,
-                                    ],
-                                    'description' => $normalized['description'] ?? null,
-                                    'language' => $normalized['language'] ?? null,
-                                    'status' => 'publish',
-                                    'source_id' => $sourceId,
-                                    'source_message_id' => $sourceLink,
-                                    'target_message_id' => $targetLink,
-                                    'target_msg_id' => $tMsgId,
-                                    'signature' => $signature,
-                                ]);
-                            } catch (\Throwable $e) {
-                                Log::error('Failed to save Vacancy', ['err' => $e->getMessage()]);
+                            // Save only if send was successful
+                            if ($sent) {
+                                try {
+                                    Vacancy::create([
+                                        'source' => 'telegram',
+                                        'title' => $normalized['title'] ?? null,
+                                        'company' => $normalized['company'] ?? null,
+                                        'contact' => [
+                                            'phones' => $phones,
+                                            'telegram_usernames' => $users,
+                                        ],
+                                        'description' => $normalized['description'] ?? null,
+                                        'language' => $normalized['language'] ?? null,
+                                        'status' => 'publish',
+                                        'source_id' => $sourceId,
+                                        'source_message_id' => $sourceLink,
+                                        'target_message_id' => $targetLink,
+                                        'target_msg_id' => $tMsgId,
+                                        'signature' => $signature,
+                                    ]);
+                                } catch (\Throwable $e) {
+                                    Log::error('Failed to save Vacancy', ['err' => $e->getMessage()]);
+                                }
+                            } else {
+                                if ((bool) config('telegramchannel_relay.debug.log_memory', false)) {
+                                    Log::debug('Skip save: send not successful', ['peer' => $ruleKey ?? null, 'id' => $id ?? null]);
+                                }
                             }
                         } finally {
                             optional($lock)->release();
