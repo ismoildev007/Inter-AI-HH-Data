@@ -30,10 +30,13 @@
 🏢 <b>Kompaniya:</b> {!! $companySafe !!}
 📞 <b>Bog’lanish:</b> {{ $contactLine }}
 📝 <b>Tavsif:</b> {!! $descSafe !!}<br>
-@if($sourceLink && $plainSource)
-🔗 <b>Manba:</b> <a href="{{ $sourceLink }}">{{ '   ' . $plainSource . '   '}}</a><br>
+@if($sourceLink)
+    @php
+        // For public channels show @username as anchor; for private, show a generic label
+        $anchor = $plainSource ? ('   ' . $plainSource . '   ') : 'post linkiga borish';
+    @endphp
+    🔗 <b>Manba:</b> <a href="{{ $sourceLink }}">{{ $anchor }}</a><br>
 @endif
 @if($targetLink && $targetUsername)
 ✅ <b>Bizning kanal:</b> <a href="{{ $targetLink }}">{{ '@'.ltrim($targetUsername, '@') }}</a>
 @endif
-

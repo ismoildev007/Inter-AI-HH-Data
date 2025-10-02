@@ -95,6 +95,9 @@ return [
         // Short-running mode: how many while-loop cycles per run
         // For scheduler-based execution, keep this 1 to minimize memory/time
         'max_loops_per_run' => 1,
+        // If true, do NOT advance last_message_id past the last successfully sent message.
+        // This makes failed sends reprocessed on the next run (safe retry), at the cost of potential reprocessing.
+        'reprocess_on_send_failure' => false,
     ],
     // Dispatch policy: round-robin per minute to smooth load
     'dispatch' => [

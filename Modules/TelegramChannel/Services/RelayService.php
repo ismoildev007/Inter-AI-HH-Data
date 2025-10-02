@@ -124,6 +124,8 @@ class RelayService
 
             // gpt apiga sorov jonatiladi 
             $maxId = $lastId;
+            // Track highest successfully SENT message id (for optional retry policy)
+            $maxDeliveredId = $lastId;
             $seenIds = [];
             foreach ($messages as $m) {
                 $id = (int) ($m['id'] ?? 0);
@@ -156,22 +158,36 @@ class RelayService
                     }
                 }
 
-                // Require username for source link; skip numeric-only without username
-                $plainSource = null;
+                // Build source link and quick dedupe by (source_id, source_message_id)
+                // Support both public (@username) and private (-100...) sources
+                $plainSource   = null; // username without @ if available
+                $channelIdRaw  = null; // string like -100xxxxxxxxxxxx if available
                 if (preg_match('/^-?\d+$/', (string) $peer)) {
-                    $plainSource = $channel?->username ? ltrim((string) $channel->username, '@') : null;
+                    // numeric peer: prefer DB channel username if present
+                    $plainSource  = $channel?->username ? ltrim((string) $channel->username, '@') : null;
+                    $channelIdRaw = (string) ($channel?->channel_id ?: $peer);
                 } else {
-                    $plainSource = ltrim((string) $peer, '@');
-                }
-                if (!$plainSource) {
-                    // Username is required to build a clickable source link
-                    Log::warning('Skipping message without source username', ['peer' => $peer, 'message_id' => $id]);
-                    continue;
+                    // username peer
+                    $plainSource  = ltrim((string) $peer, '@');
+                    $channelIdRaw = (string) ($channel->channel_id ?? '');
                 }
 
-                // Build source link and quick dedupe by (source_id, source_message_id)
-                $sourceId   = '@' . $plainSource;
-                $sourceLink = 'https://t.me/' . $plainSource . '/' . $id;
+                $sourceId  = null;
+                $sourceLink= null;
+                if ($plainSource) {
+                    // Public channel: use @username link
+                    $sourceId   = '@' . $plainSource;
+                    $sourceLink = 'https://t.me/' . $plainSource . '/' . $id;
+                } elseif ($channelIdRaw !== '' && preg_match('/^-?\d+$/', (string) $channelIdRaw)) {
+                    // Private channel: use t.me/c/<internalId>/<id>
+                    $sourceId = 'cid:' . (string) $channelIdRaw;
+                    $cid = ltrim((string) $channelIdRaw, '-');
+                    if (str_starts_with($cid, '100')) { $cid = substr($cid, 3); }
+                    $sourceLink = 'https://t.me/c/' . $cid . '/' . $id;
+                } else {
+                    Log::warning('Skipping message: cannot build source link', ['peer' => $peer, 'message_id' => $id]);
+                    continue;
+                }
                 $existsByLink = Vacancy::where('source_id', $sourceId)
                     ->where('source_message_id', $sourceLink)
                     ->exists();
@@ -296,7 +312,14 @@ class RelayService
                             $tBlock = (int) ($thr['block'] ?? 5);
 
                             $acquired = false;
-                            Redis::throttle($tKey)->allow($tAllow)->every($tEvery)->block($tBlock)->then(function () use (&$acquired, $to, $out, $target, &$targetLink, &$tMsgId) {
+                            // Initialize here so it's defined even if send fails
+                            $tMsgId = $tMsgId ?? null;
+                            $sent = false;
+                            Redis::throttle($tKey)
+                                ->allow($tAllow)
+                                ->every($tEvery)
+                                ->block($tBlock)
+                                ->then(function () use (&$acquired, $to, $out, $target, &$targetLink, &$tMsgId, $peer, $id, &$floodWait, &$stopLoop, &$sent) {
                                 $acquired = true;
                                 // Try to send; handle FLOOD_WAIT and other errors gracefully
                                 try {
@@ -323,17 +346,20 @@ class RelayService
                                     if (str_starts_with($cid, '100')) { $cid = substr($cid, 3); }
                                     $targetLink = 'https://t.me/c/' . $cid . '/' . $tMsgId;
                                 }
+                                // Mark send as successful
+                                $sent = true;
                                 } catch (\Throwable $e) {
                                 $delay = $this->parseFloodWait($e->getMessage());
                                 if ($delay > 0) {
-                                    Log::warning('Telegram relay: FLOOD_WAIT on sendMessage', ['peer' => $peer, 'delay' => $delay]);
+                                    // Avoid capturing outer $peer inside limiter closure to prevent scope issues
+                                    Log::warning('Telegram relay: FLOOD_WAIT on sendMessage', ['delay' => $delay]);
                                     $floodWait = max($floodWait, $delay);
                                     $stopLoop = true;
                                 } else {
                                     Log::warning('Telegram relay: sendMessage failed', [
                                         'error' => $e->getMessage(),
                                         'to' => $to,
-                                        'source' => $peer,
+                                        // do not reference $peer inside this closure
                                         'message_id' => $id,
                                     ]);
                                 }
@@ -350,27 +376,35 @@ class RelayService
                                 continue;
                             }
 
-                            // Save after successful send (or even if targetLink null)
-                            try {
-                                Vacancy::create([
-                                    'source' => 'telegram',
-                                    'title' => $normalized['title'] ?? null,
-                                    'company' => $normalized['company'] ?? null,
-                                    'contact' => [
-                                        'phones' => $phones,
-                                        'telegram_usernames' => $users,
-                                    ],
-                                    'description' => $normalized['description'] ?? null,
-                                    'language' => $normalized['language'] ?? null,
-                                    'status' => 'publish',
-                                    'source_id' => $sourceId,
-                                    'source_message_id' => $sourceLink,
-                                    'target_message_id' => $targetLink,
-                                    'target_msg_id' => $tMsgId,
-                                    'signature' => $signature,
-                                ]);
-                            } catch (\Throwable $e) {
-                                Log::error('Failed to save Vacancy', ['err' => $e->getMessage()]);
+                            // Save only if send was successful
+                            if ($sent) {
+                                try {
+                                    Vacancy::create([
+                                        'source' => 'telegram',
+                                        'title' => $normalized['title'] ?? null,
+                                        'company' => $normalized['company'] ?? null,
+                                        'contact' => [
+                                            'phones' => $phones,
+                                            'telegram_usernames' => $users,
+                                        ],
+                                        'description' => $normalized['description'] ?? null,
+                                        'language' => $normalized['language'] ?? null,
+                                        'status' => 'publish',
+                                        'source_id' => $sourceId,
+                                        'source_message_id' => $sourceLink,
+                                        'target_message_id' => $targetLink,
+                                        'target_msg_id' => $tMsgId,
+                                        'signature' => $signature,
+                                    ]);
+                                } catch (\Throwable $e) {
+                                    Log::error('Failed to save Vacancy', ['err' => $e->getMessage()]);
+                                }
+                                // Mark delivery progress for optional retry policy
+                                if ($id > $maxDeliveredId) { $maxDeliveredId = $id; }
+                            } else {
+                                if ((bool) config('telegramchannel_relay.debug.log_memory', false)) {
+                                    Log::debug('Skip save: send not successful', ['peer' => $ruleKey ?? null, 'id' => $id ?? null]);
+                                }
                             }
                         } finally {
                             optional($lock)->release();
@@ -381,13 +415,16 @@ class RelayService
 
             }
 
-            // Oxirgi ko'rilgan id ni saqlaymiz (agar kanal DB da bo'lsa)
-            if ($channel && $maxId > $lastId) {
-                $channel->last_message_id = $maxId;
+            // Oxirgi ko'rilgan id ni saqlash siyosati:
+            // Agar reprocess_on_send_failure yoqilgan bo'lsa, faqat muvaffaqiyatli yuborilgan eng katta id gacha suramiz.
+            // Aks holda avvalgidek $maxId gacha suramiz.
+            $advanceOnFailure = !(bool) config('telegramchannel_relay.fetch.reprocess_on_send_failure', false);
+            $newLastId = $advanceOnFailure ? $maxId : $maxDeliveredId;
+            if ($channel && $newLastId > $lastId) {
+                $channel->last_message_id = $newLastId;
                 $channel->save();
             }
-
-            $lastId = $maxId;
+            $lastId = $newLastId;
             $loops++;
             if ($loops >= $maxLoops || $stopLoop || $floodWait > 0) {
                 // Per-run cleanup to reduce retained memory in long workers
