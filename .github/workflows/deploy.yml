@@ -40,7 +40,7 @@ jobs:
           fi
 
           cd /var/www/app
-          cp .env.test .env   
+          # cp .env.test .env   
           composer install --no-interaction --prefer-dist --optimize-autoloader
           php artisan migrate --force
           php artisan config:clear
@@ -74,7 +74,7 @@ jobs:
               fi
 
               cd /var/www/app
-              cp .env.test .env   
+              # cp .env.test .env   
               composer install --no-interaction --prefer-dist --optimize-autoloader
               php artisan migrate --force
               php artisan config:clear
