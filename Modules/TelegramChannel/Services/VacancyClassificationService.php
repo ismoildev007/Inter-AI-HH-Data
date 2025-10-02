@@ -43,8 +43,8 @@ Return JSON like: {"label":"employer_vacancy","confidence":0.88,"language":"uz"}
 PROMPT;
 
         $response = Http::withToken($apiKey)
-            ->timeout(20)
-            ->retry(2, 200)
+            ->timeout(60)
+            ->retry(3, fn ($attempt) => [500, 2000, 5000][$attempt - 1] ?? 5000)
             ->post('https://api.openai.com/v1/chat/completions', [
                 'model' => $model,
                 'messages' => [

@@ -57,8 +57,22 @@ class RelayService
                     }
                     return 0;
                 }
-                Log::warning('Telegram relay: getHistory failed (initial)', ['peer' => $peer, 'error' => $e->getMessage()]);
-                return 0;
+                $etype = $this->classifyError($e);
+                switch ($etype) {
+                    case 'SIGTERM':
+                    case 'SIGINT':
+                        Log::info('Telegram relay: getHistory interrupted by signal', ['peer' => $peer, 'phase' => 'initial', 'signal' => $etype]);
+                        return 0;
+                    case 'PEER_DB_MISS':
+                        Log::warning('Telegram relay: PEER_DB_MISS on initial getHistory', ['peer' => $peer, 'error' => $e->getMessage()]);
+                        return 0;
+                    case 'NETWORK':
+                        Log::warning('Telegram relay: NETWORK_ERROR on initial getHistory', ['peer' => $peer, 'error' => $e->getMessage()]);
+                        return 0;
+                    default:
+                        Log::warning('Telegram relay: getHistory failed (initial)', ['peer' => $peer, 'error' => $e->getMessage()]);
+                        return 0;
+                }
             }
             $messages = $latest['messages'] ?? [];
             $latestId = 0;
@@ -99,7 +113,22 @@ class RelayService
                     }
                     break;
                 }
-                Log::warning('Telegram relay: getHistory failed', ['peer' => $peer, 'error' => $e->getMessage()]);
+                $etype = $this->classifyError($e);
+                switch ($etype) {
+                    case 'SIGTERM':
+                    case 'SIGINT':
+                        Log::info('Telegram relay: getHistory interrupted by signal', ['peer' => $peer, 'phase' => 'loop', 'signal' => $etype]);
+                        break;
+                    case 'PEER_DB_MISS':
+                        Log::warning('Telegram relay: PEER_DB_MISS on getHistory', ['peer' => $peer, 'error' => $e->getMessage()]);
+                        break;
+                    case 'NETWORK':
+                        Log::warning('Telegram relay: NETWORK_ERROR on getHistory', ['peer' => $peer, 'error' => $e->getMessage()]);
+                        break;
+                    default:
+                        Log::warning('Telegram relay: getHistory failed', ['peer' => $peer, 'error' => $e->getMessage()]);
+                        break;
+                }
                 break;
             }
             $messages = $hist['messages'] ?? [];
@@ -107,7 +136,16 @@ class RelayService
             if (isset($hist['users']) || isset($hist['chats']) || isset($hist['updates']) || isset($hist['users_nearby'])) {
                 unset($hist['users'], $hist['chats'], $hist['updates'], $hist['users_nearby']);
             }
-            if (empty($messages)) break;
+            if (empty($messages)) {
+                if ((bool) config('telegramchannel_relay.debug.log_empty_peers', true)) {
+                    Log::debug('Relay loop EMPTY', [
+                        'peer' => $peer,
+                        'loop' => $loops,
+                        'messages' => 0,
+                    ]);
+                }
+                break;
+            }
 
             // Optional memory diagnostics per loop
             if ((bool) config('telegramchannel_relay.debug.log_memory', false)) {
@@ -457,5 +495,20 @@ class RelayService
             if (str_contains($m, $needle)) return true;
         }
         return false;
+    }
+
+    private function classifyError(\Throwable $e): string
+    {
+        $m = (string) $e->getMessage();
+        $u = strtoupper($m);
+        if ($m === '') return 'UNKNOWN';
+        if (str_contains($u, 'SIGTERM')) return 'SIGTERM';
+        if (str_contains($u, 'SIGINT'))  return 'SIGINT';
+        if (str_contains($u, 'INTERNAL PEER DATABASE')) return 'PEER_DB_MISS';
+        // crude network hints
+        foreach (['TIMEOUT', 'TIMED OUT', 'ECONNRESET', 'FAILED TO CONNECT', 'SSL', 'TLS', 'CONNECTION RESET', 'NETWORK'] as $needle) {
+            if (str_contains($u, $needle)) return 'NETWORK';
+        }
+        return 'UNKNOWN';
     }
 }

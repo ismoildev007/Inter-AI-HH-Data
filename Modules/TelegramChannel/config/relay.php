@@ -17,16 +17,60 @@ return [
             'ищу вакансию',
             'resume',
             'cv',
+            'afitsant',
+            'ofitsiant',
+            'ofitsantka',
+            'ofisiant',
+            'sexy',
+            'go\'zal',
+            'gozal',
+            'go\'zallik',
+            'tikuvchi',
+            'tikuvchilik',
+            'sexi',
+            'tikuv',
+            'seh',
+            'quruvchi',
+            'quruvchilik',
+            'quruvchilar',
+            'quruvchisi',
+            'quruvchiga',
+            'quruvchidan',
+            'quruvchimiz',
+            'quruvchilarni',
+            'quruvchilar uchun'
         ],
         // Normalizatsiyadan so‘ng title shu qiymatlardan biri bo‘lsa — SKIP
         'title_blacklist' => [
             'ish joyi kerak',
-            'xodim kerak',
+            //'xodim kerak',
             'vakansiya',
             'резюме',
             'ищу работу',
             'resume',
             'cv',
+            'afitsant',
+            'ofitsiant',
+            'ofitsantka',
+            'ofisiant',
+            'sexy',
+            'go\'zal',
+            'gozal',
+            'go\'zallik',
+            'tikuvchi',
+            'tikuvchilik',
+            'sexi',
+            'tikuv',
+            'seh',
+            'quruvchi',
+            'quruvchilik',
+            'quruvchilar',
+            'quruvchisi',
+            'quruvchiga',
+            'quruvchidan',
+            'quruvchimiz',
+            'quruvchilarni',
+            'quruvchilar uchun'
         ],
     ],
     'dedupe' => [
@@ -60,25 +104,25 @@ return [
     // Hozir: UstozShogird va UstozShogirdSohalar
     // Operation: replace[type=regex], "to" satrida {target_username} ni ishlatish mumkin
     'transforms' => [
-        '@UstozShogird' => [
-            'replace' => [
-                [
-                    'type' => 'regex',
-                    // Pastda imzo qatordagi UstozShogird manzilini {target_username} bilan almashtirish
-                    'pattern' => '/^👉\s*@UstozShogird.*$/mi',
-                    'to' => '👉 {target_username} kanaliga ulanish',
-                ],
-            ],
-        ],
-        '@UstozShogirdSohalar' => [
-            'replace' => [
-                [
-                    'type' => 'regex',
-                    'pattern' => '/^👉\s*@UstozShogirdSohalar.*$/mi',
-                    'to' => '👉 {target_username} kanaliga ulanish',
-                ],
-            ],
-        ],
+        // '@UstozShogird' => [
+        //     'replace' => [
+        //         [
+        //             'type' => 'regex',
+        //             // Pastda imzo qatordagi UstozShogird manzilini {target_username} bilan almashtirish
+        //             'pattern' => '/^👉\s*@UstozShogird.*$/mi',
+        //             'to' => '👉 {target_username} kanaliga ulanish',
+        //         ],
+        //     ],
+        // ],
+        // '@UstozShogirdSohalar' => [
+        //     'replace' => [
+        //         [
+        //             'type' => 'regex',
+        //             'pattern' => '/^👉\s*@UstozShogirdSohalar.*$/mi',
+        //             'to' => '👉 {target_username} kanaliga ulanish',
+        //         ],
+        //     ],
+        // ],
         // '@AaaaElnurbek' => [
         //     'replace' => [
         //         [
@@ -97,25 +141,27 @@ return [
         'max_loops_per_run' => 1,
         // If true, do NOT advance last_message_id past the last successfully sent message.
         // This makes failed sends reprocessed on the next run (safe retry), at the cost of potential reprocessing.
-        'reprocess_on_send_failure' => false,
+        'reprocess_on_send_failure' => true,
     ],
     // Dispatch policy: round-robin per minute to smooth load
     'dispatch' => [
         // Nechta source har daqiqada ishga tushsin (round-robin)
         // 500 source va 50 chunk => ~10 daqiqada to'liq aylanma
-        'chunk_size' => 50,
+        'chunk_size' => 25,
         'offset_cache_key' => 'tg:relay:offset',
     ],
     'debug' => [
         // Enable to log memory usage per fetch loop
         'log_memory' => true,
+        // Also log peers with zero new messages
+        'log_empty_peers' => true,
     ],
     // Global publish throttle to reduce FLOOD_WAIT
     'throttle' => [
         'publish' => [
             'key' => 'tg:publish',
             // ruxsat etilgan yuborishlar soni / davr
-            'allow' => env('TG_PUBLISH_PER_MIN', 20), // per minute
+            'allow' => env('TG_PUBLISH_PER_MIN', 10), // per minute
             'every' => 60, // seconds
             'block' => 5,  // acquire up to N seconds, then skip current loop
         ],
