@@ -63,6 +63,7 @@ jobs:
             echo "🚀 Deploying to Server 2..."
             mkdir -p ~/.ssh
             ssh-keyscan github.com >> ~/.ssh/known_hosts
+            git config --global --add safe.directory /var/www/app
 
             if [ ! -d /var/www/app/.git ]; then
               sudo mkdir -p /var/www/app
