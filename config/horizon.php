@@ -166,7 +166,7 @@ return [
     |
     */
 
-    'memory_limit' => 64,
+    'memory_limit' => 128,
 
     /*
     |--------------------------------------------------------------------------
@@ -200,11 +200,13 @@ return [
             'balance' => 'auto',
             'autoScalingStrategy' => 'time',
             'maxProcesses' => 2,
-            'maxTime' => 3600,
-            'maxJobs' => 100,
+            // Avoid periodic rotation by time/job count to reduce SIGTERM interruptions
+            'maxTime' => 0,   // unlimited
+            'maxJobs' => 0,   // unlimited
             'memory' => 1024,
             'tries' => 1,
-            'timeout' => 120,
+            // Allow a bit more time per job in case of slow network
+            'timeout' => 180,
             'nice' => 0,
         ],
     ],
@@ -228,7 +230,7 @@ return [
                 'maxProcesses' => 3,
             ],
             'telegram-relay' => [
-                'maxProcesses' => 2,
+                'maxProcesses' => 3,
             ],
         ],
     ],
