@@ -153,6 +153,8 @@ return [
     'debug' => [
         // Enable to log memory usage per fetch loop
         'log_memory' => true,
+        // Also log peers with zero new messages
+        'log_empty_peers' => true,
     ],
     // Global publish throttle to reduce FLOOD_WAIT
     'throttle' => [

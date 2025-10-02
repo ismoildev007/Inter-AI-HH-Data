@@ -136,7 +136,16 @@ class RelayService
             if (isset($hist['users']) || isset($hist['chats']) || isset($hist['updates']) || isset($hist['users_nearby'])) {
                 unset($hist['users'], $hist['chats'], $hist['updates'], $hist['users_nearby']);
             }
-            if (empty($messages)) break;
+            if (empty($messages)) {
+                if ((bool) config('telegramchannel_relay.debug.log_empty_peers', true)) {
+                    Log::debug('Relay loop EMPTY', [
+                        'peer' => $peer,
+                        'loop' => $loops,
+                        'messages' => 0,
+                    ]);
+                }
+                break;
+            }
 
             // Optional memory diagnostics per loop
             if ((bool) config('telegramchannel_relay.debug.log_memory', false)) {

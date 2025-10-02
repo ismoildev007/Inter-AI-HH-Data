@@ -63,8 +63,8 @@ Context (do not include in output): source_username={$sourceUsername} message_id
 PROMPT;
 
         $response = Http::withToken($apiKey)
-            ->timeout(20)
-            ->retry(2, 200)
+            ->timeout(60)
+            ->retry(3, fn ($attempt) => [500, 2000, 5000][$attempt - 1] ?? 5000)
             ->post('https://api.openai.com/v1/chat/completions', [
                 'model' => $model,
                 'messages' => [
