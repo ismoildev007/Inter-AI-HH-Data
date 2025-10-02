@@ -62,13 +62,15 @@ jobs:
               mkdir -p ~/.ssh
               ssh-keyscan github.com >> ~/.ssh/known_hosts
 
+              echo "${{ secrets.SERVER_SSH_KEY_2 }}" > ~/.ssh/id_rsa
+              chmod 600 ~/.ssh/id_rsa
               if [ ! -d /var/www/app/.git ]; then
                 sudo mkdir -p /var/www/app
                 sudo chown -R $USER:$USER /var/www/app
-                git clone git@github.com:QuvonchbekJalilov/Inter-AI-Job.git /var/www/app
+                GIT_SSH_COMMAND="ssh -i ~/.ssh/id_rsa -o IdentitiesOnly=yes" git clone git@github.com:QuvonchbekJalilov/Inter-AI-Job.git /var/www/app
               else
                 cd /var/www/app
-                git pull origin main
+                GIT_SSH_COMMAND="ssh -i ~/.ssh/id_rsa -o IdentitiesOnly=yes" git pull origin main
               fi
 
               cd /var/www/app
