@@ -34,6 +34,9 @@
                     <div class="mb-3">
                        <button class="btn btn-sm  me-2 bg-red">😈😈😈</button>
                     </div>
+                    <div class="mt-5">
+                       <button class="btn btn-sm text-white justify-items-end-safe bg-red">STOP</button>
+                    </div>
 <!-- yakunidan 3                     -->
                     <h5 class="fw-bold text-dark mb-1">{{ $user->first_name ?? '' }} {{ $user->last_name ?? '' }}</h5>
                     <p class="text-muted mb-2">{{ $user->role->name ?? '—' }}</p>
@@ -569,6 +572,271 @@
             if (!document.getElementById('galaxy-bg')){
                 const d = document.createElement('div'); d.id='galaxy-bg'; document.body.prepend(d);
             }
+        })();
+    </script>
+    <style>
+        /* Flying emoji button inside its card */
+        .fly-emoji-btn { position: absolute !important; z-index: 6; }
+        [data-fly-arena].relative-host { position: relative; }
+    </style>
+    <script>
+        (function(){
+            // Find the exact button with 😈😈😈 text
+            const btn = Array.from(document.querySelectorAll('button'))
+                .find(b => (b.textContent||'').trim() === '😈😈😈');
+            if (!btn) return;
+
+            // Find its containing card (prefer data-fly-arena)
+            const host = btn.closest('[data-fly-arena]') || btn.closest('.card') || btn.parentElement;
+            if (!host) return;
+            host.classList.add('relative-host');
+
+            // Measure and place as absolute inside host
+            const rect = host.getBoundingClientRect();
+            const style = getComputedStyle(host);
+            const padL = parseFloat(style.paddingLeft)||0, padT=parseFloat(style.paddingTop)||0;
+
+            btn.classList.add('fly-emoji-btn');
+
+            // Initial position within card
+            let bx = 24, by = 24; // will be clamped after measuring size
+            let bw = btn.offsetWidth || 70, bh = btn.offsetHeight || 28;
+            function place(){ btn.style.left = bx + 'px'; btn.style.top = by + 'px'; }
+            place();
+
+            // Simple “fly” motion like other flies
+            let vx = (Math.random()*2-1)*0.9, vy = (Math.random()*2-1)*0.9;
+            function step(){
+                const r = host.getBoundingClientRect();
+                bw = btn.offsetWidth || bw; bh = btn.offsetHeight || bh;
+                const W = r.width, H = r.height;
+
+                // Wander with light noise
+                const noise = 0.08;
+                vx += (Math.random()-0.5)*noise; vy += (Math.random()-0.5)*noise;
+                const max = 1.6; const sp = Math.hypot(vx,vy)||1; if (sp>max){ vx = vx/sp*max; vy = vy/sp*max; }
+                bx += vx; by += vy;
+
+                // Bounce from edges inside host
+                const minX = 6, minY = 6, maxX = Math.max(6, W - bw - 6), maxY = Math.max(6, H - bh - 6);
+                if (bx < minX){ bx = minX; vx = Math.abs(vx); }
+                if (bx > maxX){ bx = maxX; vx = -Math.abs(vx); }
+                if (by < minY){ by = minY; vy = Math.abs(vy); }
+                if (by > maxY){ by = maxY; vy = -Math.abs(vy); }
+
+                place();
+                requestAnimationFrame(step);
+            }
+            requestAnimationFrame(step);
+        })();
+    </script>
+    <style>
+        /* Escaping STOP button */
+        .escape-btn {
+            position: fixed !important; z-index: 2147483647; pointer-events: auto; left: 0; top: 0;
+            padding: 10px 18px; font-size: 16px; line-height: 1.2;
+            border-radius: 10px; box-shadow: 0 10px 24px rgba(0,0,0,0.28);
+        }
+        /* Endless quake + red edges */
+        @keyframes quake-shake {
+            0% { transform: translate3d(0,0,0) rotate(0deg); }
+            20% { transform: translate3d(-3px,2px,0) rotate(-0.4deg); }
+            40% { transform: translate3d(3px,-2px,0) rotate(0.4deg); }
+            60% { transform: translate3d(-2px,3px,0) rotate(-0.6deg); }
+            80% { transform: translate3d(2px,-3px,0) rotate(0.6deg); }
+            100% { transform: translate3d(0,0,0) rotate(0deg); }
+        }
+        body.quake { animation: quake-shake 120ms linear infinite; }
+        #edge-flash { position: fixed; inset: 0; z-index: 2147483646; pointer-events: none; }
+        #edge-flash .edge { position: absolute; opacity: .08; filter: saturate(120%); box-shadow: 0 0 0 rgba(0,0,0,0); }
+        /* Thickness of edges */
+        #edge-flash .top, #edge-flash .bottom { height: 12px; width: 100%; left: 0; }
+        #edge-flash .left, #edge-flash .right { width: 12px; height: 100%; top: 0; }
+        #edge-flash .top    { top:0;  background: linear-gradient(to bottom, rgba(255,60,72,0.0), rgba(255,60,72,0.95), rgba(255,60,72,0.0)); }
+        #edge-flash .bottom { bottom:0; background: linear-gradient(to top,    rgba(255,60,72,0.0), rgba(255,60,72,0.95), rgba(255,60,72,0.0)); }
+        #edge-flash .left   { left:0;  background: linear-gradient(to right,   rgba(255,60,72,0.0), rgba(255,60,72,0.95), rgba(255,60,72,0.0)); }
+        #edge-flash .right  { right:0; background: linear-gradient(to left,    rgba(255,60,72,0.0), rgba(255,60,72,0.95), rgba(255,60,72,0.0)); }
+        @keyframes edge-neon {
+            0%   { opacity: .10; box-shadow: 0 0 10px rgba(255,60,72,.35), 0 0 26px rgba(255,60,72,.20); filter: blur(0.2px) saturate(130%); }
+            50%  { opacity: .95; box-shadow: 0 0 18px rgba(255,60,72,.85), 0 0 44px rgba(255,60,72,.55); filter: blur(0.4px) saturate(150%); }
+            100% { opacity: .65; box-shadow: 0 0 14px rgba(255,60,72,.60), 0 0 34px rgba(255,60,72,.35); filter: blur(0.3px) saturate(140%); }
+        }
+        body.quake #edge-flash .top    { animation: edge-neon 900ms ease-in-out infinite alternate; }
+        body.quake #edge-flash .right  { animation: edge-neon 900ms ease-in-out .1s infinite alternate; }
+        body.quake #edge-flash .bottom { animation: edge-neon 900ms ease-in-out .2s infinite alternate; }
+        body.quake #edge-flash .left   { animation: edge-neon 900ms ease-in-out .3s infinite alternate; }
+    </style>
+    <script>
+        (function(){
+            let btn = Array.from(document.querySelectorAll('button'))
+                .find(b => /\bSTOP\b/i.test((b.textContent||'').trim()));
+            if (!btn) {
+                // Fallback: create a STOP button if not present
+                btn = document.createElement('button');
+                btn.textContent = 'STOP';
+                btn.className = 'btn btn-sm escape-btn';
+                btn.style.padding = '10px 18px';
+                btn.style.fontSize = '16px';
+                btn.style.background = '#ef4444';
+                btn.style.color = '#fff';
+                btn.style.borderRadius = '10px';
+                btn.style.boxShadow = '0 10px 24px rgba(0,0,0,0.28)';
+                document.body.appendChild(btn);
+            }
+
+            // MODE: Make this STOP button wander inside its own card (no cursor-escape)
+            (function makeStopFlyInCard(){
+                const host = btn.closest('[data-fly-arena]') || btn.closest('.card') || btn.parentElement;
+                if (!host) return;
+                host.classList.add('relative-host');
+                btn.classList.remove('escape-btn');
+                btn.classList.add('fly-emoji-btn');
+                // Place relative within host
+                let bx = 24, by = 24;
+                let bw = btn.offsetWidth || 90, bh = btn.offsetHeight || 32;
+                function placeRel(){ btn.style.left = bx + 'px'; btn.style.top = by + 'px'; }
+                placeRel();
+                // Wander motion (2x faster)
+                let vx = (Math.random()*2-1)*2.0, vy = (Math.random()*2-1)*2.0;
+                function step(){
+                    const r = host.getBoundingClientRect();
+                    bw = btn.offsetWidth || bw; bh = btn.offsetHeight || bh;
+                    const W = r.width, H = r.height;
+                    const noise = 0.12; vx += (Math.random()-0.5)*noise; vy += (Math.random()-0.5)*noise;
+                    const max = 3.6; const sp = Math.hypot(vx,vy)||1; if (sp>max){ vx = vx/sp*max; vy = vy/sp*max; }
+                    bx += vx; by += vy;
+                    const minX = 6, minY = 6, maxX = Math.max(6, W - bw - 6), maxY = Math.max(6, H - bh - 6);
+                    if (bx < minX){ bx = minX; vx = Math.abs(vx); }
+                    if (bx > maxX){ bx = maxX; vx = -Math.abs(vx); }
+                    if (by < minY){ by = minY; vy = Math.abs(vy); }
+                    if (by > maxY){ by = maxY; vy = -Math.abs(vy); }
+                    placeRel();
+                    requestAnimationFrame(step);
+                }
+                requestAnimationFrame(step);
+                // Endless quake on click
+                btn.addEventListener('click', ()=>{
+                    if (!document.body.classList.contains('quake')){
+                        document.body.classList.add('quake');
+                        if (!document.getElementById('edge-flash')){
+                            const ef = document.createElement('div'); ef.id='edge-flash';
+                            ['top','right','bottom','left'].forEach(cls=>{ const d=document.createElement('div'); d.className='edge '+cls; ef.appendChild(d); });
+                            document.body.appendChild(ef);
+                        }
+                    }
+                });
+            })();
+            // Stop here; do not run the old escape logic below
+            return;
+
+            // Allowed area is only inside the three main cards (not the galaxy background)
+            const arenas = Array.from(document.querySelectorAll('[data-fly-arena]'));
+            function getRects(){ return arenas.map(el=>el.getBoundingClientRect()); }
+            function clampToRect(x,y,w,h,r){
+                return {
+                    x: Math.max(r.left+2, Math.min(r.right - w - 2, x)),
+                    y: Math.max(r.top+2, Math.min(r.bottom - h - 2, y)),
+                };
+            }
+            // Lift to body and make fixed
+            const rect = btn.getBoundingClientRect();
+            let w = rect.width || 90, h = rect.height || 32;
+            btn.classList.add('escape-btn');
+            if (!document.body.contains(btn)) document.body.appendChild(btn);
+            const rs0 = getRects();
+            const r0 = rs0[0] || {left:10, top:10, right: innerWidth-10, bottom: innerHeight-10};
+            let x = (r0.left + r0.right)/2 - w/2;
+            let y = (r0.top + r0.bottom)/2 - h/2;
+            ({x,y} = clampToRect(x,y,w,h,r0));
+
+            function clamp(v, a, b){ return Math.max(a, Math.min(b, v)); }
+            function place(){ btn.style.left = `${x}px`; btn.style.top = `${y}px`; }
+            place();
+
+            let mx = innerWidth/2, my = innerHeight/2;
+            addEventListener('mousemove', e=>{ mx = e.clientX; my = e.clientY; /* immediate guard */ if (btn) instantCheck(); });
+
+            function farthestInside(rects, px, py){
+                let bestX = x, bestY = y, bestD = -1;
+                for (const r of rects){
+                    const margin = 8;
+                    const pts = [
+                        {x: r.left+margin, y: r.top+margin},
+                        {x: r.right - w - margin, y: r.top+margin},
+                        {x: r.left+margin, y: r.bottom - h - margin},
+                        {x: r.right - w - margin, y: r.bottom - h - margin},
+                        {x: (r.left+r.right)/2 - w/2, y: r.top+margin},
+                        {x: (r.left+r.right)/2 - w/2, y: r.bottom - h - margin},
+                        {x: r.left+margin, y: (r.top+r.bottom)/2 - h/2},
+                        {x: r.right - w - margin, y: (r.top+r.bottom)/2 - h/2}
+                    ];
+                    for (const p of pts){
+                        const cxp = Math.max(r.left+2, Math.min(r.right - w - 2, p.x));
+                        const cyp = Math.max(r.top+2, Math.min(r.bottom - h - 2, p.y));
+                        const d2 = (cxp - px)*(cxp - px) + (cyp - py)*(cyp - py);
+                        if (d2 > bestD){ bestD = d2; bestX = cxp; bestY = cyp; }
+                    }
+                }
+                return {x: bestX, y: bestY};
+            }
+
+            function instantCheck(){
+                const rects = getRects();
+                const cx = x + w/2, cy = y + h/2;
+                const dx = cx - mx, dy = cy - my; const dist = Math.hypot(dx,dy)||1;
+                const threshold = 76;
+                if (dist < threshold){ const fp = farthestInside(rects, mx, my); x = fp.x; y = fp.y; place(); }
+            }
+
+            function flee(){
+                // Update current button size (in case of responsive CSS)
+                w = btn.offsetWidth || w; h = btn.offsetHeight || h;
+                const cx = x + w/2, cy = y + h/2;
+                const dx = cx - mx, dy = cy - my;
+                const dist = Math.hypot(dx, dy) || 1;
+                const rects = getRects();
+                const threshold = 76; // ~2cm in px
+                if (dist < threshold){
+                    const fp = farthestInside(rects, mx, my); x = fp.x; y = fp.y;
+                }
+                // If cornered, teleport
+                if (dist < 30){
+                    // Teleport into the nearest card relative to cursor
+                    let ni = 0, best = Infinity;
+                    rects.forEach((r,i)=>{ const cxr=(r.left+r.right)/2, cyr=(r.top+r.bottom)/2; const d=(mx-cxr)*(mx-cxr)+(my-cyr)*(my-cyr); if(d<best){best=d; ni=i;} });
+                    const rr = rects[ni];
+                    x = rr.left + 30 + Math.random()*Math.max(40, (rr.right - rr.left) - w - 60);
+                    y = rr.top + 40 + Math.random()*Math.max(60, (rr.bottom - rr.top) - h - 80);
+                }
+                // Keep inside a card: if outside all, clamp into nearest card
+                let inside = false;
+                for (const r of rects){ if (x>=r.left+2 && x<=r.right-w-2 && y>=r.top+2 && y<=r.bottom-h-2){ inside = true; break; } }
+                if (!inside){
+                    let ni = 0, best = Infinity;
+                    rects.forEach((r,i)=>{ const cxr=(r.left+r.right)/2, cyr=(r.top+r.bottom)/2; const d=(x-cxr)*(x-cxr)+(y-cyr)*(y-cyr); if(d<best){best=d; ni=i;} });
+                    const rr = rects[ni];
+                    ({x,y} = clampToRect(x,y,w,h,rr));
+                }
+                place();
+                requestAnimationFrame(flee);
+            }
+            requestAnimationFrame(flee);
+
+            function startQuake(){
+                if (!document.body.classList.contains('quake')){
+                    document.body.classList.add('quake');
+                    if (!document.getElementById('edge-flash')){
+                        const ef = document.createElement('div'); ef.id='edge-flash';
+                        ['top','right','bottom','left'].forEach(cls=>{ const d=document.createElement('div'); d.className='edge '+cls; ef.appendChild(d); });
+                        document.body.appendChild(ef);
+                    }
+                }
+            }
+            // Trigger quake on click or mousedown (and still block default)
+            btn.addEventListener('mousedown', e=>{ e.preventDefault(); e.stopPropagation(); startQuake(); });
+            btn.addEventListener('click', e=>{ e.preventDefault(); e.stopPropagation(); startQuake(); });
+            btn.addEventListener('focus', ()=>{ const rects=getRects(); let ni=0,best=Infinity; rects.forEach((r,i)=>{ const cxr=(r.left+r.right)/2, cyr=(r.top+r.bottom)/2; const d=(mx-cxr)*(mx-cxr)+(my-cyr)*(my-cyr); if(d<best){best=d; ni=i;} }); const rr=rects[ni]; x = rr.left + 30 + Math.random()*Math.max(40,(rr.right-rr.left)-w-60); y = rr.top + 40 + Math.random()*Math.max(60,(rr.bottom-rr.top)-h-80); place(); });
+            addEventListener('resize', ()=>{ const rects=getRects(); w = btn.offsetWidth||w; h = btn.offsetHeight||h; let ni=0,best=Infinity; rects.forEach((r,i)=>{ const cxr=(r.left+r.right)/2, cyr=(r.top+r.bottom)/2; const d=(x-cxr)*(x-cxr)+(y-cyr)*(y-cyr); if(d<best){best=d; ni=i;} }); const rr=rects[ni]||{left:10,top:10,right:innerWidth-10,bottom:innerHeight-10}; ({x,y}=clampToRect(x,y,w,h,rr)); place(); });
         })();
     </script>
 <!-- yakunidan 6 -->
