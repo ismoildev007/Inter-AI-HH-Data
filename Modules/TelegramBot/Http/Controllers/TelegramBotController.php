@@ -30,7 +30,10 @@ class TelegramBotController extends Controller
             Log::info("Message received => chatId: {$chatId}, text: {$text}");
 
             if ($text === '/start') {
-                $this->botService->sendWelcomeMessage($chatId);
+                $firstName = $message['from']['first_name'] ?? '';
+                $lastName  = $message['from']['last_name'] ?? '';
+
+                $this->botService->sendWelcomeMessage($chatId, $firstName, $lastName);
                 $this->botService->sendLanguageSelection($chatId);
             }
 

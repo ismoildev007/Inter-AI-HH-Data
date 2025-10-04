@@ -9,16 +9,22 @@ use Telegram\Bot\Laravel\Facades\Telegram;
 
 class TelegramBotService
 {
-    public function sendWelcomeMessage($chatId)
+    public function sendWelcomeMessage($chatId, $firstName = null, $lastName = null)
     {
-        $text = "Assalomu alaykum! Bizning botimizga xush kelibsiz!";
-        Log::info("sendWelcomeMessage => chatId: {$chatId}, text: {$text}");
+        $fullName = trim("{$firstName} {$lastName}");
+        if (empty($fullName)) {
+            $fullName = "";
+        }
+
+        $text = "Assalomu alaykum, {$fullName}! Bizning botimizga xush kelibsiz!";
+        Log::info("sendWelcomeMessage => chatId: {$chatId}, fullName: {$fullName}, text: {$text}");
 
         Telegram::bot('mybot')->sendMessage([
             'chat_id' => $chatId,
             'text'    => $text,
         ]);
     }
+
 
     public function sendLanguageSelection($chatId)
     {
