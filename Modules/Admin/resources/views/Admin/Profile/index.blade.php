@@ -442,6 +442,14 @@
             overflow: visible;
             transition: filter .2s ease;
         }
+        /* Galaxy background behind cards (real photo) */
+        #galaxy-bg { position: fixed; inset: 0; z-index: 0; pointer-events: none; display:block;
+            background-image: url('https://images.unsplash.com/photo-1462331940025-496dfbfc7564?auto=format&fit=crop&w=1920&q=80');
+            background-size: cover; background-position: center; background-repeat: no-repeat;
+            filter: brightness(0.55) contrast(1.15) saturate(1.05);
+            transform: translateZ(0); /* avoid repaint issues */
+        }
+        .nxl-container, .nxl-content, main.nxl-container { position: relative; z-index: 1; }
         [data-fly-arena].hang::before { /* nail */
             content: '';
             position: absolute;
@@ -555,6 +563,12 @@
                 requestAnimationFrame(loop);
             }
             requestAnimationFrame(loop);
+        })();
+        // Real galaxy photo background (fixed layer)
+        (function(){
+            if (!document.getElementById('galaxy-bg')){
+                const d = document.createElement('div'); d.id='galaxy-bg'; document.body.prepend(d);
+            }
         })();
     </script>
 <!-- yakunidan 6 -->
