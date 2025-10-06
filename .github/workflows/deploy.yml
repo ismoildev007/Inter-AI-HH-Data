@@ -43,7 +43,7 @@ jobs:
 
             cd /var/www/app
             composer install --no-interaction --prefer-dist --optimize-autoloader
-            php artisan migrate db:seed --force
+            php artisan migrate --seed --force
             php artisan config:clear
             php artisan cache:clear
             php artisan config:cache
@@ -80,7 +80,7 @@ jobs:
 
             cd /var/www/app
             composer install --no-interaction --prefer-dist --optimize-autoloader
-            php artisan migrate db:seed --force
+            php artisan migrate --force
             php artisan config:clear
             php artisan cache:clear
             php artisan config:cache
