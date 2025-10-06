@@ -8,5 +8,6 @@
     "Dashboard": true,
     "Admin": true,
     "TelegramChannel": true,
-    "TelegramBot": true
+    "TelegramBot": true,
+    "DemoResume": true
 }

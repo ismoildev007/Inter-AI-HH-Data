@@ -9,15 +9,25 @@ use Telegram\Bot\Laravel\Facades\Telegram;
 
 class TelegramBotService
 {
-    public function sendWelcomeMessage($chatId, $firstName = null, $lastName = null)
+//    public function sendWelcomeMessage($chatId, $firstName = null, $lastName = null)
+//    {
+//        $fullName = trim("{$firstName} {$lastName}");
+//        if (empty($fullName)) {
+//            $fullName = "";
+//        }
+//
+//        $text = "Assalomu alaykum, {$fullName}! inter-AI vakansiyalari botiga xush kelibsiz!";
+//        Log::info("sendWelcomeMessage => chatId: {$chatId}, fullName: {$fullName}, text: {$text}");
+//
+//        Telegram::bot('mybot')->sendMessage([
+//            'chat_id' => $chatId,
+//            'text'    => $text,
+//        ]);
+//    }
+    public function sendWelcomeMessage($chatId)
     {
-        $fullName = trim("{$firstName} {$lastName}");
-        if (empty($fullName)) {
-            $fullName = "";
-        }
-
-        $text = "Assalomu alaykum, {$fullName}! Bizning botimizga xush kelibsiz!";
-        Log::info("sendWelcomeMessage => chatId: {$chatId}, fullName: {$fullName}, text: {$text}");
+        $text = "Assalomu alaykum! inter-AI vakansiyalari botiga xush kelibsiz!";
+        Log::info("sendWelcomeMessage => chatId: {$chatId}, text: {$text}");
 
         Telegram::bot('mybot')->sendMessage([
             'chat_id' => $chatId,
@@ -52,9 +62,9 @@ class TelegramBotService
         Log::info("handleLanguageSelection => chatId: {$chatId}, lang: {$language}");
 
         $texts = [
-            '🇺🇿 O\'zbek' => 'Til tanlandi ✅ Quyidagi tugmani bosing!',
-            '🇷🇺 Русский' => 'Язык выбран ✅ Нажмите кнопку ниже!',
-            '🇬🇧 English' => 'Language selected ✅ Click the button below!',
+            '🇺🇿 O\'zbek' => 'Til tanlandi ✅ Platformamizdan ro\'yxatdan o\'tish uchun quyidagi tugmani bosing!',
+            '🇷🇺 Русский' => 'Язык выбран ✅ Нажмите кнопку ниже, чтобы зарегистрироваться на нашей платформе!',
+            '🇬🇧 English' => 'Language selected ✅ Click the button below to register on our platform!',
         ];
         $text = $texts[$language] ?? $texts['🇺🇿 O\'zbek'];
 
