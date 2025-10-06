@@ -21,6 +21,7 @@ class RelayService
         private TransformMessageText $transform,
         private VacancyClassificationService $classifier,
         private VacancyNormalizationService $normalizer,
+        private VacancyCategoryService $categorizer,
     ) {}
 
     public function syncOneByUsername(string $peer): int
@@ -293,6 +294,13 @@ class RelayService
                     }
                 }
 
+                // Determine category (AI normalized or heuristic fallback)
+                $category = $this->categorizer->categorize(
+                    (string) ($normalized['category'] ?? ''),
+                    (string) ($normalized['title'] ?? ''),
+                    (string) ($normalized['description'] ?? '')
+                );
+
                 // Render post in your house style (Blade)
                 // $phones and $users already prepared above
                 $targetUsername = $target?->username ? '@'.ltrim((string) $target->username, '@') : null;
@@ -421,6 +429,7 @@ class RelayService
                                         'source' => 'telegram',
                                         'title' => $normalized['title'] ?? null,
                                         'company' => $normalized['company'] ?? null,
+                                        'category' => $category ?: null,
                                         'contact' => [
                                             'phones' => $phones,
                                             'telegram_usernames' => $users,

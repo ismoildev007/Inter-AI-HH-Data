@@ -194,6 +194,15 @@ class DashboardController extends Controller
             ],
         ];
 
+        // Vacancies by category (top N) — Postgres-safe quoting and grouping by expression
+        $catExpr = "COALESCE(NULLIF(category, ''), 'other')";
+        $vacancyCategories = DB::table('vacancies')
+            ->selectRaw($catExpr . ' as category, COUNT(*) as c')
+            ->groupBy(DB::raw($catExpr))
+            ->orderByDesc('c')
+            ->limit(8)
+            ->get();
+
         // Top visitors (all-time), only authenticated users (user_id not null)
         // Use LEFT JOIN + COALESCE id fallback so rows remain even if user record missing
         $topUsers = DB::table('visits')
@@ -224,7 +233,8 @@ class DashboardController extends Controller
             'miniResumes',
             'miniTotals',
             'analyticsData',
-            'topUsers'
+            'topUsers',
+            'vacancyCategories'
         ));
     }
 
@@ -246,6 +256,23 @@ class DashboardController extends Controller
             ->paginate(50);
 
         return view('admin::Admin.Dashboard.top-visitors', [
+            'rows' => $rows,
+        ]);
+    }
+
+    /**
+     * Full listing of vacancies grouped by category (all categories).
+     */
+    public function vacancyCategories()
+    {
+        $catExpr = "COALESCE(NULLIF(category, ''), 'other')";
+        $rows = DB::table('vacancies')
+            ->selectRaw($catExpr . ' as category, COUNT(*) as c')
+            ->groupBy(DB::raw($catExpr))
+            ->orderByDesc('c')
+            ->get();
+
+        return view('admin::Admin.Dashboard.categories', [
             'rows' => $rows,
         ]);
     }

@@ -22,6 +22,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         // Dashboard
         Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
         Route::get('/visits/top-users', [DashboardController::class, 'topVisitors'])->name('visits.top_users');
+        Route::get('/vacancies/categories', [DashboardController::class, 'vacancyCategories'])->name('vacancies.categories');
 
         // Profile
         Route::get('profile', [ProfileController::class, 'index'])->name('profile');

@@ -3,7 +3,7 @@
     "private": true,
     "type": "module",
     "scripts": {
-        "build": "vite build",
+        "build": "vite build && vite build --config Modules/Admin/vite.config.js",
         "dev:root": "vite",
         "dev:admin": "npm --prefix Modules/Admin run dev",
         "build:admin": "npm --prefix Modules/Admin run build",
@@ -14,6 +14,8 @@
         "axios": "^1.11.0",
         "concurrently": "^9.0.1",
         "laravel-vite-plugin": "^2.0.0",
+        "postcss": "^8.4.47",
+        "sass": "^1.79.4",
         "tailwindcss": "^4.0.0",
         "vite": "^7.0.4"
     }
