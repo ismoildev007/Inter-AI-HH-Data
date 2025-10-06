@@ -19,7 +19,6 @@ return Application::configure(basePath: dirname(__DIR__))
             'auth.admin' => \App\Http\Middleware\AdminAuthenticate::class,
             'track.visits' => \App\Http\Middleware\TrackVisits::class,
         ]);
-        $middleware->append(TrustProxies::class);
 
 
         $middleware->group('api', [
