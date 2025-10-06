@@ -75,13 +75,13 @@ class AuthController extends Controller
 
         $user->load([
             'resumes',
-            'role',
-            'settings',
+//            'role',
+//            'settings',
             'credit',
-            'preferences.industry',
-            'locations.area',
-            'jobTypes',
-            'profileViews.employer',
+//            'preferences.industry',
+//            'locations.area',
+//            'jobTypes',
+//            'profileViews.employer',
         ]);
 
         return new UserResource($user);
