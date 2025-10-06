@@ -76,13 +76,13 @@ class AuthController extends Controller
 
         $user->load([
             'resumes',
-            'role',
-            'settings',
+//            'role',
+//            'settings',
             'credit',
-            'preferences.industry',
-            'locations.area',
-            'jobTypes',
-            'profileViews.employer',
+//            'preferences.industry',
+//            'locations.area',
+//            'jobTypes',
+//            'profileViews.employer',
         ]);
 
         return new UserResource($user);
@@ -197,7 +197,6 @@ class AuthController extends Controller
 
     public function requestVerificationCode(Request $request)
     {
-        dd($request->all());
         $request->validate([
             'email' => 'required|email'
         ]);
@@ -236,12 +235,11 @@ class AuthController extends Controller
     public function userVerify(Request $request)
     {
         $request->validate([
-            'email' => 'required|email',
+//            'email' => 'required|email',
             'phone' => 'required',
         ]);
 
-        $exists = \App\Models\User::where('email', $request->email)
-            ->orWhere('phone', $request->phone)
+        $exists = \App\Models\User::where('phone', $request->phone)
             ->exists();
 
         if ($exists) {
