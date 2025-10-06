@@ -69,7 +69,6 @@ class AuthController extends Controller
     public function me(Request $request)
     {
         $user = Auth::user();
-        dd($user);
 
         if (!$user) {
             return $this->error('Unauthenticated', 401);
