@@ -7,5 +7,7 @@
     "Payments": true,
     "Dashboard": true,
     "Admin": true,
-    "TelegramChannel": true
+    "TelegramChannel": true,
+    "TelegramBot": true,
+    "DemoResume": true
 }

@@ -1,0 +1,30 @@
+{
+    "name": "nwidart/demoresume",
+    "description": "",
+    "authors": [
+        {
+            "name": "Nicolas Widart",
+            "email": "n.widart@gmail.com"
+        }
+    ],
+    "extra": {
+        "laravel": {
+            "providers": [],
+            "aliases": {
+
+            }
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "Modules\\DemoResume\\": "app/",
+            "Modules\\DemoResume\\Database\\Factories\\": "database/factories/",
+            "Modules\\DemoResume\\Database\\Seeders\\": "database/seeders/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Modules\\DemoResume\\Tests\\": "tests/"
+        }
+    }
+}

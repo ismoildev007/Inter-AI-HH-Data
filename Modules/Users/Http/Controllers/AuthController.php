@@ -230,4 +230,28 @@ class AuthController extends Controller
             'message' => 'Email verified successfully, you can now complete registration'
         ]);
     }
+
+    public function userVerify(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email',
+            'phone' => 'required',
+        ]);
+
+        $exists = \App\Models\User::where('email', $request->email)
+            ->orWhere('phone', $request->phone)
+            ->exists();
+
+        if ($exists) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Bunday foydalanuvchi allaqachon mavjud.'
+            ], 422);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Mavjud emas, davom etishingiz mumkin.'
+        ], 200);
+    }
 }
