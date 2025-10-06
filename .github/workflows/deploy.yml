@@ -37,7 +37,7 @@ jobs:
               git clone git@github.com:QuvonchbekJalilov/Inter-AI-Job.git /var/www/app
             else
               cd /var/www/app
-              git reset --hard
+              # git reset --hard
               git pull origin main
             fi
 
@@ -71,7 +71,7 @@ jobs:
               git clone git@github.com:QuvonchbekJalilov/Inter-AI-Job.git /var/www/app
             else
               cd /var/www/app
-              git reset --hard
+              # git reset --hard
               git pull origin main
             fi
 
