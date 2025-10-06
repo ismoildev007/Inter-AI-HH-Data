@@ -234,12 +234,11 @@ class AuthController extends Controller
     public function userVerify(Request $request)
     {
         $request->validate([
-            'email' => 'required|email',
+//            'email' => 'required|email',
             'phone' => 'required',
         ]);
 
-        $exists = \App\Models\User::where('email', $request->email)
-            ->orWhere('phone', $request->phone)
+        $exists = \App\Models\User::where('phone', $request->phone)
             ->exists();
 
         if ($exists) {
