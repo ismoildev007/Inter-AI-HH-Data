@@ -222,7 +222,25 @@
                 <a href="{{ route('admin.visits.top_users') }}" class="card-footer text-center">View All</a>
             </div>
         </div>
-        <div class="col-xxl-8">
+        <div class="col-xxl-4">
+            <div class="card h-100">
+                <div class="card-header"><h5 class="mb-0">Vacancies by Category</h5></div>
+                <div class="card-body">
+                    @if(!empty($vacancyCategories) && count($vacancyCategories))
+                        @foreach($vacancyCategories as $row)
+                            <div class="d-flex justify-content-between border-bottom py-2 align-items-center">
+                                <div class="text-capitalize">{{ $row->category ?: 'other' }}</div>
+                                <div class="fw-bold">{{ $row->c }}</div>
+                            </div>
+                        @endforeach
+                    @else
+                        <div class="text-muted">No vacancy data yet</div>
+                    @endif
+                </div>
+                <a href="{{ route('admin.vacancies.categories') }}" class="card-footer text-center">View All</a>
+            </div>
+        </div>
+        <div class="col-xxl-4">
             <div class="card h-100">
                 <div class="card-header"><h5 class="mb-0">Social Radar</h5></div>
                 <div class="card-body"><div id="social-radar-chart"></div></div>

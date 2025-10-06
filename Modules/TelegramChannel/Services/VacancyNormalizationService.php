@@ -10,7 +10,7 @@ class VacancyNormalizationService
     /**
      * Normalize a raw vacancy text into a structured array using OpenAI.
      * - Keeps original language (no translation)
-     * - Extracts title, company, contacts and description
+     * - Extracts title, company, contacts, description, and category
      */
     public function normalize(string $rawText, string $sourceUsername, int $messageId): array
     {
@@ -39,7 +39,9 @@ Schema:
     "phones": ["+998...", "..."],
     "telegram_usernames": ["@user", "@user2"]
   },
-  "description": "string"
+  "description": "string",
+  "category_raw": "string",  // free-text short category inferred from the role (e.g., "PHP Laravel", "SMM", "QA")
+  "category": "string"       // one of: developer, frontend_developer, backend_developer, fullstack_developer, mobile_developer, devops, sysadmin, data, security, qa, product, project, designer, content, video_editor, motion_design, photographer, videographer, marketer, smm, pr, communications, sales, business_development, customer_success, support, hr, finance, accounting, banking, insurance, operations, procurement, supply_chain, warehouse, office_manager, analyst, architect, civil_engineer, electrical_engineer, mechanical_engineer, automation_engineer, electronics_engineer, chemical_engineer, construction, real_estate, teacher, tutor, trainer, translator, interpreter, medicine, nurse, pharmacist, dentist, veterinarian, hospitality, chef, cook, baker, pastry_chef, bartender, waiter, retail, cashier, driver, courier, logistics, technician, welder, electrician, plumber, mechanic, carpenter, painter, seamstress, tourism, travel_agent, beauty, legal, other
 }
 
 Field rules:
@@ -53,6 +55,9 @@ Field rules:
   - Put ALL remaining vacancy information (responsibilities, requirements, skills, salary, currency, bonuses, schedule, shift, format, contract, trial period, experience, location, deadlines, how to apply, preferred contact method/time, languages, start date, etc.).
   - Preserve numbers and currency exactly as in text.
   - Write neatly with proper punctuation, commas, spaces, and line breaks.
+ - category/category_raw:
+   - First, set category_raw to a short human label (e.g., "PHP Laravel", "Frontend", "SMM", "QA").
+   - Then map to the closest category from the allowed list and set category. If unclear, use "other". Always lowercase.
 
 Input text:
 """
@@ -100,6 +105,8 @@ PROMPT;
                 'telegram_usernames' => array_values(array_filter(array_map('strval', (array) ($data['contact']['telegram_usernames'] ?? [])))),
             ],
             'description' => (string) ($data['description'] ?? ''),
+            'category_raw' => (string) ($data['category_raw'] ?? ''),
+            'category' => (string) ($data['category'] ?? ''),
         ];
 
         return $normalized;

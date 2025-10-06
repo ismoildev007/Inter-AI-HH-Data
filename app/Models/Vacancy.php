@@ -14,6 +14,7 @@ class Vacancy extends Model
         'employer_id',
         'title',
         'description',
+        'category',
         'area_id',
         'schedule_id',
         'employment_id',
