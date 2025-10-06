@@ -15,6 +15,12 @@ Artisan::command('inspire', function () {
 
 //----------------------------
 
+// HTTP-triggered jobs (unscheduled):
+// - queue: default (job: App\Jobs\TrackVisitJob) — dispatched from app/Http/Middleware/TrackVisits.php
+//   No scheduler needed; ensure a default worker is running.
+
+//----------------------------
+
 Schedule::command('hh:sync-negotiations')
     ->everyFiveMinutes()
     ->withoutOverlapping();
@@ -50,4 +56,3 @@ Schedule::command('autoapply:start')
         ->hourly()
         ->withoutOverlapping();
     // Workers/queues: yo'q (queue ishlatilmaydi; to'g'ridan-to'g'ri DB update)
-
