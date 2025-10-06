@@ -29,6 +29,7 @@ class AuthController extends Controller
 
     public function register(RegisterRequest $request)
     {
+        dd($request);
         $result = $this->repo->register($request->all());
         if (isset($result['error']) && $result['error']) {
             return $this->error($result['message'], $result['status']);
