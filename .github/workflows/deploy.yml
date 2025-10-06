@@ -43,13 +43,16 @@ jobs:
 
             cd /var/www/app
             composer install --no-interaction --prefer-dist --optimize-autoloader
-            php artisan migrate --force
+            php artisan migrate db:seed --force
             php artisan config:clear
             php artisan cache:clear
             php artisan config:cache
             php artisan route:cache
+            npm install 
+            npm run build
             sudo systemctl restart php8.3-fpm
             sudo systemctl restart nginx
+
             echo "✅ Server 1 deployment completed."
 
       # Deploy to Server 2
@@ -77,11 +80,13 @@ jobs:
 
             cd /var/www/app
             composer install --no-interaction --prefer-dist --optimize-autoloader
-            php artisan migrate --force
+            php artisan migrate db:seed --force
             php artisan config:clear
             php artisan cache:clear
             php artisan config:cache
             php artisan route:cache
+            npm install 
+            npm run build
             sudo systemctl restart php8.3-fpm
             sudo systemctl restart nginx
             echo "✅ Server 2 deployment completed."
