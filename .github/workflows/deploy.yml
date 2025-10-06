@@ -18,9 +18,36 @@ jobs:
         with:
           php-version: '8.3'
           extensions: mbstring, pdo, bcmath, zip, curl, intl, gd, xml
-
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+            node-version: '20'
+      - name: Install and build frontend
+        run: |
+          npm ci
+          npm run build
+          tar -czf build.tar.gz public
       # Deploy to Server 1
       - name: Deploy to Server 1
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SERVER_IP_1 }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY_1 }}
+          source: "build.tar.gz"
+          target: "/tmp"
+
+      - name: Upload build to Server 2
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SERVER_IP_2 }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY_2 }}
+          source: "build.tar.gz"
+          target: "/tmp"
+
+
+      - name: Run Deploy to Server 1
         uses: appleboy/ssh-action@v1.0.0
         with:
           host: ${{ secrets.SERVER_IP_1 }}
@@ -42,8 +69,10 @@ jobs:
             fi
 
             cd /var/www/app
+
+            tar -xzf /tmp/build.tar.gz -C /var/www/app
             composer install --no-interaction --prefer-dist --optimize-autoloader
-            php artisan migrate --seed --force
+            php artisan migrate --force
             php artisan config:clear
             php artisan cache:clear
             php artisan config:cache
@@ -79,6 +108,7 @@ jobs:
             fi
 
             cd /var/www/app
+            tar -xzf /tmp/build.tar.gz -C /var/www/app
             composer install --no-interaction --prefer-dist --optimize-autoloader
             php artisan migrate --force
             php artisan config:clear
