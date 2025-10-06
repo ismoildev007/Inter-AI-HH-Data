@@ -97,7 +97,7 @@ class VacancyMatchingService
         }
         $url = config('services.matcher.url', 'https://python.inter-ai.uz/bulk-match-fast');
         $response = Http::retry(3, 200)->timeout(30)->post($url, [
-            'resumes'   => [mb_substr($resume->description, 0, 3000)],
+            'resumes'   => [mb_substr($resume->parsed_text, 0, 3000)],
             'vacancies' => array_map(fn($v) => [
                 'id'   => $v['id'] ? (string) $v['id'] : null,
                 'text' => $v['text'],
