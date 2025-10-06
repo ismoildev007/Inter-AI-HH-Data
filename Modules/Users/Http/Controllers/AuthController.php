@@ -8,7 +8,6 @@ use App\Models\UserCredit;
 use App\Models\UserSetting;
 use App\Traits\ApiResponseTrait;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Modules\Users\Http\Requests\LoginRequest;
 use Modules\Users\Http\Requests\RegisterRequest;
 use Modules\Users\Http\Resources\User\UserResource;
@@ -68,7 +67,8 @@ class AuthController extends Controller
 
     public function me(Request $request)
     {
-        $user = Auth::user();
+        $user = $request->user();
+        dd($user);
 
         if (!$user) {
             return $this->error('Unauthenticated', 401);
