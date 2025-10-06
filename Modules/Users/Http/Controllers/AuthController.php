@@ -196,6 +196,7 @@ class AuthController extends Controller
 
     public function requestVerificationCode(Request $request)
     {
+        dd($request->all());
         $request->validate([
             'email' => 'required|email'
         ]);
