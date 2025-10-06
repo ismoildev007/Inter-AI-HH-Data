@@ -199,6 +199,7 @@ class AuthController extends Controller
         $request->validate([
             'email' => 'required|email'
         ]);
+        dd($request->all());
 
         return response()->json(
             $this->repo->requestVerificationCode($request->email)
