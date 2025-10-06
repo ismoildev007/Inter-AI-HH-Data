@@ -36,8 +36,9 @@ jobs:
               sudo chown -R $USER:$USER /var/www/app
               git clone git@github.com:QuvonchbekJalilov/Inter-AI-Job.git /var/www/app
             else
+              echo "pulling"
               cd /var/www/app
-              # git reset --hard
+              git reset --hard
               git pull origin main
             fi
 
@@ -70,8 +71,9 @@ jobs:
               sudo chown -R $USER:$USER /var/www/app
               git clone git@github.com:QuvonchbekJalilov/Inter-AI-Job.git /var/www/app
             else
+              echo "pulling"
               cd /var/www/app
-              # git reset --hard
+              git reset --hard
               git pull origin main
             fi
 
