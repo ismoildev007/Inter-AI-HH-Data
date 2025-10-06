@@ -1,0 +1,136 @@
+{
+  "resources/assets/images/avatar/2.png": {
+    "file": "assets/2-71224e5e.png",
+    "src": "resources/assets/images/avatar/2.png"
+  },
+  "resources/assets/images/avatar/3.png": {
+    "file": "assets/3-b81a2c6a.png",
+    "src": "resources/assets/images/avatar/3.png"
+  },
+  "resources/assets/images/avatar/4.png": {
+    "file": "assets/3-b81a2c6a.png",
+    "src": "resources/assets/images/avatar/3.png"
+  },
+  "resources/assets/images/avatar/5.svg": {
+    "file": "assets/5-0a15704a.svg",
+    "src": "resources/assets/images/avatar/5.svg"
+  },
+  "resources/assets/images/favicon.ico": {
+    "file": "assets/favicon-8979682e.ico",
+    "src": "resources/assets/images/favicon.ico"
+  },
+  "resources/assets/images/logo-abbr.png": {
+    "file": "assets/logo-abbr-b2a3944d.png",
+    "src": "resources/assets/images/logo-abbr.png"
+  },
+  "resources/assets/images/logo-full.png": {
+    "file": "assets/logo-full-8f2f1736.png",
+    "src": "resources/assets/images/logo-full.png"
+  },
+  "resources/assets/js/app.js": {
+    "assets": [
+      "assets/nxlNavigation.min-bf6f2a85.js",
+      "assets/jquery.time-to.min-882f1029.js"
+    ],
+    "dynamicImports": [
+      "resources/assets/js/common-init.min.js"
+    ],
+    "file": "assets/app-22f78d34.js",
+    "isEntry": true,
+    "src": "resources/assets/js/app.js"
+  },
+  "resources/assets/js/common-init.min.js": {
+    "file": "assets/common-init.min-f2caf335.js",
+    "isDynamicEntry": true,
+    "src": "resources/assets/js/common-init.min.js"
+  },
+  "resources/assets/sass/app.scss": {
+    "file": "assets/app-d4675173.css",
+    "isEntry": true,
+    "src": "resources/assets/sass/app.scss"
+  },
+  "resources/assets/vendors/fonts/bootstrap-icons.woff": {
+    "file": "assets/bootstrap-icons-13977b4a.woff",
+    "src": "resources/assets/vendors/fonts/bootstrap-icons.woff"
+  },
+  "resources/assets/vendors/fonts/bootstrap-icons.woff2": {
+    "file": "assets/bootstrap-icons-c69bf1cc.woff2",
+    "src": "resources/assets/vendors/fonts/bootstrap-icons.woff2"
+  },
+  "resources/assets/vendors/fonts/fa-brands-400.ttf": {
+    "file": "assets/fa-brands-400-2cd4cf89.ttf",
+    "src": "resources/assets/vendors/fonts/fa-brands-400.ttf"
+  },
+  "resources/assets/vendors/fonts/fa-brands-400.woff2": {
+    "file": "assets/fa-brands-400-967394d1.woff2",
+    "src": "resources/assets/vendors/fonts/fa-brands-400.woff2"
+  },
+  "resources/assets/vendors/fonts/fa-regular-400.ttf": {
+    "file": "assets/fa-regular-400-e2d44fc8.ttf",
+    "src": "resources/assets/vendors/fonts/fa-regular-400.ttf"
+  },
+  "resources/assets/vendors/fonts/fa-regular-400.woff2": {
+    "file": "assets/fa-regular-400-52ec4d83.woff2",
+    "src": "resources/assets/vendors/fonts/fa-regular-400.woff2"
+  },
+  "resources/assets/vendors/fonts/fa-solid-900.ttf": {
+    "file": "assets/fa-solid-900-5808ca8f.ttf",
+    "src": "resources/assets/vendors/fonts/fa-solid-900.ttf"
+  },
+  "resources/assets/vendors/fonts/fa-solid-900.woff2": {
+    "file": "assets/fa-solid-900-52bbd916.woff2",
+    "src": "resources/assets/vendors/fonts/fa-solid-900.woff2"
+  },
+  "resources/assets/vendors/fonts/fa-v4compatibility.ttf": {
+    "file": "assets/fa-v4compatibility-58ccbdf2.ttf",
+    "src": "resources/assets/vendors/fonts/fa-v4compatibility.ttf"
+  },
+  "resources/assets/vendors/fonts/fa-v4compatibility.woff2": {
+    "file": "assets/fa-v4compatibility-b8f0081f.woff2",
+    "src": "resources/assets/vendors/fonts/fa-v4compatibility.woff2"
+  },
+  "resources/assets/vendors/fonts/feather.eot": {
+    "file": "assets/feather-2495770a.eot",
+    "src": "resources/assets/vendors/fonts/feather.eot"
+  },
+  "resources/assets/vendors/fonts/feather.ttf": {
+    "file": "assets/feather-3bcfe225.ttf",
+    "src": "resources/assets/vendors/fonts/feather.ttf"
+  },
+  "resources/assets/vendors/fonts/feather.woff": {
+    "file": "assets/feather-54950425.woff",
+    "src": "resources/assets/vendors/fonts/feather.woff"
+  },
+  "resources/assets/vendors/img/flags/1x1/bd.svg": {
+    "file": "assets/bd-90f8f20e.svg",
+    "src": "resources/assets/vendors/img/flags/1x1/bd.svg"
+  },
+  "resources/assets/vendors/img/flags/1x1/ch.svg": {
+    "file": "assets/ch-be4b8257.svg",
+    "src": "resources/assets/vendors/img/flags/1x1/ch.svg"
+  },
+  "resources/assets/vendors/img/flags/1x1/nl.svg": {
+    "file": "assets/nl-a8b56f7d.svg",
+    "src": "resources/assets/vendors/img/flags/1x1/nl.svg"
+  },
+  "resources/assets/vendors/img/flags/1x1/sa.svg": {
+    "file": "assets/sa-27dd5421.svg",
+    "src": "resources/assets/vendors/img/flags/1x1/sa.svg"
+  },
+  "resources/assets/vendors/img/flags/1x1/us.svg": {
+    "file": "assets/us-740efcc1.svg",
+    "src": "resources/assets/vendors/img/flags/1x1/us.svg"
+  },
+  "resources/assets/vendors/img/flags/4x3/us.svg": {
+    "file": "assets/us-553867d3.svg",
+    "src": "resources/assets/vendors/img/flags/4x3/us.svg"
+  },
+  "resources/assets/vendors/js/jquery.time-to.min.js": {
+    "file": "assets/jquery.time-to.min-882f1029.js",
+    "src": "resources/assets/vendors/js/jquery.time-to.min.js"
+  },
+  "resources/assets/vendors/js/nxlNavigation.min.js": {
+    "file": "assets/nxlNavigation.min-bf6f2a85.js",
+    "src": "resources/assets/vendors/js/nxlNavigation.min.js"
+  }
+}

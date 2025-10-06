@@ -73,10 +73,8 @@ jobs:
             tar -xzf /tmp/build.tar.gz -C /var/www/app
             composer install --no-interaction --prefer-dist --optimize-autoloader
             php artisan migrate --force
-            php artisan config:clear
-            php artisan cache:clear
-            php artisan config:cache
-            php artisan route:cache
+            
+            php artisan optimize:clear
             npm install 
             npm run build
             sudo systemctl restart php8.3-fpm
@@ -111,10 +109,7 @@ jobs:
             tar -xzf /tmp/build.tar.gz -C /var/www/app
             composer install --no-interaction --prefer-dist --optimize-autoloader
             php artisan migrate --force
-            php artisan config:clear
-            php artisan cache:clear
-            php artisan config:cache
-            php artisan route:cache
+            php artisan optimize:clear
             npm install 
             npm run build
             sudo systemctl restart php8.3-fpm
