@@ -17,6 +17,7 @@ class RelayService
     public function __construct(
         private MadelineClient $tg,
         private ExtractTextFromMessage $extract,
+        private \Modules\TelegramChannel\Actions\ExtractApplyUrlFromMessage $extractApply,
         private ChannelRuleMatcher $matcher,
         private TransformMessageText $transform,
         private VacancyClassificationService $classifier,
@@ -178,6 +179,9 @@ class RelayService
                 $text = $this->extract->handle($m);
                 if ($text === null) continue;
 
+                // Extract external apply/career URL if present
+                $applyUrl = $this->extractApply->handle($m);
+
                 // Pre-filter (optional) by channel rules
                 if ((bool) config('telegramchannel_relay.filtering.use_channel_rules', true)) {
                     if (!$this->matcher->matches($ruleKey, $text)) {
@@ -311,6 +315,7 @@ class RelayService
                     'usernames' => $users,
                     'description' => $normalized['description'] ?? '',
                     'source_link' => $sourceLink,
+                    'apply_url' => $applyUrl,
                     'plain_username' => $plainSource,
                     'target_username' => $targetUsername,
                 ])->render();
@@ -437,6 +442,7 @@ class RelayService
                                         'description' => $normalized['description'] ?? null,
                                         'language' => $normalized['language'] ?? null,
                                         'status' => 'publish',
+                                        'apply_url' => $applyUrl,
                                         'source_id' => $sourceId,
                                         'source_message_id' => $sourceLink,
                                         'target_message_id' => $targetLink,

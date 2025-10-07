@@ -5,6 +5,7 @@
     $usernames = $usernames ?? [];
     $description = $description ?? '';
     $sourceLink = $source_link ?? null;
+    $applyUrl = $apply_url ?? null;
     $plainSource = $plain_username ?? null;
     $targetUsername = $target_username ?? null;
 
@@ -32,10 +33,17 @@
 📝 <b>Tavsif:</b> {!! $descSafe !!}<br>
 @if($sourceLink)
     @php
-        // For public channels show @username as anchor; for private, show a generic label
+        // Public channel: show @username anchor; otherwise generic label
         $anchor = $plainSource ? ('   ' . $plainSource . '   ') : 'post linkiga borish';
     @endphp
     🔗 <b>Manba:</b> <a href="{{ $sourceLink }}">{{ $anchor }}</a><br>
+@endif
+
+@if($applyUrl)
+    @php
+        $host = parse_url($applyUrl, PHP_URL_HOST);
+    @endphp
+    🔗 <b>Manba2:</b> <a href="{{ $applyUrl }}">{{ $host ?: 'tashqi manba' }}</a><br>
 @endif
 @if($targetLink && $targetUsername)
 ✅ <b>Bizning kanal:</b> <a href="{{ $targetLink }}">{{ '@'.ltrim($targetUsername, '@') }}</a>

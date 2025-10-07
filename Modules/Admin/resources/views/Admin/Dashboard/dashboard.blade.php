@@ -198,6 +198,22 @@
         </div> -->
     </div>
 
+    <!-- Vacancies analytics (Hourly, Daily, Weekly, Monthly) -->
+    <div class="row g-3 mt-1">
+        <div class="col-xxl-3 col-md-6">
+            <div class="card h-100"><div class="card-body"><h6>Hourly Vacancies</h6><div id="vacancy-hourly"></div></div></div>
+        </div>
+        <div class="col-xxl-3 col-md-6">
+            <div class="card h-100"><div class="card-body"><h6>Daily Vacancies</h6><div id="vacancy-daily"></div></div></div>
+        </div>
+        <div class="col-xxl-3 col-md-6">
+            <div class="card h-100"><div class="card-body"><h6>Weekly Vacancies</h6><div id="vacancy-weekly"></div></div></div>
+        </div>
+        <div class="col-xxl-3 col-md-6">
+            <div class="card h-100"><div class="card-body"><h6>Monthly Vacancies</h6><div id="vacancy-monthly"></div></div></div>
+        </div>
+    </div>
+
     <!-- Upcoming Schedule + Social Radar -->
     <div class="row g-3 mt-1">
         <div class="col-xxl-4">
@@ -224,7 +240,7 @@
         </div>
         <div class="col-xxl-4">
             <div class="card h-100">
-                <div class="card-header"><h5 class="mb-0">Vacancies by Category</h5></div>
+                <div class="card-header"><h5 class="mb-0">Vacancies by Category @isset($vacanciesTotal)<span class="text-muted fs-12">(Total: {{ $vacanciesTotal }})</span>@endisset</h5></div>
                 <div class="card-body">
                     @if(!empty($vacancyCategories) && count($vacancyCategories))
                         @foreach($vacancyCategories as $row)

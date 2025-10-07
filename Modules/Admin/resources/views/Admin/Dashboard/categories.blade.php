@@ -15,7 +15,7 @@
 
     <div class="card stretch mt-4 ms-4 me-4">
         <div class="card-header align-items-center justify-content-between">
-            <div class="card-title"><h6 class="mb-0">All Categories</h6></div>
+            <div class="card-title"><h6 class="mb-0">All Categories @isset($totalCount)<span class="text-muted">(Total: {{ $totalCount }})</span>@endisset</h6></div>
         </div>
         <div class="card-body p-0">
             <div class="table-responsive">
@@ -45,4 +45,3 @@
         </div>
     </div>
 @endsection
-
