@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use Modules\Vacancies\Http\Controllers\VacanciesController;
 use Modules\Vacancies\Http\Controllers\HHVacancyController;
 use Modules\Vacancies\Http\Controllers\VacancyMatchingController;
+use Modules\Vacancies\Services\DemoVacancyMatchingService;
 
 Route::prefix('v1')
     ->name('v1.')
@@ -32,6 +33,19 @@ Route::prefix('v1')
                     ->name('index');
             });
         /**
+         * Demo → Vacancy matching
+         */
+
+        Route::middleware(['auth:sanctum'])
+            ->prefix('demo/vacancy-matches')
+            ->name('demo.vacancy-matches.')
+            ->group(function () {
+                Route::post('run', [DemoVacancyMatchingService::class, 'match'])
+                    ->name('run');
+                Route::get('/', [DemoVacancyMatchingService::class, 'myMatches'])
+                    ->name('index');
+            });
+        /**
          * HeadHunter API integration
          */
         Route::middleware(['auth:sanctum'])->prefix('hh')
@@ -43,5 +57,5 @@ Route::prefix('v1')
                 Route::get('vacancies/{id}', [HHVacancyController::class, 'show'])
                     ->name('vacancies.show');
             });
-        
+
     });
