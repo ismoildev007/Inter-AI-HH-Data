@@ -216,13 +216,13 @@ return [
         'production' => [
             'supervisor-1' => [
                 'maxProcesses' => 10,
-                'balanceMaxShift' => 1,
+                'balanceMaxShift' => 3,
                 'balanceCooldown' => 3,
             ],
             'telegram-relay' => [
                 // One process per Telegram session in production
-                'maxProcesses' => 1,
-                'balanceMaxShift' => 1,
+                'maxProcesses' => 3,
+                'balanceMaxShift' => 3,
                 'balanceCooldown' => 3,
             ],
         ],
@@ -233,7 +233,7 @@ return [
             ],
             'telegram-relay' => [
                 // Keep single process locally as well
-                'maxProcesses' => 1,
+                'maxProcesses' => 3,
             ],
         ],
     ],
