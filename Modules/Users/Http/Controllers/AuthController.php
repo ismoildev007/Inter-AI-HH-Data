@@ -188,7 +188,7 @@ class AuthController extends Controller
             'status'  => true,
             'balance' => $balance->balance,
             'credit'  => [
-                'limit'     => $credit->auto_apply_limit,
+                'limit'     => $credit->auto_apply_limit ?? 0,
                 'count'     => $credit->auto_apply_count ?? 0,
                 'remaining' => $remaining
             ]
