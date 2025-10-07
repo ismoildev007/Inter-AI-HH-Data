@@ -12,11 +12,11 @@ return new class extends Migration
             $table->id();
             $table->string('username')->nullable()->unique()->index();
             $table->string('channel_id')->unique();
-           // $table->string('title')->nullable();
+            $table->string('title')->nullable();
             $table->boolean('is_source')->default(true)->index();
             $table->boolean('is_target')->default(false)->index();
             $table->unsignedBigInteger('last_message_id')->nullable();
-           // $table->json('raw_json')->nullable();
+            $table->json('raw_json')->nullable();
             $table->timestamps();
         });
     }
