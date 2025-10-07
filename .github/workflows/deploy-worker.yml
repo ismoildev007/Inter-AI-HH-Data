@@ -1,0 +1,43 @@
+name: 🚀 Deploy Worker Server
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy-worker:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, bcmath, xml, curl, zip, redis
+
+      - name: Deploy to Worker Server
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.WORKER_SERVER_IP }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.WORKER_SSH_KEY }}
+          script: |
+            echo "🚀 Deploying Worker Server..."
+            cd /var/www/app
+
+            # pull latest code
+            git fetch origin main
+            git reset --hard origin/main
+
+            composer install --no-interaction --prefer-dist --optimize-autoloader
+            php artisan config:clear
+            php artisan cache:clear
+
+            # Restart Horizon to apply changes
+            php artisan horizon:terminate
+
+            echo "✅ Worker updated successfully!"
