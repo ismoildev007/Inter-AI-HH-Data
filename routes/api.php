@@ -6,7 +6,7 @@ use App\Http\Controllers\TrackVisitApiController;
 
 // Visitors analytics API
 //Route::get('v1/visitors', [VisitorsApiController::class, 'index']);
-Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
+Route::middleware(['track.visits'])->prefix('v1')->group(function () {
 Route::post('visits/track', [TrackVisitApiController::class, 'store']);
 Route::get('visits/track', [TrackVisitApiController::class, 'track']);
 });

@@ -77,7 +77,7 @@ class ResumeService
             - "keywords": A list of important keywords or technologies mentioned in the resume (useful for search/matching).
             - "language": Detect the main language of the resume text (e.g., "en", "ru", "uz").
             - "cover_letter": Write a short professional cover letter (5–7 sentences) introducing the candidate,
-                          tailored for general job applications. Keep it polite, confident, and concise.
+                          tailored for general job applications. Keep it polite, confident, and concise. 
 
             Return only valid JSON. Do not include explanations outside the JSON.
 
