@@ -56,7 +56,7 @@ return [
 
     'prefix' => env(
         'HORIZON_PREFIX',
-        Str::slug(env('APP_NAME', 'laravel'), '_').'_horizon:'
+        Str::slug(env('APP_NAME', 'laravel'), '_') . '_horizon:'
     ),
 
     /*
@@ -215,15 +215,21 @@ return [
     'environments' => [
         'production' => [
             'supervisor-1' => [
-                'maxProcesses' => 10,
-                'balanceMaxShift' => 3,
-                'balanceCooldown' => 3,
+                'connection' => 'redis',
+                'queue' => ['default'],
+                'balance' => 'simple',   // <- start all immediately
+                'processes' => 10,       // <- start 10 workers now
+                'maxProcesses' => 10,    // <- allow auto-scale up to 10 if needed
+                'tries' => 3,
+                'timeout' => 90,
             ],
             'telegram-relay' => [
-                // One process per Telegram session in production
+                'connection' => 'redis',
+                'queue' => ['telegram-relay'],
+                'balance' => 'simple',
+                'processes' => 3,
                 'maxProcesses' => 3,
-                'balanceMaxShift' => 3,
-                'balanceCooldown' => 3,
+                'timeout' => 180,
             ],
         ],
 
