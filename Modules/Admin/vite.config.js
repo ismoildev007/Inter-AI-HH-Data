@@ -1,28 +1,56 @@
 import { defineConfig } from 'vite';
 import laravel from 'laravel-vite-plugin';
-import { readdirSync, statSync } from 'fs';
-import { join,relative,dirname } from 'path';
-import { fileURLToPath } from 'url';
+import path from 'path';
 
 export default defineConfig({
+    plugins: [
+        laravel({
+            input: [
+                'Modules/Admin/Resources/assets/sass/app.scss',
+                'Modules/Admin/Resources/assets/js/app.js',
+            ],
+            refresh: true,
+            buildDirectory: 'build-admin', 
+        }),
+    ],
     build: {
-        outDir: '../../public/build-admin',
+        outDir: 'public/build-admin', 
         emptyOutDir: true,
         manifest: true,
     },
-    plugins: [
-        laravel({
-            publicDirectory: '../../public',
-            buildDirectory: 'build-admin',
-            hotFile: '../../storage/vite.hot',
-            input: [
-                __dirname + '/resources/assets/sass/app.scss',
-                __dirname + '/resources/assets/js/app.js'
-            ],
-            refresh: true,
-        }),
-    ],
+    resolve: {
+        alias: {
+            '~bootstrap': path.resolve(__dirname, 'node_modules/bootstrap'),
+        },
+    },
 });
+
+
+// import { defineConfig } from 'vite';
+// import laravel from 'laravel-vite-plugin';
+// import { readdirSync, statSync } from 'fs';
+// import { join,relative,dirname } from 'path';
+// import { fileURLToPath } from 'url';
+
+// export default defineConfig({
+//     build: {
+//         outDir: '../../public/build-admin',
+//         emptyOutDir: true,
+//         manifest: true,
+//     },
+//     plugins: [
+//         laravel({
+//             publicDirectory: '../../public',
+//             buildDirectory: 'build-admin',
+//             hotFile: '../../storage/vite.hot',
+//             input: [
+//                 __dirname + '/resources/assets/sass/app.scss',
+//                 __dirname + '/resources/assets/js/app.js'
+//             ],
+//             refresh: true,
+//         }),
+//     ],
+// });
 // Scen all resources for assets file. Return array
 //function getFilePaths(dir) {
 //    const filePaths = [];
