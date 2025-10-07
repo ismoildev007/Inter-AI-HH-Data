@@ -39,7 +39,7 @@
                                 <td>
                                     <div class="d-flex align-items-center gap-2">
                                         <div class="avatar-image avatar-sm">
-                                            <img src="{{ $u->avatar_path ? asset($u->avatar_path) : module_vite('build-admin', 'resources/assets/js/app.js')->asset('resources/assets/images/avatar/1.png') }}" class="img-fluid" alt="avatar">
+                                            <img src="/assets/images/avatar/1.png" class="img-fluid" alt="avatar">
                                         </div>
                                         <div>
                                             <div class="fw-semibold text-dark">{{ trim(($u->first_name ?? '').' '.($u->last_name ?? '')) ?: '—' }}</div>

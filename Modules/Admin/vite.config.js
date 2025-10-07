@@ -6,8 +6,8 @@ export default defineConfig({
     plugins: [
         laravel({
             input: [
-                'Modules/Admin/Resources/assets/sass/app.scss',
-                'Modules/Admin/Resources/assets/js/app.js',
+                'Modules/Admin/resources/assets/sass/app.scss',
+                'Modules/Admin/resources/assets/js/app.js',
             ],
             refresh: true,
             buildDirectory: 'build-admin', 
