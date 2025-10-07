@@ -186,7 +186,6 @@ class AuthRepository
             return [
                 'status' => 'success',
                 'data'   => $user->load([
-//                    'role',
 //                    'preferences',
 //                    'locations',
 //                    'jobTypes',
