@@ -56,35 +56,35 @@ Artisan::command('inspire', function () {
 // HH integratsiyasi (misol):
 Schedule::command('hh:sync-negotiations')
     ->everyFiveMinutes()
-    ->onOneServer()
+    //->onOneServer()
     ->withoutOverlapping();
 // queue: default (Modules\Interviews\Jobs...) — Horizon default navbatini tinglashi kerak
 
 // Auto apply (misol):
 Schedule::command('autoapply:start')
     ->everyMinute()
-    ->onOneServer()
+   // ->onOneServer()
     ->withoutOverlapping();
 // queue: autoapply — Horizon `--queue=autoapply` tinglab turadi (Horizon UI orqali sozlanadi)
 
 // TelegramChannel: source’larni bo‘lib‑bo‘lib dispatch qilish (round‑robin)
 Schedule::command('relay:run --once')
     ->everyMinute()
-    ->onOneServer()
+    //->onOneServer()
     ->withoutOverlapping();
 // queue: telegram-relay (Modules\TelegramChannel\Jobs\SyncSourceChannelJob) — Horizon `telegram-relay` ni tinglaydi
 
 // Vakansiyalarni arxivlash (to‘g‘ridan‑to‘g‘ri DB)
 Schedule::command('telegram:vacancies:auto-archive')
     ->hourly()
-    ->onOneServer()
+    //->onOneServer()
     ->withoutOverlapping();
 // queue kerak emas
 
 // Sessiya zaxirasi (12 soatda bir marta)
 Schedule::command('telegram:session:backup')
     ->cron('0 */12 * * *')
-    ->onOneServer()
+    //->onOneServer()
     ->withoutOverlapping();
 // queue kerak emas
 
@@ -92,7 +92,7 @@ Schedule::command('telegram:session:backup')
 // Eslatma: Auto‑healing (soft reset) getHistory ichida allaqachon ishlaydi; quyidagini faqat istasangiz yoqing.
  Schedule::command('telegram:session:soft-reset')
     ->dailyAt('04:30')
-    ->onOneServer()
+    //->onOneServer()
     ->withoutOverlapping();
 // queue kerak emas
 
