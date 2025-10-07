@@ -21,7 +21,7 @@ jobs:
 
       - name: Build Admin assets
         run: |
-          npm ci
+          npm install
           npm run build
       # Deploy to Server 1
       - name: Deploy to Server 1
