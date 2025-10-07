@@ -185,7 +185,7 @@ return [
             'queue' => ['default'],
             'balance' => 'auto',
             'autoScalingStrategy' => 'time',
-            'maxProcesses' => 1,
+            'maxProcesses' => 3,
             'maxTime' => 0,
             'maxJobs' => 0,
             'memory' => 128,
@@ -200,7 +200,7 @@ return [
             'balance' => 'auto',
             'autoScalingStrategy' => 'time',
             // One process per Telegram session for stability
-            'maxProcesses' => 1,
+            'maxProcesses' => 3,
             // Avoid periodic rotation by time/job count to reduce SIGTERM interruptions
             'maxTime' => 0,   // unlimited
             'maxJobs' => 0,   // unlimited
