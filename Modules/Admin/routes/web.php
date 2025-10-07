@@ -44,5 +44,10 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('telegram-channels/create', [TelegramChannelController::class, 'create'])->name('telegram_channels.create');
         Route::post('telegram-channels', [TelegramChannelController::class, 'store'])->name('telegram_channels.store');
         Route::delete('telegram-channels/{channel}', [TelegramChannelController::class, 'destroy'])->name('telegram_channels.destroy');
+
+        // Vacancies by Category → list titles for a category
+        Route::get('vacancies/category/{category}', [DashboardController::class, 'vacanciesByCategory'])->name('vacancies.by_category');
+        // Vacancy details (single)
+        Route::get('vacancies/{id}', [DashboardController::class, 'vacancyShow'])->name('vacancies.show');
     });
 });

@@ -384,4 +384,43 @@ class DashboardController extends Controller
             'totalCount' => $totalCount,
         ]);
     }
+
+    /**
+     * List all vacancies (titles) for a given category.
+     */
+    public function vacanciesByCategory(string $category)
+    {
+        $category = trim(strtolower($category));
+
+        $query = Vacancy::query()->select(['id','title','category','created_at'])->orderByDesc('id');
+
+        if ($category === 'other' || $category === '') {
+            $query->where(function($q){
+                $q->whereNull('category')->orWhere('category','')->orWhere('category','other');
+            });
+        } else {
+            $query->where('category', $category);
+        }
+
+        // Paginate to avoid huge responses; can be adjusted as needed
+        $vacancies = $query->paginate(50)->withQueryString();
+
+        $titleCategory = $category === '' ? 'other' : $category;
+        $count = $vacancies->total();
+
+        return view('admin::Admin.Dashboard.category-vacancies', [
+            'category' => $titleCategory,
+            'vacancies' => $vacancies,
+            'count' => $count,
+        ]);
+    }
+
+    /**
+     * Show single vacancy details.
+     */
+    public function vacancyShow(int $id)
+    {
+        $vacancy = Vacancy::query()->findOrFail($id);
+        return view('admin::Admin.Dashboard.vacancy-show', compact('vacancy'));
+    }
 }
