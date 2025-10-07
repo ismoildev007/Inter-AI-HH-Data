@@ -53,6 +53,7 @@ jobs:
             php artisan cache:clear
             php artisan config:cache
             php artisan route:cache
+            cd /var/www/app/Modules/Admin && npm install && npm run build
             sudo systemctl restart php8.3-fpm
             sudo systemctl restart nginx
             echo "✅ Server 1 deployment completed."
@@ -87,6 +88,7 @@ jobs:
             php artisan cache:clear
             php artisan config:cache
             php artisan route:cache
+            cd /var/www/app/Modules/Admin && npm install && npm run build
             sudo systemctl restart php8.3-fpm
             sudo systemctl restart nginx
             echo "✅ Server 2 deployment completed."
