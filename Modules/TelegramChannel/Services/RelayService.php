@@ -121,8 +121,13 @@ class RelayService
                     case 'SIGINT':
                         Log::info('Telegram relay: getHistory interrupted by signal', ['peer' => $peer, 'phase' => 'loop', 'signal' => $etype]);
                         break;
+                    case 'CANCELLED':
+                        Log::warning('Telegram relay: OPERATION_CANCELLED on getHistory', ['peer' => $peer]);
+                        $this->maybeAutoHeal('cancelled');
+                        break;
                     case 'PEER_DB_MISS':
                         Log::warning('Telegram relay: PEER_DB_MISS on getHistory', ['peer' => $peer, 'error' => $e->getMessage()]);
+                        $this->maybeAutoHeal('peer_db');
                         break;
                     case 'NETWORK':
                         Log::warning('Telegram relay: NETWORK_ERROR on getHistory', ['peer' => $peer, 'error' => $e->getMessage()]);
@@ -519,11 +524,38 @@ class RelayService
         if ($m === '') return 'UNKNOWN';
         if (str_contains($u, 'SIGTERM')) return 'SIGTERM';
         if (str_contains($u, 'SIGINT'))  return 'SIGINT';
+        if (str_contains($u, 'OPERATION WAS CANCELLED') || str_contains($u, 'CANCELLED')) return 'CANCELLED';
         if (str_contains($u, 'INTERNAL PEER DATABASE')) return 'PEER_DB_MISS';
         // crude network hints
         foreach (['TIMEOUT', 'TIMED OUT', 'ECONNRESET', 'FAILED TO CONNECT', 'SSL', 'TLS', 'CONNECTION RESET', 'NETWORK'] as $needle) {
             if (str_contains($u, $needle)) return 'NETWORK';
         }
         return 'UNKNOWN';
+    }
+
+    private function maybeAutoHeal(string $type): void
+    {
+        // Throttle: if too many errors of a kind in a short period, soft reset client once
+        $key = 'tg:heal:cnt:' . $type;
+        $cool = 'tg:heal:cooldown';
+        if (\Cache::has($cool)) {
+            return; // in cooldown period
+        }
+        $cnt = (int) (\Cache::increment($key) ?: 0);
+        if ($cnt === 1) {
+            \Cache::put($key, 1, 120); // 2 minutes TTL
+        }
+        $threshold = (int) config('telegramchannel_relay.maintenance.auto_heal_threshold', 12);
+        if ($cnt >= $threshold) {
+            try {
+                $this->tg->softReset();
+                \Log::info('Telegram relay: auto-heal soft reset executed', ['type' => $type, 'count' => $cnt]);
+            } catch (\Throwable $e) {
+                \Log::warning('Telegram relay: auto-heal soft reset failed', ['error' => $e->getMessage()]);
+            } finally {
+                \Cache::put($cool, 1, 300); // 5 minutes cooldown
+                \Cache::forget($key);
+            }
+        }
     }
 }
