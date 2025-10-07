@@ -156,6 +156,10 @@ return [
         // Also log peers with zero new messages
         'log_empty_peers' => true,
     ],
+    'maintenance' => [
+        // How many similar errors within ~2 minutes should trigger a soft reset
+        'auto_heal_threshold' => env('TG_AUTO_HEAL_THRESHOLD', 12),
+    ],
     // Global publish throttle to reduce FLOOD_WAIT
     'throttle' => [
         'publish' => [

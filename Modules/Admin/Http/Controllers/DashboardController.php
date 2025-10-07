@@ -8,6 +8,7 @@ use App\Models\Resume;
 use App\Models\User;
 use App\Models\TelegramChannel;
 use App\Models\Visit;
+use App\Models\Vacancy;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
@@ -175,6 +176,103 @@ class DashboardController extends Controller
         $conversionsLabels = $visitorsLabels;
         $conversionsSeries = $visitorsSeries;
 
+        // Vacancies analytics
+        // Hourly (last 24 hours)
+        $vHourNow = Carbon::now()->startOfHour();
+        $vHourStart = (clone $vHourNow)->subHours(23);
+        $vhExpr = match ($driver) {
+            'pgsql' => "to_char(date_trunc('hour', created_at), 'YYYY-MM-DD HH24:00')",
+            'sqlite' => "strftime('%Y-%m-%d %H:00', created_at)",
+            default => "DATE_FORMAT(created_at, '%Y-%m-%d %H:00')",
+        };
+        $vHourRows = DB::table('vacancies')
+            ->whereBetween('created_at', [$vHourStart, (clone $vHourNow)->endOfHour()])
+            ->selectRaw($vhExpr." as h, COUNT(*) as c")
+            ->groupBy('h')
+            ->orderBy('h')
+            ->get();
+        $vHourMap = array_fill_keys($hourKeys, 0);
+        foreach ($vHourRows as $r) { if (isset($vHourMap[$r->h])) { $vHourMap[$r->h] = (int) $r->c; } }
+        $vacHourlySeries = array_values($vHourMap);
+
+        // Daily (last 30 days)
+        $vdNow = Carbon::now()->startOfDay();
+        $vdStart = (clone $vdNow)->subDays(29);
+        $vdKeys = [];
+        $vdLabels = [];
+        for ($i = 0; $i < 30; $i++) {
+            $d = (clone $vdStart)->copy()->addDays($i);
+            $vdKeys[] = $d->format('Y-m-d');
+            $vdLabels[] = $d->format('M d');
+        }
+        $vdExpr = match ($driver) {
+            'pgsql' => "to_char(created_at, 'YYYY-MM-DD')",
+            'sqlite' => "strftime('%Y-%m-%d', created_at)",
+            default => "DATE(created_at)",
+        };
+        $vdRows = DB::table('vacancies')
+            ->whereBetween('created_at', [$vdStart, (clone $vdNow)->endOfDay()])
+            ->selectRaw($vdExpr." as d, COUNT(*) as c")
+            ->groupBy('d')
+            ->orderBy('d')
+            ->get();
+        $vdMap = array_fill_keys($vdKeys, 0);
+        foreach ($vdRows as $r) { if (isset($vdMap[$r->d])) { $vdMap[$r->d] = (int) $r->c; } }
+        $vacDailySeries = array_values($vdMap);
+
+        // Weekly (last 12 weeks)
+        $wNow = Carbon::now()->startOfWeek();
+        $wStart = (clone $wNow)->subWeeks(11);
+        $wKeys = [];
+        $wLabels = [];
+        for ($i = 0; $i < 12; $i++) {
+            $w = (clone $wStart)->copy()->addWeeks($i);
+            $wKeys[] = $w->format('o-W'); // ISO year-week
+            $wLabels[] = 'W' . $w->format('W');
+        }
+        $wExpr = match ($driver) {
+            'pgsql' => "to_char(date_trunc('week', created_at), 'IYYY-IW')",
+            'sqlite' => "strftime('%Y-%W', created_at)",
+            default => "DATE_FORMAT(created_at, '%x-%v')",
+        };
+        $wRows = DB::table('vacancies')
+            ->whereBetween('created_at', [$wStart, (clone $wNow)->endOfWeek()])
+            ->selectRaw($wExpr." as w, COUNT(*) as c")
+            ->groupBy('w')
+            ->orderBy('w')
+            ->get();
+        $wMap = array_fill_keys($wKeys, 0);
+        foreach ($wRows as $r) { if (isset($wMap[$r->w])) { $wMap[$r->w] = (int) $r->c; } }
+        $vacWeeklySeries = array_values($wMap);
+
+        // Monthly (last 12 months)
+        $vmNow = Carbon::now()->startOfMonth();
+        $vmStart = (clone $vmNow)->subMonths(11);
+        $vmKeys = [];
+        $vmLabels = [];
+        for ($i = 0; $i < 12; $i++) {
+            $dt = (clone $vmNow)->subMonths($i);
+            $key = $dt->format('Y-m');
+            $vmKeys[] = $key;
+            $vmLabels[] = strtoupper($dt->format('M')).'/'.$dt->format('y');
+        }
+        $vmExpr = match ($driver) {
+            'pgsql' => "to_char(created_at, 'YYYY-MM')",
+            'sqlite' => "strftime('%Y-%m', created_at)",
+            default => "DATE_FORMAT(created_at, '%Y-%m')",
+        };
+        $vmRows = DB::table('vacancies')
+            ->whereBetween('created_at', [$vmStart, (clone $vmNow)->endOfMonth()])
+            ->selectRaw($vmExpr." as ym, COUNT(*) as c")
+            ->groupBy('ym')
+            ->orderBy('ym')
+            ->get();
+        $vmMap = array_fill_keys($vmKeys, 0);
+        foreach ($vmRows as $r) { if (isset($vmMap[$r->ym])) { $vmMap[$r->ym] = (int) $r->c; } }
+        // Reverse labels to oldest -> newest
+        $vacMonthlyLabels = array_reverse($vmLabels);
+        $vacMonthlySeries = array_values(array_reverse($vmMap));
+
         $analyticsData = [
             'bounce' => [
                 'labels' => $hourLabels,
@@ -192,6 +290,11 @@ class DashboardController extends Controller
                 'labels' => $conversionsLabels,
                 'series' => $conversionsSeries,
             ],
+            // Vacancies
+            'vac_hourly' => [ 'labels' => $hourLabels, 'series' => $vacHourlySeries ],
+            'vac_daily'  => [ 'labels' => $vdLabels,   'series' => $vacDailySeries ],
+            'vac_weekly' => [ 'labels' => $wLabels,    'series' => $vacWeeklySeries ],
+            'vac_monthly'=> [ 'labels' => $vacMonthlyLabels, 'series' => $vacMonthlySeries ],
         ];
 
         // Vacancies by category (top N) — Postgres-safe quoting and grouping by expression
@@ -202,6 +305,7 @@ class DashboardController extends Controller
             ->orderByDesc('c')
             ->limit(8)
             ->get();
+        $vacanciesTotal = DB::table('vacancies')->count();
 
         // Top visitors (all-time), only authenticated users (user_id not null)
         // Use LEFT JOIN + COALESCE id fallback so rows remain even if user record missing
@@ -234,7 +338,8 @@ class DashboardController extends Controller
             'miniTotals',
             'analyticsData',
             'topUsers',
-            'vacancyCategories'
+            'vacancyCategories',
+            'vacanciesTotal'
         ));
     }
 
@@ -272,8 +377,50 @@ class DashboardController extends Controller
             ->orderByDesc('c')
             ->get();
 
+        $totalCount = DB::table('vacancies')->count();
+
         return view('admin::Admin.Dashboard.categories', [
             'rows' => $rows,
+            'totalCount' => $totalCount,
         ]);
+    }
+
+    /**
+     * List all vacancies (titles) for a given category.
+     */
+    public function vacanciesByCategory(string $category)
+    {
+        $category = trim(strtolower($category));
+
+        $query = Vacancy::query()->select(['id','title','category','created_at'])->orderByDesc('id');
+
+        if ($category === 'other' || $category === '') {
+            $query->where(function($q){
+                $q->whereNull('category')->orWhere('category','')->orWhere('category','other');
+            });
+        } else {
+            $query->where('category', $category);
+        }
+
+        // Paginate to avoid huge responses; can be adjusted as needed
+        $vacancies = $query->paginate(50)->withQueryString();
+
+        $titleCategory = $category === '' ? 'other' : $category;
+        $count = $vacancies->total();
+
+        return view('admin::Admin.Dashboard.category-vacancies', [
+            'category' => $titleCategory,
+            'vacancies' => $vacancies,
+            'count' => $count,
+        ]);
+    }
+
+    /**
+     * Show single vacancy details.
+     */
+    public function vacancyShow(int $id)
+    {
+        $vacancy = Vacancy::query()->findOrFail($id);
+        return view('admin::Admin.Dashboard.vacancy-show', compact('vacancy'));
     }
 }

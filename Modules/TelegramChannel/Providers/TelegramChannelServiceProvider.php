@@ -96,6 +96,9 @@ protected function registerConfig(): void
                 \Modules\TelegramChannel\Console\Commands\TelegramLoginCommand::class,
                 \Modules\TelegramChannel\Console\Commands\RelayRunCommand::class,
                 \Modules\TelegramChannel\Console\Commands\AutoArchiveVacanciesCommand::class,
+                \Modules\TelegramChannel\Console\Commands\TelegramSessionBackupCommand::class,
+                \Modules\TelegramChannel\Console\Commands\TelegramSessionSoftResetCommand::class,
+                \Modules\TelegramChannel\Console\Commands\TelegramSessionReloginCommand::class,
             ]);
         }
     }

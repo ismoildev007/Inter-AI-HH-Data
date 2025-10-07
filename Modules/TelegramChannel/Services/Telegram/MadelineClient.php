@@ -7,9 +7,9 @@ use danog\MadelineProto\Settings;
 use danog\MadelineProto\Logger;
 use Illuminate\Support\Facades\Cache;
 
-class MadelineClient
-{
-    private API $api;
+    class MadelineClient
+    {
+        private API $api;
 
     public function __construct()
     {
@@ -85,5 +85,42 @@ class MadelineClient
             'drop_author' => true,
             'drop_media_captions' => false,
         ]);
+    }
+
+    /**
+     * Soft reset the underlying API using the same session path and settings.
+     * Does NOT delete session files; safe to call in production when the client
+     * falls into a bad state (e.g., repeated CANCELLED/peer DB issues).
+     */
+    public function softReset(): void
+    {
+        $apiId  = (int) (config('telegramchannel.api_id') ?? 0);
+        $apiHash= (string) (config('telegramchannel.api_hash') ?? '');
+        $session= (string) (config('telegramchannel.session') ?? storage_path('app/telegram/session.madeline'));
+
+        // Prevent concurrent resets
+        $lock = \Cache::lock('tg:madeline:reset', 15);
+        $lock->block(5);
+        try {
+            $settings = new Settings;
+            $settings->getAppInfo()->setApiId($apiId);
+            $settings->getAppInfo()->setApiHash($apiHash);
+            $settings->getLogger()->setLevel(Logger::LEVEL_ERROR);
+
+            $api = new API($session, $settings);
+            $api->start();
+            $this->api = $api;
+
+            if ((bool) config('telegramchannel_relay.debug.log_memory', false)) {
+                $usage = round(memory_get_usage(true) / 1048576, 1);
+                $peak  = round(memory_get_peak_usage(true) / 1048576, 1);
+                \Log::info('MadelineClient soft reset completed', [
+                    'usage_mb' => $usage,
+                    'peak_mb'  => $peak,
+                ]);
+            }
+        } finally {
+            optional($lock)->release();
+        }
     }
 }

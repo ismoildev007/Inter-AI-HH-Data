@@ -15,7 +15,7 @@
 
     <div class="card stretch mt-4 ms-4 me-4">
         <div class="card-header align-items-center justify-content-between">
-            <div class="card-title"><h6 class="mb-0">All Categories</h6></div>
+            <div class="card-title"><h6 class="mb-0">All Categories @isset($totalCount)<span class="text-muted">(Total: {{ $totalCount }})</span>@endisset</h6></div>
         </div>
         <div class="card-body p-0">
             <div class="table-responsive">
@@ -31,7 +31,11 @@
                         @forelse($rows as $i => $row)
                             <tr>
                                 <td class="fw-semibold text-dark">{{ $i + 1 }}</td>
-                                <td class="text-capitalize">{{ $row->category ?: 'other' }}</td>
+                                <td class="text-capitalize">
+                                    <a href="{{ route('admin.vacancies.by_category', $row->category ?: 'other') }}" class="text-decoration-none">
+                                        {{ $row->category ?: 'other' }}
+                                    </a>
+                                </td>
                                 <td class="text-end fw-bold">{{ $row->c }}</td>
                             </tr>
                         @empty
@@ -45,4 +49,3 @@
         </div>
     </div>
 @endsection
-

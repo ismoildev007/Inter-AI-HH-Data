@@ -12,6 +12,11 @@
     { id: '#page-views', key: 'pageViews', name: 'Daily Visitors', color: '#3454d1' },
     { id: '#site-impressions', key: 'impressions', name: 'Monthly Visitors', color: '#e49e3d' },
     { id: '#conversions-rate', key: 'conversions', name: 'Yearly Visitors', color: '#25b865' },
+    // Vacancies
+    { id: '#vacancy-hourly',  key: 'vac_hourly',  name: 'Hourly Vacancies',  color: '#8b5cf6' },
+    { id: '#vacancy-daily',   key: 'vac_daily',   name: 'Daily Vacancies',   color: '#06b6d4' },
+    { id: '#vacancy-weekly',  key: 'vac_weekly',  name: 'Weekly Vacancies',  color: '#ef4444' },
+    { id: '#vacancy-monthly', key: 'vac_monthly', name: 'Monthly Vacancies', color: '#10b981' },
   ];
 
   const renderOne = (cfg) => {
@@ -47,4 +52,3 @@
     ensureApex(run);
   }
 })();
-

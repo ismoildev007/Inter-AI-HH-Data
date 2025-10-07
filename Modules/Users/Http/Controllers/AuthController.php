@@ -8,6 +8,7 @@ use App\Models\UserCredit;
 use App\Models\UserSetting;
 use App\Traits\ApiResponseTrait;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Modules\Users\Http\Requests\LoginRequest;
 use Modules\Users\Http\Requests\RegisterRequest;
 use Modules\Users\Http\Resources\User\UserResource;
@@ -67,7 +68,7 @@ class AuthController extends Controller
 
     public function me(Request $request)
     {
-        $user = $request->user();
+        $user = Auth::user();
 
         if (!$user) {
             return $this->error('Unauthenticated', 401);
@@ -76,12 +77,12 @@ class AuthController extends Controller
         $user->load([
             'resumes',
 //            'role',
-//            'settings',
+            'settings',
             'credit',
-//            'preferences.industry',
-//            'locations.area',
-//            'jobTypes',
-//            'profileViews.employer',
+            'preferences.industry',
+            'locations.area',
+            'jobTypes',
+            'profileViews.employer',
         ]);
 
         return new UserResource($user);
@@ -178,17 +179,21 @@ class AuthController extends Controller
         $balance = UserCredit::where('user_id', $user->id)->first();
         $credit  = UserSetting::where('user_id', $user->id)->first();
 
+        $autoApplyLimit = $credit->auto_apply_limit ?? 0;
+        $autoApplyCount = $credit->auto_apply_count ?? 0;
+
         $remaining = min(
-            $balance->balance,
-            max(0, $credit->auto_apply_limit - $credit->auto_apply_count)
+            $balance->balance ?? 0,
+            max(0, $autoApplyLimit - $autoApplyCount)
         );
+
 
         return response()->json([
             'status'  => true,
-            'balance' => $balance->balance,
+            'balance' => $balance->balance ?? 0,
             'credit'  => [
-                'limit'     => $credit->auto_apply_limit,
-                'count'     => $credit->auto_apply_count ?? 0,
+                'limit'     => $autoApplyLimit,
+                'count'     => $autoApplyCount,
                 'remaining' => $remaining
             ]
         ]);
