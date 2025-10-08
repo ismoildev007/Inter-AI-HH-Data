@@ -18,7 +18,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
     // Protected admin pages
     // TrackVisits middleware here to record authenticated admin user page hits
-    Route::middleware(['auth.admin', 'track.visits'])->group(function () {
+    Route::middleware(['auth.admin'])->group(function () {
         // Dashboard
         Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
         Route::get('/visits/top-users', [DashboardController::class, 'topVisitors'])->name('visits.top_users');
