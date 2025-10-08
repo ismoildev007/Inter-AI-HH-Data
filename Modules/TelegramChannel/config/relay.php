@@ -75,9 +75,17 @@ return [
     ],
     'dedupe' => [
         // Skip if there is already a PUBLISHED record with the same signature
-        'skip_if_published' => true,
+        'skip_if_published' => true, // legacy flag
+        'skip_if_signature_published' => true,
+        'skip_if_raw_hash_published' => true,
+        'skip_if_normalized_hash_published' => true,
         // Allow multiple ARCHIVED rows with the same signature (requires dropping unique on signature)
         'allow_multiple_archived' => true,
+        // Footer handles to strip when hashing raw or normalized content
+        'footer_handles' => [
+            '@UstozShogird',
+            '@UstozShogirdSohalar',
+        ],
         // Auto-archive after N days (affects PUBLISHED rows)
         'auto_archive_days' => 7,
     ],

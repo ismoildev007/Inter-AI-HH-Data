@@ -37,6 +37,8 @@ class Vacancy extends Model
         'source_message_id',
         'target_message_id',
         'target_msg_id',
+        'raw_hash',
+        'normalized_hash',
 
     ];
 

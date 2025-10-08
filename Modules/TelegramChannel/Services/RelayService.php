@@ -11,6 +11,7 @@ use App\Models\TelegramChannel; // Sizning Controller shuni ishlatyapti
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Cache;
+use Modules\TelegramChannel\Support\ContentFingerprint;
 
 class RelayService
 {
@@ -184,6 +185,29 @@ class RelayService
                 $text = $this->extract->handle($m);
                 if ($text === null) continue;
 
+                $rawHash = ContentFingerprint::raw($text);
+                $dedupeConfig = (array) config('telegramchannel_relay.dedupe', []);
+                $allowArchivedDuplicates = (bool) ($dedupeConfig['allow_multiple_archived'] ?? true);
+                $skipIfRawPublished = (bool) ($dedupeConfig['skip_if_raw_hash_published'] ?? true);
+                $skipSignaturePublished = (bool) ($dedupeConfig['skip_if_signature_published'] ?? ($dedupeConfig['skip_if_published'] ?? true));
+                $normalizedHash = null;
+                if ($rawHash !== '') {
+                    if ($skipIfRawPublished) {
+                        $rawPublished = Vacancy::where('raw_hash', $rawHash)
+                            ->where('status', Vacancy::STATUS_PUBLISH)
+                            ->exists();
+                        if ($rawPublished) {
+                            continue;
+                        }
+                    }
+                    if (!$allowArchivedDuplicates) {
+                        $rawExists = Vacancy::where('raw_hash', $rawHash)->exists();
+                        if ($rawExists) {
+                            continue;
+                        }
+                    }
+                }
+
                 // Extract external apply/career URL if present
                 $applyUrl = $this->extractApply->handle($m);
 
@@ -265,6 +289,27 @@ class RelayService
                     continue; // skip on error
                 }
 
+                $normalizedHash = ContentFingerprint::normalized($normalized);
+                if ($normalizedHash !== '') {
+                    $skipNormalizedPublished = (bool) ($dedupeConfig['skip_if_normalized_hash_published'] ?? true);
+                    if ($skipNormalizedPublished) {
+                        $existsNormalizedPublished = Vacancy::where('normalized_hash', $normalizedHash)
+                            ->where('status', Vacancy::STATUS_PUBLISH)
+                            ->exists();
+                        if ($existsNormalizedPublished) {
+                            continue;
+                        }
+                    }
+                    if (!$allowArchivedDuplicates) {
+                        $existsNormalizedAny = Vacancy::where('normalized_hash', $normalizedHash)->exists();
+                        if ($existsNormalizedAny) {
+                            continue;
+                        }
+                    }
+                } else {
+                    $normalizedHash = null;
+                }
+
                 // Post-normalization guard: if title is blacklisted (generic slogans) — skip
                 $sanTitle = trim((string) ($normalized['title'] ?? ''));
                 $sanTitle = trim($sanTitle, " :\t\r\n");
@@ -287,16 +332,16 @@ class RelayService
                 // Compute signature and dedupe by status policy
                 $signature = \Modules\TelegramChannel\Support\Signature::fromNormalized($normalized);
                 if ($signature !== '') {
-                    $skipIfPublished = (bool) config('telegramchannel_relay.dedupe.skip_if_published', true);
-                    if ($skipIfPublished) {
+                    if ($skipSignaturePublished) {
                         $existsPublished = Vacancy::where('signature', $signature)
-                            ->where('status', 'publish')
+                            ->where('status', Vacancy::STATUS_PUBLISH)
                             ->exists();
                         if ($existsPublished) {
                             continue;
                         }
-                    } else {
-                        $existsAny =Vacancy::where('signature', $signature)->exists();
+                    }
+                    if (!$allowArchivedDuplicates) {
+                        $existsAny = Vacancy::where('signature', $signature)->exists();
                         if ($existsAny) {
                             continue;
                         }
@@ -340,7 +385,17 @@ class RelayService
                     }
                     if ($to) {
                         // Acquire distributed lock to ensure only one send/save per message
-                        $lockKey = 'tg:msg:' . sha1($sourceId . '|' . $sourceLink);
+                        $lockParts = [$sourceId, $sourceLink];
+                        if (!empty($rawHash)) {
+                            $lockParts[] = $rawHash;
+                        }
+                        if (!empty($normalizedHash)) {
+                            $lockParts[] = $normalizedHash;
+                        }
+                        if (!empty($signature)) {
+                            $lockParts[] = $signature;
+                        }
+                        $lockKey = 'tg:msg:' . sha1(implode('|', $lockParts));
                         $lock = Cache::lock($lockKey, 600);
                         if (!$lock->get()) {
                             if ((bool) config('telegramchannel_relay.debug.log_memory', false)) {
@@ -446,13 +501,15 @@ class RelayService
                                         ],
                                         'description' => $normalized['description'] ?? null,
                                         'language' => $normalized['language'] ?? null,
-                                        'status' => 'publish',
+                                        'status' => Vacancy::STATUS_PUBLISH,
                                         'apply_url' => $applyUrl,
                                         'source_id' => $sourceId,
                                         'source_message_id' => $sourceLink,
                                         'target_message_id' => $targetLink,
                                         'target_msg_id' => $tMsgId,
                                         'signature' => $signature,
+                                        'raw_hash' => $rawHash ?: null,
+                                        'normalized_hash' => $normalizedHash ?: null,
                                     ]);
                                 } catch (\Throwable $e) {
                                     Log::error('Failed to save Vacancy', ['err' => $e->getMessage()]);
