@@ -4,12 +4,12 @@
     <div class="page-header">
         <div class="page-header-left d-flex align-items-center">
             <div class="page-header-title">
-                <h5 class="m-b-10 text-capitalize">Category: {{ $category }}</h5>
+                <h5 class="m-b-10">Category: {{ $category }}</h5>
             </div>
             <ul class="breadcrumb">
                 <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}">Home</a></li>
                 <li class="breadcrumb-item"><a href="{{ route('admin.vacancies.categories') }}">All Categories</a></li>
-                <li class="breadcrumb-item text-capitalize">{{ $category }}</li>
+                <li class="breadcrumb-item">{{ $category }}</li>
             </ul>
         </div>
         <div class="ms-auto">

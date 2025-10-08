@@ -10,7 +10,7 @@
                 <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}">Home</a></li>
                 <li class="breadcrumb-item"><a href="{{ route('admin.vacancies.categories') }}">All Categories</a></li>
                 @if($vacancy->category)
-                    <li class="breadcrumb-item text-capitalize"><a href="{{ route('admin.vacancies.by_category', $vacancy->category) }}">{{ $vacancy->category }}</a></li>
+                    <li class="breadcrumb-item"><a href="{{ route('admin.vacancies.by_category', $vacancy->category) }}">{{ $vacancy->category }}</a></li>
                 @endif
                 <li class="breadcrumb-item">Vacancy</li>
             </ul>
@@ -29,7 +29,7 @@
                     <div class="mb-2"><span class="text-muted">Title</span><div class="fw-semibold">{{ $vacancy->title ?? '—' }}</div></div>
                     <div class="mb-2"><span class="text-muted">Company</span><div class="fw-semibold">{{ $vacancy->company ?? '—' }}</div></div>
                     <div class="mb-2"><span class="text-muted">Status</span><div class="fw-semibold">{{ $vacancy->status ?? '—' }}</div></div>
-                    <div class="mb-2"><span class="text-muted">Category</span><div class="fw-semibold text-capitalize">{{ $vacancy->category ?? '—' }}</div></div>
+                    <div class="mb-2"><span class="text-muted">Category</span><div class="fw-semibold">{{ $vacancy->category ?? '—' }}</div></div>
                     <div class="mb-2"><span class="text-muted">Language</span><div class="fw-semibold">{{ $vacancy->language ?? '—' }}</div></div>
                 </div>
                 <div class="col-12 col-lg-6">
@@ -88,4 +88,3 @@
         </div>
     </div>
 @endsection
-

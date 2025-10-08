@@ -22,7 +22,7 @@ class VacancyNormalizationService
         }
 
         $prompt = <<<PROMPT
-You are an assistant that cleans and standardizes job vacancy posts into a fixed JSON schema.
+You are an assistant that cleans and standardizes job vacancy posts into a fixed JSON schema. Analyze the vacancy title and description carefully and assign the most appropriate single category.
 
 Rules:
 - Output ONLY valid JSON. No extra text, no markdown, no comments.
@@ -40,8 +40,8 @@ Schema:
     "telegram_usernames": ["@user", "@user2"]
   },
   "description": "string",
-  "category_raw": "string",  // free-text short category inferred from the role (e.g., "PHP Laravel", "SMM", "QA")
-  "category": "string"       // one of: developer, frontend_developer, backend_developer, fullstack_developer, mobile_developer, devops, sysadmin, data, security, qa, product, project, designer, content, video_editor, motion_design, photographer, videographer, marketer, smm, pr, communications, sales, business_development, customer_success, support, hr, finance, accounting, banking, insurance, operations, procurement, supply_chain, warehouse, office_manager, analyst, architect, civil_engineer, electrical_engineer, mechanical_engineer, automation_engineer, electronics_engineer, chemical_engineer, construction, real_estate, teacher, tutor, trainer, translator, interpreter, medicine, nurse, pharmacist, dentist, veterinarian, hospitality, chef, cook, baker, pastry_chef, bartender, waiter, retail, cashier, driver, courier, logistics, technician, welder, electrician, plumber, mechanic, carpenter, painter, seamstress, tourism, travel_agent, beauty, legal, other
+  "category_raw": "string",  // free-text short category inferred from the role (e.g., "Sales Manager", "Backend", "Courier")
+  "category": "string"       // your best-fit single category (e.g., "Marketing and Advertising", "IT and Technology", or "Other" if unclear)
 }
 
 Field rules:
@@ -56,8 +56,8 @@ Field rules:
   - Preserve numbers and currency exactly as in text.
   - Write neatly with proper punctuation, commas, spaces, and line breaks.
  - category/category_raw:
-   - First, set category_raw to a short human label (e.g., "PHP Laravel", "Frontend", "SMM", "QA").
-   - Then map to the closest category from the allowed list and set category. If unclear, use "other". Always lowercase.
+   - First, set category_raw to a concise human-readable label drawn from the vacancy context.
+   - Then choose exactly one category name (e.g., "Marketing and Advertising", "Sales and Customer Relations", "IT and Technology" …). If nothing fits, use "Other". Return the label exactly as written (same casing and spacing). Do not invent new category types.
 
 Input text:
 """

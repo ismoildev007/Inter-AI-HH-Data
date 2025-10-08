@@ -9,6 +9,8 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Modules\TelegramChannel\Services\RelayService;
+use Modules\TelegramChannel\Exceptions\SessionLockBusyException;
+use Illuminate\Support\Facades\Log;
 
 class SyncSourceChannelJob implements ShouldQueue, ShouldBeUnique
 {
@@ -30,9 +32,22 @@ class SyncSourceChannelJob implements ShouldQueue, ShouldBeUnique
         return [5, 20, 60];
     }
 
-    public function handle(RelayService $relay): void
+    public function handle(): void
     {
-        $delay = $relay->syncOneByUsername($this->username);
+        /** @var RelayService $relay */
+        $relay = app(RelayService::class);
+        try {
+            $delay = $relay->syncOneByUsername($this->username);
+        } catch (SessionLockBusyException $e) {
+            $retry = (int) config('telegramchannel_relay.locks.session_retry', 20);
+            Log::warning('Telegram relay: session busy, job released', [
+                'username' => $this->username,
+                'retry' => $retry,
+                'error' => $e->getMessage(),
+            ]);
+            $this->release(max(1, $retry));
+            return;
+        }
         if ($delay > 0) {
             // Delay the job to respect FLOOD_WAIT without blocking the worker
             $this->release($delay + 1);
