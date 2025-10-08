@@ -87,7 +87,7 @@ return [
             '@UstozShogirdSohalar',
         ],
         // Auto-archive after N days (affects PUBLISHED rows)
-        'auto_archive_days' => 7,
+        'auto_archive_days' => 30,
     ],
     'locks' => [
         'session_ttl' => env('TG_SESSION_LOCK_TTL', 120),
