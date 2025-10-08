@@ -17,7 +17,6 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'auth' => \App\Http\Middleware\Authenticate::class, // override qilamiz
             'auth.admin' => \App\Http\Middleware\AdminAuthenticate::class,
-            'track.visits' => \App\Http\Middleware\TrackVisits::class,
         ]);
 
 
