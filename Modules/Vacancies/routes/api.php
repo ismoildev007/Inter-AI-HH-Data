@@ -36,8 +36,7 @@ Route::prefix('v1')
          * Demo → Vacancy matching
          */
 
-        Route::middleware(['auth:sanctum'])
-            ->prefix('demo/vacancy-matches')
+        Route::prefix('demo/vacancy-matches')
             ->name('demo.vacancy-matches.')
             ->group(function () {
                 Route::post('run', [DemoVacancyMatchingService::class, 'match'])
