@@ -39,7 +39,17 @@
     <script src="/assets/js/apps-storage-init.min.js"></script>
     <!--! END: Apps Init !-->
     <!--! BEGIN: Theme Customizer  !-->
-    <script src="/assets/js/theme-customizer-init.min.js"></script>
+   
     <script src="/assets/js/visitors-custom.js"></script>
+
+    <script src="/assets/js/analytics-custom.js"></script>
+
+    <script src="/assets/js/app.js"></script>
+
+    <script src="/assets/js/dashboard-custom.js"></script>
+
+    <script src="/assets/js/mini-charts-custom.js"></script>
+
+
 </body>
 </html>

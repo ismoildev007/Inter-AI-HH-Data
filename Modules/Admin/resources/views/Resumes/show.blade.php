@@ -25,13 +25,16 @@
                 </div>
                 <div class="card-body text-center">
                     <div class="avatar-text avatar-xxl mx-auto mb-3">
-                        <img src="{{ $resume->user && $resume->user->avatar_path ? asset($resume->user->avatar_path) : module_vite('build-admin', 'resources/assets/js/app.js')->asset('resources/assets/images/avatar/1.png') }}" alt="" class="img-fluid">
+                        <img src="{{ $resume->user?->avatar_path ? asset($resume->user->avatar_path) : module_vite('build-admin', 'resources/assets/js/app.js')->asset('resources/assets/images/avatar/1.png') }}" alt="" class="img-fluid">
                     </div>
-                    <h5 class="fw-bold text-dark mb-1">{{ trim(($resume->user->first_name ?? '').' '.($resume->user->last_name ?? '')) ?: '—' }}</h5>
-                    <p class="text-muted mb-2">{{ $resume->user->role->name ?? '—' }}</p>
-                    <p class="mb-0"><i class="feather-mail me-1"></i> {{ $resume->user->email ?? '—' }}</p>
-                    @if(optional($resume->user)->phone)
-                        <p class="mb-0"><i class="feather-phone me-1"></i> {{ $resume->user->phone }}</p>
+                    @php
+                        $userFullName = trim(($resume->user?->first_name ?? '') . ' ' . ($resume->user?->last_name ?? ''));
+                    @endphp
+                    <h5 class="fw-bold text-dark mb-1">{{ $userFullName !== '' ? $userFullName : '—' }}</h5>
+                    <p class="text-muted mb-2">{{ $resume->user?->role?->name ?? '—' }}</p>
+                    <p class="mb-0"><i class="feather-mail me-1"></i> {{ $resume->user?->email ?? '—' }}</p>
+                    @if($resume->user?->phone)
+                        <p class="mb-0"><i class="feather-phone me-1"></i> {{ $resume->user?->phone }}</p>
                     @endif
                 </div>
             </div>
@@ -58,9 +61,20 @@
                         </div>
                         <div class="col-md-6">
                             <label class="form-label text-muted">File</label>
-                            @if($resume->file_path)
+                            @php
+                                $fileUrl = $resume->file_path;
+                                if ($fileUrl) {
+                                    $isAbsolute = preg_match('#^(https?:)?//#', $fileUrl) === 1;
+                                    if (!$isAbsolute) {
+                                        $fileUrl = \Illuminate\Support\Str::startsWith($fileUrl, '/')
+                                            ? $fileUrl
+                                            : \Illuminate\Support\Facades\Storage::url($fileUrl);
+                                    }
+                                }
+                            @endphp
+                            @if($fileUrl)
                                 <div class="d-flex align-items-center gap-2">
-                                    <a class="btn btn-sm btn-light-brand" href="{{ asset($resume->file_path) }}" target="_blank">
+                                    <a class="btn btn-sm btn-light-brand" href="{{ $fileUrl }}" target="_blank" rel="noopener">
                                         <i class="feather-download me-1"></i> Open
                                     </a>
                                     <span class="fs-11 text-muted">{{ $resume->file_mime }} • {{ number_format((int) $resume->file_size / 1024, 0) }} KB</span>

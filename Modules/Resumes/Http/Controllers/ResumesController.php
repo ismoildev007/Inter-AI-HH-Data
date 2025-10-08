@@ -36,20 +36,20 @@ class ResumesController extends Controller
         return new ResumeResource($resume->load('analysis'));
     }
 
-    public function show(int $id)
+    public function show(string $id)
     {
         $resume = Resume::with('analysis')->findOrFail($id);
         return new ResumeResource($resume);
     }
 
-    public function update(ResumeUpdateRequest $request, int $id)
+    public function update(ResumeUpdateRequest $request, string $id)
     {
         $resume = Resume::findOrFail($id);
         $resume = $this->service->update($resume, $request->validated());
         return new ResumeResource($resume->load('analysis'));
     }
 
-    public function destroy(int $id)
+    public function destroy(string $id)
     {
         $resume = Resume::where('user_id', auth()->id())->findOrFail($id);
 
@@ -64,7 +64,7 @@ class ResumesController extends Controller
     /**
      * Set a resume as primary for the authenticated user.
      */
-    public function setPrimary(int $id)
+    public function setPrimary(string $id)
     {
         $resume = Resume::where('user_id', auth()->id())->findOrFail($id);
 
