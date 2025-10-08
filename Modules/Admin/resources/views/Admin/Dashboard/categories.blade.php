@@ -31,7 +31,7 @@
                         @forelse($rows as $i => $row)
                             <tr>
                                 <td class="fw-semibold text-dark">{{ $i + 1 }}</td>
-                                <td class="text-capitalize">
+                                <td>
                                     <a href="{{ route('admin.vacancies.by_category', $row->category ?: 'other') }}" class="text-decoration-none">
                                         {{ $row->category ?: 'other' }}
                                     </a>
