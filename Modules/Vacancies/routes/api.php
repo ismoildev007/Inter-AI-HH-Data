@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Modules\Vacancies\Http\Controllers\DemoVacancyMatchingController;
 use Modules\Vacancies\Http\Controllers\VacanciesController;
 use Modules\Vacancies\Http\Controllers\HHVacancyController;
 use Modules\Vacancies\Http\Controllers\VacancyMatchingController;
@@ -39,9 +40,9 @@ Route::prefix('v1')
         Route::prefix('demo/vacancy-matches')
             ->name('demo.vacancy-matches.')
             ->group(function () {
-                Route::post('run', [DemoVacancyMatchingService::class, 'match'])
+                Route::post('run', [DemoVacancyMatchingController::class, 'match'])
                     ->name('run');
-                Route::get('/', [DemoVacancyMatchingService::class, 'myMatches'])
+                Route::get('/', [DemoVacancyMatchingController::class, 'myMatches'])
                     ->name('index');
             });
         /**
