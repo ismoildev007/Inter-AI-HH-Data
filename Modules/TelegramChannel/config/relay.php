@@ -89,6 +89,11 @@ return [
         // Auto-archive after N days (affects PUBLISHED rows)
         'auto_archive_days' => 7,
     ],
+    'locks' => [
+        'session_ttl' => env('TG_SESSION_LOCK_TTL', 120),
+        'session_wait' => env('TG_SESSION_LOCK_WAIT', 45),
+        'session_retry' => env('TG_SESSION_LOCK_RETRY', 20),
+    ],
     'rules' => [
         // '@AaaaElnurbek' => [
         //     'type' => 'starts_with',

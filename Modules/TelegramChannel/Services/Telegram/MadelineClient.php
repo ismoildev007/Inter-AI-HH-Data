@@ -6,6 +6,8 @@ use danog\MadelineProto\API;
 use danog\MadelineProto\Settings;
 use danog\MadelineProto\Logger;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Contracts\Cache\LockTimeoutException;
+use Modules\TelegramChannel\Exceptions\SessionLockBusyException;
 
     class MadelineClient
     {
@@ -23,14 +25,24 @@ use Illuminate\Support\Facades\Cache;
         $settings->getLogger()->setLevel(Logger::LEVEL_ERROR);
 
         // Prevent concurrent starts on the same session file (avoid corruption)
-        $lock = Cache::lock('tg:madeline:session', 30);
-        $lock->block(10);
+        $lockTtl = (int) config('telegramchannel_relay.locks.session_ttl', 120);
+        $lockWait = (int) config('telegramchannel_relay.locks.session_wait', 45);
+        $lock = Cache::lock('tg:madeline:session', max(1, $lockTtl));
+        $hasLock = false;
+        try {
+            $lock->block(max(1, $lockWait));
+            $hasLock = true;
+        } catch (LockTimeoutException $e) {
+            throw new SessionLockBusyException('Madeline session lock busy', 0, $e);
+        }
         try {
             $api = new API($session, $settings);
             $api->start();
             $this->api = $api;
         } finally {
-            optional($lock)->release();
+            if ($hasLock) {
+                optional($lock)->release();
+            }
         }
 
         // Optional: log memory right after start for diagnostics
