@@ -40,6 +40,6 @@
     <!--! END: Apps Init !-->
     <!--! BEGIN: Theme Customizer  !-->
     <script src="/assets/js/theme-customizer-init.min.js"></script>
-    <script src="/assets/js/visitor-custom.js"></script>
+    <script src="/assets/js/visitors-custom.js"></script>
 </body>
 </html>
