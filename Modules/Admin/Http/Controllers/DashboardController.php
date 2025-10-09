@@ -298,7 +298,7 @@ class DashboardController extends Controller
         ];
 
         // Vacancies by category (top N) — Postgres-safe quoting and grouping by expression
-        $catExpr = "COALESCE(NULLIF(category, ''), 'Other')";
+        $catExpr = "COALESCE(NULLIF(category, ''), 'other')";
         $vacancyCategories = DB::table('vacancies')
             ->selectRaw($catExpr . ' as category, COUNT(*) as c')
             ->groupBy(DB::raw($catExpr))
@@ -370,7 +370,7 @@ class DashboardController extends Controller
      */
     public function vacancyCategories()
     {
-        $catExpr = "COALESCE(NULLIF(category, ''), 'Other')";
+        $catExpr = "COALESCE(NULLIF(category, ''), 'other')";
         $rows = DB::table('vacancies')
             ->selectRaw($catExpr . ' as category, COUNT(*) as c')
             ->groupBy(DB::raw($catExpr))
@@ -390,27 +390,24 @@ class DashboardController extends Controller
      */
     public function vacanciesByCategory(string $category)
     {
-        $requestedCategory = trim($category);
-        $normalized = mb_strtolower($requestedCategory);
+$category = trim(strtolower($category));
 
         $query = Vacancy::query()->select(['id','title','category','created_at'])->orderByDesc('id');
 
-        if ($normalized === 'other' || $normalized === '') {
+         if ($category === 'other' || $category === '') {
             $query->where(function($q){
-                $q->whereNull('category')
-                    ->orWhere('category','')
-                    ->orWhereRaw('LOWER(category) = ?', ['other']);
+$q->whereNull('category')->orWhere('category','')
+->orWhere('category','other');
             });
-            $displayCategory = 'Other';
         } else {
-            $query->whereRaw('LOWER(category) = ?', [$normalized]);
-            $displayCategory = $requestedCategory;
+            $query->where('category', $category);
         }
 
         // Paginate to avoid huge responses; can be adjusted as needed
         $vacancies = $query->paginate(50)->withQueryString();
 
-        $titleCategory = $displayCategory;
+         $titleCategory = $category === '' ? 'other' : $category;
+        
         $count = $vacancies->total();
 
         return view('admin::Admin.Dashboard.category-vacancies', [

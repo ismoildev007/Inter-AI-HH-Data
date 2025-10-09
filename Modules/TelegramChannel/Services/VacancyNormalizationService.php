@@ -22,7 +22,7 @@ class VacancyNormalizationService
         }
 
         $prompt = <<<PROMPT
-You are an assistant that cleans and standardizes job vacancy posts into a fixed JSON schema. Analyze the vacancy title and description carefully and assign the most appropriate single category.
+You are an assistant that cleans and standardizes job vacancy posts into a fixed JSON schema.
 
 Rules:
 - Output ONLY valid JSON. No extra text, no markdown, no comments.
@@ -41,7 +41,7 @@ Schema:
   },
   "description": "string",
   "category_raw": "string",  // free-text short category inferred from the role (e.g., "Sales Manager", "Backend", "Courier")
-  "category": "string"       // your best-fit single category (e.g., "Marketing and Advertising", "IT and Technology", or "Other" if unclear)
+  "category": "string"       // one of: developer, frontend_developer, backend_developer, fullstack_developer, mobile_developer, devops, sysadmin, data, security, qa, product, project, designer, content, video_editor, motion_design, photographer, videographer, marketer, smm, pr, communications, sales, business_development, customer_success, support, hr, finance, accounting, banking, insurance, operations, procurement, supply_chain, warehouse, office_manager, analyst, architect, civil_engineer, electrical_engineer, mechanical_engineer, automation_engineer, electronics_engineer, chemical_engineer, construction, real_estate, teacher, tutor, trainer, translator, interpreter, medicine, nurse, pharmacist, dentist, veterinarian, hospitality, chef, cook, baker, pastry_chef, bartender, waiter, retail, cashier, driver, courier, logistics, technician, welder, electrician, plumber, mechanic, carpenter, painter, seamstress, tourism, travel_agent, beauty, legal, other
 }
 
 Field rules:
@@ -55,9 +55,9 @@ Field rules:
   - Put ALL remaining vacancy information (responsibilities, requirements, skills, salary, currency, bonuses, schedule, shift, format, contract, trial period, experience, location, deadlines, how to apply, preferred contact method/time, languages, start date, etc.).
   - Preserve numbers and currency exactly as in text.
   - Write neatly with proper punctuation, commas, spaces, and line breaks.
- - category/category_raw:
-   - First, set category_raw to a concise human-readable label drawn from the vacancy context.
-   - Then choose exactly one category name (e.g., "Marketing and Advertising", "Sales and Customer Relations", "IT and Technology" …). If nothing fits, use "Other". Return the label exactly as written (same casing and spacing). Do not invent new category types.
+- category/category_raw:
+  - First, set category_raw to a short human label (e.g., "PHP Laravel", "Frontend", "SMM", "QA").
+  - Then map to the closest category from the allowed list and set category. If unclear, use "other". Always lowercase.
 
 Input text:
 """
@@ -69,7 +69,7 @@ PROMPT;
 
         $response = Http::withToken($apiKey)
             ->timeout(60)
-            ->retry(3, fn ($attempt) => [500, 2000, 5000][$attempt - 1] ?? 5000)
+            ->retry(3, fn($attempt) => [500, 2000, 5000][$attempt - 1] ?? 5000)
             ->post('https://api.openai.com/v1/chat/completions', [
                 'model' => $model,
                 'messages' => [
@@ -81,7 +81,7 @@ PROMPT;
 
         if ($response->failed()) {
             Log::error('Vacancy normalization failed', ['status' => $response->status(), 'body' => $response->body()]);
-            throw new \RuntimeException('OpenAI request failed: '.$response->status());
+            throw new \RuntimeException('OpenAI request failed: ' . $response->status());
         }
 
         $content = (string) $response->json('choices.0.message.content', '');
@@ -92,7 +92,7 @@ PROMPT;
 
         $data = json_decode($content, true);
         if (!is_array($data)) {
-            throw new \RuntimeException('Invalid JSON from OpenAI: '.$content);
+            throw new \RuntimeException('Invalid JSON from OpenAI: ' . $content);
         }
 
         // Ensure shape

@@ -348,12 +348,12 @@ class RelayService
                     }
                 }
 
-                // Determine category using canonical mapper (GPT-driven + fallback)
-                $category = $this->categorizer->normalize(
+
+                // Determine category (AI normalized or heuristic fallback)
+                $category = $this->categorizer->categorize(
                     (string) ($normalized['category'] ?? ''),
                     (string) ($normalized['title'] ?? ''),
-                    (string) ($normalized['description'] ?? ''),
-                    (string) ($normalized['category_raw'] ?? '')
+(string) ($normalized['description'] ?? '')
                 );
 
                 // Render post in your house style (Blade)
