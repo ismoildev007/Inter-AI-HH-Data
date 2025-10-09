@@ -21,4 +21,9 @@ class DemoResume extends Model
         'parsed_text',
         'is_primary',
     ];
+
+    public function analysis()
+    {
+        return $this->hasOne(ResumeAnalyze::class);
+    }
 }

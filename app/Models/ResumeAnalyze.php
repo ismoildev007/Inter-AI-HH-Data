@@ -11,6 +11,7 @@ class ResumeAnalyze extends Model
 
     protected $fillable = [
         'resume_id',
+        'demo_resume_id',
         'strengths',
         'weaknesses',
         'keywords',
@@ -24,10 +25,14 @@ class ResumeAnalyze extends Model
         'weaknesses' => 'array',
         'keywords'   => 'array',
     ];
-    
+
 
     public function resume()
     {
         return $this->belongsTo(Resume::class);
+    }
+    public function demoResume()
+    {
+        return $this->belongsTo(DemoResume::class);
     }
 }
