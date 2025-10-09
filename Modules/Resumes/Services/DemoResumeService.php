@@ -3,7 +3,6 @@
 namespace Modules\Resumes\Services;
 
 use App\Models\DemoResume;
-use App\Models\Resume;
 use App\Models\ResumeAnalyze;
 use App\Models\UserPreference;
 use Illuminate\Support\Facades\Http;
@@ -15,13 +14,6 @@ use Modules\Resumes\Interfaces\ResumeInterface;
 
 class DemoResumeService
 {
-    protected ResumeInterface $repo;
-
-    public function __construct(ResumeInterface $repo)
-    {
-        $this->repo = $repo;
-    }
-
     /**
      * Store a new resume and trigger analysis.
      */
@@ -155,17 +147,5 @@ class DemoResumeService
             Log::error("Resume parsing failed: " . $e->getMessage());
             return null;
         }
-    }
-
-    public function setPrimary(Resume $resume): Resume
-    {
-        // Reset all other resumes for this user
-        Resume::where('user_id', $resume->user_id)
-            ->where('id', '!=', $resume->id)
-            ->update(['is_primary' => false]);
-
-        $resume->update(['is_primary' => true]);
-
-        return $resume;
     }
 }
