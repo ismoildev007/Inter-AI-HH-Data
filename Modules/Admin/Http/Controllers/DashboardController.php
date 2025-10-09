@@ -309,16 +309,21 @@ class DashboardController extends Controller
         $vacancyCategories = $vacancyCategoriesRaw
             ->map(function ($row) use ($categorizer) {
                 $canonical = $categorizer->categorize($row->category, null, '', $row->category);
+                $slug = $categorizer->slugify($canonical);
                 return (object) [
                     'category' => $canonical,
-                    'c' => (int) $row->c,
+                    'slug' => $slug,
+                    'count' => (int) $row->c,
                 ];
             })
             ->groupBy('category')
-            ->map(function ($group, $category) {
+            ->map(function ($group, $category) use ($categorizer) {
+                $total = $group->sum('count');
+                $slug = $categorizer->slugify($category);
                 return (object) [
                     'category' => $category,
-                    'c' => $group->sum('c'),
+                    'slug' => $slug,
+                    'c' => $total,
                 ];
             })
             ->sortByDesc('c')
@@ -398,16 +403,21 @@ class DashboardController extends Controller
         $rows = $rowsRaw
             ->map(function ($row) use ($categorizer) {
                 $canonical = $categorizer->categorize($row->category, null, '', $row->category);
+                $slug = $categorizer->slugify($canonical);
                 return (object) [
                     'category' => $canonical,
-                    'c' => (int) $row->c,
+                    'slug' => $slug,
+                    'count' => (int) $row->c,
                 ];
             })
             ->groupBy('category')
-            ->map(function ($group, $category) {
+            ->map(function ($group, $category) use ($categorizer) {
+                $total = $group->sum('count');
+                $slug = $categorizer->slugify($category);
                 return (object) [
                     'category' => $category,
-                    'c' => $group->sum('c'),
+                    'slug' => $slug,
+                    'c' => $total,
                 ];
             })
             ->sortByDesc('c')
@@ -427,7 +437,8 @@ class DashboardController extends Controller
     public function vacanciesByCategory(string $category)
     {
         $categorizer = app(\Modules\TelegramChannel\Services\VacancyCategoryService::class);
-        $canonical = $categorizer->categorize($category, null, '', $category);
+        $canonical = $categorizer->fromSlug($category) ?? $categorizer->categorize($category, null, '', $category);
+        $slug = $categorizer->slugify($canonical);
 
         $query = Vacancy::query()->select(['id','title','category','created_at'])->orderByDesc('id');
 
@@ -449,6 +460,7 @@ class DashboardController extends Controller
 
         return view('admin::Admin.Dashboard.category-vacancies', [
             'category' => $titleCategory,
+            'categorySlug' => $slug,
             'vacancies' => $vacancies,
             'count' => $count,
         ]);
@@ -460,6 +472,8 @@ class DashboardController extends Controller
     public function vacancyShow(int $id)
     {
         $vacancy = Vacancy::query()->findOrFail($id);
-        return view('admin::Admin.Dashboard.vacancy-show', compact('vacancy'));
+        $categorizer = app(\Modules\TelegramChannel\Services\VacancyCategoryService::class);
+        $categorySlug = $vacancy->category ? $categorizer->slugify($vacancy->category) : null;
+        return view('admin::Admin.Dashboard.vacancy-show', compact('vacancy', 'categorySlug'));
     }
 }

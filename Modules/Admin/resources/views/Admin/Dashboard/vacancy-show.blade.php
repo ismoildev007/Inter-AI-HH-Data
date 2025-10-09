@@ -10,7 +10,7 @@
                 <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}">Home</a></li>
                 <li class="breadcrumb-item"><a href="{{ route('admin.vacancies.categories') }}">All Categories</a></li>
                 @if($vacancy->category)
-                    <li class="breadcrumb-item text-capitalize"><a href="{{ route('admin.vacancies.by_category', $vacancy->category) }}">{{ $vacancy->category }}</a></li>
+                    <li class="breadcrumb-item"><a href="{{ route('admin.vacancies.by_category', $categorySlug ?? 'other') }}">{{ $vacancy->category }}</a></li>
                 @endif
                 <li class="breadcrumb-item">Vacancy</li>
             </ul>

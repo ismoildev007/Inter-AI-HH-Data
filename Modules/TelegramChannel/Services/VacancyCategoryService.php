@@ -545,6 +545,7 @@ class VacancyCategoryService
 
     private array $canonicalIndex = [];
     private array $aliasIndex = [];
+    private array $slugIndex = [];
 
     public function __construct()
     {
@@ -553,6 +554,10 @@ class VacancyCategoryService
                 if ($key !== '') {
                     $this->canonicalIndex[$key] = $label;
                 }
+            }
+            $slugKey = $this->slugify($label);
+            if ($slugKey !== '') {
+                $this->slugIndex[$slugKey] = $label;
             }
         }
         foreach ($this->aliasMap as $alias => $slug) {
@@ -582,6 +587,23 @@ class VacancyCategoryService
         }
 
         return $this->categories['other'];
+    }
+
+    public function slugify(?string $label): string
+    {
+        if ($label === null || trim($label) === '') {
+            return 'other';
+        }
+        return Str::slug(mb_strtolower($label, 'UTF-8'), '-');
+    }
+
+    public function fromSlug(?string $slug): ?string
+    {
+        if ($slug === null || trim($slug) === '') {
+            return null;
+        }
+        $key = $this->slugify($slug);
+        return $this->slugIndex[$key] ?? null;
     }
 
     private function matchDirect(?string $value): ?string
