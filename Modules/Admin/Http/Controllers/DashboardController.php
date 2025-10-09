@@ -298,13 +298,31 @@ class DashboardController extends Controller
         ];
 
         // Vacancies by category (top N) — Postgres-safe quoting and grouping by expression
-        $catExpr = "COALESCE(NULLIF(category, ''), 'other')";
-        $vacancyCategories = DB::table('vacancies')
+        $categorizer = app(\Modules\TelegramChannel\Services\VacancyCategoryService::class);
+        $catExpr = "COALESCE(NULLIF(category, ''), 'Other')";
+        $vacancyCategoriesRaw = DB::table('vacancies')
             ->selectRaw($catExpr . ' as category, COUNT(*) as c')
             ->groupBy(DB::raw($catExpr))
             ->orderByDesc('c')
             ->limit(8)
             ->get();
+        $vacancyCategories = $vacancyCategoriesRaw
+            ->map(function ($row) use ($categorizer) {
+                $canonical = $categorizer->categorize($row->category, null, '', $row->category);
+                return (object) [
+                    'category' => $canonical,
+                    'c' => (int) $row->c,
+                ];
+            })
+            ->groupBy('category')
+            ->map(function ($group, $category) {
+                return (object) [
+                    'category' => $category,
+                    'c' => $group->sum('c'),
+                ];
+            })
+            ->sortByDesc('c')
+            ->values();
         $vacanciesTotal = DB::table('vacancies')->count();
 
         // Top visitors (all-time), only authenticated users (user_id not null)
@@ -370,12 +388,30 @@ class DashboardController extends Controller
      */
     public function vacancyCategories()
     {
-        $catExpr = "COALESCE(NULLIF(category, ''), 'other')";
-        $rows = DB::table('vacancies')
+        $categorizer = app(\Modules\TelegramChannel\Services\VacancyCategoryService::class);
+        $catExpr = "COALESCE(NULLIF(category, ''), 'Other')";
+        $rowsRaw = DB::table('vacancies')
             ->selectRaw($catExpr . ' as category, COUNT(*) as c')
             ->groupBy(DB::raw($catExpr))
             ->orderByDesc('c')
             ->get();
+        $rows = $rowsRaw
+            ->map(function ($row) use ($categorizer) {
+                $canonical = $categorizer->categorize($row->category, null, '', $row->category);
+                return (object) [
+                    'category' => $canonical,
+                    'c' => (int) $row->c,
+                ];
+            })
+            ->groupBy('category')
+            ->map(function ($group, $category) {
+                return (object) [
+                    'category' => $category,
+                    'c' => $group->sum('c'),
+                ];
+            })
+            ->sortByDesc('c')
+            ->values();
 
         $totalCount = DB::table('vacancies')->count();
 
@@ -390,24 +426,25 @@ class DashboardController extends Controller
      */
     public function vacanciesByCategory(string $category)
     {
-$category = trim(strtolower($category));
+        $categorizer = app(\Modules\TelegramChannel\Services\VacancyCategoryService::class);
+        $canonical = $categorizer->categorize($category, null, '', $category);
 
         $query = Vacancy::query()->select(['id','title','category','created_at'])->orderByDesc('id');
 
-         if ($category === 'other' || $category === '') {
+        if (mb_strtolower($canonical) === 'other') {
             $query->where(function($q){
-$q->whereNull('category')->orWhere('category','')
-->orWhere('category','other');
+                $q->whereNull('category')->orWhere('category','')
+                ->orWhere('category','Other');
             });
         } else {
-            $query->where('category', $category);
+            $query->where('category', $canonical);
         }
 
         // Paginate to avoid huge responses; can be adjusted as needed
         $vacancies = $query->paginate(50)->withQueryString();
 
-         $titleCategory = $category === '' ? 'other' : $category;
-        
+        $titleCategory = $canonical;
+
         $count = $vacancies->total();
 
         return view('admin::Admin.Dashboard.category-vacancies', [
