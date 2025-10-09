@@ -111,6 +111,8 @@ class VacancyCategoryService
         'backend engineer' => 'it_and_software_development',
         'frontend developer' => 'it_and_software_development',
         'frontend engineer' => 'it_and_software_development',
+        'lead frontend developer' => 'it_and_software_development',
+        'frontend lead developer' => 'it_and_software_development',
         'fullstack developer' => 'it_and_software_development',
         'full stack developer' => 'it_and_software_development',
         'mobile developer' => 'it_and_software_development',
