@@ -14,6 +14,11 @@ class DemoResume extends Model
     protected $fillable = [
         'chat_id',
         'title',
-        'file',
+        'description',
+        'file_path',
+        'file_mime',
+        'file_size',
+        'parsed_text',
+        'is_primary',
     ];
 }

@@ -110,7 +110,7 @@ class DemoResumeService
 
         if (!empty($analysis['cover_letter'])) {
             UserPreference::updateOrCreate(
-                ['user_id' => $demoResume->user_id],
+                ['user_id' => $demoResume->chat_id],
                 ['cover_letter' => $analysis['cover_letter']]
             );
         }
