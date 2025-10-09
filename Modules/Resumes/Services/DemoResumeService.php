@@ -32,11 +32,12 @@ class DemoResumeService
             $data['file_path'] = $path;
             $data['file_mime'] = $data['file']->getMimeType();
             $data['file_size'] = $data['file']->getSize();
+
             $absolutePath = Storage::disk('public')->path($path);
             $data['parsed_text'] = $this->parseFile($absolutePath);
         }
 
-        $demoResume = $this->repo->demoStore($data);
+        $demoResume = DemoResume::create($data);
 
         $this->analyze($demoResume);
 
