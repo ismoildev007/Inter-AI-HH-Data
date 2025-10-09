@@ -10,5 +10,5 @@ return [
     'session' => env('TG_SESSION_PATH', storage_path('app/telegram/session.madeline')),
     // OpenAI config
     'openai_key' => env('OPENAI_API_KEY'),
-    'openai_model' => env('OPENAI_MODEL', 'gpt-4.1-mini'),
+    'openai_model' => env('OPENAI_MODEL', 'gpt-4.1-nano'),
 ];

@@ -353,7 +353,8 @@ class RelayService
                 $category = $this->categorizer->categorize(
                     (string) ($normalized['category'] ?? ''),
                     (string) ($normalized['title'] ?? ''),
-(string) ($normalized['description'] ?? '')
+                    (string) ($normalized['description'] ?? ''),
+                    (string) ($normalized['category_raw'] ?? '')
                 );
 
                 // Render post in your house style (Blade)
