@@ -25,6 +25,7 @@
             <div class="row g-3">
                 <div class="col-12 col-lg-6">
                     <div class="mb-2"><span class="text-muted">ID</span><div class="fw-semibold">{{ $vacancy->id }}</div></div>
+                    <div class="mb-2"><span class="text-muted">Created At</span><div class="fw-semibold">{{ optional($vacancy->created_at)->format('Y-m-d H:i:s') ?? '—' }}</div></div>
                     <div class="mb-2"><span class="text-muted">Source</span><div class="fw-semibold">{{ $vacancy->source ?? '—' }}</div></div>
                     <div class="mb-2"><span class="text-muted">Title</span><div class="fw-semibold">{{ $vacancy->title ?? '—' }}</div></div>
                     <div class="mb-2"><span class="text-muted">Company</span><div class="fw-semibold">{{ $vacancy->company ?? '—' }}</div></div>
