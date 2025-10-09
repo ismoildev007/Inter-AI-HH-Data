@@ -48,6 +48,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
         // Vacancies by Category → list titles for a category
         Route::get('vacancies/category/{category}', [DashboardController::class, 'vacanciesByCategory'])->name('vacancies.by_category');
+        Route::patch('vacancies/{vacancy}/status', [DashboardController::class, 'vacancyUpdateStatus'])->name('vacancies.update_status');
         // Vacancy details (single)
         Route::get('vacancies/{id}', [DashboardController::class, 'vacancyShow'])->name('vacancies.show');
     });

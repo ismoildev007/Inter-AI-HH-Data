@@ -17,9 +17,27 @@
         </div>
     </div>
 
+    @if (session('status'))
+        <div class="alert alert-success mt-4 ms-4 me-4">{{ session('status') }}</div>
+    @endif
+
     <div class="card stretch mt-4 ms-4 me-4">
         <div class="card-header align-items-center justify-content-between">
             <div class="card-title"><h6 class="mb-0">Details</h6></div>
+            @php
+                $isPublished = in_array($vacancy->status, [\App\Models\Vacancy::STATUS_PUBLISH, 'published'], true);
+                $isArchived = in_array($vacancy->status, [\App\Models\Vacancy::STATUS_ARCHIVE, 'archived'], true);
+            @endphp
+            @if($isPublished || $isArchived)
+                <form method="POST" action="{{ route('admin.vacancies.update_status', ['vacancy' => $vacancy->id]) }}">
+                    @csrf
+                    @method('PATCH')
+                    <input type="hidden" name="status" value="{{ $isPublished ? \App\Models\Vacancy::STATUS_ARCHIVE : \App\Models\Vacancy::STATUS_PUBLISH }}">
+                    <button type="submit" class="btn btn-sm {{ $isPublished ? 'btn-danger' : 'btn-success' }}">
+                        {{ $isPublished ? 'Archive qilish' : 'Publish qilish' }}
+                    </button>
+                </form>
+            @endif
         </div>
         <div class="card-body">
             <div class="row g-3">

@@ -10,6 +10,8 @@ use App\Models\TelegramChannel;
 use App\Models\Visit;
 use App\Models\Vacancy;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Carbon\Carbon;
 
 class DashboardController extends Controller
@@ -464,6 +466,24 @@ class DashboardController extends Controller
             'vacancies' => $vacancies,
             'count' => $count,
         ]);
+    }
+
+    /**
+     * Toggle a vacancy between published and archived states.
+     */
+    public function vacancyUpdateStatus(Request $request, Vacancy $vacancy)
+    {
+        $validated = $request->validate([
+            'status' => ['required', Rule::in([Vacancy::STATUS_PUBLISH, Vacancy::STATUS_ARCHIVE])],
+        ]);
+
+        $vacancy->update([
+            'status' => $validated['status'],
+        ]);
+
+        return redirect()
+            ->route('admin.vacancies.show', ['id' => $vacancy->id])
+            ->with('status', 'Vacancy status updated.');
     }
 
     /**
