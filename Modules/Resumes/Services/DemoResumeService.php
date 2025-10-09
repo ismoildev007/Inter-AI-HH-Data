@@ -2,6 +2,7 @@
 
 namespace Modules\Resumes\Services;
 
+use App\Models\DemoResume;
 use App\Models\Resume;
 use App\Models\ResumeAnalyze;
 use App\Models\UserPreference;
@@ -12,7 +13,7 @@ use Smalot\PdfParser\Parser as PdfParser;
 use PhpOffice\PhpWord\IOFactory as WordIO;
 use Modules\Resumes\Interfaces\ResumeInterface;
 
-class ResumeService
+class DemoResumeService
 {
     protected ResumeInterface $repo;
 
@@ -24,7 +25,7 @@ class ResumeService
     /**
      * Store a new resume and trigger analysis.
      */
-    public function create(array $data): Resume
+    public function create(array $data): DemoResume
     {
         if (isset($data['file'])) {
             $path = $data['file']->store('resumes', 'public');
@@ -35,37 +36,17 @@ class ResumeService
             $data['parsed_text'] = $this->parseFile($absolutePath);
         }
 
-        $resume = $this->repo->store($data);
+        $demoResume = $this->repo->demoStore($data);
 
-        $this->analyze($resume);
+        $this->analyze($demoResume);
 
-        return $resume;
-    }
-
-    /**
-     * Update an existing resume and re-run analysis.
-     */
-    public function update(Resume $resume, array $data): Resume
-    {
-        if (isset($data['file'])) {
-            $path = $data['file']->store('resumes', 'public');
-            $data['file_path'] = $path;
-            $data['file_mime'] = $data['file']->getMimeType();
-            $data['file_size'] = $data['file']->getSize();
-            $data['parsed_text'] = $this->parseFile($data['file']->getPathname());
-        }
-
-        $resume = $this->repo->update($resume, $data);
-
-        $this->analyze($resume);
-
-        return $resume;
+        return $demoResume;
     }
 
     /**
      * Call GPT API to analyze resume and store results.
      */
-    public function analyze(Resume $resume): void
+    public function analyze(DemoResume $demoResume): void
     {
         $prompt = <<<PROMPT
             You are an expert HR assistant AI.
@@ -83,7 +64,7 @@ class ResumeService
 
             Resume text:
 
-            " . ($resume->parsed_text ?? $resume->description) . "
+            " . ($demoResume->parsed_text ?? $demoResume->description) . "
 
             PROMPT;
 
@@ -117,7 +98,7 @@ class ResumeService
 
 
         ResumeAnalyze::updateOrCreate(
-            ['resume_id' => $resume->id],
+            ['resume_id' => $demoResume->id],
             [
                 'skills'     => $analysis['skills'] ?? null,
                 'strengths'  => $analysis['strengths'] ?? null,
@@ -129,7 +110,7 @@ class ResumeService
 
         if (!empty($analysis['cover_letter'])) {
             UserPreference::updateOrCreate(
-                ['user_id' => $resume->user_id],
+                ['user_id' => $demoResume->user_id],
                 ['cover_letter' => $analysis['cover_letter']]
             );
         }

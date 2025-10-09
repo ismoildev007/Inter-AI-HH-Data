@@ -5,6 +5,7 @@ namespace Modules\Resumes\Http\Controllers;
 use App\Http\Controllers\Controller;
 use Modules\Resumes\Http\Requests\ResumeUpdateRequest;
 use Modules\Resumes\Http\Resources\ResumeResource;
+use Modules\Resumes\Services\DemoResumeService;
 use Modules\Resumes\Services\ResumeService;
 use App\Models\Resume;
 use Modules\Resumes\Http\Requests\ResumeStoreRequest;
@@ -12,10 +13,14 @@ use Modules\Resumes\Http\Requests\ResumeStoreRequest;
 class ResumesController extends Controller
 {
     protected ResumeService $service;
+    protected DemoResumeService $demoResumeService;
 
-    public function __construct(ResumeService $service)
+    public function __construct(
+        ResumeService $service,
+    DemoResumeService $demoResumeService)
     {
         $this->service = $service;
+        $this->demoResumeService = $demoResumeService;
     }
 
     public function index()
@@ -34,6 +39,11 @@ class ResumesController extends Controller
     {
         $resume = $this->service->create($request->validated() + ['user_id' => auth()->id()]);
         return new ResumeResource($resume->load('analysis'));
+    }
+    public function demoStore(ResumeStoreRequest $request)
+    {
+        $demoResume = $this->demoResumeService->create($request->validated());
+        return new ResumeResource($demoResume->load('analysis'));
     }
 
     public function show(string $id)

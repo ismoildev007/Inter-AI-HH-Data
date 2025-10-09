@@ -5,6 +5,7 @@ return [
     'allowed_methods' => ['*'],
     'allowed_origins' => [
          'http://localhost:5173',
+        'https://vacancies.inter-ai.uz',
         'https://api.inter-ai.uz',
     ],
     'allowed_origins_patterns' => [],
