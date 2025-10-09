@@ -34,6 +34,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         // Resumes
         Route::get('resumes', [ResumeController::class, 'index'])->name('resumes.index');
         Route::get('resumes/{id}', [ResumeController::class, 'show'])->name('resumes.show');
+        Route::get('resumes/{id}/download', [ResumeController::class, 'download'])->name('resumes.download');
 
         // Applications
         Route::get('applications', [ApplicationController::class, 'index'])->name('applications.index');

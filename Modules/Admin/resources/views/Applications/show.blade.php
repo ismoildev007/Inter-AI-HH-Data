@@ -122,9 +122,18 @@
                                     <label class="form-label text-muted">Created</label>
                                     <div class="form-control">{{ optional(optional($application->resume)->created_at)->format('Y-m-d H:i') }}</div>
                                 </div>
-                                @if(optional($application->resume)->file_path)
+                                @php
+                                    $resume = $application->resume;
+                                @endphp
+                                @if($resume && $resume->file_path)
+                                    @php
+                                        $fileUrl = $resume->file_path;
+                                        $openUrl = preg_match('#^(https?:)?//#', $fileUrl) === 1
+                                            ? $fileUrl
+                                            : route('admin.resumes.download', $resume->id);
+                                    @endphp
                                     <div class="col-12">
-                                        <a class="btn btn-light-brand" href="{{ asset($application->resume->file_path) }}" target="_blank">
+                                        <a class="btn btn-light-brand" href="{{ $openUrl }}" target="_blank" rel="noopener">
                                             <i class="feather-download me-1"></i> Open Resume
                                         </a>
                                     </div>

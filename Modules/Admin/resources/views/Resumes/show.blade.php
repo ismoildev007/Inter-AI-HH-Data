@@ -62,19 +62,18 @@
                         <div class="col-md-6">
                             <label class="form-label text-muted">File</label>
                             @php
-                                $fileUrl = $resume->file_path;
-                                if ($fileUrl) {
-                                    $isAbsolute = preg_match('#^(https?:)?//#', $fileUrl) === 1;
-                                    if (!$isAbsolute) {
-                                        $fileUrl = \Illuminate\Support\Str::startsWith($fileUrl, '/')
-                                            ? $fileUrl
-                                            : \Illuminate\Support\Facades\Storage::url($fileUrl);
-                                    }
+                                $filePath = $resume->file_path;
+                                $openUrl = null;
+                                if ($filePath) {
+                                    $isAbsolute = preg_match('#^(https?:)?//#', $filePath) === 1;
+                                    $openUrl = $isAbsolute
+                                        ? $filePath
+                                        : route('admin.resumes.download', $resume->id);
                                 }
                             @endphp
-                            @if($fileUrl)
+                            @if($openUrl)
                                 <div class="d-flex align-items-center gap-2">
-                                    <a class="btn btn-sm btn-light-brand" href="{{ $fileUrl }}" target="_blank" rel="noopener">
+                                    <a class="btn btn-sm btn-light-brand" href="{{ $openUrl }}" target="_blank" rel="noopener">
                                         <i class="feather-download me-1"></i> Open
                                     </a>
                                     <span class="fs-11 text-muted">{{ $resume->file_mime }} • {{ number_format((int) $resume->file_size / 1024, 0) }} KB</span>
