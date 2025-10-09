@@ -33,6 +33,7 @@ class VacancyRepository implements VacancyInterface
         $schedules = [];
         $employments = [];
         $vacancies = [];
+        $categorizer = app(\Modules\TelegramChannel\Services\VacancyCategoryService::class);
 
         foreach ($vacanciesData as $data) {
             $salary = is_array($data['salary'] ?? null) ? $data['salary'] : [];
@@ -105,6 +106,21 @@ class VacancyRepository implements VacancyInterface
         foreach ($vacanciesData as $data) {
             $salary = is_array($data['salary'] ?? null) ? $data['salary'] : [];
             $publishedAt = !empty($data['published_at']) ? Carbon::parse($data['published_at'])->format('Y-m-d H:i:s') : null;
+            $description = $data['description']
+                ?? (($data['snippet']['requirement'] ?? '') . "\n" . ($data['snippet']['responsibility'] ?? ''));
+            $categoryRaw = '';
+            if (!empty($data['specializations']) && is_array($data['specializations'])) {
+                $categoryRaw = $data['specializations'][0]['name'] ?? '';
+            }
+            if ($categoryRaw === '' && !empty($data['professional_roles']) && is_array($data['professional_roles'])) {
+                $categoryRaw = $data['professional_roles'][0]['name'] ?? '';
+            }
+            $category = $categorizer->categorize(
+                $data['category'] ?? '',
+                $data['name'] ?? '',
+                $description,
+                $categoryRaw
+            );
 
             $vacancies[] = [
                 'source'          => 'hh',
@@ -114,14 +130,14 @@ class VacancyRepository implements VacancyInterface
                 'schedule_id'     => !empty($data['schedule']['id']) ? $scheduleMap[$data['schedule']['id']] ?? null : null,
                 'employment_id'   => !empty($data['employment']['id']) ? $employmentMap[$data['employment']['id']] ?? null : null,
                 'title'           => $data['name'] ?? '',
-                'description'     => $data['description']
-                    ?? (($data['snippet']['requirement'] ?? '') . "\n" . ($data['snippet']['responsibility'] ?? '')),
+                'description'     => $description,
                 'salary_from'     => $salary['from'] ?? null,
                 'salary_to'       => $salary['to'] ?? null,
                 'salary_currency' => $salary['currency'] ?? null,
                 'salary_gross'    => $salary['gross'] ?? false,
                 'published_at'    => $publishedAt,
                 'apply_url'       => $data['alternate_url'] ?? null,
+                'category'        => $category,
                 'raw_data'        => json_encode($data, JSON_UNESCAPED_UNICODE),
                 'created_at'      => $now,
                 'updated_at'      => $now,
@@ -144,6 +160,7 @@ class VacancyRepository implements VacancyInterface
                 'salary_gross',
                 'published_at',
                 'apply_url',
+                'category',
                 'raw_data',
                 'updated_at'
             ]
@@ -220,6 +237,7 @@ class VacancyRepository implements VacancyInterface
 
         // Salary
         $salary = is_array($hhVacancy['salary'] ?? null) ? $hhVacancy['salary'] : [];
+        $categorizer = app(\Modules\TelegramChannel\Services\VacancyCategoryService::class);
 
         // Published date
         $publishedAt = null;
@@ -237,14 +255,16 @@ class VacancyRepository implements VacancyInterface
             'external_id' => $hhVacancy['id'],
         ]);
 
+        $description = $hhVacancy['description']
+            ?? (($hhVacancy['snippet']['requirement'] ?? '') . "\n" . ($hhVacancy['snippet']['responsibility'] ?? ''));
+
         $vacancy->fill([
             'employer_id'     => $employerId,
             'area_id'         => $areaId,
             'schedule_id'     => $scheduleId,
             'employment_id'   => $employmentId,
             'title'           => $hhVacancy['name'] ?? '',
-            'description'     => $hhVacancy['description']
-                ?? (($hhVacancy['snippet']['requirement'] ?? '') . "\n" . ($hhVacancy['snippet']['responsibility'] ?? '')),
+            'description'     => $description,
             'salary_from'     => $salary['from'] ?? null,
             'salary_to'       => $salary['to'] ?? null,
             'salary_currency' => $salary['currency'] ?? null,
@@ -254,6 +274,23 @@ class VacancyRepository implements VacancyInterface
             'raw_data'        => json_encode($hhVacancy, JSON_UNESCAPED_UNICODE),
             'updated_at'      => $now,
         ]);
+
+        $categoryRaw = '';
+        if (!empty($hhVacancy['specializations']) && is_array($hhVacancy['specializations'])) {
+            $categoryRaw = $hhVacancy['specializations'][0]['name'] ?? '';
+        }
+        if ($categoryRaw === '' && !empty($hhVacancy['professional_roles']) && is_array($hhVacancy['professional_roles'])) {
+            $categoryRaw = $hhVacancy['professional_roles'][0]['name'] ?? '';
+        }
+        $shouldSetCategory = !$vacancy->exists || empty($vacancy->category) || mb_strtolower((string) $vacancy->category, 'UTF-8') === 'other';
+        if ($shouldSetCategory) {
+            $vacancy->category = $categorizer->categorize(
+                $vacancy->category,
+                $vacancy->title ?? '',
+                $description ?? '',
+                $categoryRaw
+            );
+        }
 
         $vacancy->save();
 
