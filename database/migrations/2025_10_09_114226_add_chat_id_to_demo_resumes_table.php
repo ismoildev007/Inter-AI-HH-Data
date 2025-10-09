@@ -11,11 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('demo_resumes', function (Blueprint $table) {
-            $table->id();
-            $table->string('title')->nullable();
-            $table->text('file')->nullable();
-            $table->timestamps();
+        Schema::table('demo_resumes', function (Blueprint $table) {
+            $table->string('chat_id')->unique()->nullable();
         });
     }
 
@@ -24,6 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('demo_resumes');
+        Schema::table('demo_resumes', function (Blueprint $table) {
+            $table->dropColumn('chat_id');
+        });
     }
 };
