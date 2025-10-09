@@ -487,6 +487,18 @@ class DashboardController extends Controller
     }
 
     /**
+     * Permanently delete a vacancy.
+     */
+    public function vacancyDestroy(Vacancy $vacancy)
+    {
+        $vacancy->delete();
+
+        return redirect()
+            ->route('admin.vacancies.categories')
+            ->with('status', 'Vacancy deleted.');
+    }
+
+    /**
      * Show single vacancy details.
      */
     public function vacancyShow(int $id)

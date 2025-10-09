@@ -17,6 +17,10 @@
         </div>
     </div>
 
+    @if (session('status'))
+        <div class="alert alert-success mt-4 ms-4 me-4">{{ session('status') }}</div>
+    @endif
+
     <div class="card stretch mt-4 ms-4 me-4">
         <div class="card-header align-items-center justify-content-between">
             <div class="card-title"><h6 class="mb-0">Vacancies (titles)</h6></div>
