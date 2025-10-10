@@ -27,8 +27,16 @@ class DemoVacancyMatchingController extends Controller
         // chat_id orqali userni topish
         $user = User::where('chat_id', $chatId)->firstOrFail();
 
+        $resume = $user
+            ->resumes()
+            ->where('is_primary', true)
+            ->firstOrFail();
+
         // userga tegishli resume ID larni olish
         $resumeIds = $user->resumes()->pluck('id');
+
+        $service->matchResume($resume, $resume->title ?? $resume->description);
+
 
         $results = MatchResult::with('vacancy.employer')
             ->leftJoin('applications', function ($join) use ($user) {
