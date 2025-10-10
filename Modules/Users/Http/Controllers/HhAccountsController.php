@@ -5,14 +5,15 @@ namespace Modules\Users\Http\Controllers;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Route;
 use Illuminate\Validation\ValidationException;
 use Modules\Users\Http\Resources\HhAccountResource;
 use Modules\Users\Repositories\HhAccountRepositoryInterface;
 
 class HhAccountsController extends Controller
 {
-    public function __construct(private readonly HhAccountRepositoryInterface $repo) {}
+    public function __construct(private readonly HhAccountRepositoryInterface $repo)
+    {
+    }
 
     public function authorizeUrl(Request $request)
     {
@@ -36,9 +37,10 @@ class HhAccountsController extends Controller
 
         $account = $this->repo->handleCallback($validated['code'], $validated['state']);
         // return new HhAccountResource($account);
-        Route::get('/headhunter/success', function () {
-            return view('headhunter.success');
-        })->name('headhunter.success');
+        return response()->json(['data' => new HhAccountResource($account), 'status' => true]);
+        // Route::get('/headhunter/success', function () {
+        //     return view('headhunter.success');
+        // })->name('headhunter.success');
     }
 
     public function attach(Request $request)
@@ -104,3 +106,4 @@ class HhAccountsController extends Controller
         return new HhAccountResource($refreshed);
     }
 }
+
