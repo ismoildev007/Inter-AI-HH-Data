@@ -623,6 +623,7 @@ class VacancyCategoryService
         'geodesist' => 'construction_and_architecture',
         'геодезист' => 'construction_and_architecture',
         // Logistics & Supply Chain
+        'Logistika' => 'logistics_and_supply_chain',
         'logistics' => 'logistics_and_supply_chain',
         'logistician' => 'logistics_and_supply_chain',
         'логист' => 'logistics_and_supply_chain',
@@ -658,6 +659,7 @@ class VacancyCategoryService
         'expeditor' => 'logistics_and_supply_chain',
         'экспедитор' => 'logistics_and_supply_chain',
         'customs clearance specialist' => 'logistics_and_supply_chain',
+        'Safety Specialist'=>'logistics_and_supply_chain',
         // Warehouse & Procurement
         'warehouse' => 'warehouse_and_procurement',
         'storekeeper' => 'warehouse_and_procurement',
@@ -949,7 +951,7 @@ class VacancyCategoryService
         'mechanical_and_maintenance_engineering' => ['mechanic', 'maintenance', 'service engineer', 'авто', 'texnik', 'hvac', 'mechatronics', 'automotive', 'plumber', 'santexnik', 'сантехник', 'слесарь', 'repair technician', 'maintenance technician', 'hvac technician', 'locksmith', 'chilangar'],
         'electrical_and_electronics_engineering' => ['electrical', 'electronics', 'электро', 'электрик', 'embedded', 'hardware', 'plc', 'automation', 'electrician', 'электромонтер', 'электромеханик', 'energetik', 'low current'],
         'construction_and_architecture' => ['construction', 'civil engineer', 'architect', 'строитель', 'qurilish', 'proekt', 'bim', 'site manager', 'structural', 'builder', 'foreman', 'mason', 'bricklayer', 'tiler', 'маляр', 'plasterer', 'roofer', 'carpenter', 'geodesist'],
-        'logistics_and_supply_chain' => ['logistics', 'supply chain', 'логист', 'post', 'delivery', '3pl', 'freight', 'import', 'export', 'fleet', 'distribution', 'logistics coordinator', 'supply planner', 'dispatch', 'claims specialist', 'warehouse supervisor', 'customs', 'customs clearance', 'transport manager', 'route planner', 'shipping manager', 'expeditor', 'экспедитор'],
+        'logistics_and_supply_chain' => ['Logistika','Safety Specialist','logistics', 'supply chain', 'логист', 'post', 'delivery', '3pl', 'freight', 'import', 'export', 'fleet', 'distribution', 'logistics coordinator', 'supply planner', 'dispatch', 'claims specialist', 'warehouse supervisor', 'customs', 'customs clearance', 'transport manager', 'route planner', 'shipping manager', 'expeditor', 'экспедитор'],
         'warehouse_and_procurement' => ['warehouse', 'storekeeper', 'клад', 'procurement', 'zakup', 'sotib olish', 'inventory', 'fulfillment', 'warehouse management', 'inventory manager', 'purchase manager', 'loader', 'грузчик', 'forklift', 'pogruzchik', 'yukchi'],
         'transportation_and_driving' => ['driver', 'driving', 'courier', 'delivery', 'водитель', 'haydovchi', 'dispatcher', 'dispetcher', 'диспетчер', 'fleet', 'chauffeur', 'delivery coordinator', 'driver recruiter'],
         'security_and_protective_services' => ['security guard', 'охрана', 'охранник', 'служба безопасности', 'qorovul', 'qo\'riqchi', 'bodyguard', 'bouncer', 'cctv', 'loss prevention', 'security patrol', 'patrol officer', 'security officer'],
