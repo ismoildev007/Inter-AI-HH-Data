@@ -1,19 +1,14 @@
 <?php
 
-namespace Modules\Vacancies\Http\Controllers;
+namespace Modules\DemoResume\Http;
 
 use App\Http\Controllers\Controller;
 use App\Models\MatchResult;
-use App\Models\Resume;
 use App\Models\User;
 use Illuminate\Http\Client\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Log;
 use Modules\Vacancies\Http\Requests\VacancyMatchRequest;
 use Modules\Vacancies\Http\Resources\VacancyMatchResource;
-use Modules\Vacancies\Jobs\MatchResumeJob;
 use Modules\Vacancies\Services\DemoVacancyMatchingService;
-use Modules\Vacancies\Services\VacancyMatchingService;
 
 class DemoVacancyMatchingController extends Controller
 {

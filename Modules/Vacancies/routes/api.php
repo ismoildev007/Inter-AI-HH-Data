@@ -1,11 +1,10 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use Modules\Vacancies\Http\Controllers\DemoVacancyMatchingController;
-use Modules\Vacancies\Http\Controllers\VacanciesController;
+use Modules\DemoResume\Http\DemoVacancyMatchingController;
 use Modules\Vacancies\Http\Controllers\HHVacancyController;
+use Modules\Vacancies\Http\Controllers\VacanciesController;
 use Modules\Vacancies\Http\Controllers\VacancyMatchingController;
-use Modules\Vacancies\Services\DemoVacancyMatchingService;
 
 Route::prefix('v1')
     ->name('v1.')
