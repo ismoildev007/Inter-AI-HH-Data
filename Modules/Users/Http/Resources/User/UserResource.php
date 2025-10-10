@@ -2,6 +2,7 @@
 
 namespace Modules\Users\Http\Resources\User;
 
+use App\Models\HhAccount;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Modules\Resumes\Http\Resources\ResumeResource;
 use Modules\Users\Http\Resources\RoleResource;
@@ -10,6 +11,7 @@ class UserResource extends JsonResource
 {
     public function toArray($request): array
     {
+        $hhAccount = HhAccount::where('user_id', $this->id)->first();
         return [
             'id'         => $this->id,
             'first_name' => $this->first_name,
@@ -27,6 +29,7 @@ class UserResource extends JsonResource
 //            'job_types'  => UserJobTypeResource::collection($this->whenLoaded('jobTypes')),
 //            'profile_views' => UserProfileViewResource::collection($this->whenLoaded('profileViews')),
 //            'created_at' => $this->created_at,
+            'hh_account_status' => $hhAccount ? true : false,
         ];
     }
 }
