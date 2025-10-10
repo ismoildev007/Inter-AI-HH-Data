@@ -6,16 +6,31 @@ use App\Http\Controllers\Controller;
 use App\Models\Resume;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\StreamedResponse;
+use Illuminate\Http\Request;
 
 class ResumeController extends Controller
 {
     /**
      * Resumes list.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $resumes = Resume::with('user')->latest()->paginate(15);
-        return view('admin::Resumes.index', compact('resumes'));
+        $search = trim((string) $request->query('q', ''));
+
+        $resumes = Resume::with('user')
+            ->when($search !== '', function ($query) use ($search) {
+                $normalized = mb_strtolower($search, 'UTF-8');
+                $like = '%' . $normalized . '%';
+                $query->whereRaw('LOWER(title) LIKE ?', [$like]);
+            })
+            ->latest()
+            ->paginate(15)
+            ->withQueryString();
+
+        return view('admin::Resumes.index', [
+            'resumes' => $resumes,
+            'search' => $search,
+        ]);
     }
 
     /**

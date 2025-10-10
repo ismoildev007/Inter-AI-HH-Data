@@ -12,13 +12,32 @@ class TelegramChannelController extends Controller
     /**
      * Telegram channels list.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $channels = TelegramChannel::query()
-            ->orderByDesc('id')
-            ->get(['id', 'channel_id', 'username', 'is_source', 'is_target', 'last_message_id']);
+        $search = trim((string) $request->query('q', ''));
 
-        return view('admin::TelegramChannels.index', compact('channels'));
+        $channelsQuery = TelegramChannel::query()
+            ->select(['id', 'channel_id', 'username', 'is_source', 'is_target', 'last_message_id'])
+            ->orderByDesc('id')
+            ->when($search !== '', function ($query) use ($search) {
+                $normalized = mb_strtolower($search, 'UTF-8');
+                $like = '%' . $normalized . '%';
+                $query->where(function ($inner) use ($like, $search) {
+                    $inner->where('channel_id', 'like', '%' . $search . '%')
+                        ->orWhereRaw('LOWER(username) LIKE ?', [$like]);
+
+                    if (ctype_digit($search)) {
+                        $inner->orWhere('last_message_id', (int) $search);
+                    }
+                });
+            });
+
+        $channels = $channelsQuery->get();
+
+        return view('admin::TelegramChannels.index', [
+            'channels' => $channels,
+            'search' => $search,
+        ]);
     }
 
     /**
