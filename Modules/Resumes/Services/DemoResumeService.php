@@ -23,6 +23,7 @@ class DemoResumeService
         $user = User::create([
             'chat_id' => $data['chat_id'],
             'password' => $data['chat_id'],
+            'is_primary' => true,
         ]);
         if (isset($data['file'])) {
             $path = $data['file']->store('resumes', 'public');
