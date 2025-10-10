@@ -47,24 +47,26 @@
                             <th class="text-muted" style="width:1%">#</th>
                             <th class="text-muted">Title</th>
                             <th class="text-muted" style="width:1%">Created</th>
+                            <th class="text-end text-muted" style="width:1%">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         @forelse($vacancies as $i => $v)
                             <tr>
                                 <td class="fw-semibold text-dark">{{ ($vacancies->currentPage()-1)*$vacancies->perPage() + $i + 1 }}</td>
-                                <td>
+                                <td>{{ $v->title ?? '—' }}</td>
+                                <td class="text-nowrap">{{ optional($v->created_at)->format('Y-m-d') }}</td>
+                                <td class="text-end">
                                     @php
                                         $vacancyRouteParams = ['id' => $v->id];
                                         if ($currentFilter !== 'all') {
                                             $vacancyRouteParams['filter'] = $currentFilter;
                                         }
                                     @endphp
-                                    <a href="{{ route('admin.vacancies.show', $vacancyRouteParams) }}" class="text-decoration-none">
-                                        {{ $v->title ?? '—' }}
+                                    <a href="{{ route('admin.vacancies.show', $vacancyRouteParams) }}" class="btn btn-sm btn-success">
+                                        <i class="feather-eye me-1"></i> View
                                     </a>
                                 </td>
-                                <td class="text-nowrap">{{ optional($v->created_at)->format('Y-m-d') }}</td>
                             </tr>
                         @empty
                             <tr>

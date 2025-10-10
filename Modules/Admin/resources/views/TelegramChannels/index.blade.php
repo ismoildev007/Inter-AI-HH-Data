@@ -11,11 +11,7 @@
                 <li class="breadcrumb-item">Telegram Channels</li>
             </ul>
         </div>
-        <div class="ms-auto">
-            <a href="{{ route('admin.telegram_channels.create') }}" class="btn btn-primary">
-                <i class="feather-plus me-1"></i> Add Channel
-            </a>
-        </div>
+
     </div>
 
     @if (session('status'))
@@ -28,24 +24,31 @@
             <div class="card-title">
                 <h6 class="mb-0">Channels</h6>
             </div>
-            <form method="GET" class="d-flex align-items-center gap-2">
-                <div class="input-group input-group-sm">
-                    <input type="search"
-                           name="q"
-                           value="{{ $searchTerm }}"
-                           class="form-control"
-                           placeholder="Search channels (ID, username)">
-                    @if(!empty($searchTerm))
-                        <a href="{{ route('admin.telegram_channels.index') }}" class="btn btn-outline-secondary">
-                            <i class="feather-x"></i>
-                        </a>
-                    @endif
-                    <button type="submit" class="btn btn-primary">
-                        <i class="feather-search"></i>
-                    </button>
-                </div>
-            </form>
+            
+    <form method="GET" class="d-flex justify-content-center flex-grow-1">
+        <div class="input-group input-group-sm w-100" style="max-width: 400px;">
+            <input type="search"
+                   name="q"
+                   value="{{ $searchTerm }}"
+                   class="form-control flex-grow-1"
+                   placeholder="Search channels (ID, username)">
+            @if(!empty($searchTerm))
+                <a href="{{ route('admin.telegram_channels.index') }}" class="btn btn-outline-secondary">
+                    <i class="feather-x"></i>
+                </a>
+            @endif
+            <button type="submit" class="btn btn-primary">
+                <i class="feather-search"></i>
+            </button>
         </div>
+    </form>
+            <div>
+        <a href="{{ route('admin.telegram_channels.create') }}" class="btn btn-primary">
+            <i class="feather-plus me-1"></i> Add Channel
+        </a>
+    </div>    
+        </div>
+        
         <div class="card-body p-0">
             <div class="table-responsive">
                 <table class="table align-middle mb-0">
