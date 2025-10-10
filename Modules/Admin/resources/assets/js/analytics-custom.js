@@ -26,10 +26,30 @@
     { id: '#site-impressions', key: 'impressions', name: 'Monthly Visitors', color: '#e49e3d' },
     { id: '#conversions-rate', key: 'conversions', name: 'Yearly Visitors', color: '#25b865' },
     // Vacancies
-    { id: '#vacancy-hourly',  key: 'vac_hourly',  name: 'Hourly Vacancies',  color: '#8b5cf6' },
-    { id: '#vacancy-daily',   key: 'vac_daily',   name: 'Daily Vacancies',   color: '#06b6d4' },
-    { id: '#vacancy-weekly',  key: 'vac_weekly',  name: 'Weekly Vacancies',  color: '#ef4444' },
-    { id: '#vacancy-monthly', key: 'vac_monthly', name: 'Monthly Vacancies', color: '#10b981' },
+    {
+      id: '#vacancy-hourly',
+      key: 'vac_hourly',
+      name: 'Hourly Vacancies',
+      colors: ['#8b5cf6', '#2563eb', '#f97316'],
+    },
+    {
+      id: '#vacancy-daily',
+      key: 'vac_daily',
+      name: 'Daily Vacancies',
+      colors: ['#06b6d4', '#0ea5e9', '#fbbf24'],
+    },
+    {
+      id: '#vacancy-weekly',
+      key: 'vac_weekly',
+      name: 'Weekly Vacancies',
+      colors: ['#ef4444', '#38bdf8', '#f59e0b'],
+    },
+    {
+      id: '#vacancy-monthly',
+      key: 'vac_monthly',
+      name: 'Monthly Vacancies',
+      colors: ['#10b981', '#1d4ed8', '#fb7185'],
+    },
   ];
 
   const renderOne = (cfg, data) => {
@@ -40,19 +60,41 @@
       if (!d) return;
       el.innerHTML = '';
       const rawLabels = Array.isArray(d.labels) ? d.labels : [];
-      const rawSeries = Array.isArray(d.series) ? d.series : [];
       const labels = rawLabels.length ? rawLabels.map((v) => (v == null ? '' : String(v))) : [''];
-      const series = rawSeries.length ? rawSeries.map((v) => Number(v) || 0) : [0];
-      const maxVal = series.reduce((m, v) => (v > m ? v : m), 0);
+      const rawSeries = d.series;
+
+      let buildSeries = [];
+      if (Array.isArray(rawSeries)) {
+        const seriesValues = rawSeries.length ? rawSeries.map((v) => Number(v) || 0) : [0];
+        buildSeries = [{ name: cfg.name, data: seriesValues }];
+      } else if (rawSeries && typeof rawSeries === 'object') {
+        buildSeries = Object.entries(rawSeries).map(([name, values]) => ({
+          name,
+          data: Array.isArray(values) ? values.map((v) => Number(v) || 0) : [0],
+        }));
+        // Ensure all series have at least one point
+        buildSeries = buildSeries.map((serie) => ({
+          name: serie.name,
+          data: serie.data.length ? serie.data : [0],
+        }));
+        if (!buildSeries.length) {
+          buildSeries = [{ name: cfg.name, data: [0] }];
+        }
+      } else {
+        buildSeries = [{ name: cfg.name, data: [0] }];
+      }
+
+      const allValues = buildSeries.flatMap((serie) => serie.data);
+      const maxVal = allValues.reduce((m, v) => (v > m ? v : m), 0);
       const hasData = maxVal > 0;
       const opt = {
-        series: [{ name: cfg.name, data: series }],
+        series: buildSeries,
         chart: { type: 'area', height: 80, sparkline: { enabled: true }, toolbar: { show: false } },
         stroke: { width: 2, curve: 'smooth' },
         fill: { opacity: [0.85, 0.25, 1, 1], gradient: { inverseColors: false, shade: 'light', type: 'vertical', opacityFrom: 0.5, opacityTo: 0.1, stops: [0, 100, 100, 100] } },
         markers: { size: hasData ? 0 : 3 },
         yaxis: hasData ? { min: 0 } : { min: -1, max: 1 },
-        colors: [cfg.color],
+        colors: Array.isArray(cfg.colors) ? cfg.colors.slice(0, buildSeries.length) : [cfg.color],
         xaxis: { categories: labels, axisBorder: { show: false }, axisTicks: { show: false } },
         tooltip: { y: { formatter: (v) => (+v) + '' }, style: { fontSize: '12px', fontFamily: 'Inter' } },
         animations: { enabled: true },

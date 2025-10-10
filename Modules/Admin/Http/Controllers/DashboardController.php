@@ -179,6 +179,22 @@ class DashboardController extends Controller
         $conversionsSeries = $visitorsSeries;
 
         // Vacancies analytics
+        $sourceAggregations = [
+            'total' => 'COUNT(*) as total',
+            'telegram' => "SUM(CASE WHEN LOWER(COALESCE(source,'')) LIKE 'telegram%' THEN 1 ELSE 0 END) as telegram",
+            'hh' => "SUM(CASE WHEN LOWER(COALESCE(source,'')) LIKE 'hh%' THEN 1 ELSE 0 END) as hh",
+        ];
+
+        $extractSourceValues = static function (array $maps, $row, string $bucket) {
+            if (!isset($maps['all'][$bucket])) {
+                return $maps;
+            }
+            $maps['all'][$bucket] = (int)($row->total ?? 0);
+            $maps['telegram'][$bucket] = (int)($row->telegram ?? 0);
+            $maps['hh'][$bucket] = (int)($row->hh ?? 0);
+            return $maps;
+        };
+
         // Hourly (last 24 hours)
         $vHourNow = Carbon::now()->startOfHour();
         $vHourStart = (clone $vHourNow)->subHours(23);
@@ -189,13 +205,24 @@ class DashboardController extends Controller
         };
         $vHourRows = DB::table('vacancies')
             ->whereBetween('created_at', [$vHourStart, (clone $vHourNow)->endOfHour()])
-            ->selectRaw($vhExpr." as h, COUNT(*) as c")
+            ->selectRaw($vhExpr." as h")
+            ->selectRaw($sourceAggregations['total'])
+            ->selectRaw($sourceAggregations['telegram'])
+            ->selectRaw($sourceAggregations['hh'])
             ->groupBy('h')
             ->orderBy('h')
             ->get();
-        $vHourMap = array_fill_keys($hourKeys, 0);
-        foreach ($vHourRows as $r) { if (isset($vHourMap[$r->h])) { $vHourMap[$r->h] = (int) $r->c; } }
-        $vacHourlySeries = array_values($vHourMap);
+        $vacHourlyMap = [
+            'all' => array_fill_keys($hourKeys, 0),
+            'telegram' => array_fill_keys($hourKeys, 0),
+            'hh' => array_fill_keys($hourKeys, 0),
+        ];
+        foreach ($vHourRows as $r) {
+            $vacHourlyMap = $extractSourceValues($vacHourlyMap, $r, $r->h);
+        }
+        $vacHourlySeries = array_values($vacHourlyMap['all']);
+        $vacHourlySeriesTelegram = array_values($vacHourlyMap['telegram']);
+        $vacHourlySeriesHh = array_values($vacHourlyMap['hh']);
 
         // Daily (last 30 days)
         $vdNow = Carbon::now()->startOfDay();
@@ -214,13 +241,24 @@ class DashboardController extends Controller
         };
         $vdRows = DB::table('vacancies')
             ->whereBetween('created_at', [$vdStart, (clone $vdNow)->endOfDay()])
-            ->selectRaw($vdExpr." as d, COUNT(*) as c")
+            ->selectRaw($vdExpr." as d")
+            ->selectRaw($sourceAggregations['total'])
+            ->selectRaw($sourceAggregations['telegram'])
+            ->selectRaw($sourceAggregations['hh'])
             ->groupBy('d')
             ->orderBy('d')
             ->get();
-        $vdMap = array_fill_keys($vdKeys, 0);
-        foreach ($vdRows as $r) { if (isset($vdMap[$r->d])) { $vdMap[$r->d] = (int) $r->c; } }
-        $vacDailySeries = array_values($vdMap);
+        $vacDailyMap = [
+            'all' => array_fill_keys($vdKeys, 0),
+            'telegram' => array_fill_keys($vdKeys, 0),
+            'hh' => array_fill_keys($vdKeys, 0),
+        ];
+        foreach ($vdRows as $r) {
+            $vacDailyMap = $extractSourceValues($vacDailyMap, $r, $r->d);
+        }
+        $vacDailySeries = array_values($vacDailyMap['all']);
+        $vacDailySeriesTelegram = array_values($vacDailyMap['telegram']);
+        $vacDailySeriesHh = array_values($vacDailyMap['hh']);
 
         // Weekly (last 12 weeks)
         $wNow = Carbon::now()->startOfWeek();
@@ -239,13 +277,24 @@ class DashboardController extends Controller
         };
         $wRows = DB::table('vacancies')
             ->whereBetween('created_at', [$wStart, (clone $wNow)->endOfWeek()])
-            ->selectRaw($wExpr." as w, COUNT(*) as c")
+            ->selectRaw($wExpr." as w")
+            ->selectRaw($sourceAggregations['total'])
+            ->selectRaw($sourceAggregations['telegram'])
+            ->selectRaw($sourceAggregations['hh'])
             ->groupBy('w')
             ->orderBy('w')
             ->get();
-        $wMap = array_fill_keys($wKeys, 0);
-        foreach ($wRows as $r) { if (isset($wMap[$r->w])) { $wMap[$r->w] = (int) $r->c; } }
-        $vacWeeklySeries = array_values($wMap);
+        $vacWeeklyMap = [
+            'all' => array_fill_keys($wKeys, 0),
+            'telegram' => array_fill_keys($wKeys, 0),
+            'hh' => array_fill_keys($wKeys, 0),
+        ];
+        foreach ($wRows as $r) {
+            $vacWeeklyMap = $extractSourceValues($vacWeeklyMap, $r, $r->w);
+        }
+        $vacWeeklySeries = array_values($vacWeeklyMap['all']);
+        $vacWeeklySeriesTelegram = array_values($vacWeeklyMap['telegram']);
+        $vacWeeklySeriesHh = array_values($vacWeeklyMap['hh']);
 
         // Monthly (last 12 months)
         $vmNow = Carbon::now()->startOfMonth();
@@ -265,15 +314,26 @@ class DashboardController extends Controller
         };
         $vmRows = DB::table('vacancies')
             ->whereBetween('created_at', [$vmStart, (clone $vmNow)->endOfMonth()])
-            ->selectRaw($vmExpr." as ym, COUNT(*) as c")
+            ->selectRaw($vmExpr." as ym")
+            ->selectRaw($sourceAggregations['total'])
+            ->selectRaw($sourceAggregations['telegram'])
+            ->selectRaw($sourceAggregations['hh'])
             ->groupBy('ym')
             ->orderBy('ym')
             ->get();
-        $vmMap = array_fill_keys($vmKeys, 0);
-        foreach ($vmRows as $r) { if (isset($vmMap[$r->ym])) { $vmMap[$r->ym] = (int) $r->c; } }
+        $vacMonthlyMap = [
+            'all' => array_fill_keys($vmKeys, 0),
+            'telegram' => array_fill_keys($vmKeys, 0),
+            'hh' => array_fill_keys($vmKeys, 0),
+        ];
+        foreach ($vmRows as $r) {
+            $vacMonthlyMap = $extractSourceValues($vacMonthlyMap, $r, $r->ym);
+        }
         // Reverse labels to oldest -> newest
         $vacMonthlyLabels = array_reverse($vmLabels);
-        $vacMonthlySeries = array_values(array_reverse($vmMap));
+        $vacMonthlySeries = array_values(array_reverse($vacMonthlyMap['all']));
+        $vacMonthlySeriesTelegram = array_values(array_reverse($vacMonthlyMap['telegram']));
+        $vacMonthlySeriesHh = array_values(array_reverse($vacMonthlyMap['hh']));
 
         $analyticsData = [
             'bounce' => [
@@ -293,10 +353,38 @@ class DashboardController extends Controller
                 'series' => $conversionsSeries,
             ],
             // Vacancies
-            'vac_hourly' => [ 'labels' => $hourLabels, 'series' => $vacHourlySeries ],
-            'vac_daily'  => [ 'labels' => $vdLabels,   'series' => $vacDailySeries ],
-            'vac_weekly' => [ 'labels' => $wLabels,    'series' => $vacWeeklySeries ],
-            'vac_monthly'=> [ 'labels' => $vacMonthlyLabels, 'series' => $vacMonthlySeries ],
+            'vac_hourly' => [
+                'labels' => $hourLabels,
+                'series' => [
+                    'Total' => $vacHourlySeries,
+                    'Telegram' => $vacHourlySeriesTelegram,
+                    'HH' => $vacHourlySeriesHh,
+                ],
+            ],
+            'vac_daily'  => [
+                'labels' => $vdLabels,
+                'series' => [
+                    'Total' => $vacDailySeries,
+                    'Telegram' => $vacDailySeriesTelegram,
+                    'HH' => $vacDailySeriesHh,
+                ],
+            ],
+            'vac_weekly' => [
+                'labels' => $wLabels,
+                'series' => [
+                    'Total' => $vacWeeklySeries,
+                    'Telegram' => $vacWeeklySeriesTelegram,
+                    'HH' => $vacWeeklySeriesHh,
+                ],
+            ],
+            'vac_monthly'=> [
+                'labels' => $vacMonthlyLabels,
+                'series' => [
+                    'Total' => $vacMonthlySeries,
+                    'Telegram' => $vacMonthlySeriesTelegram,
+                    'HH' => $vacMonthlySeriesHh,
+                ],
+            ],
         ];
 
         // Vacancies by category (top N) — Postgres-safe quoting and grouping by expression
@@ -393,12 +481,23 @@ class DashboardController extends Controller
     /**
      * Full listing of vacancies grouped by category (all categories).
      */
-    public function vacancyCategories()
+    public function vacancyCategories(Request $request)
     {
+        $filter = strtolower($request->query('filter', 'all'));
+        if (!in_array($filter, ['all', 'telegram', 'hh'], true)) {
+            $filter = 'all';
+        }
+
         $categorizer = app(\Modules\TelegramChannel\Services\VacancyCategoryService::class);
         $catExpr = "COALESCE(NULLIF(category, ''), 'Other')";
         $rowsRaw = DB::table('vacancies')
             ->selectRaw($catExpr . ' as category, COUNT(*) as c')
+            ->when($filter === 'telegram', function ($query) {
+                $query->whereRaw('LOWER(source) LIKE ?', ['telegram%']);
+            })
+            ->when($filter === 'hh', function ($query) {
+                $query->whereRaw('LOWER(source) LIKE ?', ['hh%']);
+            })
             ->groupBy(DB::raw($catExpr))
             ->orderByDesc('c')
             ->get();
@@ -425,11 +524,19 @@ class DashboardController extends Controller
             ->sortByDesc('c')
             ->values();
 
-        $totalCount = DB::table('vacancies')->count();
+        $totalCount = DB::table('vacancies')
+            ->when($filter === 'telegram', function ($query) {
+                $query->whereRaw('LOWER(source) LIKE ?', ['telegram%']);
+            })
+            ->when($filter === 'hh', function ($query) {
+                $query->whereRaw('LOWER(source) LIKE ?', ['hh%']);
+            })
+            ->count();
 
         return view('admin::Admin.Dashboard.categories', [
             'rows' => $rows,
             'totalCount' => $totalCount,
+            'filter' => $filter,
         ]);
     }
 
