@@ -4,6 +4,7 @@ namespace Modules\Resumes\Services;
 
 use App\Models\Resume;
 use App\Models\ResumeAnalyze;
+use App\Models\User;
 use App\Models\UserPreference;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -19,7 +20,7 @@ class DemoResumeService
      */
     public function create(array $data): Resume
     {
-        $user = $this->create([
+        $user = User::create([
             'chat_id' => $data['chat_id'],
         ]);
         if (isset($data['file'])) {
