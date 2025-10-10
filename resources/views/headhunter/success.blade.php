@@ -23,7 +23,7 @@
 
         <!-- Checkmark -->
         <div class="flex justify-center mb-6 animate-bounce">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                       d="M9 12l2 2l4 -4m7 2a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
