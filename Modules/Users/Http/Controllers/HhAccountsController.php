@@ -37,10 +37,8 @@ class HhAccountsController extends Controller
 
         $account = $this->repo->handleCallback($validated['code'], $validated['state']);
         // return new HhAccountResource($account);
-        return response()->json(['data' => new HhAccountResource($account), 'status' => true]);
-        // Route::get('/headhunter/success', function () {
-        //     return view('headhunter.success');
-        // })->name('headhunter.success');
+        // return response()->json(['data' => new HhAccountResource($account), 'status' => true]);
+        return view('headhunter.success');
     }
 
     public function attach(Request $request)
