@@ -8,3 +8,4 @@ use Modules\Users\Http\Controllers\UsersController;
 //    Route::resource('users', UsersController::class)->names('users');
 //});
 Route::get('hh/callback', [HhAccountsController::class, 'callback']);
+

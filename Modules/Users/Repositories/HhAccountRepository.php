@@ -157,7 +157,7 @@ class HhAccountRepository implements HhAccountRepositoryInterface
         }
 
         Cache::forget('hh:oauth:state:' . $state);
-        return $account;
+        return $account ;
     }
 
     public function attachToUser(int $accountId, int $userId): HhAccount
