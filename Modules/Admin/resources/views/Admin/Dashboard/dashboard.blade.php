@@ -11,7 +11,7 @@
             <li class="breadcrumb-item">Dashboard</li>
         </ul>
     </div>
-    <div class="page-header-right ms-auto">
+    <!-- <div class="page-header-right ms-auto">
         <div class="d-flex align-items-center gap-2">
             <div id="reportrange" class="reportrange-picker d-flex align-items-center">
                 <span class="reportrange-picker-field"></span>
@@ -20,7 +20,7 @@
                 <i class="feather-filter me-2"></i> Manage Filter
             </a>
         </div>
-    </div>
+    </div> -->
 </div>
 
 <div class="main-content">

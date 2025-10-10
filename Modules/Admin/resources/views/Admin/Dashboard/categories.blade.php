@@ -47,13 +47,16 @@
                             <th class="text-muted">#</th>
                             <th class="text-muted">Category</th>
                             <th class="text-end text-muted">Vacancies</th>
+                            <th class="text-end text-muted" style="width:1%">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         @forelse($rows as $i => $row)
                             <tr>
                                 <td class="fw-semibold text-dark">{{ $i + 1 }}</td>
-                                <td class="text-capitalize">
+                                <td class="text-capitalize">{{ $row->category ?: 'other' }}</td>
+                                <td class="text-end fw-bold">{{ $row->c }}</td>
+                                <td class="text-end">
                                     @php
                                         $categoryRouteParams = array_filter([
                                             'category' => $row->slug ?? 'other',
@@ -62,11 +65,10 @@
                                             return !is_null($value);
                                         });
                                     @endphp
-                                    <a href="{{ route('admin.vacancies.by_category', $categoryRouteParams) }}" class="text-decoration-none">
-                                        {{ $row->category ?: 'other' }}
+                                    <a href="{{ route('admin.vacancies.by_category', $categoryRouteParams) }}" class="btn btn-sm btn-success">
+                                        <i class="feather-eye me-1"></i> View
                                     </a>
                                 </td>
-                                <td class="text-end fw-bold">{{ $row->c }}</td>
                             </tr>
                         @empty
                             <tr>
