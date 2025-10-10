@@ -8,6 +8,7 @@ use Modules\Users\Http\Controllers\HhAccountsController;
 Route::post('/user-verify', [AuthController::class, 'userVerify']);
 Route::post('/sending-code', [AuthController::class, 'requestVerificationCode']);
 Route::post('/verify-email', [AuthController::class, 'verifyEmail']);
+Route::post('/demo-resume-check', [AuthController::class, 'resumeCheck']);
 
 // Public OAuth endpoints (no auth required yet)
 Route::middleware('auth:sanctum')->prefix('v1')->group(function () {
