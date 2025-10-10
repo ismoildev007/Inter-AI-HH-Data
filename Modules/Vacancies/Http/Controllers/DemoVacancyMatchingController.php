@@ -31,11 +31,6 @@ class DemoVacancyMatchingController extends Controller
         $user = Auth::user();
         $resumeIds = $user->resumes()->pluck('id');
 
-        // Log::info('Starting match for user', ['user_id' => auth()->id(), 'resume_id' => $resume->id]);
-        // MatchResumeJob::dispatch($resume, $resume->title ?? $resume->description);
-        // Log::info('Dispatched MatchResumeJob', ['user_id' => auth()->id(), 'resume_id' => $resume->id]);
-        $savedData = $service->matchResume($resume, $resume->title ?? $resume->description);
-
         $results = MatchResult::with('vacancy.employer')
             ->leftJoin('applications', function ($join) use ($user) {
                 $join->on('applications.vacancy_id', '=', 'match_results.vacancy_id')

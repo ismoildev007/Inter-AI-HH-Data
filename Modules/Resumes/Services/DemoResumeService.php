@@ -2,7 +2,7 @@
 
 namespace Modules\Resumes\Services;
 
-use App\Models\DemoResume;
+use App\Models\Resume;
 use App\Models\ResumeAnalyze;
 use App\Models\UserPreference;
 use Illuminate\Support\Facades\Http;
@@ -17,19 +17,23 @@ class DemoResumeService
     /**
      * Store a new resume and trigger analysis.
      */
-    public function create(array $data): DemoResume
+    public function create(array $data): Resume
     {
+        $user = $this->create([
+            'chat_id' => $data['chat_id'],
+        ]);
         if (isset($data['file'])) {
             $path = $data['file']->store('resumes', 'public');
             $data['file_path'] = $path;
             $data['file_mime'] = $data['file']->getMimeType();
             $data['file_size'] = $data['file']->getSize();
+            $data['user_id'] = $user->id;
 
             $absolutePath = Storage::disk('public')->path($path);
             $data['parsed_text'] = $this->parseFile($absolutePath);
         }
 
-        $demoResume = DemoResume::create($data);
+        $demoResume = Resume::create($data);
 
         $this->analyze($demoResume);
 
@@ -39,7 +43,7 @@ class DemoResumeService
     /**
      * Call GPT API to analyze resume and store results.
      */
-    public function analyze(DemoResume $demoResume): void
+    public function analyze(Resume $resume): void
     {
         $prompt = <<<PROMPT
             You are an expert HR assistant AI.
@@ -57,7 +61,7 @@ class DemoResumeService
 
             Resume text:
 
-            " . ($demoResume->parsed_text ?? $demoResume->description) . "
+            " . ($resume->parsed_text ?? $resume->description) . "
 
             PROMPT;
 
@@ -91,7 +95,7 @@ class DemoResumeService
 
 
         ResumeAnalyze::updateOrCreate(
-            ['resume_id' => $demoResume->id],
+            ['resume_id' => $resume->id],
             [
                 'skills'     => $analysis['skills'] ?? null,
                 'strengths'  => $analysis['strengths'] ?? null,
@@ -103,7 +107,7 @@ class DemoResumeService
 
         if (!empty($analysis['cover_letter'])) {
             UserPreference::updateOrCreate(
-                ['user_id' => $demoResume->chat_id],
+                ['user_id' => $resume->user_id],
                 ['cover_letter' => $analysis['cover_letter']]
             );
         }
