@@ -29,26 +29,34 @@
         </div>
     </main>
 
-    <script src="/assets/vendors/js/vendors.min.js"></script>
+    @php
+        $assetWithVersion = function ($path) {
+            $fullPath = public_path($path);
+            $version = file_exists($fullPath) ? filemtime($fullPath) : null;
+            return asset($path) . ($version ? '?v=' . $version : '');
+        };
+    @endphp
+
+    <script src="{{ $assetWithVersion('assets/vendors/js/vendors.min.js') }}"></script>
     <!-- vendors.min.js {always must need to be top} -->
-    <script src="/assets/vendors/js/select2.min.js"></script>
-    <script src="/assets/vendors/js/select2-active.min.js"></script>
+    <script src="{{ $assetWithVersion('assets/vendors/js/select2.min.js') }}"></script>
+    <script src="{{ $assetWithVersion('assets/vendors/js/select2-active.min.js') }}"></script>
     <!--! END: Vendors JS !-->
     <!--! BEGIN: Apps Init  !-->
-    <script src="/assets/js/common-init.min.js"></script>
-    <script src="/assets/js/apps-storage-init.min.js"></script>
+    <script src="{{ $assetWithVersion('assets/js/common-init.min.js') }}"></script>
+    <script src="{{ $assetWithVersion('assets/js/apps-storage-init.min.js') }}"></script>
     <!--! END: Apps Init !-->
     <!--! BEGIN: Theme Customizer  !-->
    
-    <script src="/assets/js/visitors-custom.js"></script>
+    <script src="{{ $assetWithVersion('assets/js/visitors-custom.js') }}"></script>
 
-    <script src="/assets/js/analytics-custom.js"></script>
+    <script src="{{ $assetWithVersion('assets/js/analytics-custom.js') }}"></script>
 
-    <script src="/assets/js/app.js"></script>
+    <script src="{{ $assetWithVersion('assets/js/app.js') }}"></script>
 
-    <script src="/assets/js/dashboard-custom.js"></script>
+    <script src="{{ $assetWithVersion('assets/js/dashboard-custom.js') }}"></script>
 
-    <script src="/assets/js/mini-charts-custom.js"></script>
+    <script src="{{ $assetWithVersion('assets/js/mini-charts-custom.js') }}"></script>
 
 
 </body>

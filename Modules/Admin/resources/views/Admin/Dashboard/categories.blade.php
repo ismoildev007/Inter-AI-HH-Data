@@ -13,17 +13,24 @@
         </div>
     </div>
 
+    @php
+        $currentFilter = $filter ?? 'all';
+    @endphp
     <div class="card stretch mt-4 ms-4 me-4">
         <div class="card-header align-items-center justify-content-between">
             <div class="card-title"><h6 class="mb-0">All Categories @isset($totalCount)<span class="text-muted">(Total: {{ $totalCount }})</span>@endisset</h6></div>
-            @php($currentFilter = $filter ?? 'all')
             <div class="d-flex align-items-center gap-2">
                 <span class="text-muted small">Filter</span>
                 <div class="btn-group btn-group-sm" role="group">
                     @foreach(['all' => 'All', 'telegram' => 'Telegram', 'hh' => 'HH'] as $value => $label)
-                        @php($isActive = $currentFilter === $value)
+                        @php
+                            $isActive = $currentFilter === $value;
+                            $filterUrl = $value === 'all'
+                                ? route('admin.vacancies.categories')
+                                : route('admin.vacancies.categories', ['filter' => $value]);
+                        @endphp
                         <a
-                            href="{{ $value === 'all' ? route('admin.vacancies.categories') : route('admin.vacancies.categories', ['filter' => $value]) }}"
+                            href="{{ $filterUrl }}"
                             class="btn {{ $isActive ? 'btn-primary' : 'btn-outline-secondary' }}"
                         >
                             {{ $label }}
@@ -48,10 +55,12 @@
                                 <td class="fw-semibold text-dark">{{ $i + 1 }}</td>
                                 <td class="text-capitalize">
                                     @php
-                                        $categoryRouteParams = ['category' => $row->slug ?? 'other'];
-                                        if ($currentFilter !== 'all') {
-                                            $categoryRouteParams['filter'] = $currentFilter;
-                                        }
+                                        $categoryRouteParams = array_filter([
+                                            'category' => $row->slug ?? 'other',
+                                            'filter' => $currentFilter !== 'all' ? $currentFilter : null,
+                                        ], function ($value) {
+                                            return !is_null($value);
+                                        });
                                     @endphp
                                     <a href="{{ route('admin.vacancies.by_category', $categoryRouteParams) }}" class="text-decoration-none">
                                         {{ $row->category ?: 'other' }}
