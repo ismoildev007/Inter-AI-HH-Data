@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Storage;
 use Smalot\PdfParser\Parser as PdfParser;
 use PhpOffice\PhpWord\IOFactory as WordIO;
 use Modules\Resumes\Interfaces\ResumeInterface;
+use Whoops\Run;
 
 class ResumeService
 {
@@ -154,17 +155,19 @@ class ResumeService
 
                 case 'docx':
                 case 'doc':
-                    Log::info("Parsing DOCX/DOC file: " . $path);
-                    $phpWord = WordIO::load($path);
-                    $text = '';
-                    foreach ($phpWord->getSections() as $section) {
-                        $elements = $section->getElements();
-                        foreach ($elements as $element) {
-                            if (method_exists($element, 'getText')) {
-                                $text .= $element->getText() . " ";
-                            }
-                        }
+                    Log::info("Converting DOCX/DOC file using unoconv: " . $path);
+                    $tmpTxt = tempnam(sys_get_temp_dir(), 'resume_'). '.txt';
+                    $cmd = sprintf('unoconv -f txt -o %s %s 2>&1', escapeshellarg($tmpTxt), escapeshellarg($path));
+
+                    exec($cmd, $output, $code);
+
+                    if ($code !== 0) {
+                        Log::error("unoconv failed [code=$code]". implode("\n", $output));
+                        throw new \RuntimeException("unoconv failed with code $code");
                     }
+                    $text = file_get_contents($tmpTxt);
+                    @unlink($tmpTxt);
+
                     Log::info("Parsed text length: " . strlen($text));
                     return trim($text);
 
