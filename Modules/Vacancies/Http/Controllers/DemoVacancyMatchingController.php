@@ -26,8 +26,13 @@ class DemoVacancyMatchingController extends Controller
 
     public function match(VacancyMatchRequest $request, DemoVacancyMatchingService $service)
     {
-        $user = $request->chat_id;
+        // Bodydan chat_id olish
+        $chatId = $request->input('chat_id');
 
+        // chat_id orqali userni topish
+        $user = User::where('chat_id', $chatId)->firstOrFail();
+
+        // userga tegishli resume ID larni olish
         $resumeIds = $user->resumes()->pluck('id');
 
         $results = MatchResult::with('vacancy.employer')
