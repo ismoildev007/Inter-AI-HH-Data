@@ -5,6 +5,7 @@ namespace Modules\Dashboard\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Models\Application;
 use App\Models\MatchResult;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -13,9 +14,9 @@ class DashboardController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $user = Auth::user();
+        $user = User::where('chat_id', $request->input('chat_id'))->firstOrFail();
         $totalMatchResults = $user->matchResults()->count();
 
         $applied = Application::where('user_id', $user->id)->count();

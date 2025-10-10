@@ -112,11 +112,12 @@ class ResumeService
         $analysis = json_decode($content, true);
 
         if (json_last_error() !== JSON_ERROR_NONE || !is_array($analysis)) {
+            Log::info("Invalid GPT response: " . $content);
             throw new \RuntimeException("Invalid GPT response: " . $content);
         }
 
 
-        ResumeAnalyze::updateOrCreate(
+        $resumeAnalyze = ResumeAnalyze::updateOrCreate(
             ['resume_id' => $resume->id],
             [
                 'skills'     => $analysis['skills'] ?? null,
@@ -126,6 +127,8 @@ class ResumeService
                 'language'   => $analysis['language'] ?? 'en',
             ]
         );
+
+        Log::info('Resume analyzed', ['resume_id' => $resume->id, 'analysis_id' => $resumeAnalyze->id, 'data' => $analysis]);
 
         if (!empty($analysis['cover_letter'])) {
             UserPreference::updateOrCreate(
@@ -151,6 +154,7 @@ class ResumeService
 
                 case 'docx':
                 case 'doc':
+                    Log::info("Parsing DOCX/DOC file: " . $path);
                     $phpWord = WordIO::load($path);
                     $text = '';
                     foreach ($phpWord->getSections() as $section) {
@@ -161,6 +165,7 @@ class ResumeService
                             }
                         }
                     }
+                    Log::info("Parsed text length: " . strlen($text));
                     return trim($text);
 
                 case 'txt':
