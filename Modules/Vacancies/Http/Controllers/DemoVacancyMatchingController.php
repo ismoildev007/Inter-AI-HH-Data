@@ -5,6 +5,8 @@ namespace Modules\Vacancies\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Models\MatchResult;
 use App\Models\Resume;
+use App\Models\User;
+use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Modules\Vacancies\Http\Requests\VacancyMatchRequest;
@@ -24,11 +26,8 @@ class DemoVacancyMatchingController extends Controller
 
     public function match(VacancyMatchRequest $request, DemoVacancyMatchingService $service)
     {
-        $resume = auth()->user()
-            ->resumes()
-            ->where('is_primary', true)
-            ->firstOrFail();
-        $user = Auth::user();
+        $user = $request->chat_id;
+
         $resumeIds = $user->resumes()->pluck('id');
 
         $results = MatchResult::with('vacancy.employer')
@@ -50,9 +49,11 @@ class DemoVacancyMatchingController extends Controller
     }
 
 
-    public function myMatches()
+    public function myMatches(Request $request)
     {
-        $user = Auth::user();
+        $chatId = $request->query('chat_id');
+
+        $user = User::where('chat_id', $chatId)->firstOrFail();
 
         $resumeIds = $user->resumes()->pluck('id');
 
