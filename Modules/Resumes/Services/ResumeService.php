@@ -149,40 +149,43 @@ class ResumeService
         try {
             switch ($ext) {
                 case 'pdf':
-                    $parser = new PdfParser();
+                    $parser = new \Smalot\PdfParser\Parser();
                     $pdf = $parser->parseFile($path);
                     return trim($pdf->getText());
 
-                    case 'docx':
-                    case 'doc':
-                        Log::info("Converting DOCX/DOC file using unoconv: " . $path);
-                    
-                        $tmpTxt = tempnam(sys_get_temp_dir(), 'resume_') . '.txt';
-                        $loProfile = '/var/www/.config/libreoffice';
-                        $cmd = sprintf(
-                            'unoconv -f txt -o %s --listener -env:UserInstallation=file://%s %s 2>&1',
-                            escapeshellarg($tmpTxt),
-                            escapeshellarg($loProfile),
-                            escapeshellarg($path)
-                        );
-                    
-                        exec($cmd, $output, $code);
-                    
-                        if ($code !== 0) {
-                            Log::error("unoconv failed [code=$code] " . implode("\n", $output));
-                            throw new \RuntimeException("unoconv failed with code $code");
-                        }
-                    
-                        $text = file_get_contents($tmpTxt);
-                        @unlink($tmpTxt);
-                    
-                        Log::info("Parsed text length: " . strlen($text));
-                        return trim($text);
+                case 'docx':
+                case 'doc':
+                    Log::info("Converting DOCX/DOC file using unoconv: " . $path);
+
+                    $tmpTxt = tempnam(sys_get_temp_dir(), 'resume_') . '.txt';
+                    $loProfile = '/var/www/.config/libreoffice';
+
+                    // ✅ Correct command: no --listener, just convert
+                    $cmd = sprintf(
+                        'HOME=/var/www unoconv -f txt -o %s -env:UserInstallation=file://%s %s 2>&1',
+                        escapeshellarg($tmpTxt),
+                        escapeshellarg($loProfile),
+                        escapeshellarg($path)
+                    );
+
+                    exec($cmd, $output, $code);
+
+                    if ($code !== 0 || !file_exists($tmpTxt)) {
+                        Log::error("unoconv failed [code=$code]: " . implode("\n", $output));
+                        throw new \RuntimeException("unoconv failed with code $code");
+                    }
+
+                    $text = file_get_contents($tmpTxt);
+                    @unlink($tmpTxt);
+
+                    Log::info("Parsed text length: " . strlen($text));
+                    return trim($text);
 
                 case 'txt':
                     return file_get_contents($path);
 
                 default:
+                    Log::warning("Unsupported resume format: " . $ext);
                     return null;
             }
         } catch (\Throwable $e) {
@@ -190,6 +193,7 @@ class ResumeService
             return null;
         }
     }
+
 
     public function setPrimary(Resume $resume): Resume
     {
