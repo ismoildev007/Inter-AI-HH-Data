@@ -18,7 +18,7 @@
             <div class="card-title"><h6 class="mb-0">All Categories @isset($totalCount)<span class="text-muted">(Total: {{ $totalCount }})</span>@endisset</h6></div>
             @php($currentFilter = $filter ?? 'all')
             <div class="d-flex align-items-center gap-2">
-                <span class="text-muted small"></span>
+                <span class="text-muted small">Filter</span>
                 <div class="btn-group btn-group-sm" role="group">
                     @foreach(['all' => 'All', 'telegram' => 'Telegram', 'hh' => 'HH'] as $value => $label)
                         @php($isActive = $currentFilter === $value)
@@ -47,7 +47,13 @@
                             <tr>
                                 <td class="fw-semibold text-dark">{{ $i + 1 }}</td>
                                 <td class="text-capitalize">
-                                    <a href="{{ route('admin.vacancies.by_category', $row->slug ?? 'other') }}" class="text-decoration-none">
+                                    @php
+                                        $categoryRouteParams = ['category' => $row->slug ?? 'other'];
+                                        if ($currentFilter !== 'all') {
+                                            $categoryRouteParams['filter'] = $currentFilter;
+                                        }
+                                    @endphp
+                                    <a href="{{ route('admin.vacancies.by_category', $categoryRouteParams) }}" class="text-decoration-none">
                                         {{ $row->category ?: 'other' }}
                                     </a>
                                 </td>

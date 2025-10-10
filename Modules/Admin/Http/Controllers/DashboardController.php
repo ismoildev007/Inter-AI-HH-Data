@@ -543,8 +543,13 @@ class DashboardController extends Controller
     /**
      * List all vacancies (titles) for a given category.
      */
-    public function vacanciesByCategory(string $category)
+    public function vacanciesByCategory(Request $request, string $category)
     {
+        $filter = strtolower($request->query('filter', 'all'));
+        if (!in_array($filter, ['all', 'telegram', 'hh'], true)) {
+            $filter = 'all';
+        }
+
         $categorizer = app(\Modules\TelegramChannel\Services\VacancyCategoryService::class);
         $canonical = $categorizer->fromSlug($category) ?? $categorizer->categorize($category, null, '', $category);
         $slug = $categorizer->slugify($canonical);
@@ -560,6 +565,12 @@ class DashboardController extends Controller
             $query->where('category', $canonical);
         }
 
+        $query->when($filter === 'telegram', function ($q) {
+            $q->whereRaw('LOWER(source) LIKE ?', ['telegram%']);
+        })->when($filter === 'hh', function ($q) {
+            $q->whereRaw('LOWER(source) LIKE ?', ['hh%']);
+        });
+
         // Paginate to avoid huge responses; can be adjusted as needed
         $vacancies = $query->paginate(50)->withQueryString();
 
@@ -572,6 +583,7 @@ class DashboardController extends Controller
             'categorySlug' => $slug,
             'vacancies' => $vacancies,
             'count' => $count,
+            'filter' => $filter,
         ]);
     }
 
@@ -588,31 +600,50 @@ class DashboardController extends Controller
             'status' => $validated['status'],
         ]);
 
+        $filter = strtolower($request->input('return_filter', $request->query('filter', 'all')));
+        if (!in_array($filter, ['all', 'telegram', 'hh'], true)) {
+            $filter = 'all';
+        }
+        $routeParams = ['id' => $vacancy->id];
+        if ($filter !== 'all') {
+            $routeParams['filter'] = $filter;
+        }
+
         return redirect()
-            ->route('admin.vacancies.show', ['id' => $vacancy->id])
+            ->route('admin.vacancies.show', $routeParams)
             ->with('status', 'Vacancy status updated.');
     }
 
     /**
      * Permanently delete a vacancy.
      */
-    public function vacancyDestroy(Vacancy $vacancy)
+    public function vacancyDestroy(Request $request, Vacancy $vacancy)
     {
         $vacancy->delete();
 
+        $filter = strtolower($request->input('return_filter', $request->query('filter', 'all')));
+        if (!in_array($filter, ['all', 'telegram', 'hh'], true)) {
+            $filter = 'all';
+        }
+        $routeParams = $filter === 'all' ? [] : ['filter' => $filter];
+
         return redirect()
-            ->route('admin.vacancies.categories')
+            ->route('admin.vacancies.categories', $routeParams)
             ->with('status', 'Vacancy deleted.');
     }
 
     /**
      * Show single vacancy details.
      */
-    public function vacancyShow(int $id)
+    public function vacancyShow(Request $request, int $id)
     {
         $vacancy = Vacancy::query()->findOrFail($id);
         $categorizer = app(\Modules\TelegramChannel\Services\VacancyCategoryService::class);
         $categorySlug = $vacancy->category ? $categorizer->slugify($vacancy->category) : null;
-        return view('admin::Admin.Dashboard.vacancy-show', compact('vacancy', 'categorySlug'));
+        $filter = strtolower($request->query('filter', $request->input('return_filter', 'all')));
+        if (!in_array($filter, ['all', 'telegram', 'hh'], true)) {
+            $filter = 'all';
+        }
+        return view('admin::Admin.Dashboard.vacancy-show', compact('vacancy', 'categorySlug', 'filter'));
     }
 }

@@ -1,6 +1,17 @@
 @extends('admin::components.layouts.master')
 
 @section('content')
+    @php
+        $currentFilter = $filter ?? request('filter', 'all');
+        if (!in_array($currentFilter, ['all','telegram','hh'], true)) {
+            $currentFilter = 'all';
+        }
+        $categoryIndexParams = $currentFilter === 'all' ? [] : ['filter' => $currentFilter];
+        $categoryRouteParams = ['category' => $categorySlug ?? 'other'];
+        if ($currentFilter !== 'all') {
+            $categoryRouteParams['filter'] = $currentFilter;
+        }
+    @endphp
     <div class="page-header">
         <div class="page-header-left d-flex align-items-center">
             <div class="page-header-title">
@@ -8,9 +19,9 @@
             </div>
             <ul class="breadcrumb">
                 <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}">Home</a></li>
-                <li class="breadcrumb-item"><a href="{{ route('admin.vacancies.categories') }}">All Categories</a></li>
+                <li class="breadcrumb-item"><a href="{{ route('admin.vacancies.categories', $categoryIndexParams) }}">All Categories</a></li>
                 @if($vacancy->category)
-                    <li class="breadcrumb-item"><a href="{{ route('admin.vacancies.by_category', $categorySlug ?? 'other') }}">{{ $vacancy->category }}</a></li>
+                    <li class="breadcrumb-item"><a href="{{ route('admin.vacancies.by_category', $categoryRouteParams) }}">{{ $vacancy->category }}</a></li>
                 @endif
                 <li class="breadcrumb-item">Vacancy</li>
             </ul>
@@ -34,6 +45,7 @@
                         @csrf
                         @method('PATCH')
                         <input type="hidden" name="status" value="{{ $isPublished ? \App\Models\Vacancy::STATUS_ARCHIVE : \App\Models\Vacancy::STATUS_PUBLISH }}">
+                        <input type="hidden" name="return_filter" value="{{ $currentFilter }}">
                         <button type="submit" class="btn btn-sm {{ $isPublished ? 'btn-danger' : 'btn-success' }}">
                             {{ $isPublished ? 'Archive qilish' : 'Publish qilish' }}
                         </button>
@@ -42,6 +54,7 @@
                 <form method="POST" action="{{ route('admin.vacancies.destroy', ['vacancy' => $vacancy->id]) }}" onsubmit="return confirm('Vakansiyani o\'chirilsinmi?');">
                     @csrf
                     @method('DELETE')
+                    <input type="hidden" name="return_filter" value="{{ $currentFilter }}">
                     <button type="submit" class="btn btn-sm btn-outline-danger">
                         Delete
                     </button>

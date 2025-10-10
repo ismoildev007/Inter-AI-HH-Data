@@ -1,6 +1,15 @@
 @extends('admin::components.layouts.master')
 
 @section('content')
+    @php
+        $currentFilter = $filter ?? 'all';
+        $filterLabels = [
+            'all' => 'All sources',
+            'telegram' => 'Telegram only',
+            'hh' => 'HH only',
+        ];
+        $categoryIndexParams = $currentFilter === 'all' ? [] : ['filter' => $currentFilter];
+    @endphp
     <div class="page-header">
         <div class="page-header-left d-flex align-items-center">
             <div class="page-header-title">
@@ -8,12 +17,17 @@
             </div>
             <ul class="breadcrumb">
                 <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}">Home</a></li>
-                <li class="breadcrumb-item"><a href="{{ route('admin.vacancies.categories') }}">All Categories</a></li>
+                <li class="breadcrumb-item"><a href="{{ route('admin.vacancies.categories', $categoryIndexParams) }}">All Categories</a></li>
                  <li class="breadcrumb-item text-capitalize">{{ $category }}</li>
             </ul>
         </div>
         <div class="ms-auto">
-            <span class="badge bg-light text-dark">Total: {{ $count }}</span>
+            <div class="d-flex gap-2">
+                <span class="badge bg-light text-dark">Total: {{ $count }}</span>
+                @if($currentFilter !== 'all')
+                    <span class="badge bg-secondary text-white">{{ $filterLabels[$currentFilter] ?? $currentFilter }}</span>
+                @endif
+            </div>
         </div>
     </div>
 
@@ -40,7 +54,13 @@
                             <tr>
                                 <td class="fw-semibold text-dark">{{ ($vacancies->currentPage()-1)*$vacancies->perPage() + $i + 1 }}</td>
                                 <td>
-                                    <a href="{{ route('admin.vacancies.show', $v->id) }}" class="text-decoration-none">
+                                    @php
+                                        $vacancyRouteParams = ['id' => $v->id];
+                                        if ($currentFilter !== 'all') {
+                                            $vacancyRouteParams['filter'] = $currentFilter;
+                                        }
+                                    @endphp
+                                    <a href="{{ route('admin.vacancies.show', $vacancyRouteParams) }}" class="text-decoration-none">
                                         {{ $v->title ?? '—' }}
                                     </a>
                                 </td>
