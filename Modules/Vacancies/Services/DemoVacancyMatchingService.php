@@ -3,6 +3,7 @@
 namespace Modules\Vacancies\Services;
 
 use App\Models\DemoResume;
+use App\Models\Resume;
 use App\Models\Vacancy;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
@@ -25,9 +26,9 @@ class DemoVacancyMatchingService
         $this->hhRepository = $hhRepository;
     }
 
-    public function matchResume(DemoResume $demoResume, string $query): array
+    public function matchResume(Resume $resume, string $query): array
     {
-        Log::info('Job started for resume', ['resume_id' => $demoResume->id, 'query' => $query]);
+        Log::info('Job started for resume', ['resume_id' => $resume->id, 'query' => $query]);
         $start = microtime(true);
 
         [$hhVacancies, $localVacancies] = Concurrency::run([
@@ -76,12 +77,12 @@ class DemoVacancyMatchingService
             }
         }
         if (empty($vacanciesPayload)) {
-            Log::info('No vacancies to match for resume', ['resume_id' => $demoResume->id]);
+            Log::info('No vacancies to match for resume', ['resume_id' => $resume->id]);
             return [];
         }
         $url = config('services.matcher.url', 'https://python.inter-ai.uz/bulk-match-fast');
         $response = Http::retry(3, 200)->timeout(30)->post($url, [
-            'resumes'   => [mb_substr($demoResume->parsed_text, 0, 3000)],
+            'resumes'   => [mb_substr($resume->parsed_text, 0, 3000)],
             'vacancies' => array_map(fn($v) => [
                 'id'   => $v['id'] ? (string) $v['id'] : null,
                 'text' => $v['text'],
@@ -93,7 +94,7 @@ class DemoVacancyMatchingService
         Log::info('Fetch HH details took: ' . (microtime(true) - $start) . 's');
 
         if ($response->failed()) {
-            Log::error('Matcher API failed', ['resume_id' => $demoResume->id, 'body' => $response->body()]);
+            Log::error('Matcher API failed', ['resume_id' => $resume->id, 'body' => $response->body()]);
             return [];
         }
 
@@ -123,7 +124,7 @@ class DemoVacancyMatchingService
 
             if ($vac) {
                 $savedData[] = [
-                    'resume_id'     => $demoResume->id,
+                    'resume_id'     => $resume->id,
                     'vacancy_id'    => $vac->id,
                     'score_percent' => $match['score'],
                     'explanations'  => json_encode($match),
@@ -141,7 +142,7 @@ class DemoVacancyMatchingService
             );
         }
 
-        Log::info('Matching finished', ['resume_id' => $demoResume->id]);
+        Log::info('Matching finished', ['resume_id' => $resume->id]);
 
         return $savedData;
     }
