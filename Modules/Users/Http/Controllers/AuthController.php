@@ -3,12 +3,14 @@
 namespace Modules\Users\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Models\Resume;
 use App\Models\User;
 use App\Models\UserCredit;
 use App\Models\UserSetting;
 use App\Traits\ApiResponseTrait;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Modules\Resumes\Http\Resources\ResumeResource;
 use Modules\Users\Http\Requests\LoginRequest;
 use Modules\Users\Http\Requests\RegisterRequest;
 use Modules\Users\Http\Resources\User\UserResource;
@@ -255,6 +257,32 @@ class AuthController extends Controller
 
         return response()->json([
             'success' => true,
+            'message' => 'Mavjud emas, davom etishingiz mumkin.'
+        ], 200);
+    }
+    public function resumeCheck(Request $request)
+    {
+        $user = \App\Models\User::where('chat_id', $request->chat_id)->first();
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'User topilmadi.'
+            ], 404);
+        }
+
+        $resume = Resume::where('user_id', $user->id)->first();
+
+        if ($resume) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Resume mavjud.',
+                'data'    => new ResumeResource($resume)
+            ], 200);
+        }
+
+        return response()->json([
+            'success' => false,
             'message' => 'Mavjud emas, davom etishingiz mumkin.'
         ], 200);
     }

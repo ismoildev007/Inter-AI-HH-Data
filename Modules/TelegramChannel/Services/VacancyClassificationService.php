@@ -31,6 +31,7 @@ Classify the following text into one of four categories:
 Strict rules:
 - If the text starts with or strongly contains phrases such as "Ish joyi kerak", "Ish qidiryapman", "Ищу работу", "Резюме", "Resume", "CV" then label = job_seeker, even if company-like fields appear.
 - Only use employer_vacancy if it clearly states the company is hiring (third-person/company voice) and provides vacancy details.
+- If the text is only about advertising a channel, explaining how to post ads, pricing, contact admins, or other meta instructions without an actual vacancy or candidate, classify as other.
 - DO NOT translate; detect the main language (e.g., "uz", "ru", "en").
 - Return only JSON with fields: label, confidence (0..1), language.
 
