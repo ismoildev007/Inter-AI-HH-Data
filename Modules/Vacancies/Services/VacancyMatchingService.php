@@ -53,11 +53,15 @@ class VacancyMatchingService
                 fn() => $this->hhRepository->search($query, 0, 100, ['area' => 97])
             ),
             fn() => Vacancy::query()
-                ->where(function ($q) use ($query) {
-                    $q->where('title', 'like', "%{$query}%")
-                        ->orWhere('description', 'like', "%{$query}%");
-                })
                 ->where('status', 'publish')
+                ->where(function ($q) use ($words) {
+                    foreach ($words as $word) {
+                        $q->where(function ($sub) use ($word) {
+                            $sub->where('title', 'ilike', "%{$word}%")
+                                ->orWhere('description', 'ilike', "%{$word}%");
+                        });
+                    }
+                })
                 ->get()
                 ->keyBy(
                     fn($v) => $v->source === 'hh' && $v->external_id
@@ -67,6 +71,7 @@ class VacancyMatchingService
         ]);
         Log::info('Data fetch took:' . (microtime(true) - $start) . 's');
         Log::info('Local vacancies: ' . $localVacancies->count());
+        Log::info('hh vacancies count: ' . count($hhVacancies['items'] ?? []));
 
         $hhItems = $hhVacancies['items'] ?? [];
         $vacanciesPayload = [];
