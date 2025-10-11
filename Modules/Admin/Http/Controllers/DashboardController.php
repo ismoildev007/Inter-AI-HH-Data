@@ -431,7 +431,7 @@ class DashboardController extends Controller
             ->selectRaw('COUNT(*) as visits_count')
             ->groupBy(DB::raw('COALESCE(users.id, visits.user_id)'), 'users.first_name', 'users.last_name', 'users.email')
             ->orderByDesc('visits_count')
-            ->limit(4)
+            ->limit(5)
             ->get();
 
         return view('admin::Admin.Dashboard.dashboard', compact(
