@@ -14,6 +14,7 @@ class MatchResult extends Model
         'vacancy_id',
         'score_percent',
         'explanations',
+        'notified_at'
     ];
 
     public function resume()
