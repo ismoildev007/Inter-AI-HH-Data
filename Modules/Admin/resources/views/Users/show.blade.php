@@ -12,9 +12,9 @@
                 <li class="breadcrumb-item">#{{ $user->id }}</li>
             </ul>
         </div>
-        <div class="ms-auto">
+        <!-- <div class="ms-auto">
             <a href="{{ route('admin.users.index') }}" class="btn btn-light-brand"><i class="feather-arrow-left me-1"></i> Back</a>
-        </div>
+        </div> -->
     </div>
 
     <div class="row g-3 mt-4 ms-4 me-4">
@@ -22,7 +22,7 @@
             <div class="card stretch">
                 <div class="card-body text-center">
                     <div class="avatar-text avatar-xxl mx-auto mb-3">
-                        <img src="{{ $user->avatar_path ? asset($user->avatar_path) : module_vite('build-admin', 'resources/assets/js/app.js')->asset('resources/assets/images/avatar/1.png') }}" alt="" class="img-fluid">
+                        <img src="{{ $user->avatar_path ? asset($user->avatar_path) : asset('assets/images/avatar/ava.svg') }}" alt="" class="img-fluid">
                     </div>
                     <h5 class="fw-bold text-dark mb-1">{{ trim(($user->first_name ?? '').' '.($user->last_name ?? '')) ?: '—' }}</h5>
                     <p class="text-muted mb-2">{{ $user->role->name ?? '—' }}</p>

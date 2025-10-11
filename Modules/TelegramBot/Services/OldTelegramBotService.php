@@ -7,8 +7,23 @@ use Illuminate\Support\Facades\Log;
 use Telegram\Bot\Keyboard\Keyboard;
 use Telegram\Bot\Laravel\Facades\Telegram;
 
-class TelegramBotService
+class OldTelegramBotService
 {
+//    public function sendWelcomeMessage($chatId, $firstName = null, $lastName = null)
+//    {
+//        $fullName = trim("{$firstName} {$lastName}");
+//        if (empty($fullName)) {
+//            $fullName = "";
+//        }
+//
+//        $text = "Assalomu alaykum, {$fullName}! inter-AI vakansiyalari botiga xush kelibsiz!";
+//        Log::info("sendWelcomeMessage => chatId: {$chatId}, fullName: {$fullName}, text: {$text}");
+//
+//        Telegram::bot('mybot')->sendMessage([
+//            'chat_id' => $chatId,
+//            'text'    => $text,
+//        ]);
+//    }
     public function sendWelcomeMessage($chatId)
     {
         $text = "Assalomu alaykum! inter-AI vakansiyalari botiga xush kelibsiz!";
@@ -47,7 +62,7 @@ class TelegramBotService
         Log::info("handleLanguageSelection => chatId: {$chatId}, lang: {$language}");
 
         $texts = [
-            '🇺🇿 O\'zbek' => 'Til tanlandi ✅ Platformamizdan ro‘yxatdan o‘tish uchun quyidagi tugmani bosing!',
+            '🇺🇿 O\'zbek' => 'Til tanlandi ✅ Platformamizdan ro\'yxatdan o\'tish uchun quyidagi tugmani bosing!',
             '🇷🇺 Русский' => 'Язык выбран ✅ Нажмите кнопку ниже, чтобы зарегистрироваться на нашей платформе!',
             '🇬🇧 English' => 'Language selected ✅ Click the button below to register on our platform!',
         ];
@@ -58,10 +73,8 @@ class TelegramBotService
             '🇷🇺 Русский' => 'ru',
             '🇬🇧 English' => 'en',
         ];
-        $langCode = $langCodeMap[$language] ?? 'uz';
-
-        // 🧩 Chat ID’ni URL query param sifatida qo‘shamiz:
-        $webAppUrl = "https://vacancies.inter-ai.uz/demo-register?locale={$langCode}&chat_id={$chatId}";
+        $langCode  = $langCodeMap[$language] ?? 'uz';
+        $webAppUrl = "https://d2e56253f7af.ngrok-free.app/register?locale={$langCode}";
         Log::info("Generated WebApp URL => {$webAppUrl}");
 
         $inlineKeyboard = Keyboard::make()

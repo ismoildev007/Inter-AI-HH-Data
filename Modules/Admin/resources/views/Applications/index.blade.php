@@ -62,11 +62,11 @@
                     <tbody>
                         @forelse($applications as $app)
                             <tr>
-                                <td class="fw-semibold text-dark">#{{ $app->id }}</td>
+                                <td class="fw-semibold text-dark">{{ $app->id }}</td>
                                 <td>
                                     <div class="d-flex align-items-center gap-2">
                                         <div class="avatar-image avatar-sm">
-                                            <img src="{{ optional($app->user)->avatar_path ? asset($app->user->avatar_path) : module_vite('build-admin', 'resources/assets/js/app.js')->asset('resources/assets/images/avatar/1.png') }}" class="img-fluid" alt="avatar">
+                                            <img src="/assets/images/avatar/ava.svg" class="img-fluid" alt="avatar">
                                         </div>
                                         <div>
                                             <div class="fw-semibold text-dark">{{ trim((optional($app->user)->first_name ?? '').' '.(optional($app->user)->last_name ?? '')) ?: '—' }}</div>

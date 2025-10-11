@@ -26,6 +26,12 @@ class DashboardController extends Controller
         $resumesCount = Resume::count();
         $applicationsCount = Application::count();
         $telegramChannelsCount = TelegramChannel::count();
+        $telegramVacanciesCount = Vacancy::query()
+            ->whereRaw('LOWER(source) LIKE ?', ['telegram%'])
+            ->count();
+        $hhVacanciesCount = Vacancy::query()
+            ->whereRaw('LOWER(source) LIKE ?', ['hh%'])
+            ->count();
         $tgSourceCount = TelegramChannel::where('is_source', true)->count();
         $tgTargetCount = TelegramChannel::where('is_target', true)->count();
 
@@ -431,14 +437,36 @@ class DashboardController extends Controller
             ->selectRaw('COUNT(*) as visits_count')
             ->groupBy(DB::raw('COALESCE(users.id, visits.user_id)'), 'users.first_name', 'users.last_name', 'users.email')
             ->orderByDesc('visits_count')
-            ->limit(10)
+            ->limit(6)
             ->get();
+
+        $socialRadarLabels = ['TG Vacancies', 'HH Vacancies', 'Users', 'Resumes'];
+        $socialRadarRaw = [
+            (int) $telegramVacanciesCount,
+            (int) $hhVacanciesCount,
+            (int) $usersCount,
+            (int) $resumesCount,
+        ];
+
+        $socialRadar = [
+            'labels' => $socialRadarLabels,
+            'series' => [
+                [
+                    'name' => 'Totals',
+                    'data' => $socialRadarRaw,
+                ],
+            ],
+            'rawValues' => $socialRadarRaw,
+            'colors' => ['#3454D1', '#41B2C4', '#EA4D4D', '#25B865'],
+        ];
 
         return view('admin::Admin.Dashboard.dashboard', compact(
             'usersCount',
             'resumesCount',
             'applicationsCount',
             'telegramChannelsCount',
+            'telegramVacanciesCount',
+            'hhVacanciesCount',
             'tgSourceCount',
             'tgTargetCount',
             'tgTargetPercent',
@@ -452,7 +480,8 @@ class DashboardController extends Controller
             'analyticsData',
             'topUsers',
             'vacancyCategories',
-            'vacanciesTotal'
+            'vacanciesTotal',
+            'socialRadar'
         ));
     }
 
@@ -487,6 +516,9 @@ class DashboardController extends Controller
         if (!in_array($filter, ['all', 'telegram', 'hh'], true)) {
             $filter = 'all';
         }
+
+        $search = trim((string) $request->query('q', ''));
+        $normalizedSearch = $search !== '' ? mb_strtolower($search, 'UTF-8') : null;
 
         $categorizer = app(\Modules\TelegramChannel\Services\VacancyCategoryService::class);
         $catExpr = "COALESCE(NULLIF(category, ''), 'Other')";
@@ -524,6 +556,14 @@ class DashboardController extends Controller
             ->sortByDesc('c')
             ->values();
 
+        if ($normalizedSearch !== null) {
+            $rows = $rows->filter(function ($row) use ($normalizedSearch) {
+                $category = mb_strtolower($row->category ?? '', 'UTF-8');
+                $slug = mb_strtolower($row->slug ?? '', 'UTF-8');
+                return str_contains($category, $normalizedSearch) || str_contains($slug, $normalizedSearch);
+            })->values();
+        }
+
         $totalCount = DB::table('vacancies')
             ->when($filter === 'telegram', function ($query) {
                 $query->whereRaw('LOWER(source) LIKE ?', ['telegram%']);
@@ -537,6 +577,7 @@ class DashboardController extends Controller
             'rows' => $rows,
             'totalCount' => $totalCount,
             'filter' => $filter,
+            'search' => $search,
         ]);
     }
 
@@ -549,6 +590,8 @@ class DashboardController extends Controller
         if (!in_array($filter, ['all', 'telegram', 'hh'], true)) {
             $filter = 'all';
         }
+
+        $search = trim((string) $request->query('q', ''));
 
         $categorizer = app(\Modules\TelegramChannel\Services\VacancyCategoryService::class);
         $canonical = $categorizer->fromSlug($category) ?? $categorizer->categorize($category, null, '', $category);
@@ -571,6 +614,18 @@ class DashboardController extends Controller
             $q->whereRaw('LOWER(source) LIKE ?', ['hh%']);
         });
 
+        if ($search !== '') {
+            $normalized = mb_strtolower($search, 'UTF-8');
+            $like = '%' . $normalized . '%';
+            $query->where(function ($inner) use ($like, $search, $normalized) {
+                $inner->whereRaw('LOWER(title) LIKE ?', [$like]);
+
+                if (ctype_digit($search)) {
+                    $inner->orWhere('id', (int) $search);
+                }
+            });
+        }
+
         // Paginate to avoid huge responses; can be adjusted as needed
         $vacancies = $query->paginate(50)->withQueryString();
 
@@ -584,6 +639,7 @@ class DashboardController extends Controller
             'vacancies' => $vacancies,
             'count' => $count,
             'filter' => $filter,
+            'search' => $search,
         ]);
     }
 
