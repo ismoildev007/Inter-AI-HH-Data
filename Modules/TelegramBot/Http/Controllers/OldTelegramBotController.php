@@ -8,7 +8,7 @@ use Illuminate\Http\Request;
 use Modules\TelegramBot\Services\TelegramBotService;
 use Telegram\Bot\Laravel\Facades\Telegram;
 
-class TelegramBotController extends Controller
+class OldTelegramBotController extends Controller
 {
     protected $botService;
 
@@ -26,7 +26,16 @@ class TelegramBotController extends Controller
             $message = $update['message'];
             $chatId  = $message['chat']['id'];
             $text    = $message['text'] ?? null;
+
             Log::info("Message received => chatId: {$chatId}, text: {$text}");
+
+//            if ($text === '/start') {
+//                $firstName = $message['from']['first_name'] ?? '';
+//                $lastName  = $message['from']['last_name'] ?? '';
+//
+//                $this->botService->sendWelcomeMessage($chatId, $firstName, $lastName);
+//                $this->botService->sendLanguageSelection($chatId);
+//            }
             if ($text === '/start') {
                 $this->botService->sendWelcomeMessage($chatId);
                 $this->botService->sendLanguageSelection($chatId);
