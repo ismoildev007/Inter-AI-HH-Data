@@ -26,6 +26,12 @@ class DashboardController extends Controller
         $resumesCount = Resume::count();
         $applicationsCount = Application::count();
         $telegramChannelsCount = TelegramChannel::count();
+        $telegramVacanciesCount = Vacancy::query()
+            ->whereRaw('LOWER(source) LIKE ?', ['telegram%'])
+            ->count();
+        $hhVacanciesCount = Vacancy::query()
+            ->whereRaw('LOWER(source) LIKE ?', ['hh%'])
+            ->count();
         $tgSourceCount = TelegramChannel::where('is_source', true)->count();
         $tgTargetCount = TelegramChannel::where('is_target', true)->count();
 
@@ -434,11 +440,33 @@ class DashboardController extends Controller
             ->limit(6)
             ->get();
 
+        $socialRadarLabels = ['TG Vacancies', 'HH Vacancies', 'Users', 'Resumes'];
+        $socialRadarRaw = [
+            (int) $telegramVacanciesCount,
+            (int) $hhVacanciesCount,
+            (int) $usersCount,
+            (int) $resumesCount,
+        ];
+
+        $socialRadar = [
+            'labels' => $socialRadarLabels,
+            'series' => [
+                [
+                    'name' => 'Totals',
+                    'data' => $socialRadarRaw,
+                ],
+            ],
+            'rawValues' => $socialRadarRaw,
+            'colors' => ['#3454D1', '#41B2C4', '#EA4D4D', '#25B865'],
+        ];
+
         return view('admin::Admin.Dashboard.dashboard', compact(
             'usersCount',
             'resumesCount',
             'applicationsCount',
             'telegramChannelsCount',
+            'telegramVacanciesCount',
+            'hhVacanciesCount',
             'tgSourceCount',
             'tgTargetCount',
             'tgTargetPercent',
@@ -452,7 +480,8 @@ class DashboardController extends Controller
             'analyticsData',
             'topUsers',
             'vacancyCategories',
-            'vacanciesTotal'
+            'vacanciesTotal',
+            'socialRadar'
         ));
     }
 

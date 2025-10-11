@@ -286,5 +286,146 @@
         }
     };
     window.analyticsData = @json($analyticsData ?? []);
+    window.socialRadar = @json($socialRadar ?? []);
+</script>
+<script>
+    (function () {
+        const target = document.querySelector('#social-radar-chart');
+        const radarPayload = window.socialRadar || {};
+        if (!target) {
+            return;
+        }
+
+        if (target.dataset.chartRendered === '1') {
+            return;
+        }
+
+        const labels = Array.isArray(radarPayload.labels) ? radarPayload.labels : [];
+        const seriesSource = Array.isArray(radarPayload.series) && radarPayload.series.length
+            ? radarPayload.series
+            : [{ name: 'Totals', data: labels.map(() => 0) }];
+        const rawValues = Array.isArray(radarPayload.rawValues) ? radarPayload.rawValues : (seriesSource[0]?.data ?? []);
+        const colors = Array.isArray(radarPayload.colors) && radarPayload.colors.length
+            ? radarPayload.colors
+            : ['#3454D1', '#41B2C4', '#EA4D4D', '#25B865'];
+
+        if (!labels.length) {
+            target.innerHTML = '<div class="text-muted text-center py-5">No data available</div>';
+            return;
+        }
+
+        const normalisedSeries = seriesSource.map((serie) => ({
+            name: serie.name ?? 'Totals',
+            data: (serie.data ?? []).map((value) => Number(value) || 0),
+        }));
+
+        const ensureApex = (callback) => {
+            if (typeof ApexCharts !== 'undefined') {
+                callback();
+                return;
+            }
+
+            if (Array.isArray(window.__socialRadarLoadQueue)) {
+                window.__socialRadarLoadQueue.push(callback);
+                return;
+            }
+
+            window.__socialRadarLoadQueue = [callback];
+
+            const finish = () => {
+                const queue = window.__socialRadarLoadQueue || [];
+                delete window.__socialRadarLoadQueue;
+                queue.forEach((fn) => fn());
+            };
+
+            const cdnScript = document.createElement('script');
+            cdnScript.src = 'https://cdn.jsdelivr.net/npm/apexcharts@3.44.0';
+            cdnScript.async = true;
+            cdnScript.onload = finish;
+            cdnScript.onerror = () => {
+                const fallback = document.createElement('script');
+                fallback.src = '/assets/vendors/js/apexcharts.min.js';
+                fallback.async = true;
+                fallback.onload = finish;
+                document.head.appendChild(fallback);
+            };
+            document.head.appendChild(cdnScript);
+        };
+
+        const renderChart = () => {
+            if (target.dataset.chartRendered === '1') {
+                return;
+            }
+
+            ensureApex(() => {
+                if (target.dataset.chartRendered === '1') {
+                    return;
+                }
+
+                const chart = new ApexCharts(target, {
+                    chart: {
+                        type: 'radar',
+                        height: 360,
+                        toolbar: { show: false },
+                    },
+                    labels: labels,
+                    xaxis: {
+                        categories: labels,
+                        labels: {
+                            show: true,
+                            style: { colors: '#94A3B8', fontFamily: 'Inter', fontSize: '12px' },
+                        },
+                    },
+                    yaxis: {
+                        show: true,
+                        min: 0,
+                        tickAmount: 4,
+                        labels: {
+                            style: { colors: '#CBD5F5', fontFamily: 'Inter', fontSize: '11px' },
+                            formatter: (val) => Number(val).toFixed(0),
+                        },
+                    },
+                    series: normalisedSeries,
+                    colors: colors.slice(0, normalisedSeries.length),
+                    stroke: {
+                        show: true,
+                        width: 2,
+                        curve: 'straight',
+                    },
+                    fill: {
+                        opacity: 0.25,
+                    },
+                    markers: {
+                        size: 4,
+                        strokeWidth: 2,
+                    },
+                    legend: {
+                        show: true,
+                        position: 'bottom',
+                        horizontalAlign: 'center',
+                        fontFamily: 'Inter',
+                    },
+                    tooltip: {
+                        y: {
+                            formatter: (value, opts) => {
+                                const index = opts?.dataPointIndex ?? 0;
+                                const original = rawValues[index] !== undefined ? rawValues[index] : value;
+                                return Number(original).toLocaleString();
+                            },
+                        },
+                    },
+                });
+
+            chart.render();
+            target.dataset.chartRendered = '1';
+            });
+        };
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', renderChart, { once: true });
+        } else {
+            renderChart();
+        }
+    })();
 </script>
 @endsection
