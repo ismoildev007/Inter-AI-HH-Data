@@ -52,7 +52,7 @@
                             <th class="text-muted">ID</th>
                             <th class="text-muted">User</th>
                             <th class="text-muted">Email</th>
-                            <th class="text-muted">Role</th>
+                            <!--<th class="text-muted">Role</th>-->
                             <th class="text-muted">Created</th>
                             <th class="text-end text-muted">Actions</th>
                         </tr>
@@ -60,11 +60,11 @@
                     <tbody>
                         @forelse($users as $u)
                             <tr>
-                                <td class="fw-semibold text-dark">#{{ $u->id }}</td>
+                                <td class="fw-semibold text-dark">{{ $u->id }}</td>
                                 <td>
                                     <div class="d-flex align-items-center gap-2">
                                         <div class="avatar-image avatar-sm">
-                                            <img src="/assets/images/avatar/1.png" class="img-fluid" alt="avatar">
+                                            <img src="/assets/images/avatar/ava.svg" class="img-fluid" alt="avatar">
                                         </div>
                                         <div>
                                             <div class="fw-semibold text-dark">{{ trim(($u->first_name ?? '').' '.($u->last_name ?? '')) ?: '—' }}</div>
@@ -75,7 +75,7 @@
                                     </div>
                                 </td>
                                 <td>{{ $u->email }}</td>
-                                <td>{{ $u->role->name ?? '—' }}</td>
+                               <!--<td>{{ $u->role->name ?? '—' }}</td>-->
                                 <td>{{ optional($u->created_at)->format('Y-m-d H:i') }}</td>
                                 <td class="text-end">
                                     <a href="{{ route('admin.users.show', $u->id) }}" class="btn btn-sm btn-light-brand">

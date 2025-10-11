@@ -8,7 +8,13 @@
             'telegram' => 'Telegram only',
             'hh' => 'HH only',
         ];
-        $categoryIndexParams = $currentFilter === 'all' ? [] : ['filter' => $currentFilter];
+        $searchTerm = $search ?? request('q', '');
+        $categoryIndexParams = array_filter([
+            'filter' => $currentFilter !== 'all' ? $currentFilter : null,
+            'q' => !empty($searchTerm) ? $searchTerm : null,
+        ], function ($value) {
+            return !is_null($value);
+        });
     @endphp
     <div class="page-header">
         <div class="page-header-left d-flex align-items-center">
@@ -36,8 +42,45 @@
     @endif
 
     <div class="card stretch mt-4 ms-4 me-4">
-        <div class="card-header align-items-center justify-content-between">
-            <div class="card-title"><h6 class="mb-0">Vacancies (titles)</h6></div>
+        <div class="card-header d-flex flex-column flex-lg-row align-items-lg-center justify-content-lg-between gap-3">
+            <div class="card-title mb-0"><h6 class="mb-0">Vacancies (titles)</h6></div>
+            @php
+                $formRouteParams = array_filter([
+                    'category' => $categorySlug,
+                    'filter' => $currentFilter !== 'all' ? $currentFilter : null,
+                ], function ($value) {
+                    return !is_null($value);
+                });
+            @endphp
+<!-- 🔍 Search Vacancies Form -->
+<div class="d-flex justify-content-center flex-grow-1">
+    <form method="GET"
+          class="d-flex justify-content-center"
+          style="width: 400px; margin-left: -200px;"   {{-- ← shu qator qo‘shildi --}}
+          action="{{ route('admin.vacancies.by_category', $formRouteParams) }}">
+        <div class="input-group input-group-sm w-100">
+            <input type="search"
+                   name="q"
+                   value="{{ $searchTerm }}"
+                   class="form-control"
+                   placeholder="Search vacancies (title or ID)">
+            @if(!empty($searchTerm))
+                <a href="{{ route('admin.vacancies.by_category', array_filter([
+                        'category' => $categorySlug,
+                        'filter' => $currentFilter !== 'all' ? $currentFilter : null,
+                    ], function ($value) {
+                        return !is_null($value);
+                    })) }}"
+                   class="btn btn-outline-secondary">
+                    <i class="feather-x"></i>
+                </a>
+            @endif
+            <button type="submit" class="btn btn-primary">
+                <i class="feather-search"></i>
+            </button>
+        </div>
+    </form>
+</div>
         </div>
         <div class="card-body p-0">
             <div class="table-responsive">

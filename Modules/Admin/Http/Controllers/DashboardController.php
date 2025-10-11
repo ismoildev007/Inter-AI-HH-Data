@@ -488,6 +488,9 @@ class DashboardController extends Controller
             $filter = 'all';
         }
 
+        $search = trim((string) $request->query('q', ''));
+        $normalizedSearch = $search !== '' ? mb_strtolower($search, 'UTF-8') : null;
+
         $categorizer = app(\Modules\TelegramChannel\Services\VacancyCategoryService::class);
         $catExpr = "COALESCE(NULLIF(category, ''), 'Other')";
         $rowsRaw = DB::table('vacancies')
@@ -524,6 +527,14 @@ class DashboardController extends Controller
             ->sortByDesc('c')
             ->values();
 
+        if ($normalizedSearch !== null) {
+            $rows = $rows->filter(function ($row) use ($normalizedSearch) {
+                $category = mb_strtolower($row->category ?? '', 'UTF-8');
+                $slug = mb_strtolower($row->slug ?? '', 'UTF-8');
+                return str_contains($category, $normalizedSearch) || str_contains($slug, $normalizedSearch);
+            })->values();
+        }
+
         $totalCount = DB::table('vacancies')
             ->when($filter === 'telegram', function ($query) {
                 $query->whereRaw('LOWER(source) LIKE ?', ['telegram%']);
@@ -537,6 +548,7 @@ class DashboardController extends Controller
             'rows' => $rows,
             'totalCount' => $totalCount,
             'filter' => $filter,
+            'search' => $search,
         ]);
     }
 
@@ -549,6 +561,8 @@ class DashboardController extends Controller
         if (!in_array($filter, ['all', 'telegram', 'hh'], true)) {
             $filter = 'all';
         }
+
+        $search = trim((string) $request->query('q', ''));
 
         $categorizer = app(\Modules\TelegramChannel\Services\VacancyCategoryService::class);
         $canonical = $categorizer->fromSlug($category) ?? $categorizer->categorize($category, null, '', $category);
@@ -571,6 +585,18 @@ class DashboardController extends Controller
             $q->whereRaw('LOWER(source) LIKE ?', ['hh%']);
         });
 
+        if ($search !== '') {
+            $normalized = mb_strtolower($search, 'UTF-8');
+            $like = '%' . $normalized . '%';
+            $query->where(function ($inner) use ($like, $search, $normalized) {
+                $inner->whereRaw('LOWER(title) LIKE ?', [$like]);
+
+                if (ctype_digit($search)) {
+                    $inner->orWhere('id', (int) $search);
+                }
+            });
+        }
+
         // Paginate to avoid huge responses; can be adjusted as needed
         $vacancies = $query->paginate(50)->withQueryString();
 
@@ -584,6 +610,7 @@ class DashboardController extends Controller
             'vacancies' => $vacancies,
             'count' => $count,
             'filter' => $filter,
+            'search' => $search,
         ]);
     }
 

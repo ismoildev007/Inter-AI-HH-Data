@@ -13,7 +13,7 @@
             </ul>
         </div>
         <div class="ms-auto">
-            <a href="{{ route('admin.resumes.index') }}" class="btn btn-light-brand"><i class="feather-arrow-left me-1"></i> Back</a>
+           <!--<a href="{{ route('admin.resumes.index') }}" class="btn btn-light-brand"><i class="feather-arrow-left me-1"></i> Back</a>-->
         </div>
     </div>
 
@@ -25,7 +25,7 @@
                 </div>
                 <div class="card-body text-center">
                     <div class="avatar-text avatar-xxl mx-auto mb-3">
-                        <img src="{{ $resume->user?->avatar_path ? asset($resume->user->avatar_path) : module_vite('build-admin', 'resources/assets/js/app.js')->asset('resources/assets/images/avatar/1.png') }}" alt="" class="img-fluid">
+                        <img src="/assets/images/avatar/ava.svg" class="img-fluid" alt="avatar">
                     </div>
                     @php
                         $userFullName = trim(($resume->user?->first_name ?? '') . ' ' . ($resume->user?->last_name ?? ''));

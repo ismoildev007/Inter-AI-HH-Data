@@ -35,7 +35,7 @@
                     title="Profile">
                     Profil・
                     <div class="avatar-text avatar-md">
-                        <img src="{{ module_vite('build-admin', 'resources/assets/js/app.js')->asset('resources/assets/images/avatar/5.svg') }}"
+                        <img src="{{ asset('assets/images/avatar/5.svg') }}"
                             alt=""
                             class="img-fluid">
                     </div>
