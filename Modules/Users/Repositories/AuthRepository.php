@@ -8,21 +8,20 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
 use App\Notifications\VerifyEmailCodeNotification;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class AuthRepository
 {
     public function register(array $data): array
     {
-        return \DB::transaction(function () use ($data) {
-            // userni chat_id orqali qidiramiz
+        return DB::transaction(function () use ($data) {
             $user = null;
             if (!empty($data['chat_id'])) {
                 $user = User::where('chat_id', $data['chat_id'])->first();
             }
 
-            // agar topilmagan bo‘lsa yangi user yaratamiz
             if (!$user) {
-                // phone unique bo‘lishini tekshiramiz
                 if (!empty($data['phone']) && User::where('phone', $data['phone'])->exists()) {
                     return [
                         'status'  => 'error',
@@ -30,31 +29,37 @@ class AuthRepository
                         'code'    => 422,
                     ];
                 }
+                
+                $user = User::updateOrCreate(
+                    ['chat_id' => $data['chat_id']],
+                    [
+                        'first_name' => $data['first_name'] ?? null,
+                        'last_name'  => $data['last_name'] ?? null,
+                        'phone'      => $data['phone'] ?? null,
+                        'password'   => isset($data['password']) ? Hash::make($data['password']) : null,
+                    ]
+                );
 
-                $user = User::create([
-                    'first_name' => $data['first_name'] ?? null,
-                    'last_name'  => $data['last_name'] ?? null,
-                    'phone'      => $data['phone'] ?? null,
-                    'password'   => isset($data['password']) ? Hash::make($data['password']) : null,
-                    'chat_id'    => $data['chat_id'] ?? null,
-                ]);
-
-                // Initial credit
                 $user->credit()->create([
                     'balance' => 50,
                 ]);
+                Log::info("new balance". $user->credit->balance);
             } else {
-                // agar user topilgan bo‘lsa uni update qilamiz
                 $user->update([
                     'first_name' => $data['first_name'] ?? $user->first_name,
                     'last_name'  => $data['last_name'] ?? $user->last_name,
                     'phone'      => $data['phone'] ?? $user->phone,
-                    // password update qilishni xohlaysizmi yo‘qmi shuni qarab yozasiz
                     'password'   => isset($data['password']) ? Hash::make($data['password']) : $user->password,
                 ]);
+
+                if (!$user->credit) {
+                    $user->credit()->create([
+                        'balance' => 50,
+                    ]);
+                    Log::info("existing user new balance". $user->credit->balance);
+                }
             }
 
-            // token yaratamiz
             $token = $user->createToken(
                 'api_token',
                 ['*'],
@@ -74,7 +79,7 @@ class AuthRepository
 
     public function update(User $user, array $data): array
     {
-        return \DB::transaction(function () use ($user, $data) {
+        return DB::transaction(function () use ($user, $data) {
             if (!empty($data['phone']) && User::where('phone', $data['phone'])->where('id', '!=', $user->id)->exists()) {
                 return [
                     'status'  => 'error',
@@ -90,22 +95,7 @@ class AuthRepository
                 'password'    => !empty($data['password']) ? Hash::make($data['password']) : $user->password,
             ]);
 
-            if (!empty($data['resume_text'])) {
-                $resume = $user->resumes()->first();
-                if ($resume) {
-                    $resume->update([
-                        'description' => $data['resume_text'],
-                        'parsed_text' => $data['resume_text'],
-                    ]);
-                } else {
-                    $user->resumes()->create([
-                        'title'       => 'Text Resume',
-                        'description' => $data['resume_text'],
-                        'parsed_text' => $data['resume_text'],
-                        'is_primary'  => true,
-                    ]);
-                }
-            }
+            
 
 //            if (!empty($data['experience']) || !empty($data['salary_from']) || !empty($data['salary_to'])) {
 //                $pref = $user->preferences()->first();
@@ -155,7 +145,6 @@ class AuthRepository
 
         $user = Auth::user();
 
-        // 🔑 2. Create token
         $token = $user->createToken(
             'api_token',
             ['*'],

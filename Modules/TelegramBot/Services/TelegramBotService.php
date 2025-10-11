@@ -2,6 +2,7 @@
 
 namespace Modules\TelegramBot\Services;
 
+use App\Models\User;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Telegram\Bot\Keyboard\Keyboard;
@@ -60,9 +61,14 @@ class TelegramBotService
         ];
         $langCode = $langCodeMap[$language] ?? 'uz';
 
-        // 🧩 Chat ID’ni URL query param sifatida qo‘shamiz:
-        $webAppUrl = "https://vacancies.inter-ai.uz/demo-register?locale={$langCode}&chat_id={$chatId}";
-        Log::info("Generated WebApp URL => {$webAppUrl}");
+        $user  = User::where('chat_id', $chatId)->first();
+        if (!$user) {
+            $webAppUrl = "https://vacancies.inter-ai.uz/demo-register?locale={$langCode}&chat_id={$chatId}";
+            Log::info("Generated WebApp URL => {$webAppUrl}");
+        } else {
+            $webAppUrl = "https://vacancies.inter-ai.uz/register?locale={$langCode}";
+            Log::info("User exists. Generated WebApp URL => {$webAppUrl}");
+        }
 
         $inlineKeyboard = Keyboard::make()
             ->inline()

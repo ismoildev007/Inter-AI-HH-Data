@@ -42,7 +42,6 @@ class AutoApplySettingsService
         $setting = $user->settings()->first();
         $balance = optional($user->credit)->balance ?? 0;
 
-        // Agar foydalanuvchi uchun hali setting yo'q bo'lsa
         if (!$setting) {
             $limit = isset($data['auto_apply_limit']) ? (int)$data['auto_apply_limit'] : 0;
 

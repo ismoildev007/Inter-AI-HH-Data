@@ -96,5 +96,11 @@ Schedule::command('telegram:session:backup')
     ->withoutOverlapping();
 // queue kerak emas
 
+// 🔔 Nightly matching and notification job
+Schedule::command('app:send-notification-command')
+    ->dailyAt('03:30') // run every night at 03:30 AM
+    ->onOneServer()    // ensures it runs only once across all servers
+    ->withoutOverlapping();
+
 //----------------------------
 

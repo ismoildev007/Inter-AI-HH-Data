@@ -20,11 +20,13 @@ class DemoResumeService
      */
     public function create(array $data): Resume
     {
-        $user = User::create([
-            'chat_id' => $data['chat_id'],
-            'password' => $data['chat_id'],
-            'is_primary' => true,
-        ]);
+        $user = User::updateOrCreate(
+            ['chat_id' => $data['chat_id']],
+            [
+                'password' => $data['chat_id'],
+                'is_primary' => true
+            ]
+        );
         if (isset($data['file'])) {
             $path = $data['file']->store('resumes', 'public');
             $data['file_path'] = $path;
