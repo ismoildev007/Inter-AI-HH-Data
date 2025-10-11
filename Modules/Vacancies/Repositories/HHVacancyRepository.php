@@ -21,7 +21,7 @@ class HHVacancyRepository implements HHVacancyInterface
         ]);
     }
 
-    public function search(string $query, int $page = 0, int $perPage = 40, array $options = ['area' => 97]): array
+    public function search(string $query, int $page = 0, int $perPage = 100, array $options = ['area' => 97]): array
     {
         $dateFrom = now()->subMonth()->startOfDay()->toIso8601String();
         $dateTo   = now()->endOfDay()->toIso8601String();

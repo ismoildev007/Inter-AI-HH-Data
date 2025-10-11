@@ -272,7 +272,7 @@ class VacancyRepository implements VacancyInterface
             'published_at'    => $publishedAt,
             'apply_url'       => $hhVacancy['alternate_url'] ?? null,
             'raw_data'        => json_encode($hhVacancy, JSON_UNESCAPED_UNICODE),
-            'updated_at'      => $now,
+            'status'          => 'publish',
         ]);
 
         $categoryRaw = '';

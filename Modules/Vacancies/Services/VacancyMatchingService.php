@@ -45,7 +45,7 @@ class VacancyMatchingService
 
         // $results = await($pool);
         $words = explode(' ', $query);
-        
+
         [$hhVacancies, $localVacancies] = Concurrency::run([
             fn() => cache()->remember(
                 "hh:search:{$query}:area97",
@@ -53,7 +53,11 @@ class VacancyMatchingService
                 fn() => $this->hhRepository->search($query, 0, 100, ['area' => 97])
             ),
             fn() => Vacancy::query()
-                ->where('title', 'like', "%{$query}%")
+                ->where(function ($q) use ($query) {
+                    $q->where('title', 'like', "%{$query}%")
+                        ->orWhere('description', 'like', "%{$query}%");
+                })
+                ->where('status', 'publish')
                 ->get()
                 ->keyBy(
                     fn($v) => $v->source === 'hh' && $v->external_id
@@ -61,6 +65,8 @@ class VacancyMatchingService
                         : "local_{$v->id}"
                 ),
         ]);
+        Log::info('Data fetch took:' . (microtime(true) - $start) . 's');
+        Log::info('Local vacancies: ' . $localVacancies->count());
 
         $hhItems = $hhVacancies['items'] ?? [];
         $vacanciesPayload = [];
