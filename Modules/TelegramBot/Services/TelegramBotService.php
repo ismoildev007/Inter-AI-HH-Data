@@ -63,10 +63,10 @@ class TelegramBotService
 
         $user  = User::where('chat_id', $chatId)->first();
         if (!$user) {
-            $webAppUrl = "https://vacancies.inter-ai.uz/demo-register?locale={$langCode}&chat_id={$chatId}";
+            $webAppUrl = "https://vacancies.inter-ai.uz/register?locale={$langCode}&chat_id={$chatId}";
             Log::info("Generated WebApp URL => {$webAppUrl}");
         } else {
-            $webAppUrl = "https://vacancies.inter-ai.uz/register?locale={$langCode}";
+            $webAppUrl = "https://vacancies.inter-ai.uz/login?locale={$langCode}";
             Log::info("User exists. Generated WebApp URL => {$webAppUrl}");
         }
 
