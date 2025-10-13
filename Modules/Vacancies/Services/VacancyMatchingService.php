@@ -30,21 +30,7 @@ class VacancyMatchingService
         Log::info('Job started for resume', ['resume_id' => $resume->id, 'query' => $query]);
         $start = microtime(true);
 
-        // $pool = Pool::create();
-
-        // $pool[] = async(fn() => cache()->remember(
-        //     "hh:search:{$query}:area97",
-        //     now()->addMinutes(30),
-        //     fn() => $this->hhRepository->search($query, 0, 100, ['area' => 97])
-        // ));
-        // $pool[] = async(
-        //     fn() => Vacancy::where('title', 'like', "%{$query}%")
-        //         ->get()
-        //         ->keyBy(fn($v) => $v->source === 'hh' && $v->external_id ? $v->external_id : "local_{$v->id}")
-        // );
-
-        // $results = await($pool);
-        $words = explode(' ', $query);
+        $words = array_map('trim', explode(',', $query));
 
         [$hhVacancies, $localVacancies] = Concurrency::run([
             fn() => cache()->remember(
@@ -56,7 +42,7 @@ class VacancyMatchingService
                 ->where('status', 'publish')
                 ->where(function ($q) use ($words) {
                     foreach ($words as $word) {
-                        $q->where(function ($sub) use ($word) {
+                        $q->orWhere(function ($sub) use ($word) {
                             $sub->where('title', 'ilike', "%{$word}%")
                                 ->orWhere('description', 'ilike', "%{$word}%");
                         });
@@ -69,12 +55,14 @@ class VacancyMatchingService
                         : "local_{$v->id}"
                 ),
         ]);
+
         Log::info('Data fetch took:' . (microtime(true) - $start) . 's');
         Log::info('Local vacancies: ' . $localVacancies->count());
         Log::info('hh vacancies count: ' . count($hhVacancies['items'] ?? []));
 
         $hhItems = $hhVacancies['items'] ?? [];
         $vacanciesPayload = [];
+
         foreach ($localVacancies as $v) {
             $vacanciesPayload[] = [
                 'id'   => $v->id,
