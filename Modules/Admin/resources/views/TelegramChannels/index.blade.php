@@ -55,6 +55,7 @@
                     <thead>
                         <tr>
                             
+                            <th class="text-muted text-center" style="width: 90px;">ID</th>
                             <th class="text-muted">Channel ID</th>
                             <th class="text-muted">Username</th>
                             <th class="text-muted">Role</th>
@@ -64,7 +65,12 @@
                     <tbody>
                         @forelse($channels as $ch)
                             <tr @if($ch->is_target) class="table-success" @endif>
-                               
+                                <td class="text-center align-middle">
+                                    <span class="badge bg-light text-primary border border-primary px-3 py-2 fw-semibold">
+                                        {{ (method_exists($channels, 'firstItem') ? ($channels->firstItem() ?? 1) : 1) + $loop->index }}
+                                    </span>
+                                  
+                                </td>
                                 <td>{{ $ch->channel_id }}</td>
                                 <td>{{ $ch->username ?: '—' }}</td>
                                 <td>

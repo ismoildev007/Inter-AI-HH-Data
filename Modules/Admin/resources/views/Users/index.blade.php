@@ -50,6 +50,7 @@
                     <thead>
                         <tr>
                           
+                            <th class="text-muted text-center" style="width: 90px;">ID</th>
                             <th class="text-muted">User</th>
                             <th class="text-muted">Email</th>
                             <!--<th class="text-muted">Role</th>-->
@@ -60,7 +61,12 @@
                     <tbody>
                         @forelse($users as $u)
                             <tr>
-                              
+                                <td class="text-center align-middle">
+                                    <span class="badge bg-light text-primary border border-primary px-3 py-2 fw-semibold">
+                                        {{ (method_exists($users, 'firstItem') ? ($users->firstItem() ?? 1) : 1) + $loop->index }}
+                                    </span>
+                                    
+                                </td>
                                 <td>
                                     <div class="d-flex align-items-center gap-2">
                                         <div class="avatar-image avatar-sm">
@@ -85,7 +91,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="6" class="text-center text-muted py-4">No users found.</td>
+                                <td colspan="5" class="text-center text-muted py-4">No users found.</td>
                             </tr>
                         @endforelse
                     </tbody>

@@ -50,6 +50,7 @@
                     <thead>
                         <tr>
                             
+                            <th class="text-muted text-center" style="width: 90px;">ID</th>
                             <th class="text-muted">Title</th>
                             <th class="text-muted">User</th>
                             <th class="text-muted">Created</th>
@@ -59,7 +60,12 @@
                     <tbody>
                         @forelse($resumes as $r)
                             <tr>
-                               
+                                <td class="text-center align-middle">
+                                    <span class="badge bg-light text-primary border border-primary px-3 py-2 fw-semibold">
+                                        {{ (method_exists($resumes, 'firstItem') ? ($resumes->firstItem() ?? 1) : 1) + $loop->index }}
+                                    </span>
+                                   
+                                </td>
                                 <td>
                                     <div class="d-flex align-items-center gap-2">
                                         <div class="fw-semibold text-dark">{{ $r->title ?? '—' }}</div>
