@@ -49,7 +49,7 @@
                 <table class="table align-middle mb-0">
                     <thead>
                         <tr>
-                            <th class="text-muted">ID</th>
+                          
                             <th class="text-muted">User</th>
                             <th class="text-muted">Email</th>
                             <!--<th class="text-muted">Role</th>-->
@@ -60,7 +60,7 @@
                     <tbody>
                         @forelse($users as $u)
                             <tr>
-                                <td class="fw-semibold text-dark">{{ $u->id }}</td>
+                              
                                 <td>
                                     <div class="d-flex align-items-center gap-2">
                                         <div class="avatar-image avatar-sm">
