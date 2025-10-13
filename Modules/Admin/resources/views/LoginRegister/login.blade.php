@@ -28,8 +28,9 @@
                 <div class="card mb-4 mt-5 mx-4 mx-sm-0 position-relative" style="z-index:1;">
                     <div
                         class="wd-50 bg-white p-2 rounded-circle shadow-lg position-absolute translate-middle top-0 start-50">
-                        <img src="/assets/images/logo-abbr.png"
-                            alt="Logo" class="img-fluid">
+                        <img src="{{ asset('assets/images/avatar/5.svg') }}"
+                            alt=""
+                            class="img-fluid">
                     </div>
                     <div class="card-body p-sm-5">
                         <h2 class="fs-20 fw-bolder mb-4">Login</h2>
@@ -60,13 +61,7 @@
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                             </div>
-                            <div class="d-flex align-items-center justify-content-between">
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" name="remember" id="rememberMe"
-                                        {{ old('remember') ? 'checked' : '' }}>
-                                    <label class="form-check-label c-pointer" for="rememberMe">Remember Me</label>
-                                </div>
-                            </div>
+
                             <div class="mt-5">
                                 <button type="submit" class="btn btn-lg btn-primary w-100">Login</button>
                             </div>
@@ -85,9 +80,7 @@
     <!--! BEGIN: Apps Init  !-->
     <script src="/assets/js/common-init.min.js"></script>
     <script src="/assets/js/apps-storage-init.min.js"></script>
-    <!--! END: Apps Init !-->
-    <!--! BEGIN: Theme Customizer  !-->
-    <script src="/assets/js/theme-customizer-init.min.js"></script>
+
 </body>
 
 </html>
