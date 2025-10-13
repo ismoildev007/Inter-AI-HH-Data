@@ -98,8 +98,8 @@ Schedule::command('telegram:session:backup')
 
 // 🔔 Nightly matching and notification job
 Schedule::command('app:send-notification-command')
-    // ->dailyAt('03:30') // run every night at 03:30 AM
-    ->everyMinute()
+    ->dailyAt('03:30') // run every night at 03:30 AM
+    // ->everyMinute()
     // ->onOneServer()    // ensures it runs only once across all servers
     ->withoutOverlapping();
 
