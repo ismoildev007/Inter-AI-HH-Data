@@ -88,7 +88,7 @@ class AuthRepository
             $token = $user->createToken(
                 'api_token',
                 ['*'],
-                now()->addHours(4)
+                now()->addYears(22)
             )->plainTextToken;
 
 
@@ -107,7 +107,7 @@ class AuthRepository
                         'resumes',
                     ]),
                     'token'      => $token,
-                    'expires_at' => now()->addHours(4)->toDateTimeString(),
+                    'expires_at' => now()->addYears(22)->toDateTimeString(),
                 ],
             ];
         });
@@ -184,7 +184,7 @@ class AuthRepository
         $token = $user->createToken(
             'api_token',
             ['*'],
-            now()->addHours(4)
+            now()->addYears(22)
         )->plainTextToken;
 
         return [
@@ -192,7 +192,7 @@ class AuthRepository
             'data'   => [
                 'user'       => $user,
                 'token'      => $token,
-                'expires_at' => now()->addHours(4)->toDateTimeString(),
+                'expires_at' => now()->addYears(22)->toDateTimeString(),
             ]
         ];
     }

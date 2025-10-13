@@ -8,6 +8,7 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
 use Modules\Vacancies\Services\VacancyMatchingService;
 use Telegram\Bot\Api;
+use Telegram\Bot\Keyboard\Keyboard;
 
 class SendNotificationCommand extends Command
 {
@@ -72,13 +73,42 @@ class SendNotificationCommand extends Command
             $this->line("   🎯 Total new matches for user {$user->first_name}: {$totalNewMatches}");
             if ($totalNewMatches > 0) {
                 try {
-                    $message = "💼 *Good news!*\n\nWe found *{$totalNewMatches}* new matching vacancies for your resume.\n\n👉 Check your account to view them.";
-                    $telegram->sendMessage([
-                        'chat_id' => $user->chat_id,
-                        'text' => $message,
-                        'parse_mode' => 'Markdown',
-                    ]);
+                    $langCode = $user->language ?? 'ru';
 
+                    if ($user->language === 'uz') {
+                        $message = "Sun’iy intellekt siz uchun aynan mos bo‘lgan ish o‘rnini topdi! 🚀\n\nImkonni qo‘ldan boy bermang — batafsil ma’lumotni ilovada ko’rishingiz mumkin👇";
+                        $buttonText = "Akkauntga kirish";
+                    } elseif ($user->language === 'ru') {
+                        $message = "Наш ИИ нашёл для вас вакансию, которая идеально подходит! 🚀 \n\nНе упустите шанс — посмотрите подробности прямо сейчас в приложении 👇";
+                        $buttonText = "Войти в аккаунт";
+                    } else {
+                        $message = "Our AI has found a job that perfectly matches your profile! 🚀\n\nDon’t miss this opportunity — check the details in the app right now 👇";
+                        $buttonText = "Enter Account";
+                    }
+
+                    $webAppUrl = "https://vacancies.inter-ai.uz?chat_id={$user->chat_id}&locale={$langCode}";
+
+                    $inlineKeyboard = Keyboard::make()
+                        ->inline()
+                        ->row([
+                            Keyboard::inlineButton([
+                                'text'    => $buttonText,
+                                'web_app' => ['url' => $webAppUrl],
+                            ]),
+                        ]);
+
+                    try {
+                        $telegram->sendMessage([
+                            'chat_id'      => $user->chat_id,
+                            'text'         => $message,
+                            'parse_mode'   => 'Markdown',
+                            'reply_markup' => $inlineKeyboard,
+                        ]);
+
+                        Log::info("✅ Dashboard button sent to user {$user->id}");
+                    } catch (\Throwable $e) {
+                        Log::error("❌ Telegram send failed for user {$user->id}: " . $e->getMessage());
+                    }
                     $this->info("✅ Sent message to {$user->email} ({$totalNewMatches} matches)");
                     Log::info("✅ Notification sent to user {$user->id}");
                 } catch (\Throwable $e) {
@@ -89,6 +119,5 @@ class SendNotificationCommand extends Command
             }
         }
         Log::info('✅ Matching and notifications completed.');
-
     }
 }
