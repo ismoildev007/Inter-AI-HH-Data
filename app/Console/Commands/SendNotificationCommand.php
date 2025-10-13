@@ -38,6 +38,7 @@ class SendNotificationCommand extends Command
             })
             ->with('resumes')
             ->get();
+        $this->line('Found ' . $users->count() . ' users with resumes and chat IDs.');
 
         if ($users->isEmpty()) {
             $this->warn('No users found with valid resumes and chat IDs.');
