@@ -28,7 +28,7 @@ class ResumeService
     public function create(array $data): Resume
     {
         if (isset($data['file'])) {
-            $path = $data['file']->store('resumes', 'public');
+            $path = $data['file']->store('resumes', 'spaces');
             $data['file_path'] = $path;
             $data['file_mime'] = $data['file']->getMimeType();
             $data['file_size'] = $data['file']->getSize();
