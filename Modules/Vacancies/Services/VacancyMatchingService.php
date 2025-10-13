@@ -108,7 +108,7 @@ class VacancyMatchingService
             Log::info('No vacancies to match for resume', ['resume_id' => $resume->id]);
             return [];
         }
-        $url = config('services.matcher.url', 'https://python.inter-ai.uz/bulk-match-fast');
+        $url = config('services.matcher.url', 'http://190.231.99.173:6302/bulk-match-fast');
         $response = Http::retry(3, 200)->timeout(30)->post($url, [
             'resumes'   => [mb_substr($resume->parsed_text, 0, 3000)],
             'vacancies' => array_map(fn($v) => [
