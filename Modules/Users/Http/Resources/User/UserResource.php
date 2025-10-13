@@ -22,13 +22,13 @@ class UserResource extends JsonResource
 //            'avatar'     => $this->avatar_path,
 //            'role'       => new RoleResource($this->whenLoaded('role')),
             'resumes' => ResumeResource::collection($this->whenLoaded('resumes')),
-//            'settings'   => new UserSettingResource($this->whenLoaded('settings')),
-//            'credit'     => new UserCreditResource($this->whenLoaded('credit')),
+            'settings'   => new UserSettingResource($this->whenLoaded('settings')),
+            'credit'     => new UserCreditResource($this->whenLoaded('credit')),
 //            'preferences'=> UserPreferenceResource::collection($this->whenLoaded('preferences')),
 //            'locations'  => UserLocationResource::collection($this->whenLoaded('locations')),
 //            'job_types'  => UserJobTypeResource::collection($this->whenLoaded('jobTypes')),
 //            'profile_views' => UserProfileViewResource::collection($this->whenLoaded('profileViews')),
-//            'created_at' => $this->created_at,
+            'created_at' => $this->created_at,
             'hh_account_status' => $hhAccount ? true : false,
         ];
     }
