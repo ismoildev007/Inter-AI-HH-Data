@@ -29,7 +29,8 @@ class User extends Authenticatable
         'avatar_path',
         'verify_code',
         'role_id',
-        'chat_id'
+        'chat_id',
+        'language'
     ];
 
     /**

@@ -68,6 +68,13 @@ class HHVacancyController extends Controller
         $user = auth()->user();
         $vacancy = Vacancy::where('id', $id)->first();
 
+        if (!$vacancy) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Vacancy not found',
+            ], 404);
+        }
+
         return response()->json([
             'success' => true,
             'data' => [
