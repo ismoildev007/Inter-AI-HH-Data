@@ -16,7 +16,7 @@ class DashboardController extends Controller
      */
     public function index(Request $request)
     {
-        $user = User::where('chat_id', $request->input('chat_id'))->firstOrFail();
+        $user = Auth::user();
         $totalMatchResults = $user->matchResults()->count();
 
         $applied = Application::where('user_id', $user->id)->count();
