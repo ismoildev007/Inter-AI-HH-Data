@@ -4,6 +4,7 @@ namespace Modules\Vacancies\Jobs;
 
 use App\Models\Resume;
 use App\Models\MatchResult;
+use App\Models\Vacancy;
 use Illuminate\Bus\Queueable;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -14,6 +15,8 @@ use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\DB;
 use Modules\Vacancies\Interfaces\VacancyInterface;
 use Modules\Vacancies\Interfaces\HHVacancyInterface;
+
+use App\Helpers\TranslitHelper;
 
 class MatchResumeJob implements ShouldQueue
 {
@@ -45,7 +48,15 @@ class MatchResumeJob implements ShouldQueue
         }
 
         // --- Fetch from local DB (own vacancies) ---
-        $localVacancies = \App\Models\Vacancy::where('title', 'like', "%{$this->query}%")
+
+        $latinQuery  = TranslitHelper::toLatin($this->query);
+        $cyrilQuery  = TranslitHelper::toCyrillic($this->query);
+
+        $localVacancies = Vacancy::query()
+            ->where(function ($q) use ($latinQuery, $cyrilQuery) {
+                $q->where('title', 'like', "%{$latinQuery}%")
+                    ->orWhere('title', 'like', "%{$cyrilQuery}%");
+            })
             ->get()
             ->keyBy(function ($v) {
                 return $v->source === 'hh' && $v->external_id ? $v->external_id : "local_{$v->id}";
@@ -129,7 +140,7 @@ class MatchResumeJob implements ShouldQueue
                     // This came from HH, not saved before
                     $payload = $vacancyMap["new_{$match['vacancy_index']}"] ?? null;
                     if ($payload && isset($payload['external_id'])) {
-                        $vac = $vacancyRepository->createFromHH($payload['raw']); 
+                        $vac = $vacancyRepository->createFromHH($payload['raw']);
                     }
                 }
 
