@@ -12,4 +12,8 @@ Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
 //Route::get('visits/track', [TrackVisitApiController::class, 'track']);
 });
 
-
+Route::fallback(function () {
+    return response()->json([
+        'message' => 'Endpoint not found.',
+    ], 404);
+});
