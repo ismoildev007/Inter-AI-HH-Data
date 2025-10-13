@@ -61,6 +61,8 @@
             letter-spacing: 0.12em;
             text-transform: uppercase;
             margin-bottom: 18px;
+            color: #fff;
+            
         }
 
         .users-hero-left h1 {
@@ -333,11 +335,79 @@
         }
 
         .users-pagination {
-            padding: 20px 32px 26px;
+            padding: 20px 32px 40px;
             border-top: 1px solid rgba(15, 35, 87, 0.06);
             background: #fff;
             display: flex;
             justify-content: center;
+        }
+
+        .users-pagination nav > ul,
+        .users-pagination nav > div > ul,
+        .users-pagination nav > div > div > ul,
+        .users-pagination nav .pagination {
+            display: inline-flex;
+            gap: 12px;
+            padding: 10px 16px;
+            border-radius: 999px;
+            background: linear-gradient(135deg, rgba(230, 236, 255, 0.92), rgba(206, 220, 255, 0.88));
+            box-shadow: 0 12px 24px rgba(26, 44, 104, 0.18);
+            align-items: center;
+        }
+
+        .users-pagination nav > ul li a,
+        .users-pagination nav > ul li span,
+        .users-pagination nav > div > ul li a,
+        .users-pagination nav > div > ul li span,
+        .users-pagination nav > div > div > ul li a,
+        .users-pagination nav > div > div > ul li span,
+        .users-pagination nav .pagination li a,
+        .users-pagination nav .pagination li span {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            font-weight: 600;
+            font-size: 0.95rem;
+            color: #1a2f70;
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+
+        .users-pagination nav > ul li a:hover,
+        .users-pagination nav > div > ul li a:hover,
+        .users-pagination nav > div > div > ul li a:hover,
+        .users-pagination nav .pagination li a:hover {
+            background: #ffffff;
+            box-shadow: 0 8px 18px rgba(26, 44, 104, 0.22);
+            transform: translateY(-2px);
+        }
+
+        .users-pagination nav > ul li span[aria-current="page"],
+        .users-pagination nav > div > ul li span[aria-current="page"],
+        .users-pagination nav > div > div > ul li span[aria-current="page"],
+        .users-pagination nav .pagination li span[aria-current="page"] {
+            background: linear-gradient(135deg, #4a76ff, #265bff);
+            color: #fff;
+            box-shadow: 0 12px 24px rgba(38, 91, 255, 0.35);
+        }
+
+        .users-pagination nav > ul li:first-child a,
+        .users-pagination nav > ul li:last-child a,
+        .users-pagination nav > div > ul li:first-child a,
+        .users-pagination nav > div > ul li:last-child a,
+        .users-pagination nav > div > div > ul li:first-child a,
+        .users-pagination nav > div > div > ul li:last-child a,
+        .users-pagination nav .pagination li:first-child a,
+        .users-pagination nav .pagination li:last-child a {
+            width: auto;
+            padding: 0 18px;
+            border-radius: 999px;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
         }
 
         @media (max-width: 991px) {
@@ -395,6 +465,39 @@
             .users-action {
                 justify-content: flex-start;
             }
+
+            .users-pagination nav > ul,
+            .users-pagination nav > div > ul,
+            .users-pagination nav > div > div > ul,
+            .users-pagination nav .pagination {
+                gap: 6px;
+                padding: 8px 10px;
+            }
+
+            .users-pagination nav > ul li a,
+            .users-pagination nav > ul li span,
+            .users-pagination nav > div > ul li a,
+            .users-pagination nav > div > ul li span,
+            .users-pagination nav > div > div > ul li a,
+            .users-pagination nav > div > div > ul li span,
+            .users-pagination nav .pagination li a,
+            .users-pagination nav .pagination li span {
+                width: 36px;
+                height: 36px;
+                font-size: 0.85rem;
+            }
+
+            .users-pagination nav > ul li:first-child a,
+            .users-pagination nav > ul li:last-child a,
+            .users-pagination nav > div > ul li:first-child a,
+            .users-pagination nav > div > ul li:last-child a,
+            .users-pagination nav > div > div > ul li:first-child a,
+            .users-pagination nav > div > div > ul li:last-child a,
+            .users-pagination nav .pagination li:first-child a,
+            .users-pagination nav .pagination li:last-child a {
+                padding: 0 12px;
+                font-size: 0.75rem;
+            }
         }
     </style>
 
@@ -429,7 +532,7 @@
                     <i class="feather-users"></i>
                     Team overview
                 </span>
-                <h1>Users directory</h1>
+                <h1 style="color: #fff;">Users directory</h1>
                 <p>Browse every registered member, keep track of new sign-ups, and jump directly into detailed
                     profiles with a single click.</p>
             </div>
@@ -556,7 +659,7 @@
 
         @if($users instanceof \Illuminate\Contracts\Pagination\Paginator || $users instanceof \Illuminate\Contracts\Pagination\LengthAwarePaginator)
             <div class="users-pagination">
-                {{ $users->links() }}
+                {{ $users->links('vendor.pagination.bootstrap-5') }}
             </div>
         @endif
     </div>

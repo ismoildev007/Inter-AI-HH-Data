@@ -68,6 +68,7 @@
             font-size: clamp(2.2rem, 3vw, 2.8rem);
             font-weight: 700;
             letter-spacing: -0.01em;
+            color: #fff;
         }
 
         .resumes-hero-left p {
@@ -304,11 +305,79 @@
         }
 
         .resumes-pagination {
-            padding: 20px 32px 26px;
+            padding: 20px 32px 40px;
             border-top: 1px solid rgba(15, 35, 87, 0.06);
             background: #fff;
             display: flex;
             justify-content: center;
+        }
+
+        .resumes-pagination nav > ul,
+        .resumes-pagination nav > div > ul,
+        .resumes-pagination nav > div > div > ul,
+        .resumes-pagination nav .pagination {
+            display: inline-flex;
+            gap: 12px;
+            padding: 10px 16px;
+            border-radius: 999px;
+            background: linear-gradient(135deg, rgba(230, 236, 255, 0.92), rgba(206, 220, 255, 0.88));
+            box-shadow: 0 12px 24px rgba(26, 44, 104, 0.18);
+            align-items: center;
+        }
+
+        .resumes-pagination nav > ul li a,
+        .resumes-pagination nav > ul li span,
+        .resumes-pagination nav > div > ul li a,
+        .resumes-pagination nav > div > ul li span,
+        .resumes-pagination nav > div > div > ul li a,
+        .resumes-pagination nav > div > div > ul li span,
+        .resumes-pagination nav .pagination li a,
+        .resumes-pagination nav .pagination li span {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            font-weight: 600;
+            font-size: 0.95rem;
+            color: #1a2f70;
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+
+        .resumes-pagination nav > ul li a:hover,
+        .resumes-pagination nav > div > ul li a:hover,
+        .resumes-pagination nav > div > div > ul li a:hover,
+        .resumes-pagination nav .pagination li a:hover {
+            background: #ffffff;
+            box-shadow: 0 8px 18px rgba(26, 44, 104, 0.22);
+            transform: translateY(-2px);
+        }
+
+        .resumes-pagination nav > ul li span[aria-current="page"],
+        .resumes-pagination nav > div > ul li span[aria-current="page"],
+        .resumes-pagination nav > div > div > ul li span[aria-current="page"],
+        .resumes-pagination nav .pagination li span[aria-current="page"] {
+            background: linear-gradient(135deg, #4a76ff, #265bff);
+            color: #fff;
+            box-shadow: 0 12px 24px rgba(38, 91, 255, 0.35);
+        }
+
+        .resumes-pagination nav > ul li:first-child a,
+        .resumes-pagination nav > ul li:last-child a,
+        .resumes-pagination nav > div > ul li:first-child a,
+        .resumes-pagination nav > div > ul li:last-child a,
+        .resumes-pagination nav > div > div > ul li:first-child a,
+        .resumes-pagination nav > div > div > ul li:last-child a,
+        .resumes-pagination nav .pagination li:first-child a,
+        .resumes-pagination nav .pagination li:last-child a {
+            width: auto;
+            padding: 0 18px;
+            border-radius: 999px;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
         }
 
         @media (max-width: 991px) {
@@ -352,6 +421,39 @@
                 letter-spacing: 0.1em;
                 color: #8a94b8;
                 margin-right: 12px;
+            }
+
+            .resumes-pagination nav > ul,
+            .resumes-pagination nav > div > ul,
+            .resumes-pagination nav > div > div > ul,
+            .resumes-pagination nav .pagination {
+                gap: 6px;
+                padding: 8px 10px;
+            }
+
+            .resumes-pagination nav > ul li a,
+            .resumes-pagination nav > ul li span,
+            .resumes-pagination nav > div > ul li a,
+            .resumes-pagination nav > div > ul li span,
+            .resumes-pagination nav > div > div > ul li a,
+            .resumes-pagination nav > div > div > ul li span,
+            .resumes-pagination nav .pagination li a,
+            .resumes-pagination nav .pagination li span {
+                width: 36px;
+                height: 36px;
+                font-size: 0.85rem;
+            }
+
+            .resumes-pagination nav > ul li:first-child a,
+            .resumes-pagination nav > ul li:last-child a,
+            .resumes-pagination nav > div > ul li:first-child a,
+            .resumes-pagination nav > div > ul li:last-child a,
+            .resumes-pagination nav > div > div > ul li:first-child a,
+            .resumes-pagination nav > div > div > ul li:last-child a,
+            .resumes-pagination nav .pagination li:first-child a,
+            .resumes-pagination nav .pagination li:last-child a {
+                padding: 0 12px;
+                font-size: 0.75rem;
             }
 
             .resumes-table-card .table tbody td:first-child {
@@ -538,7 +640,7 @@
 
         @if($resumes instanceof \Illuminate\Contracts\Pagination\Paginator || $resumes instanceof \Illuminate\Contracts\Pagination\LengthAwarePaginator)
             <div class="resumes-pagination">
-                {{ $resumes->links() }}
+                {{ $resumes->links('vendor.pagination.bootstrap-5') }}
             </div>
         @endif
     </div>

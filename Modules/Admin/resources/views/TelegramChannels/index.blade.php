@@ -68,6 +68,7 @@
             font-size: clamp(2.2rem, 3vw, 2.9rem);
             font-weight: 700;
             letter-spacing: -0.01em;
+            color: #fff;
         }
 
         .telegram-hero-left p {
