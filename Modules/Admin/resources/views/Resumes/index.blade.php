@@ -211,6 +211,10 @@
             vertical-align: middle;
         }
 
+        .resumes-table-card .table tbody tr {
+            cursor: pointer;
+        }
+
         .resumes-table-card .table tbody tr:hover {
             background: rgba(80, 118, 255, 0.08);
             transform: translateY(-1px);
@@ -221,14 +225,14 @@
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            width: 58px;
-            height: 58px;
+            width: 46px;
+            height: 46px;
             background: linear-gradient(135deg, #eff3ff, #d9e1ff);
-            border-radius: 18px;
-            font-weight: 700;
-            font-size: 1.2rem;
+            border-radius: 14px;
+            font-weight: 600;
+            font-size: 1rem;
             color: #1f2f7a;
-            box-shadow: 0 14px 28px rgba(31, 51, 126, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+            box-shadow: 0 10px 20px rgba(31, 51, 126, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.85);
         }
 
         .resumes-title {
@@ -481,12 +485,12 @@
                         <th class="text-muted">Resume</th>
                         <th class="text-muted">Owner</th>
                         <th class="text-muted">Created</th>
-                        <th class="text-end text-muted">Actions</th>
+                      
                     </tr>
                 </thead>
                 <tbody>
                     @forelse($resumes as $r)
-                        <tr>
+                        <tr onclick="window.location.href='{{ route('admin.resumes.show', $r->id) }}'">
                             <td data-label="#" class="text-center align-middle">
                                 <div class="resumes-index-pill">
                                     {{ (method_exists($resumes, 'firstItem') ? ($resumes->firstItem() ?? 1) : 1) + $loop->index }}
@@ -519,11 +523,7 @@
                                     @endif
                                 </div>
                             </td>
-                            <td data-label="Actions" class="text-end resumes-action">
-                                <a href="{{ route('admin.resumes.show', $r->id) }}" class="btn btn-sm btn-primary shadow-sm">
-                                    <i class="feather-eye me-1"></i> View resume
-                                </a>
-                            </td>
+
                         </tr>
                     @empty
                         <tr>

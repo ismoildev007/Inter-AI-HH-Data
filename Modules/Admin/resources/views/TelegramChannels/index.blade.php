@@ -244,14 +244,14 @@
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            width: 58px;
-            height: 58px;
+            width: 46px;
+            height: 46px;
             background: linear-gradient(135deg, #eff3ff, #d9e1ff);
-            border-radius: 18px;
-            font-weight: 700;
-            font-size: 1.2rem;
+            border-radius: 14px;
+            font-weight: 600;
+            font-size: 1rem;
             color: #1f2f7a;
-            box-shadow: 0 14px 28px rgba(31, 51, 126, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+            box-shadow: 0 10px 20px rgba(31, 51, 126, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.85);
         }
 
         .telegram-channel-id {
