@@ -32,12 +32,7 @@ class SendNotificationCommand extends Command
         $token = '8086335636:AAGGAWtnPfbDGUviunLMwk7S7y2yNPUkl4Q';
         $telegram = new Api($token);
 
-        $users = User::whereNotNull('chat_id')
-            ->whereHas('resumes', function ($q) {
-                $q->whereNotNull('parsed_text');
-            })
-            ->with('resumes')
-            ->get();
+        $users = User::get();
         $this->line('Found ' . $users->count() . ' users with resumes and chat IDs.');
 
         if ($users->isEmpty()) {
