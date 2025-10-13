@@ -327,14 +327,18 @@
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            width: 46px;
-            height: 46px;
-            border-radius: 14px;
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
             background: linear-gradient(135deg, #eff3ff, #d9e1ff);
             font-weight: 600;
-            font-size: 1rem;
+            font-size: 0.95rem;
             color: #1f2f7a;
-            box-shadow: 0 10px 20px rgba(31, 51, 126, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.85);
+            box-shadow: 0 8px 18px rgba(31, 51, 126, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.85);
+        }
+
+        .categories-list-row td:first-child {
+            width: 70px;
         }
 
         .categories-empty {
@@ -569,8 +573,8 @@
             <table class="table align-middle mb-0">
                 <thead>
                     <tr>
-                        <th class="text-muted">Listing</th>
                         <th class="text-muted">ID</th>
+                        
                         <th class="text-muted">Category</th>
                         <th class="text-end text-muted">Vacancies</th>
                     </tr>
@@ -590,7 +594,7 @@
                             <td class="text-center" data-label="#">
                                 <div class="categories-index-pill">{{ $firstNumber + $index }}</div>
                             </td>
-                            <td class="text-muted small" data-label="ID">{{ $categorySlug }}</td>
+                            
                             <td class="text-capitalize fw-semibold text-dark" data-label="Category">{{ $row->category ?: 'other' }}</td>
                             <td class="text-end fw-semibold" data-label="Vacancies">{{ number_format($row->c) }}</td>
                         </tr>
