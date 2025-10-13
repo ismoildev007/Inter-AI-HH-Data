@@ -207,10 +207,14 @@
             vertical-align: middle;
         }
 
-        .category-vacancies-card .table tbody tr:hover {
+        .category-vacancies-list-row {
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .category-vacancies-list-row:hover {
             background: rgba(86, 134, 255, 0.08);
             transform: translateY(-1px);
-            transition: all 0.2s ease;
         }
 
         .category-vacancies-index-pill {
@@ -455,9 +459,9 @@
                 <thead>
                     <tr>
                         <th class="text-muted">Listing</th>
+                        <th class="text-muted">ID</th>
                         <th class="text-muted">Title</th>
                         <th class="text-muted">Created</th>
-                        <th class="text-end text-muted">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -469,17 +473,13 @@
                                 'filter' => $currentFilter !== 'all' ? $currentFilter : null,
                             ], fn ($value) => !is_null($value));
                         @endphp
-                        <tr>
-                            <td data-label="#" class="text-center">
+                        <tr class="category-vacancies-list-row" onclick="window.location.href='{{ route('admin.vacancies.show', $viewParams) }}'">
+                            <td class="text-center" data-label="#">
                                 <div class="category-vacancies-index-pill">{{ $firstNumber + $index }}</div>
                             </td>
-                            <td data-label="Title" class="fw-semibold text-dark">{{ $vacancy->title ?? '—' }}</td>
-                            <td data-label="Created" class="text-nowrap">{{ optional($vacancy->created_at)->format('M d, Y') ?? '—' }}</td>
-                            <td data-label="Actions" class="text-end">
-                                <a href="{{ route('admin.vacancies.show', $viewParams) }}" class="btn btn-sm btn-primary shadow-sm">
-                                    <i class="feather-eye me-1"></i> View
-                                </a>
-                            </td>
+                            <td class="text-muted small" data-label="ID">{{ $vacancy->id }}</td>
+                            <td class="fw-semibold text-dark" data-label="Title">{{ $vacancy->title ?? '—' }}</td>
+                            <td class="text-nowrap" data-label="Created">{{ optional($vacancy->created_at)->format('M d, Y') ?? '—' }}</td>
                         </tr>
                     @empty
                         <tr>

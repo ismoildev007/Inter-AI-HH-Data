@@ -313,10 +313,14 @@
             vertical-align: middle;
         }
 
-        .categories-card .table tbody tr:hover {
+        .categories-list-row {
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .categories-list-row:hover {
             background: rgba(86, 134, 255, 0.08);
             transform: translateY(-1px);
-            transition: all 0.2s ease;
         }
 
         .categories-index-pill {
@@ -440,31 +444,14 @@
                 display: none;
             }
 
-            .categories-card .table tbody tr {
-                display: block;
-                margin-bottom: 18px;
-                border-radius: 20px;
-                border: 1px solid rgba(15, 35, 87, 0.08);
-                padding: 18px;
-                background: #fff;
-                transform: none !important;
+            .categories-list-row {
+                cursor: pointer;
+                transition: all 0.2s ease;
             }
 
-            .categories-card .table tbody td {
-                display: flex;
-                justify-content: space-between;
-                padding: 10px 0;
-                border: none;
-            }
-
-            .categories-card .table tbody td::before {
-                content: attr(data-label);
-                font-size: 0.75rem;
-                font-weight: 600;
-                text-transform: uppercase;
-                letter-spacing: 0.1em;
-                color: #8a94b8;
-                margin-right: 12px;
+            .categories-list-row:hover {
+                background: rgba(86, 134, 255, 0.08);
+                transform: translateY(-1px);
             }
 
             .categories-pagination nav > ul,
@@ -583,9 +570,9 @@
                 <thead>
                     <tr>
                         <th class="text-muted">Listing</th>
+                        <th class="text-muted">ID</th>
                         <th class="text-muted">Category</th>
                         <th class="text-end text-muted">Vacancies</th>
-                        <th class="text-end text-muted" style="width: 1%;">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -599,17 +586,13 @@
                                 'q' => !empty($searchTerm) ? $searchTerm : null,
                             ], fn ($value) => !is_null($value));
                         @endphp
-                        <tr>
-                            <td data-label="#" class="text-center">
+                        <tr class="categories-list-row" onclick="window.location.href='{{ route('admin.vacancies.by_category', $viewParams) }}'">
+                            <td class="text-center" data-label="#">
                                 <div class="categories-index-pill">{{ $firstNumber + $index }}</div>
                             </td>
-                            <td data-label="Category" class="text-capitalize fw-semibold text-dark">{{ $row->category ?: 'other' }}</td>
-                            <td data-label="Vacancies" class="text-end fw-semibold">{{ number_format($row->c) }}</td>
-                            <td data-label="Actions" class="text-end">
-                                <a href="{{ route('admin.vacancies.by_category', $viewParams) }}" class="btn btn-sm btn-primary shadow-sm">
-                                    <i class="feather-eye me-1"></i> View
-                                </a>
-                            </td>
+                            <td class="text-muted small" data-label="ID">{{ $categorySlug }}</td>
+                            <td class="text-capitalize fw-semibold text-dark" data-label="Category">{{ $row->category ?: 'other' }}</td>
+                            <td class="text-end fw-semibold" data-label="Vacancies">{{ number_format($row->c) }}</td>
                         </tr>
                     @empty
                         <tr>
