@@ -8,10 +8,6 @@
                     </div>
                 </div>
             </a>
-            <div class="nxl-navigation-toggle">
-                <a href="javascript:void(0);" id="menu-mini-button"><i class="feather-align-left"></i></a>
-                <a href="javascript:void(0);" id="menu-expend-button" style="display:none"><i class="feather-arrow-right"></i></a>
-            </div>
         </div>
 
         <div class="header-right ms-auto d-flex align-items-center gap-3">
@@ -48,7 +44,7 @@
                 <a href="{{ route('admin.logout') }}"
                     class="nxl-head-link  text-black"
                     title="Logout">
-                    <i class="feather-log-out"></i>
+                    <i class="feather-log-out text-red"></i>
                 </a>
             </div>
         </div>

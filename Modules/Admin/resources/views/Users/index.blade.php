@@ -1,10 +1,522 @@
 @extends('admin::components.layouts.master')
 
 @section('content')
+    <style>
+        .users-hero {
+            margin: 0 1.5rem 1.5rem;
+            padding: 40px 44px;
+            border-radius: 26px;
+            background: linear-gradient(135deg, #1f3cfd, #4f77ff);
+            color: #fff;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 25px 62px rgba(23, 46, 160, 0.28);
+        }
+
+        .users-hero::before,
+        .users-hero::after {
+            content: '';
+            position: absolute;
+            border-radius: 50%;
+            opacity: 0.18;
+        }
+
+        .users-hero::before {
+            width: 340px;
+            height: 340px;
+            background: rgba(255, 255, 255, 0.7);
+            top: -160px;
+            right: -100px;
+        }
+
+        .users-hero::after {
+            width: 240px;
+            height: 240px;
+            background: rgba(255, 255, 255, 0.35);
+            bottom: -120px;
+            left: -120px;
+        }
+
+        .users-hero-content {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 32px;
+            align-items: flex-start;
+            position: relative;
+            z-index: 1;
+        }
+
+        .users-hero-left {
+            flex: 1 1 320px;
+        }
+
+        .users-hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 16px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.2);
+            font-size: 0.78rem;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            margin-bottom: 18px;
+            color: #fff;
+            
+        }
+
+        .users-hero-left h1 {
+            margin: 0 0 12px;
+            font-size: clamp(2.2rem, 3vw, 2.9rem);
+            font-weight: 700;
+            letter-spacing: -0.01em;
+        }
+
+        .users-hero-left p {
+            margin: 0;
+            max-width: 420px;
+            line-height: 1.6;
+            color: rgba(255, 255, 255, 0.82);
+        }
+
+        .users-stats {
+            flex: 1 1 280px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px;
+        }
+
+        .users-stat-card {
+            background: rgba(255, 255, 255, 0.18);
+            border-radius: 20px;
+            padding: 18px 22px;
+            border: 1px solid rgba(255, 255, 255, 0.28);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45);
+            backdrop-filter: blur(6px);
+        }
+
+        .users-stat-card--compact .value {
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        .users-stat-card .label {
+            display: block;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: rgba(255, 255, 255, 0.72);
+        }
+
+        .users-stat-card .value {
+            display: block;
+            margin-top: 6px;
+            font-size: 1.9rem;
+            font-weight: 700;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .users-stat-card .hint {
+            display: block;
+            margin-top: 8px;
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.72);
+        }
+
+        .users-filter-card {
+            margin: 0 1.5rem 1.5rem;
+            border: none;
+            border-radius: 22px;
+            box-shadow: 0 18px 45px rgba(31, 51, 126, 0.12);
+            overflow: hidden;
+        }
+
+        .users-filter-card .card-body {
+            padding: 26px 32px;
+        }
+
+        .users-filter-header {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 18px;
+        }
+
+        .users-filter-header h6 {
+            margin: 0;
+            font-weight: 600;
+            font-size: 1.05rem;
+        }
+
+        .users-filter-header p {
+            margin: 4px 0 0;
+            color: #5e6a85;
+            font-size: 0.9rem;
+        }
+
+        .users-search-form {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            align-items: center;
+        }
+
+        .users-search-form .input-group {
+            flex: 1 1 320px;
+            background: #f5f7ff;
+            border-radius: 16px;
+            padding: 4px;
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+        }
+
+        .users-search-form .input-group-text {
+            border: none;
+            background: transparent;
+            color: #4f6bff;
+        }
+
+        .users-search-form .form-control {
+            border: none;
+            background: transparent;
+            padding: 12px 16px;
+            font-size: 0.95rem;
+        }
+
+        .users-search-form .form-control:focus {
+            box-shadow: none;
+        }
+
+        .users-search-form .btn {
+            border-radius: 14px;
+            padding: 10px 20px;
+            font-weight: 600;
+        }
+
+        .users-search-form .clear-btn {
+            color: #8a96b8;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.88rem;
+            text-decoration: none;
+        }
+
+        .users-search-form .clear-btn:hover {
+            color: #1f3cfd;
+        }
+
+        .users-table-card {
+            margin: 0 1.5rem 2rem;
+            border: none;
+            border-radius: 24px;
+            box-shadow: 0 24px 50px rgba(21, 37, 97, 0.14);
+            overflow: hidden;
+        }
+
+        .users-table-card .table {
+            margin: 0;
+        }
+
+        .users-table-card .table thead th {
+            padding: 18px 20px;
+            background: rgba(31, 60, 253, 0.08);
+            border: none;
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: #58618c;
+        }
+
+        .users-table-card .table tbody td {
+            padding: 20px;
+            border-top: 1px solid rgba(15, 35, 87, 0.06);
+            vertical-align: middle;
+        }
+
+        .users-table-card .table tbody tr {
+            cursor: pointer;
+        }
+
+        .users-table-card .table tbody tr:hover {
+            background: rgba(80, 118, 255, 0.08);
+            transform: translateY(-1px);
+            transition: all 0.2s ease;
+        }
+
+        .users-index-pill {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 46px;
+            height: 46px;
+            background: linear-gradient(135deg, #eff3ff, #d9e1ff);
+            border-radius: 14px;
+            font-weight: 600;
+            font-size: 1rem;
+            color: #1f2f7a;
+            box-shadow: 0 10px 20px rgba(31, 51, 126, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.85);
+        }
+
+        .users-user-block {
+            display: flex;
+            gap: 14px;
+            align-items: center;
+        }
+
+        .users-user-block .avatar-image {
+            width: 48px;
+            height: 48px;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 10px 24px rgba(32, 52, 122, 0.18);
+        }
+
+        .users-user-block .avatar-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .users-user-block .name {
+            font-weight: 600;
+            font-size: 1rem;
+            color: #172655;
+        }
+
+        .users-user-block .meta {
+            font-size: 0.85rem;
+            color: #6a7397;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .users-email {
+            font-size: 0.95rem;
+            font-weight: 500;
+            color: #1a2c63;
+        }
+
+        .users-email a {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        .users-email a:hover {
+            text-decoration: underline;
+            color: #2546ff;
+        }
+
+        .users-created {
+            font-size: 0.9rem;
+            color: #25335f;
+        }
+
+        .users-created span {
+            display: block;
+            font-size: 0.78rem;
+            color: #8a94b8;
+        }
+
+        .users-action .btn {
+            border-radius: 999px;
+            padding-inline: 18px;
+            font-weight: 600;
+        }
+
+        .users-empty {
+            padding: 42px 0;
+            font-size: 0.95rem;
+            color: #7d88ad;
+        }
+
+        .users-pagination {
+            padding: 20px 32px 40px;
+            border-top: 1px solid rgba(15, 35, 87, 0.06);
+            background: #fff;
+            display: flex;
+            justify-content: center;
+        }
+
+        .users-pagination nav > ul,
+        .users-pagination nav > div > ul,
+        .users-pagination nav > div > div > ul,
+        .users-pagination nav .pagination {
+            display: inline-flex;
+            gap: 12px;
+            padding: 10px 16px;
+            border-radius: 999px;
+            background: linear-gradient(135deg, rgba(230, 236, 255, 0.92), rgba(206, 220, 255, 0.88));
+            box-shadow: 0 12px 24px rgba(26, 44, 104, 0.18);
+            align-items: center;
+        }
+
+        .users-pagination nav > ul li a,
+        .users-pagination nav > ul li span,
+        .users-pagination nav > div > ul li a,
+        .users-pagination nav > div > ul li span,
+        .users-pagination nav > div > div > ul li a,
+        .users-pagination nav > div > div > ul li span,
+        .users-pagination nav .pagination li a,
+        .users-pagination nav .pagination li span {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            font-weight: 600;
+            font-size: 0.95rem;
+            color: #1a2f70;
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+
+        .users-pagination nav > ul li a:hover,
+        .users-pagination nav > div > ul li a:hover,
+        .users-pagination nav > div > div > ul li a:hover,
+        .users-pagination nav .pagination li a:hover {
+            background: #ffffff;
+            box-shadow: 0 8px 18px rgba(26, 44, 104, 0.22);
+            transform: translateY(-2px);
+        }
+
+        .users-pagination nav > ul li span[aria-current="page"],
+        .users-pagination nav > div > ul li span[aria-current="page"],
+        .users-pagination nav > div > div > ul li span[aria-current="page"],
+        .users-pagination nav .pagination li span[aria-current="page"] {
+            background: linear-gradient(135deg, #4a76ff, #265bff);
+            color: #fff;
+            box-shadow: 0 12px 24px rgba(38, 91, 255, 0.35);
+        }
+
+        .users-pagination nav > ul li:first-child a,
+        .users-pagination nav > ul li:last-child a,
+        .users-pagination nav > div > ul li:first-child a,
+        .users-pagination nav > div > ul li:last-child a,
+        .users-pagination nav > div > div > ul li:first-child a,
+        .users-pagination nav > div > div > ul li:last-child a,
+        .users-pagination nav .pagination li:first-child a,
+        .users-pagination nav .pagination li:last-child a {
+            width: auto;
+            padding: 0 18px;
+            border-radius: 999px;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        @media (max-width: 991px) {
+            .users-hero {
+                margin-inline: 1rem;
+                border-radius: 22px;
+                padding: 30px;
+            }
+
+            .users-filter-card,
+            .users-table-card {
+                margin-inline: 1rem;
+            }
+
+            .users-table-card .table thead {
+                display: none;
+            }
+
+            .users-table-card .table tbody tr {
+                display: block;
+                border-radius: 20px;
+                margin-bottom: 18px;
+                padding: 18px;
+                border: 1px solid rgba(15, 35, 87, 0.08);
+                background: #fff;
+                transform: none !important;
+            }
+
+            .users-table-card .table tbody td {
+                display: flex;
+                justify-content: space-between;
+                padding: 12px 0;
+                border: none;
+            }
+
+            .users-table-card .table tbody td::before {
+                content: attr(data-label);
+                font-size: 0.75rem;
+                font-weight: 600;
+                text-transform: uppercase;
+                letter-spacing: 0.1em;
+                color: #8a94b8;
+                margin-right: 12px;
+            }
+
+            .users-table-card .table tbody td:first-child {
+                display: block;
+                margin-bottom: 12px;
+            }
+
+            .users-table-card .table tbody td:first-child::before {
+                content: '';
+            }
+
+            .users-action {
+                justify-content: flex-start;
+            }
+
+            .users-pagination nav > ul,
+            .users-pagination nav > div > ul,
+            .users-pagination nav > div > div > ul,
+            .users-pagination nav .pagination {
+                gap: 6px;
+                padding: 8px 10px;
+            }
+
+            .users-pagination nav > ul li a,
+            .users-pagination nav > ul li span,
+            .users-pagination nav > div > ul li a,
+            .users-pagination nav > div > ul li span,
+            .users-pagination nav > div > div > ul li a,
+            .users-pagination nav > div > div > ul li span,
+            .users-pagination nav .pagination li a,
+            .users-pagination nav .pagination li span {
+                width: 36px;
+                height: 36px;
+                font-size: 0.85rem;
+            }
+
+            .users-pagination nav > ul li:first-child a,
+            .users-pagination nav > ul li:last-child a,
+            .users-pagination nav > div > ul li:first-child a,
+            .users-pagination nav > div > ul li:last-child a,
+            .users-pagination nav > div > div > ul li:first-child a,
+            .users-pagination nav > div > div > ul li:last-child a,
+            .users-pagination nav .pagination li:first-child a,
+            .users-pagination nav .pagination li:last-child a {
+                padding: 0 12px;
+                font-size: 0.75rem;
+            }
+        }
+    </style>
+
+    @php
+        $searchTerm = $search ?? request('q');
+        $isPaginator = $users instanceof \Illuminate\Contracts\Pagination\Paginator;
+        $items = $isPaginator ? $users->getCollection() : collect($users);
+        $totalUsers = $users instanceof \Illuminate\Contracts\Pagination\LengthAwarePaginator ? $users->total() : $items->count();
+        $pageCount = $items->count();
+        $lastJoinedAt = $items->filter(fn ($user) => isset($user->created_at))->max('created_at');
+        $lastJoinedDate = $lastJoinedAt ? $lastJoinedAt->format('M d, Y') : '—';
+        $lastJoinedAgo = $lastJoinedAt ? $lastJoinedAt->diffForHumans() : null;
+        $searchDisplay = $searchTerm ? \Illuminate\Support\Str::limit($searchTerm, 28) : 'None';
+    @endphp
+
     <div class="page-header">
         <div class="page-header-left d-flex align-items-center">
             <div class="page-header-title">
-                <h5 class="m-b-10">Users</h5>
+                <h5 class="m-b-10 text-uppercase text-muted" style="letter-spacing: 0.08em;">Directory</h5>
             </div>
             <ul class="breadcrumb">
                 <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}">Home</a></li>
@@ -13,89 +525,141 @@
         </div>
     </div>
 
-    @php($searchTerm = $search ?? request('q'))
-
-    <div class="card stretch mt-4 ms-4 me-4">
-        <div class="card-header d-flex align-items-center justify-content-between">
-            <!-- Chap tomonda sarlavha -->
-            <div class="card-title mb-0">
-                <h6 class="mb-0">All Users</h6>
+    <div class="users-hero">
+        <div class="users-hero-content">
+            <div class="users-hero-left">
+                <span class="users-hero-badge">
+                    <i class="feather-users"></i>
+                    Team overview
+                </span>
+                <h1 style="color: #fff;">Users directory</h1>
+                <p>Browse every registered member, keep track of new sign-ups, and jump directly into detailed
+                    profiles with a single click.</p>
             </div>
-
-            <!-- Markazda qidiruv formasi -->
-            <div class="d-flex justify-content-center flex-grow-1">
-                <form method="GET" class="d-flex justify-content-center" style="width: 400px;">
-                    <div class="input-group input-group-sm w-100">
-                        <input type="search"
-                               name="q"
-                               value="{{ $searchTerm }}"
-                               class="form-control"
-                               placeholder="Search users (name, email, phone)">
-                        @if(!empty($searchTerm))
-                            <a href="{{ route('admin.users.index') }}" class="btn btn-outline-secondary">
-                                <i class="feather-x"></i>
-                            </a>
-                        @endif
-                        <button type="submit" class="btn btn-primary">
-                            <i class="feather-search"></i>
-                        </button>
-                    </div>
-                </form>
+            <div class="users-stats">
+                <div class="users-stat-card">
+                    <span class="label">Total users</span>
+                    <span class="value">{{ number_format($totalUsers) }}</span>
+                    <span class="hint">Across the entire platform</span>
+                </div>
+                <div class="users-stat-card">
+                    <span class="label">Currently showing</span>
+                    <span class="value">{{ number_format($pageCount) }}</span>
+                    <span class="hint">Users on this page</span>
+                </div>
+                <div class="users-stat-card">
+                    <span class="label">Last registration</span>
+                    <span class="value">{{ $lastJoinedDate }}</span>
+                    <span class="hint">{{ $lastJoinedAgo ? 'Joined ' . $lastJoinedAgo : 'No recent sign-ups' }}</span>
+                </div>
+                <div class="users-stat-card users-stat-card--compact">
+                    <span class="label">Active search</span>
+                    <span class="value">{{ $searchTerm ? $searchDisplay : 'None' }}</span>
+                    <span class="hint">Keyword filter applied</span>
+                </div>
             </div>
         </div>
+    </div>
 
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table align-middle mb-0">
-                    <thead>
-                        <tr>
-                          
-                            <th class="text-muted">User</th>
-                            <th class="text-muted">Email</th>
-                            <!--<th class="text-muted">Role</th>-->
-                            <th class="text-muted">Created</th>
-                            <th class="text-end text-muted">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($users as $u)
-                            <tr>
-                              
-                                <td>
-                                    <div class="d-flex align-items-center gap-2">
-                                        <div class="avatar-image avatar-sm">
-                                            <img src="/assets/images/avatar/ava.svg" class="img-fluid" alt="avatar">
-                                        </div>
-                                        <div>
-                                            <div class="fw-semibold text-dark">{{ trim(($u->first_name ?? '').' '.($u->last_name ?? '')) ?: '—' }}</div>
-                                            @if($u->phone)
-                                                <div class="fs-11 text-muted">{{ $u->phone }}</div>
-                                            @endif
+    <div class="card users-filter-card">
+        <div class="card-body">
+            <div class="users-filter-header">
+                <div>
+                    <h6>Search &amp; filter</h6>
+                    <p class="mb-0">Find people by name, email address, or phone number.</p>
+                </div>
+                @if($searchTerm)
+                    <div class="text-muted small">Showing results for “{{ $searchTerm }}”</div>
+                @endif
+            </div>
+            <form method="GET" class="users-search-form">
+                <div class="input-group">
+                    <span class="input-group-text">
+                        <i class="feather-search"></i>
+                    </span>
+                    <input
+                        type="search"
+                        name="q"
+                        value="{{ $searchTerm }}"
+                        class="form-control"
+                        placeholder="Search users (name, email, phone)">
+                    <button type="submit" class="btn btn-primary shadow-sm">
+                        Search
+                    </button>
+                </div>
+                @if(!empty($searchTerm))
+                    <a href="{{ route('admin.users.index') }}" class="clear-btn">
+                        <i class="feather-x-circle"></i>
+                        Clear search
+                    </a>
+                @endif
+            </form>
+        </div>
+    </div>
+
+    <div class="card users-table-card">
+        <div class="table-responsive">
+            <table class="table align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th class="text-muted text-center" style="width: 120px;">Listing</th>
+                        <th class="text-muted">User</th>
+                        <th class="text-muted">Email</th>
+                        <th class="text-muted">Joined</th>
+                      
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($users as $u)
+                        <tr onclick="window.location.href='{{ route('admin.users.show', $u->id) }}'">
+                            <td data-label="#" class="text-center align-middle">
+                                <div class="users-index-pill">
+                                    {{ (method_exists($users, 'firstItem') ? ($users->firstItem() ?? 1) : 1) + $loop->index }}
+                                </div>
+                            </td>
+                            <td data-label="User">
+                                <div class="users-user-block">
+                                    <div class="avatar-image">
+                                        <img src="/assets/images/avatar/ava.svg" class="img-fluid" alt="avatar">
+                                    </div>
+                                    <div>
+                                        <div class="name">{{ trim(($u->first_name ?? '').' '.($u->last_name ?? '')) ?: '—' }}</div>
+                                        <div class="meta">
+                                            <i class="feather-phone"></i>
+                                            {{ $u->phone ?: 'No phone on file' }}
                                         </div>
                                     </div>
-                                </td>
-                                <td>{{ $u->email }}</td>
-                               <!--<td>{{ $u->role->name ?? '—' }}</td>-->
-                                <td>{{ optional($u->created_at)->format('Y-m-d H:i') }}</td>
-                                <td class="text-end">
-                                    <a href="{{ route('admin.users.show', $u->id) }}" class="btn btn-sm btn-light-brand">
-                                        <i class="feather-eye me-1"></i> View
-                                    </a>
-                                </td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="6" class="text-center text-muted py-4">No users found.</td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
+                                </div>
+                            </td>
+                            <td data-label="Email">
+                                <div class="users-email">
+                                    <a href="mailto:{{ $u->email }}">{{ $u->email }}</a>
+                                </div>
+                            </td>
+                            <td data-label="Joined">
+                                <div class="users-created">
+                                    {{ optional($u->created_at)->format('M d, Y') ?? '—' }}
+                                    @if($u->created_at)
+                                        <span>{{ $u->created_at->diffForHumans() }}</span>
+                                    @endif
+                                </div>
+                            </td>
+
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="5" class="text-center users-empty">
+                                No users found. Try adjusting your filters or search keywords.
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
         </div>
 
         @if($users instanceof \Illuminate\Contracts\Pagination\Paginator || $users instanceof \Illuminate\Contracts\Pagination\LengthAwarePaginator)
-            <div class="card-footer d-flex justify-content-center">
-                {{ $users->links() }}
+            <div class="users-pagination">
+                {{ $users->links('vendor.pagination.bootstrap-5') }}
             </div>
         @endif
     </div>
