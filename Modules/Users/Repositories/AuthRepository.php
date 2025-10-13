@@ -38,7 +38,7 @@ class AuthRepository
             $user = User::create([
                 'first_name'  => $data['first_name'],
                 'last_name'   => $data['last_name'],
-                //                'email'       => $data['email'],
+                'email'       => $data['email'] ?? null,
                 'phone'       => $data['phone'] ?? null,
                 'password'    => Hash::make($data['password']),
                 'chat_id'  => $data['chat_id'] ?? null,
@@ -80,7 +80,7 @@ class AuthRepository
 
             // Initial credit balance
             $user->credit()->create([
-                'balance' => 50,
+                'balance' => 100,
             ]);
 
 
