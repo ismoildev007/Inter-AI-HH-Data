@@ -65,16 +65,13 @@
         <div class="dashboard-hero__glance">
             <div class="dashboard-hero__glance-item">
                 <span class="label">Active visitors</span>
-                <span class="value">{{ $analyticsData['liveVisitors'] ?? '—' }}</span>
+                <span class="value">{{ $analyticsData['liveVisitors'] ?? '📈' }}</span>
             </div>
             <div class="dashboard-hero__glance-item">
                 <span class="label">Returning rate</span>
-                <span class="value">{{ $analyticsData['returningRate'] ?? '—' }}</span>
+                <span class="value">{{ $analyticsData['returningRate'] ?? '📉' }}</span>
             </div>
-            <div class="dashboard-hero__glance-item">
-                <span class="label">Avg session</span>
-                <span class="value">{{ $analyticsData['avgSessionDuration'] ?? '—' }}</span>
-            </div>
+
         </div>
     </div>
 
