@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Concurrency;
 use Modules\Vacancies\Interfaces\HHVacancyInterface;
 use Modules\Vacancies\Interfaces\VacancyInterface;
 use Spatie\Async\Pool;
+use App\Helpers\TranslitHelper;
 
 class VacancyMatchingService
 {
@@ -30,6 +31,9 @@ class VacancyMatchingService
         Log::info('Job started for resume', ['resume_id' => $resume->id, 'query' => $query]);
         $start = microtime(true);
 
+        $latinQuery = TranslitHelper::toLatin($query);
+        $cyrilQuery = TranslitHelper::toCyrillic($query);
+
         $words = array_map('trim', explode(',', $query));
 
         [$hhVacancies, $localVacancies] = Concurrency::run([
@@ -40,13 +44,23 @@ class VacancyMatchingService
             ),
             fn() => Vacancy::query()
                 ->where('status', 'publish')
-                ->where(function ($q) use ($words) {
+                ->where(function ($q) use ($words, $latinQuery, $cyrilQuery) {
                     foreach ($words as $word) {
-                        $q->orWhere(function ($sub) use ($word) {
+                        $latin = TranslitHelper::toLatin($word);
+                        $cyril = TranslitHelper::toCyrillic($word);
+                        $q->orWhere(function ($sub) use ($word, $latin, $cyril) {
                             $sub->where('title', 'ilike', "%{$word}%")
-                                ->orWhere('description', 'ilike', "%{$word}%");
+                                ->orWhere('title', 'ilike', "%{$latin}%")
+                                ->orWhere('title', 'ilike', "%{$cyril}%")
+                                ->orWhere('description', 'ilike', "%{$word}%")
+                                ->orWhere('description', 'ilike', "%{$latin}%")
+                                ->orWhere('description', 'ilike', "%{$cyril}%");
                         });
                     }
+                    $q->orWhere('title', 'ilike', "%{$latinQuery}%")
+                        ->orWhere('title', 'ilike', "%{$cyrilQuery}%")
+                        ->orWhere('description', 'ilike', "%{$latinQuery}%")
+                        ->orWhere('description', 'ilike', "%{$cyrilQuery}%");
                 })
                 ->get()
                 ->keyBy(
