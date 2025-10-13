@@ -139,12 +139,29 @@
             color: rgba(255, 255, 255, 0.7);
         }
 
+        .categories-filter-card,
         .categories-card {
             margin: 0 1.5rem 2rem;
             border: none;
             border-radius: 24px;
             box-shadow: 0 24px 50px rgba(21, 37, 97, 0.12);
             overflow: hidden;
+        }
+
+        .categories-filter-card {
+            margin-bottom: 1.5rem;
+        }
+
+        .categories-filter-card .card-body {
+            padding: 26px 32px;
+        }
+
+        .categories-filter-header {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 18px;
+            align-items: center;
+            justify-content: space-between;
         }
 
         .categories-card .card-header {
@@ -160,32 +177,124 @@
             justify-content: space-between;
         }
 
-        .categories-card .search-form {
+        .categories-search-form {
             display: flex;
-            flex-grow: 1;
-            max-width: 420px;
+            flex-wrap: wrap;
+            gap: 16px;
+            align-items: center;
+            width: 100%;
+            justify-content: flex-start;
         }
 
-        .categories-card .search-form .input-group {
+        .categories-search-form .input-group {
+            flex: 1 1 100%;
+            max-width: 100%;
             background: #f5f7ff;
             border-radius: 16px;
             padding: 4px;
             box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
         }
 
-        .categories-card .search-form input {
+        .categories-search-form .input-group-text {
             border: none;
             background: transparent;
-            padding: 10px 16px;
+            color: #4f6bff;
         }
 
-        .categories-card .search-form input:focus {
+        .categories-search-form .form-control {
+            border: none;
+            background: transparent;
+            padding: 12px 16px;
+            font-size: 0.95rem;
+        }
+
+        .categories-search-form .form-control:focus {
             box-shadow: none;
         }
 
-        .categories-card .filter-group .btn {
-            min-width: 88px;
+        .categories-search-form .btn {
+            border-radius: 14px;
+            padding: 10px 20px;
+            font-weight: 600;
+        }
+
+        .categories-clear-btn {
+            color: #8a96b8;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.88rem;
+            text-decoration: none;
+        }
+
+        .categories-clear-btn:hover {
+            color: #1f3cfd;
+        }
+
+        .categories-filter-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 18px;
+        }
+
+        .categories-filter-card-item {
+            padding: 18px 22px;
+            border-radius: 18px;
+            background: linear-gradient(135deg, rgba(230, 236, 255, 0.78), rgba(207, 220, 255, 0.82));
+            box-shadow: 0 12px 30px rgba(26, 44, 104, 0.18);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .categories-filter-card-item.active {
+            background: linear-gradient(135deg, #4a76ff, #265bff);
+            color: #fff;
+            box-shadow: 0 14px 32px rgba(38, 91, 255, 0.3);
+        }
+
+        .categories-filter-card-item .content {
+            display: grid;
+            gap: 4px;
+        }
+
+        .categories-filter-card-item .label {
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: rgba(17, 38, 96, 0.65);
+        }
+
+        .categories-filter-card-item.active .label {
+            color: rgba(255, 255, 255, 0.78);
+        }
+
+        .categories-filter-card-item .value {
+            font-weight: 600;
+            font-size: 1.05rem;
+            color: #172655;
+        }
+
+        .categories-filter-card-item.active .value {
+            color: #fff;
+        }
+
+        .categories-filter-card-item .btn {
             border-radius: 999px;
+            padding: 6px 16px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            border: none;
+            background: rgba(255, 255, 255, 0.8);
+            color: #1a2f70;
+        }
+
+        .categories-filter-card-item.active .btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            color: #fff;
         }
 
         .categories-card .table thead th {
@@ -312,22 +421,19 @@
                 border-radius: 24px;
             }
 
+            .categories-filter-card,
             .categories-card {
                 margin-inline: 1rem;
             }
 
-            .categories-card .filters {
+            .categories-filter-header {
                 flex-direction: column;
                 align-items: stretch;
+                gap: 16px;
             }
 
-            .categories-card .search-form {
+            .categories-search-form {
                 max-width: 100%;
-            }
-
-            .categories-card .filter-group {
-                display: flex;
-                gap: 10px;
             }
 
             .categories-card .table thead {
@@ -418,7 +524,7 @@
                 <h1 class="categories-hero__title">Vacancies by category</h1>
                 <div class="categories-hero__meta">
                     <span class="categories-hero__meta-item"><i class="feather-filter"></i>{{ $activeFilterLabel }}</span>
-                    <span class="categories-hero__meta-item"><i class="feather-users"></i>Total categories: {{ number_format($totalCategories) }}</span>
+                    <span class="categories-hero__meta-item"><i class="feather-users"></i>Total Vacancies: {{ number_format($totalCategories) }}</span>
                 </div>
             </div>
             <div class="categories-stats">
@@ -435,48 +541,42 @@
             </div>
         </div>
     </div>
+        
+    <div class="card categories-filter-card">
+        <div class="card-body">
+            <div class="categories-filter-grid">
+                @foreach([
+                    ['value' => 'all', 'label' => 'All', 'description' => 'Show all sources'],
+                    ['value' => 'telegram', 'label' => 'Telegram', 'description' => 'Telegram collected vacancies'],
+                    ['value' => 'hh', 'label' => 'HH', 'description' => 'HeadHunter imports'],
+                ] as $card)
+                    @php
+                        $isActive = $currentFilter === $card['value'];
+                        $params = [];
+                        if ($card['value'] !== 'all') {
+                            $params['filter'] = $card['value'];
+                        }
+                        if (!empty($searchTerm)) {
+                            $params['q'] = $searchTerm;
+                        }
+                    @endphp
+                    <div class="categories-filter-card-item {{ $isActive ? 'active' : '' }}">
+                        <div class="content">
+                            <span class="label">{{ strtoupper($card['label']) }}</span>
+                            <span class="value">{{ $card['description'] }}</span>
+                        </div>
+                        <a href="{{ route('admin.vacancies.categories', $params) }}" class="btn">
+                            {{ $isActive ? 'Selected' : 'View' }}
+                        </a>
+                    </div>
+                @endforeach
+            </div>
+        </div>
+    </div>
 
     <div class="card categories-card">
         <div class="card-header">
-            <div class="filters">
-                <div>
-                    <h6 class="mb-1">All categories</h6>
-                    <span class="text-muted small">Manage vacancy distribution across sources</span>
-                </div>
-                <form method="GET" class="search-form">
-                    @if($currentFilter !== 'all')
-                        <input type="hidden" name="filter" value="{{ $currentFilter }}">
-                    @endif
-                    <div class="input-group input-group-sm w-100">
-                        <input type="search" name="q" value="{{ $searchTerm }}" class="form-control" placeholder="Search categories">
-                        @if(!empty($searchTerm))
-                            <a href="{{ route('admin.vacancies.categories', $currentFilter === 'all' ? [] : ['filter' => $currentFilter]) }}" class="btn btn-outline-secondary">
-                                <i class="feather-x"></i>
-                            </a>
-                        @endif
-                        <button type="submit" class="btn btn-primary">
-                            <i class="feather-search"></i>
-                        </button>
-                    </div>
-                </form>
-                <div class="filter-group btn-group btn-group-sm" role="group">
-                    @foreach(['all' => 'All', 'telegram' => 'Telegram', 'hh' => 'HH'] as $value => $label)
-                        @php
-                            $isActive = $currentFilter === $value;
-                            $params = [];
-                            if ($value !== 'all') {
-                                $params['filter'] = $value;
-                            }
-                            if (!empty($searchTerm)) {
-                                $params['q'] = $searchTerm;
-                            }
-                        @endphp
-                        <a href="{{ route('admin.vacancies.categories', $params) }}" class="btn {{ $isActive ? 'btn-primary' : 'btn-outline-secondary' }}">
-                            {{ $label }}
-                        </a>
-                    @endforeach
-                </div>
-            </div>
+            <h6 class="mb-0">Results</h6>
         </div>
         <div class="table-responsive">
             <table class="table align-middle mb-0">

@@ -447,22 +447,7 @@
                     <h6 class="mb-1">Vacancies list</h6>
                     <span class="text-muted small">Explore titles within this category</span>
                 </div>
-                <form method="GET" action="{{ route('admin.vacancies.by_category', $formRouteParams) }}" class="search-form">
-                    <div class="input-group input-group-sm w-100">
-                        <input type="search" name="q" value="{{ $searchTerm }}" class="form-control" placeholder="Search vacancies (title or ID)">
-                        @if(!empty($searchTerm))
-                            <a href="{{ route('admin.vacancies.by_category', array_filter([
-                                    'category' => $categorySlug,
-                                    'filter' => $currentFilter !== 'all' ? $currentFilter : null,
-                                ], fn ($value) => !is_null($value))) }}" class="btn btn-outline-secondary">
-                                <i class="feather-x"></i>
-                            </a>
-                        @endif
-                        <button type="submit" class="btn btn-primary">
-                            <i class="feather-search"></i>
-                        </button>
-                    </div>
-                </form>
+
             </div>
         </div>
         <div class="table-responsive">
