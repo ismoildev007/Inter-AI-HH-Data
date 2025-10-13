@@ -44,7 +44,7 @@ class SendNotificationCommand extends Command
             return;
         }
         foreach ($users as $user) {
-            $this->line("👤 Checking matches for user: {$user->email}");
+            $this->line("👤 Checking matches for user: {$user->first_name}");
 
             $totalNewMatches = 0;
 
@@ -62,14 +62,18 @@ class SendNotificationCommand extends Command
                     ->whereNull('notified_at')
                     ->with('vacancy')
                     ->get();
+                $this->line("      🔍 Found {$newMatches->count()} new matches for resume #{$resume->id}");
 
                 if ($newMatches->isNotEmpty()) {
                     $totalNewMatches += $newMatches->count();
+                    $this->info("      ✅ New matches for resume #{$resume->id}: {$newMatches->count()}");
 
                     MatchResult::whereIn('id', $newMatches->pluck('id'))
                         ->update(['notified_at' => now()]);
+                    $this->info("      🕒 Updated notified_at for resume #{$resume->id}");
                 }
             }
+            $this->line("   🎯 Total new matches for user {$user->first_name}: {$totalNewMatches}");
             if ($totalNewMatches > 0) {
                 try {
                     $message = "💼 *Good news!*\n\nWe found *{$totalNewMatches}* new matching vacancies for your resume.\n\n👉 Check your account to view them.";
