@@ -54,7 +54,7 @@
                 <table class="table align-middle mb-0">
                     <thead>
                         <tr>
-                            <th class="text-muted">ID</th>
+                            
                             <th class="text-muted">Channel ID</th>
                             <th class="text-muted">Username</th>
                             <th class="text-muted">Role</th>
@@ -64,7 +64,7 @@
                     <tbody>
                         @forelse($channels as $ch)
                             <tr @if($ch->is_target) class="table-success" @endif>
-                                <td class="fw-semibold text-dark">#{{ $ch->id }}</td>
+                               
                                 <td>{{ $ch->channel_id }}</td>
                                 <td>{{ $ch->username ?: '—' }}</td>
                                 <td>
