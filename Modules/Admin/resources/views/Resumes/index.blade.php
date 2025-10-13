@@ -49,7 +49,7 @@
                 <table class="table align-middle mb-0">
                     <thead>
                         <tr>
-                            <th class="text-muted">ID</th>
+                            
                             <th class="text-muted">Title</th>
                             <th class="text-muted">User</th>
                             <th class="text-muted">Created</th>
@@ -59,7 +59,7 @@
                     <tbody>
                         @forelse($resumes as $r)
                             <tr>
-                                <td class="fw-semibold text-dark">{{ $r->id }}</td>
+                               
                                 <td>
                                     <div class="d-flex align-items-center gap-2">
                                         <div class="fw-semibold text-dark">{{ $r->title ?? '—' }}</div>

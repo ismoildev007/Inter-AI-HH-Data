@@ -49,7 +49,7 @@
                 <table class="table align-middle mb-0">
                     <thead>
                         <tr>
-                            <th class="text-muted">ID</th>
+                           
                             <th class="text-muted">User</th>
                             <th class="text-muted">Vacancy</th>
                             <th class="text-muted">Resume</th>
@@ -62,7 +62,7 @@
                     <tbody>
                         @forelse($applications as $app)
                             <tr>
-                                <td class="fw-semibold text-dark">{{ $app->id }}</td>
+                                
                                 <td>
                                     <div class="d-flex align-items-center gap-2">
                                         <div class="avatar-image avatar-sm">
