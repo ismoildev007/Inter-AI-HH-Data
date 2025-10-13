@@ -253,11 +253,7 @@
                 <li class="breadcrumb-item">#{{ $resume->id }}</li>
             </ul>
         </div>
-        <div class="ms-auto">
-            <a href="{{ route('admin.resumes.index') }}" class="btn btn-light-brand">
-                <i class="feather-arrow-left me-1"></i> Back to list
-            </a>
-        </div>
+
     </div>
 
     <div class="resume-show-hero">

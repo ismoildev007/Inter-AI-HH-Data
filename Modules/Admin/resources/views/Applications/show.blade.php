@@ -251,11 +251,7 @@
                 <li class="breadcrumb-item">#{{ $application->id }}</li>
             </ul>
         </div>
-        <div class="ms-auto">
-            <a href="{{ route('admin.applications.index') }}" class="btn btn-light-brand">
-                <i class="feather-arrow-left me-1"></i> Back to list
-            </a>
-        </div>
+
     </div>
 
     <div class="app-show-hero">
