@@ -53,7 +53,7 @@ class ResumeController extends Controller
             abort(404);
         }
 
-        $disk = Storage::disk('public');
+        $disk = Storage::disk('spaces');
         $path = ltrim($resume->file_path, '/');
 
         if (!$disk->exists($path)) {
