@@ -57,7 +57,7 @@
                 <i class="feather-activity"></i>
                 Realtime view
             </span>
-            <h1 class="dashboard-hero__title">Platform health</h1>
+            <h1 class="dashboard-hero__title">Platform statistics</h1>
             <p class="dashboard-hero__subtitle">
                 Stay on top of user activity, hiring momentum, and channel performance — all data refreshes live from the backend.
             </p>
