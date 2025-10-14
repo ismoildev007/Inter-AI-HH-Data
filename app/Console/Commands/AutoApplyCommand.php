@@ -18,6 +18,7 @@ class AutoApplyCommand extends Command
 
     public function handle()
     {
+        $this->info('Starting auto-apply process...');
         Log::info('auto apply');
         $settings = UserSetting::where('auto_apply_enabled', true)
             ->with(['user.credit', 'user.hhAccount', 'user.resumes.matchResults.vacancy'])
@@ -26,7 +27,7 @@ class AutoApplyCommand extends Command
                 return $setting->auto_apply_count < $setting->auto_apply_limit;
             });
 
-
+        Log::info(['Settings count: ' => $settings]);
         $hhService = new HhApiService();
 
         foreach ($settings as $setting) {
@@ -50,8 +51,10 @@ class AutoApplyCommand extends Command
             if ($remaining <= 0) {
                 continue; 
             }
+            $this->line("User {$user->id} can apply to {$remaining} vacancies.");
 
             $matches = $user->resumes->flatMap->matchResults->where('score_percent', '>=', 70);
+            Log::info(['User ' . $user->id . ' matches: ' => $matches]);
             foreach ($matches as $match) {
                 if ($remaining <= 0) {
                     break; 
