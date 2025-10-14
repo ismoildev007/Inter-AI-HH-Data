@@ -1094,6 +1094,11 @@ class VacancyCategoryService
         'bogbon' => 'agriculture_and_farming',
     ];
 
+    public function getCanonicalCategories(): array
+    {
+        return $this->categories;
+    }
+
     /**
      * Keyword buckets for inference (slug => list of phrases).
      */

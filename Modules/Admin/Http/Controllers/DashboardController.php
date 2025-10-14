@@ -640,6 +640,7 @@ class DashboardController extends Controller
             'count' => $count,
             'filter' => $filter,
             'search' => $search,
+            'categoryOptions' => array_values($categorizer->getCanonicalCategories()),
         ]);
     }
 
@@ -668,6 +669,27 @@ class DashboardController extends Controller
         return redirect()
             ->route('admin.vacancies.show', $routeParams)
             ->with('status', 'Vacancy status updated.');
+    }
+
+    /**
+     * Update vacancy category.
+     */
+    public function vacancyUpdateCategory(Request $request, Vacancy $vacancy)
+    {
+        $categorizer = app(\Modules\TelegramChannel\Services\VacancyCategoryService::class);
+        $categories = array_values($categorizer->getCanonicalCategories());
+
+        $validated = $request->validate([
+            'category' => ['required', Rule::in($categories)],
+        ]);
+
+        $vacancy->update([
+            'category' => $validated['category'],
+        ]);
+
+        return redirect()
+            ->back()
+            ->with('status', 'Vacancy category updated.');
     }
 
     /**
