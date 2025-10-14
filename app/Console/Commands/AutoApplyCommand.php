@@ -50,7 +50,7 @@ class AutoApplyCommand extends Command
 
             $remaining = $setting->auto_apply_limit - $setting->auto_apply_count;
             if ($remaining <= 0) {
-                continue; 
+                continue;
             }
             $this->line("User {$user->id} can apply to {$remaining} vacancies.");
 
@@ -58,7 +58,7 @@ class AutoApplyCommand extends Command
             Log::info(['User ' . $user->id . ' matches: ' => $matches]);
             foreach ($matches as $match) {
                 if ($remaining <= 0) {
-                    break; 
+                    break;
                 }
                 $exists = Application::where('user_id', $user->id)
                     ->where('vacancy_id', $match->vacancy_id)
@@ -80,7 +80,9 @@ class AutoApplyCommand extends Command
                         ->onQueue('autoapply');
                 });
 
-                $remaining--; 
+                $remaining--;
+                $setting->increment('auto_apply_count'); 
+                $user->credit->decrement('balance');
             }
         }
     }
