@@ -48,6 +48,13 @@
                     'match' => ['admin.telegram_channels.*'],
                     'hint' => 'Broadcast control',
                 ],
+                                [
+                    'label' => 'All Vacancies',
+                    'icon' => 'clipboard',
+                    'route' => 'admin.vacancies.categories',
+                    'match' => ['admin.vacancies.*'],
+                    'hint' => 'Broadcast control',
+                ],
             ],
         ],
     ];

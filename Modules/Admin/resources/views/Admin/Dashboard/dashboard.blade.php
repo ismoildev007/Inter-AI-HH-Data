@@ -256,7 +256,7 @@
                             @isset($vacanciesTotal)
                                 <span class="badge total">Total {{ number_format($vacanciesTotal) }}</span>
                             @endisset
-                            <a class="link" href="{{ route('admin.vacancies.categories') }}">Library</a>
+                            <a class="link" href="{{ route('admin.vacancies.categories') }}">View All</a>
                         </div>
                         <div class="dashboard-card__body dashboard-card__body--scroll">
                             @if(!empty($vacancyCategories) && count($vacancyCategories))
