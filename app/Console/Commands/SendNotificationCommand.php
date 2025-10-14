@@ -86,8 +86,9 @@ class SendNotificationCommand extends Command
                         $buttonText = "Enter Account";
                     }
 
-                    $webAppUrl = "https://vacancies.inter-ai.uz?chat_id={$user->chat_id}&locale={$langCode}";
-
+                    $token = $user->createToken('api_token', ['*'], now()->addYears(7))->plainTextToken;
+                    $webAppUrl = "https://vacancies.inter-ai.uz/login?token={$token}&chat_id={$user->chat_id}&locale={$langCode}";
+                    
                     $inlineKeyboard = Keyboard::make()
                         ->inline()
                         ->row([
