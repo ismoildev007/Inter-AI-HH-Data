@@ -37,10 +37,10 @@ class AuthRepository
 
             $user = User::create([
                 'first_name'  => $data['first_name'],
-                'last_name'   => $data['last_name'],
+                'last_name'   => $data['last_name'] ?? null,
                 'email'       => $data['email'] ?? null,
                 'phone'       => $data['phone'] ?? null,
-                'password'    => Hash::make($data['password']),
+                'password'    => Hash::make($data['password']) ?? null,
                 'chat_id'  => $data['chat_id'] ?? null,
                 'language'    => $data['language'] ?? 'en',
                 //                'birth_date'  => $data['birth_date'] ?? null,
