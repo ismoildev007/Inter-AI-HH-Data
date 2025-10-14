@@ -8,7 +8,7 @@ use Illuminate\Support\Str;
 
 class OpenAiQuestionGenerator implements AiQuestionGeneratorInterface
 {
-    protected string $apiKey;
+    protected $apiKey;
     protected string $model;
     protected int $timeout;
     protected int $retries;
