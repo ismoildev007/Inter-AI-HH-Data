@@ -8,14 +8,12 @@ use Illuminate\Support\Str;
 
 class OpenAiQuestionGenerator implements AiQuestionGeneratorInterface
 {
-    protected $apiKey;
     protected string $model;
     protected int $timeout;
     protected int $retries;
 
     public function __construct()
     {
-        $this->apiKey =  env('OPENAI_API_KEY');
         $this->model = 'gpt-4.1-nano';
         $this->timeout =  20;
         $this->retries =  2;
@@ -31,7 +29,13 @@ class OpenAiQuestionGenerator implements AiQuestionGeneratorInterface
         $attempts = 0;
         do {
             try {
-                $response = Http::withToken($this->apiKey)
+                $key = env('OPENAI_API_KEY');
+                if (empty($key)) {
+                    Log::error('❌ Missing OpenAI API key in environment');
+                    throw new \RuntimeException('OpenAI API key not configured');
+                }
+                Log::info(['api key' => $key]);
+                $response = Http::withToken($key)
                     ->timeout($this->timeout)
                     ->acceptJson()
                     ->post('https://api.openai.com/v1/chat/completions', [
@@ -74,7 +78,6 @@ class OpenAiQuestionGenerator implements AiQuestionGeneratorInterface
             }
         } while (++$attempts <= $this->retries);
         throw new \RuntimeException('OpenAI generation failed after ' . $this->retries . ' retries', 0, $lastException ?? null);
-
     }
 
     protected function buildPrompt(string $title, ?string $company, ?string $description, string $language, int $count): string
