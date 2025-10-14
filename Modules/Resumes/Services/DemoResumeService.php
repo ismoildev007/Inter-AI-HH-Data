@@ -28,15 +28,19 @@ class DemoResumeService
             ]
         );
         if (isset($data['file'])) {
-            $path = $data['file']->store('resumes', 'public');
+            $path = $data['file']->store('resumes', 'spaces');
             $data['file_path'] = $path;
             $data['file_mime'] = $data['file']->getMimeType();
             $data['file_size'] = $data['file']->getSize();
-            $data['user_id'] = $user->id;
-
-            $absolutePath = Storage::disk('public')->path($path);
-            $data['parsed_text'] = $this->parseFile($absolutePath);
+        
+            // ✅ Download temporarily for parsing
+            $tempPath = tempnam(sys_get_temp_dir(), 'resume_');
+            file_put_contents($tempPath, Storage::disk('spaces')->get($path));
+        
+            $data['parsed_text'] = $this->parseFile($tempPath);
+            unlink($tempPath);
         }
+        
 
         $demoResume = Resume::create($data);
 

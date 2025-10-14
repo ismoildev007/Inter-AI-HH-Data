@@ -31,7 +31,7 @@ class GenerateInterviewQuestionsJob implements ShouldQueue
         }
 
         $vac = $interview->application->vacancy;
-        $language = config('interviews.ai.language', 'auto');
+        $language = $interview->application->user->language ?? 'ru';
         $count = (int) config('interviews.max_questions', 20);
 
         try {
