@@ -43,10 +43,10 @@ class AutoApplyCommand extends Command
                 continue;
             }
 
-            // if (is_null($setting->resume_id)) {
-            //     Log::warning("User {$user->id} skipped — missing resume_id");
-            //     continue;
-            // }
+            if (is_null($setting->resume_id)) {
+                Log::warning("User {$user->id} skipped — missing resume_id");
+                continue;
+            }
 
             $remaining = $setting->auto_apply_limit - $setting->auto_apply_count;
             if ($remaining <= 0) {
@@ -54,7 +54,7 @@ class AutoApplyCommand extends Command
             }
             $this->line("User {$user->id} can apply to {$remaining} vacancies.");
 
-            $matches = $user->resumes->flatMap->matchResults->where('score_percent', '>=', 70);
+            $matches = $user->resumes->flatMap->matchResults->where('score_percent', '>=', 50);
             Log::info(['User ' . $user->id . ' matches: ' => $matches]);
             foreach ($matches as $match) {
                 if ($remaining <= 0) {
