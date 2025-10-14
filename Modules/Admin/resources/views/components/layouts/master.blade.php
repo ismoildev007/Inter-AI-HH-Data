@@ -59,6 +59,7 @@
     <script src="{{ $assetWithVersion('assets/js/mini-charts-custom.js') }}"></script>
 
     @include('admin::components.partials.back-button')
+    @stack('scripts')
 
 </body>
 </html>
