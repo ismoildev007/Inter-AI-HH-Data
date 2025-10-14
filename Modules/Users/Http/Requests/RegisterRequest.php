@@ -17,10 +17,10 @@ class RegisterRequest extends FormRequest
     {
         return [
             'first_name'  => 'required|string|max:100',
-            'last_name'   => 'required|string|max:100',
+//            'last_name'   => 'required|string|max:100',
 //            'email'       => 'required|email|unique:users,email',
             'phone'       => 'nullable|string|max:20|unique:users,phone',
-            'password'    => 'required|string|min:6',
+//            'password'    => 'required|string|min:6',
 //            'birth_date'  => 'nullable|date',
 //            'avatar_path' => 'nullable|string',
 //            'verify_code' => 'nullable|string|max:10',
