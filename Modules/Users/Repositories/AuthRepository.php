@@ -126,9 +126,9 @@ class AuthRepository
 
             $user->update([
                 'first_name'  => $data['first_name'] ?? $user->first_name,
-                'last_name'   => $data['last_name'] ?? $user->last_name,
+//                'last_name'   => $data['last_name'] ?? $user->last_name,
                 'phone'       => $data['phone'] ?? $user->phone,
-                'password'    => !empty($data['password']) ? Hash::make($data['password']) : $user->password,
+//                'password'    => !empty($data['password']) ? Hash::make($data['password']) : $user->password,
             ]);
 
 
