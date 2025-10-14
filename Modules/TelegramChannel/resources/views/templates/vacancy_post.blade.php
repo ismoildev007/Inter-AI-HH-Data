@@ -27,7 +27,7 @@
 @endphp
 
 <b>Yangi bo'sh ish o'rni e'lon qilindi!</b><br>
-🫡 <b>Lavozim:</b> {!! $titleSafe !!}<br>
+💼 <b>Lavozim:</b> {!! $titleSafe !!}<br>
 🏢 <b>Kompaniya:</b> {!! $companySafe !!}
 📞 <b>Bog’lanish:</b> {{ $contactLine }}
 📝 <b>Tavsif:</b> {!! $descSafe !!}<br>
