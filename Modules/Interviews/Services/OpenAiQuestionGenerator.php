@@ -3,6 +3,7 @@
 namespace Modules\Interviews\Services;
 
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class OpenAiQuestionGenerator implements AiQuestionGeneratorInterface
@@ -14,62 +15,66 @@ class OpenAiQuestionGenerator implements AiQuestionGeneratorInterface
 
     public function __construct()
     {
-        $this->apiKey = (string) (config('services.openai.key') ?? env('OPENAI_API_KEY'));
-        $this->model = (string) config('interviews.ai.model', 'gpt-4.1-nano');
-        $this->timeout = (int) config('interviews.ai.timeout', 20);
-        $this->retries = (int) config('interviews.ai.retries', 2);
+        $this->apiKey =  env('OPENAI_API_KEY');
+        $this->model = 'gpt-4.1-nano';
+        $this->timeout =  20;
+        $this->retries =  2;
     }
 
     public function generate(string $title, ?string $company, ?string $description, ?string $language, int $count = 20): array
     {
-        // Default to English if language is not specified or set to 'auto'
         $language = $language && $language !== 'auto' ? $language : 'en';
         $count = max(1, min(50, $count));
 
         $prompt = $this->buildPrompt($title, $company, $description, $language, $count);
-
+        Log::info('OpenAI prompt', ['title' => $title, 'company' => $company, 'language' => $language, 'count' => $count]);
         $attempts = 0;
-        $lastException = null;
         do {
             try {
                 $response = Http::withToken($this->apiKey)
                     ->timeout($this->timeout)
                     ->acceptJson()
-                    ->asJson()
-                    ->post('https://api.openai.com/v1/responses', [
+                    ->post('https://api.openai.com/v1/chat/completions', [
                         'model' => $this->model,
-                        'input' => $prompt,
-                        'max_output_tokens' => 800,
+                        'messages' => [
+                            [
+                                'role' => 'system',
+                                'content' => 'You are a seasoned technical and HR interviewer who generates professional interview questions.'
+                            ],
+                            [
+                                'role' => 'user',
+                                'content' => $prompt
+                            ],
+                        ],
+                        'temperature' => 0.2,
+                        'max_tokens' => 800,
                     ]);
+                Log::info('OpenAI response', ['status' => $response->status()]);
 
                 if ($response->failed()) {
+                    Log::error('OpenAI API error', ['status' => $response->status(), 'body' => $response->body()]);
                     throw new \RuntimeException('OpenAI error: ' . $response->body());
                 }
 
-                $text = (string) data_get($response->json(), 'output_text', '');
+                $text = (string) data_get($response->json(), 'choices.0.message.content', '');
                 if (!$text) {
-                    // Fallback for alternative response structure
                     $text = (string) data_get($response->json(), 'choices.0.message.content', '');
                 }
 
                 $questions = $this->extractQuestions($text, $count);
                 if (count($questions) >= min(5, $count)) {
+                    Log::info('Generated questions', ['count' => count($questions), 'sample' => array_slice($questions, 0, 10)]);
                     return array_slice($questions, 0, $count);
                 }
 
-                // If parsing failed, try a light retry
                 throw new \RuntimeException('Not enough questions parsed');
             } catch (\Throwable $e) {
                 $lastException = $e;
                 usleep(200_000 * ($attempts + 1));
             }
         } while (++$attempts <= $this->retries);
+        throw new \RuntimeException('OpenAI generation failed after ' . $this->retries . ' retries', 0, $lastException ?? null);
 
-        // On failure, return a minimal safe fallback
-        if ($lastException) {
-            // Optionally log here, but service should be side-effect free
-        }
-        return $this->fallback($title, $company, $language, $count);
     }
 
     protected function buildPrompt(string $title, ?string $company, ?string $description, string $language, int $count): string

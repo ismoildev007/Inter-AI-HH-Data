@@ -88,7 +88,7 @@ class SyncHhNegotiationsCommand extends Command
                         }
 
                         if ($app->hh_status !== $stateId) {
-                            $app->update(['hh_status' => $stateId]);
+                            $app->update(['hh_status' => $stateId, 'status' => $stateId]);
                             $updatedCount++;
 
                             if ($stateId === 'interview') {
