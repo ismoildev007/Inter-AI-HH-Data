@@ -30,6 +30,8 @@
         $strengths = is_iterable($analysis->strengths ?? null) ? $analysis->strengths : [];
         $weaknesses = is_iterable($analysis->weaknesses ?? null) ? $analysis->weaknesses : [];
         $keywords = is_iterable($analysis->keywords ?? null) ? $analysis->keywords : [];
+
+        $profileUpdated = optional(optional($user)->updated_at)->format('M d, Y H:i') ?? '—';
     @endphp
 
     <style>
@@ -336,7 +338,7 @@
                             </div>
                             <div class="summary-chip">
                                 <span class="label">Profile updated</span>
-                                <span class="value">{{ optional($user->updated_at)->format('M d, Y H:i') ?? '—' }}</span>
+                                <span class="value">{{ $profileUpdated }}</span>
                             </div>
                         </div>
                     </div>
