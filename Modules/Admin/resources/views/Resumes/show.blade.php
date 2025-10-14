@@ -270,7 +270,7 @@
                     <span class="resume-show-chip"><i class="feather-hash"></i>Resume ID {{ $resume->id }}</span>
                     <span class="resume-show-chip"><i class="feather-shield"></i>{{ ucfirst($ownerRole) }}</span>
                     @if($ownerPhone)
-                        <span class="resume-show-chip"><i class="feather-phone"></i>{{ $ownerPhone }}</span>
+                        <span class="resume-show-chip"><i class="feather-phone"></i>+998{{ $ownerPhone }}</span>
                     @endif
                     @if($language !== '—')
                         <span class="resume-show-chip"><i class="feather-globe"></i>{{ strtoupper($language) }}</span>
@@ -324,7 +324,7 @@
                                 <span class="label">Phone</span>
                                 <span class="value">
                                     @if($ownerPhone)
-                                        <a href="tel:{{ preg_replace('/\s+/', '', $ownerPhone) }}">{{ $ownerPhone }}</a>
+                                        <a href="tel:{{ preg_replace('/\s+/', '', $ownerPhone) }}">+998{{ $ownerPhone }}</a>
                                     @else
                                         <span class="text-muted">Not provided</span>
                                     @endif

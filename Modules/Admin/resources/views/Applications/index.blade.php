@@ -6,11 +6,12 @@
             margin: 0 1.5rem 1.5rem;
             padding: 42px 46px;
             border-radius: 26px;
-            background: linear-gradient(135deg, #1c6dfd, #6d9dff);
-            color: #fff;
+            background: #ffffff;
+            color: #0f172a;
             position: relative;
             overflow: hidden;
-            box-shadow: 0 25px 62px rgba(23, 71, 173, 0.28);
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 22px 48px rgba(15, 23, 42, 0.06);
         }
 
         .applications-hero::before,
@@ -19,12 +20,13 @@
             position: absolute;
             border-radius: 50%;
             opacity: 0.2;
+            pointer-events: none;
         }
 
         .applications-hero::before {
             width: 320px;
             height: 320px;
-            background: rgba(255, 255, 255, 0.4);
+            background: rgba(59, 130, 246, 0.18);
             top: -150px;
             right: -130px;
         }
@@ -32,7 +34,7 @@
         .applications-hero::after {
             width: 260px;
             height: 260px;
-            background: rgba(255, 255, 255, 0.25);
+            background: rgba(96, 165, 250, 0.16);
             bottom: -140px;
             left: -110px;
         }
@@ -56,26 +58,27 @@
             gap: 6px;
             padding: 6px 16px;
             border-radius: 999px;
-            background: rgba(255, 255, 255, 0.2);
+            background: #eff6ff;
             font-size: 0.78rem;
             letter-spacing: 0.12em;
             text-transform: uppercase;
             margin-bottom: 18px;
+            color: #1d4ed8;
         }
 
-            .applications-hero-left h1 {
-                margin: 0 0 12px;
-                font-size: clamp(2.2rem, 3vw, 3rem);
-                font-weight: 700;
-                letter-spacing: -0.01em;
-                color: #fff;
-            }
+        .applications-hero-left h1 {
+            margin: 0 0 12px;
+            font-size: clamp(2.2rem, 3vw, 3rem);
+            font-weight: 700;
+            letter-spacing: -0.01em;
+            color: #0f172a;
+        }
 
         .applications-hero-left p {
             margin: 0;
             max-width: 440px;
             line-height: 1.6;
-            color: rgba(255, 255, 255, 0.82);
+            color: #475569;
         }
 
         .applications-stats {
@@ -86,12 +89,12 @@
         }
 
         .applications-stat-card {
-            background: rgba(255, 255, 255, 0.2);
+            background: #f8fafc;
             border-radius: 20px;
             padding: 20px 22px;
-            border: 1px solid rgba(255, 255, 255, 0.28);
-            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4);
-            backdrop-filter: blur(8px);
+            border: 1px solid #e2e8f0;
+            box-shadow: none;
+            backdrop-filter: none;
         }
 
         .applications-stat-card .label {
@@ -99,7 +102,7 @@
             font-size: 0.8rem;
             text-transform: uppercase;
             letter-spacing: 0.12em;
-            color: rgba(255, 255, 255, 0.7);
+            color: #94a3b8;
         }
 
         .applications-stat-card .value {
@@ -107,13 +110,14 @@
             margin-top: 6px;
             font-size: 1.9rem;
             font-weight: 700;
+            color: #0f172a;
         }
 
         .applications-stat-card .hint {
             display: block;
             margin-top: 8px;
             font-size: 0.85rem;
-            color: rgba(255, 255, 255, 0.72);
+            color: #94a3b8;
         }
 
         .applications-filter-card {

@@ -31,11 +31,12 @@
             margin: 0 1.5rem 1.5rem;
             padding: 42px 46px;
             border-radius: 26px;
-            background: linear-gradient(135deg, #1b48f8, #59b0ff);
-            color: #fff;
+            background: #ffffff;
+            color: #0f172a;
             position: relative;
             overflow: hidden;
-            box-shadow: 0 25px 62px rgba(12, 56, 158, 0.28);
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 22px 48px rgba(15, 23, 42, 0.06);
         }
 
         .vacancy-show-hero::before,
@@ -43,13 +44,14 @@
             content: '';
             position: absolute;
             border-radius: 50%;
-            opacity: 0.2;
+            opacity: 0.22;
+            pointer-events: none;
         }
 
         .vacancy-show-hero::before {
             width: 320px;
             height: 320px;
-            background: rgba(255, 255, 255, 0.4);
+            background: rgba(59, 130, 246, 0.18);
             top: -150px;
             right: -120px;
         }
@@ -57,7 +59,7 @@
         .vacancy-show-hero::after {
             width: 260px;
             height: 260px;
-            background: rgba(255, 255, 255, 0.24);
+            background: rgba(96, 165, 250, 0.16);
             bottom: -140px;
             left: -130px;
         }
@@ -77,10 +79,11 @@
             gap: 6px;
             padding: 6px 16px;
             border-radius: 999px;
-            background: rgba(255, 255, 255, 0.22);
+            background: #eff6ff;
             font-size: 0.78rem;
             letter-spacing: 0.12em;
             text-transform: uppercase;
+            color: #1d4ed8;
         }
 
         .vacancy-show-hero__title {
@@ -88,7 +91,7 @@
             font-size: clamp(2.1rem, 3vw, 3rem);
             font-weight: 700;
             letter-spacing: -0.01em;
-            color: #fff;
+            color: #0f172a;
         }
 
         .vacancy-show-hero__meta {
@@ -104,9 +107,10 @@
             gap: 6px;
             padding: 8px 14px;
             border-radius: 12px;
-            background: rgba(255, 255, 255, 0.18);
+            background: #f8fafc;
             font-size: 0.9rem;
             font-weight: 500;
+            color: #475569;
         }
 
         .vacancy-show-stats {
@@ -116,12 +120,12 @@
         }
 
         .vacancy-show-stat-card {
-            background: rgba(255, 255, 255, 0.22);
+            background: #f8fafc;
             border-radius: 20px;
             padding: 20px 22px;
-            border: 1px solid rgba(255, 255, 255, 0.28);
-            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
-            backdrop-filter: blur(8px);
+            border: 1px solid #e2e8f0;
+            box-shadow: none;
+            backdrop-filter: none;
         }
 
         .vacancy-show-stat-card .label {
@@ -129,7 +133,7 @@
             font-size: 0.78rem;
             text-transform: uppercase;
             letter-spacing: 0.12em;
-            color: rgba(255, 255, 255, 0.74);
+            color: #94a3b8;
         }
 
         .vacancy-show-stat-card .value {
@@ -139,13 +143,14 @@
             font-weight: 700;
             word-break: break-word;
             line-height: 1.2;
+            color: #0f172a;
         }
 
         .vacancy-show-stat-card .hint {
             display: block;
             margin-top: 8px;
             font-size: 0.82rem;
-            color: rgba(255, 255, 255, 0.7);
+            color: #94a3b8;
         }
 
         .vacancy-show-actions-card .vacancy-show-actions {
@@ -314,7 +319,7 @@
                             @csrf
                             @method('DELETE')
                             <input type="hidden" name="return_filter" value="{{ $currentFilter }}">
-                            <button type="submit" class="btn btn-sm btn-outline-danger shadow-sm text-white justify-content-end">Delete</button>
+                            <button type="submit" class="btn btn-sm btn-outline-danger shadow-sm text-red justify-content-end">Delete</button>
                         </form>
                     </div>
                 </div>

@@ -34,11 +34,12 @@
             margin: 0 1.5rem 1.5rem;
             padding: 42px 46px;
             border-radius: 26px;
-            background: linear-gradient(135deg, #1f3ffd, #61a4ff);
-            color: #fff;
+            background: #ffffff;
+            color: #0f172a;
             position: relative;
             overflow: hidden;
-            box-shadow: 0 25px 62px rgba(11, 49, 157, 0.28);
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 22px 48px rgba(15, 23, 42, 0.06);
         }
 
         .category-vacancies-hero::before,
@@ -46,13 +47,14 @@
             content: '';
             position: absolute;
             border-radius: 50%;
-            opacity: 0.2;
+            opacity: 0.22;
+            pointer-events: none;
         }
 
         .category-vacancies-hero::before {
             width: 320px;
             height: 320px;
-            background: rgba(255, 255, 255, 0.4);
+            background: rgba(59, 130, 246, 0.18);
             top: -150px;
             right: -120px;
         }
@@ -60,7 +62,7 @@
         .category-vacancies-hero::after {
             width: 260px;
             height: 260px;
-            background: rgba(255, 255, 255, 0.24);
+            background: rgba(96, 165, 250, 0.16);
             bottom: -140px;
             left: -140px;
         }
@@ -80,10 +82,11 @@
             gap: 6px;
             padding: 6px 16px;
             border-radius: 999px;
-            background: rgba(255, 255, 255, 0.22);
+            background: #eff6ff;
             font-size: 0.78rem;
             letter-spacing: 0.12em;
             text-transform: uppercase;
+            color: #1d4ed8;
         }
 
         .category-vacancies-hero__title {
@@ -91,7 +94,7 @@
             font-size: clamp(2.1rem, 3vw, 3rem);
             font-weight: 700;
             letter-spacing: -0.01em;
-            color: #fff;
+            color: #0f172a;
         }
 
         .category-vacancies-hero__meta {
@@ -107,9 +110,10 @@
             gap: 6px;
             padding: 8px 14px;
             border-radius: 12px;
-            background: rgba(255, 255, 255, 0.18);
+            background: #f8fafc;
             font-size: 0.9rem;
             font-weight: 500;
+            color: #475569;
         }
 
         .category-vacancies-stats {
@@ -119,12 +123,12 @@
         }
 
         .category-vacancies-stat-card {
-            background: rgba(255, 255, 255, 0.22);
+            background: #f8fafc;
             border-radius: 20px;
             padding: 20px 22px;
-            border: 1px solid rgba(255, 255, 255, 0.28);
-            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
-            backdrop-filter: blur(8px);
+            border: 1px solid #e2e8f0;
+            box-shadow: none;
+            backdrop-filter: none;
         }
 
         .category-vacancies-stat-card .label {
@@ -132,7 +136,7 @@
             font-size: 0.78rem;
             text-transform: uppercase;
             letter-spacing: 0.12em;
-            color: rgba(255, 255, 255, 0.74);
+            color: #94a3b8;
         }
 
         .category-vacancies-stat-card .value {
@@ -140,13 +144,14 @@
             margin-top: 6px;
             font-size: 1.8rem;
             font-weight: 700;
+            color: #0f172a;
         }
 
         .category-vacancies-stat-card .hint {
             display: block;
             margin-top: 8px;
             font-size: 0.82rem;
-            color: rgba(255, 255, 255, 0.7);
+            color: #94a3b8;
         }
 
         .category-vacancies-card {

@@ -274,7 +274,7 @@
                     @if($phone)
                         <div class="user-profile-hero__meta-item">
                             <i class="feather-phone"></i>
-                            {{ $phone }}
+                            +998{{ $phone }}
                         </div>
                     @endif
                 </div>
@@ -315,7 +315,7 @@
                     <span class="label">Phone</span>
                     <span class="value">
                         @if($phone)
-                            <a href="tel:{{ preg_replace('/\s+/', '', $phone) }}">{{ $phone }}</a>
+                            <a href="tel:{{ preg_replace('/\s+/', '', $phone) }}">+998{{ $phone }}</a>
                         @else
                             <span class="text-muted">Not provided</span>
                         @endif
