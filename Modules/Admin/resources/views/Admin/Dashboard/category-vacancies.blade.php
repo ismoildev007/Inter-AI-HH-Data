@@ -206,6 +206,14 @@
             color: #58618c;
         }
 
+        .category-vacancies-card .table thead th.actions-cell,
+        .category-vacancies-card .table tbody td.actions-cell {
+            width: 1%;
+            text-align: right;
+            white-space: nowrap;
+            padding-right: 12px;
+        }
+
         .category-vacancies-card .table tbody td {
             padding: 18px 20px;
             border-top: 1px solid rgba(15, 35, 87, 0.06);
@@ -471,7 +479,7 @@
                         
                         <th class="text-muted">Title</th>
                         <th class="text-muted">Created</th>
-                        <th class="text-muted text-end">Actions</th>
+                        <th class="text-muted text-end actions-cell">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -490,7 +498,7 @@
                             
                             <td class="fw-semibold text-dark" data-label="Title">{{ $vacancy->title ?? '—' }}</td>
                             <td class="text-nowrap" data-label="Created">{{ optional($vacancy->created_at)->format('M d, Y') ?? '—' }}</td>
-                            <td class="text-end" data-label="Actions">
+                            <td class="text-end actions-cell text-nowrap" data-label="Actions">
                                 <button type="button"
                                         class="btn btn-sm btn-outline-primary"
                                         data-bs-toggle="modal"
