@@ -74,7 +74,7 @@ class TelegramBotService
                 now()->addYears(22)
             )->plainTextToken;
 
-            $webAppUrl = "https://vacancies.inter-ai.uz/login?locale={$langCode}&token={$token}&chat_id={$chatId}";
+            $webAppUrl = "https://vacancies.inter-ai.uz?locale={$langCode}&token={$token}&chat_id={$chatId}";
             Log::info("User exists. Generated WebApp URL => {$webAppUrl}");
         }
 
