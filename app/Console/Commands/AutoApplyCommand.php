@@ -43,10 +43,10 @@ class AutoApplyCommand extends Command
                 continue;
             }
 
-            if (is_null($setting->resume_id)) {
-                Log::warning("User {$user->id} skipped — missing resume_id");
-                continue;
-            }
+            // if (is_null($setting->resume_id)) {
+            //     Log::warning("User {$user->id} skipped — missing resume_id");
+            //     continue;
+            // }
 
             $remaining = $setting->auto_apply_limit - $setting->auto_apply_count;
             if ($remaining <= 0) {
