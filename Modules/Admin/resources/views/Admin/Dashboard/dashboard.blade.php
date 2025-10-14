@@ -300,18 +300,22 @@
         gap: 24px;
         padding: 32px;
         border-radius: 28px;
-        background: linear-gradient(135deg, #2563eb, #7c3aed);
-        color: #fff;
+        background: #ffffff;
+        color: #0f172a;
         position: relative;
         overflow: hidden;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 22px 48px rgba(15, 23, 42, 0.06);
     }
     .dashboard-hero::after {
         content: '';
         position: absolute;
-        inset: -40% -10% auto 40%;
+        inset: -20% 10% auto 35%;
         height: 160%;
-        background: radial-gradient(circle at center, rgba(255,255,255,0.25), transparent 65%);
-        opacity: 0.55;
+        width: 60%;
+        background: radial-gradient(circle at center, rgba(59, 130, 246, 0.15), transparent 70%);
+        opacity: 0.85;
+        pointer-events: none;
     }
     .dashboard-hero__meta {
         position: relative;
@@ -326,7 +330,8 @@
         gap: 8px;
         padding: 6px 16px;
         border-radius: 999px;
-        background: rgba(255,255,255,0.18);
+        background: #eff6ff;
+        color: #1d4ed8;
         font-size: 0.82rem;
         letter-spacing: 0.08em;
         text-transform: uppercase;
@@ -340,7 +345,7 @@
     .dashboard-hero__subtitle {
         margin: 0;
         max-width: 520px;
-        color: rgba(255,255,255,0.82);
+        color: #475569;
         line-height: 1.6;
     }
     .dashboard-hero__glance {
@@ -354,7 +359,7 @@
     .dashboard-hero__glance-item {
         padding: 16px 18px;
         border-radius: 18px;
-        background: rgba(15, 23, 42, 0.18);
+        background: #f8fafc;
         backdrop-filter: blur(4px);
     }
     .dashboard-hero__glance-item .label {
@@ -362,13 +367,14 @@
         font-size: 0.75rem;
         text-transform: uppercase;
         letter-spacing: 0.12em;
-        color: rgba(255,255,255,0.7);
+        color: #94a3b8;
     }
     .dashboard-hero__glance-item .value {
         display: block;
         margin-top: 8px;
         font-size: 1.65rem;
         font-weight: 600;
+        color: #0f172a;
     }
     .dashboard-summary-grid {
         display: grid;

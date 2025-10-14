@@ -6,11 +6,12 @@
             margin: 0 1.5rem 1.5rem;
             padding: 40px 44px;
             border-radius: 26px;
-            background: linear-gradient(135deg, #1f3cfd, #4f77ff);
-            color: #fff;
+            background: #ffffff;
+            color: #0f172a;
             position: relative;
             overflow: hidden;
-            box-shadow: 0 25px 62px rgba(23, 46, 160, 0.28);
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 22px 48px rgba(15, 23, 42, 0.06);
         }
 
         .users-hero::before,
@@ -18,13 +19,14 @@
             content: '';
             position: absolute;
             border-radius: 50%;
-            opacity: 0.18;
+            opacity: 0.22;
+            pointer-events: none;
         }
 
         .users-hero::before {
             width: 340px;
             height: 340px;
-            background: rgba(255, 255, 255, 0.7);
+            background: rgba(59, 130, 246, 0.15);
             top: -160px;
             right: -100px;
         }
@@ -32,7 +34,7 @@
         .users-hero::after {
             width: 240px;
             height: 240px;
-            background: rgba(255, 255, 255, 0.35);
+            background: rgba(99, 102, 241, 0.15);
             bottom: -120px;
             left: -120px;
         }
@@ -56,13 +58,12 @@
             gap: 6px;
             padding: 6px 16px;
             border-radius: 999px;
-            background: rgba(255, 255, 255, 0.2);
+            background: #eff6ff;
             font-size: 0.78rem;
             letter-spacing: 0.12em;
             text-transform: uppercase;
             margin-bottom: 18px;
-            color: #fff;
-            
+            color: #1d4ed8;
         }
 
         .users-hero-left h1 {
@@ -70,13 +71,14 @@
             font-size: clamp(2.2rem, 3vw, 2.9rem);
             font-weight: 700;
             letter-spacing: -0.01em;
+            color: #0f172a;
         }
 
         .users-hero-left p {
             margin: 0;
             max-width: 420px;
             line-height: 1.6;
-            color: rgba(255, 255, 255, 0.82);
+            color: #475569;
         }
 
         .users-stats {
@@ -87,12 +89,12 @@
         }
 
         .users-stat-card {
-            background: rgba(255, 255, 255, 0.18);
+            background: #f8fafc;
             border-radius: 20px;
             padding: 18px 22px;
-            border: 1px solid rgba(255, 255, 255, 0.28);
-            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45);
-            backdrop-filter: blur(6px);
+            border: 1px solid #e2e8f0;
+            box-shadow: none;
+            backdrop-filter: none;
         }
 
         .users-stat-card--compact .value {
@@ -105,7 +107,7 @@
             font-size: 0.8rem;
             text-transform: uppercase;
             letter-spacing: 0.12em;
-            color: rgba(255, 255, 255, 0.72);
+            color: #94a3b8;
         }
 
         .users-stat-card .value {
@@ -122,7 +124,7 @@
             display: block;
             margin-top: 8px;
             font-size: 0.85rem;
-            color: rgba(255, 255, 255, 0.72);
+            color: #94a3b8;
         }
 
         .users-filter-card {
@@ -532,7 +534,7 @@
                     <i class="feather-users"></i>
                     Team overview
                 </span>
-                <h1 style="color: #fff;">Users directory</h1>
+                <h1>Users directory</h1>
                 <p>Browse every registered member, keep track of new sign-ups, and jump directly into detailed
                     profiles with a single click.</p>
             </div>
@@ -626,7 +628,7 @@
                                         <div class="name">{{ trim(($u->first_name ?? '').' '.($u->last_name ?? '')) ?: '—' }}</div>
                                         <div class="meta">
                                             <i class="feather-phone"></i>
-                                            {{ $u->phone ?: 'No phone on file' }}
+                                            +998{{ $u->phone ?: 'No phone on file' }}
                                         </div>
                                     </div>
                                 </div>

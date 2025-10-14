@@ -30,6 +30,8 @@
         $strengths = is_iterable($analysis->strengths ?? null) ? $analysis->strengths : [];
         $weaknesses = is_iterable($analysis->weaknesses ?? null) ? $analysis->weaknesses : [];
         $keywords = is_iterable($analysis->keywords ?? null) ? $analysis->keywords : [];
+
+        $profileUpdated = optional(optional($user)->updated_at)->format('M d, Y H:i') ?? '—';
     @endphp
 
     <style>
@@ -270,7 +272,7 @@
                     <span class="resume-show-chip"><i class="feather-hash"></i>Resume ID {{ $resume->id }}</span>
                     <span class="resume-show-chip"><i class="feather-shield"></i>{{ ucfirst($ownerRole) }}</span>
                     @if($ownerPhone)
-                        <span class="resume-show-chip"><i class="feather-phone"></i>{{ $ownerPhone }}</span>
+                        <span class="resume-show-chip"><i class="feather-phone"></i>+998{{ $ownerPhone }}</span>
                     @endif
                     @if($language !== '—')
                         <span class="resume-show-chip"><i class="feather-globe"></i>{{ strtoupper($language) }}</span>
@@ -324,7 +326,7 @@
                                 <span class="label">Phone</span>
                                 <span class="value">
                                     @if($ownerPhone)
-                                        <a href="tel:{{ preg_replace('/\s+/', '', $ownerPhone) }}">{{ $ownerPhone }}</a>
+                                        <a href="tel:{{ preg_replace('/\s+/', '', $ownerPhone) }}">+998{{ $ownerPhone }}</a>
                                     @else
                                         <span class="text-muted">Not provided</span>
                                     @endif
@@ -336,7 +338,7 @@
                             </div>
                             <div class="summary-chip">
                                 <span class="label">Profile updated</span>
-                                <span class="value">{{ optional($user->updated_at)->format('M d, Y H:i') ?? '—' }}</span>
+                                <span class="value">{{ $profileUpdated }}</span>
                             </div>
                         </div>
                     </div>

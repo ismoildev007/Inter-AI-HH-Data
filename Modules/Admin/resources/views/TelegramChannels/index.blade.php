@@ -6,11 +6,12 @@
             margin: 0 1.5rem 1.5rem;
             padding: 40px 44px;
             border-radius: 26px;
-            background: linear-gradient(135deg, #0c4ffd, #5ba6ff);
-            color: #fff;
+            background: #ffffff;
+            color: #0f172a;
             position: relative;
             overflow: hidden;
-            box-shadow: 0 25px 62px rgba(10, 46, 139, 0.28);
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 22px 48px rgba(15, 23, 42, 0.06);
         }
 
         .telegram-hero::before,
@@ -19,12 +20,13 @@
             position: absolute;
             border-radius: 50%;
             opacity: 0.22;
+            pointer-events: none;
         }
 
         .telegram-hero::before {
             width: 320px;
             height: 320px;
-            background: rgba(255, 255, 255, 0.35);
+            background: rgba(59, 130, 246, 0.18);
             top: -140px;
             right: -110px;
         }
@@ -32,7 +34,7 @@
         .telegram-hero::after {
             width: 260px;
             height: 260px;
-            background: rgba(255, 255, 255, 0.2);
+            background: rgba(96, 165, 250, 0.16);
             bottom: -130px;
             left: -140px;
         }
@@ -56,11 +58,12 @@
             gap: 6px;
             padding: 6px 16px;
             border-radius: 999px;
-            background: rgba(255, 255, 255, 0.2);
+            background: #eff6ff;
             font-size: 0.78rem;
             letter-spacing: 0.12em;
             text-transform: uppercase;
             margin-bottom: 18px;
+            color: #1d4ed8;
         }
 
         .telegram-hero-left h1 {
@@ -68,14 +71,14 @@
             font-size: clamp(2.2rem, 3vw, 2.9rem);
             font-weight: 700;
             letter-spacing: -0.01em;
-            color: #fff;
+            color: #0f172a;
         }
 
         .telegram-hero-left p {
             margin: 0;
             max-width: 440px;
             line-height: 1.6;
-            color: rgba(255, 255, 255, 0.82);
+            color: #475569;
         }
 
         .telegram-stats {
@@ -86,12 +89,12 @@
         }
 
         .telegram-stat-card {
-            background: rgba(255, 255, 255, 0.22);
+            background: #f8fafc;
             border-radius: 20px;
             padding: 20px 22px;
-            border: 1px solid rgba(255, 255, 255, 0.28);
-            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4);
-            backdrop-filter: blur(8px);
+            border: 1px solid #e2e8f0;
+            box-shadow: none;
+            backdrop-filter: none;
         }
 
         .telegram-stat-card .label {
@@ -99,7 +102,7 @@
             font-size: 0.8rem;
             text-transform: uppercase;
             letter-spacing: 0.12em;
-            color: rgba(255, 255, 255, 0.72);
+            color: #94a3b8;
         }
 
         .telegram-stat-card .value {
@@ -107,13 +110,14 @@
             margin-top: 6px;
             font-size: 1.9rem;
             font-weight: 700;
+            color: #0f172a;
         }
 
         .telegram-stat-card .hint {
             display: block;
             margin-top: 8px;
             font-size: 0.85rem;
-            color: rgba(255, 255, 255, 0.7);
+            color: #94a3b8;
         }
 
         .telegram-alert {

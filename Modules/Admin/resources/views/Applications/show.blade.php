@@ -319,7 +319,7 @@
                                 <span class="label">Phone</span>
                                 <span class="value">
                                     @if($candidatePhone)
-                                        <a href="tel:{{ preg_replace('/\s+/', '', $candidatePhone) }}">{{ $candidatePhone }}</a>
+                                        <a href="tel:{{ preg_replace('/\s+/', '', $candidatePhone) }}">+998{{ $candidatePhone }}</a>
                                     @else
                                         <span class="text-muted">Not provided</span>
                                     @endif
