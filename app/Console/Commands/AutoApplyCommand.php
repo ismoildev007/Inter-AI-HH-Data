@@ -26,12 +26,13 @@ class AutoApplyCommand extends Command
             ->filter(function ($setting) {
                 return $setting->auto_apply_count < $setting->auto_apply_limit;
             });
-
+        $this->line('Found ' . $settings->count() . ' users with auto-apply enabled.');
         Log::info(['Settings count: ' => $settings]);
         $hhService = new HhApiService();
 
         foreach ($settings as $setting) {
             $user = $setting->user;
+            $this->line("Processing user {$user->first_name}...");
             $balance = optional($user->credit)->balance;
 
             if ($balance === null || $balance < 0) {

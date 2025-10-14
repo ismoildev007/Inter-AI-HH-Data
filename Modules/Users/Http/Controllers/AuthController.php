@@ -193,6 +193,7 @@ class AuthController extends Controller
         return response()->json([
             'status'  => true,
             'balance' => $balance->balance ?? 0,
+            'hh_status' => $user->hhAccount ? true : false,
             'credit'  => [
                 'limit'     => $autoApplyLimit,
                 'count'     => $autoApplyCount,
