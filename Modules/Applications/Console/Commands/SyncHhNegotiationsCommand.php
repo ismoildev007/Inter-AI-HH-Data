@@ -72,7 +72,7 @@ class SyncHhNegotiationsCommand extends Command
 
                         $vacancy = Vacancy::where('external_id', $vacancyExternalId)->first();
                         if (!$vacancy) {
-                            continue; // Unknown locally, skip
+                            continue;
                         }
 
                         $app = Application::where('user_id', $account->user_id)
@@ -83,7 +83,6 @@ class SyncHhNegotiationsCommand extends Command
                         }
 
                         if ($resumeId !== '' && $app->hh_resume_id && (string) $app->hh_resume_id !== $resumeId) {
-                            // If resume ids are present and do not match, skip this negotiation for this app
                             continue;
                         }
 
@@ -91,10 +90,14 @@ class SyncHhNegotiationsCommand extends Command
                             $app->update(['hh_status' => $stateId, 'status' => $stateId]);
                             $updatedCount++;
 
-                            if ($stateId === 'interview') {
-                                // Dispatch interviews pipeline for this application (HH only)
+                            $triggerStates = ['interview', 'interview_scheduled', 'invitation', 'offer', 'hired'];
+
+                            if (in_array($stateId, $triggerStates, true)) {
                                 if ($vacancy->source === config('interviews.source_filter', 'hh')) {
-                                    \Modules\Interviews\Jobs\HandleInterviewApplication::dispatch($app->id);
+                                    if (!$app->interview_job_dispatched_at) {
+                                        \Modules\Interviews\Jobs\HandleInterviewApplication::dispatch($app->id);
+                                        $app->update(['interview_job_dispatched_at' => now()]);
+                                    }
                                 }
                             }
                         }
@@ -111,4 +114,3 @@ class SyncHhNegotiationsCommand extends Command
         return self::SUCCESS;
     }
 }
-
