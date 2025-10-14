@@ -16,7 +16,7 @@ class AuthRepository
     public function register(array $data): array
     {
 
-        return \DB::transaction(function () use ($data) {
+        return DB::transaction(function () use ($data) {
             //            if (User::where('email', $data['email'])->exists()) {
             //                return [
             //                    'status'  => 'error',
