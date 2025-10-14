@@ -79,6 +79,7 @@ class HHVacancyController extends Controller
             'success' => true,
             'data' => [
                 'id' => $vacancy->id,
+                'title' => $vacancy->title,
                 'description' => $vacancy->description,
                 'company' => $vacancy->company,
                 'contact' => $vacancy->contact,
