@@ -110,7 +110,7 @@
                                 <h3>Visitors Overview</h3>
                                 <p>Weekly distribution of total visits vs conversions</p>
                             </div>
-                            <span class="badge timeframe">Last 30 days</span>
+                            <span class="badge timeframe">Last 12 month</span>
                         </div>
                         <div class="dashboard-card__body chart-lg" id="visitors-overview-chart"></div>
                     </div>
