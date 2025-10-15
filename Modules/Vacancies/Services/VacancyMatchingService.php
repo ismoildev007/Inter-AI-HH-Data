@@ -108,6 +108,7 @@ class VacancyMatchingService
             Log::info('No vacancies to match for resume', ['resume_id' => $resume->id]);
             return [];
         }
+        Log::info('Prepared payload with ' . count($vacanciesPayload) . ' vacancies');
         $url = config('services.matcher.url', 'https://python.inter-ai.uz/bulk-match-fast');
         $response = Http::retry(3, 200)->timeout(30)->post($url, [
             'resumes'   => [mb_substr($resume->parsed_text, 0, 3000)],
