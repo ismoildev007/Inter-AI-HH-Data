@@ -116,7 +116,7 @@ class VacancyMatchingService
                 'text' => $v['text'],
             ], $vacanciesPayload),
             'top_k'     => 100,
-            'min_score' => 0,
+            'min_score' => 70,
         ]);
 
         Log::info('Fetch HH details took: ' . (microtime(true) - $start) . 's');
@@ -169,6 +169,7 @@ class VacancyMatchingService
                 ['score_percent', 'explanations', 'updated_at']
             );
         }
+        Log::info('All details took finished: ' . (microtime(true) - $start) . 's');
 
         Log::info('Matching finished', ['resume_id' => $resume->id]);
 
