@@ -33,10 +33,11 @@ class ResumeService
             $data['file_mime'] = $data['file']->getMimeType();
             $data['file_size'] = $data['file']->getSize();
         
-            // ✅ Download temporarily for parsing
-            $tempPath = tempnam(sys_get_temp_dir(), 'resume_');
+            $originalExt = strtolower(pathinfo($data['file']->getClientOriginalName(), PATHINFO_EXTENSION));
+            $tempPath = tempnam(sys_get_temp_dir(), 'resume_') . '.' . $originalExt;
+
             file_put_contents($tempPath, Storage::disk('spaces')->get($path));
-        
+
             $data['parsed_text'] = $this->parseFile($tempPath);
             unlink($tempPath);
         }
