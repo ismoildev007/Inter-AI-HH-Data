@@ -158,6 +158,7 @@ class ResumeService
         try {
             switch ($ext) {
                 case 'pdf':
+                    Log::info("Parsing PDF file: " . $path);
                     $parser = new \Smalot\PdfParser\Parser();
                     $pdf = $parser->parseFile($path);
                     return trim($pdf->getText());
