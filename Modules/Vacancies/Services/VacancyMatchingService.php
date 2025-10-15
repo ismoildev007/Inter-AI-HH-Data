@@ -129,6 +129,7 @@ class VacancyMatchingService
 
         $results = $response->json();
         $matches = $results['results'][0] ?? [];
+        Log::info('example match', ['match' => $matches[0] ?? null]);
         $vacancyMap = collect($vacanciesPayload)->keyBy(fn($v, $k) => $v['id'] ?? "new_{$k}");
 
         $savedData = [];
