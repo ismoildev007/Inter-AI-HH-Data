@@ -116,11 +116,11 @@ class VacancyMatchingService
                 'text' => $v['text'],
             ], $vacanciesPayload),
             'top_k'     => 100,
-            'min_score' => 70,
+            'min_score' => 50,
         ]);
 
         Log::info('Fetch HH details took: ' . (microtime(true) - $start) . 's');
-
+        Log::info('hh response count:'. count($response->json()));
         if ($response->failed()) {
             Log::error('Matcher API failed', ['resume_id' => $resume->id, 'body' => $response->body()]);
             return [];
