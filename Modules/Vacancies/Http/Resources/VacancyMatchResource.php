@@ -14,6 +14,8 @@ class VacancyMatchResource extends JsonResource
 {
     public function toArray($request)
     {
+        static $counter = 0; 
+        $order = ++$counter;
         $vacancy = Vacancy::find($this->vacancy_id);
         $raw = $vacancy?->raw_data ? json_decode($vacancy->raw_data, true) : [];
 
@@ -26,7 +28,7 @@ class VacancyMatchResource extends JsonResource
             'source'      => $vacancy->source ?? 'telegram',
             'external_id' => $vacancy?->external_id ?? null,
             'company'     => $raw['employer']['name'] ?? $vacancy->company,
-            'title'       => $vacancy?->title,
+            'title'       => $order . '. ' . ($vacancy?->title ?? ''),
             'experience'  => $raw['experience']['name'] ?? null,
             'salary'      => $raw['salary'] ?? null,
             'published_at' => isset($raw['published_at'])
