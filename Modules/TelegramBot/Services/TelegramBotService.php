@@ -66,18 +66,10 @@ class TelegramBotService
 
         if (!$user) {
             $webAppUrl = "https://vacancies.inter-ai.uz/#/register?locale={$langCode}&chat_id={$chatId}";
-            Log::info("Generated WebApp URL => {$webAppUrl}");
         } else {
-            $token = $user->createToken(
-                'api_token',
-                ['*'],
-                now()->addYears(22)
-            )->plainTextToken;
-
+            $token = $user->createToken('api_token', ['*'], now()->addYears(22))->plainTextToken;
             $webAppUrl = "https://vacancies.inter-ai.uz/#?locale={$langCode}&token={$token}&chat_id={$chatId}";
-            Log::info("User exists. Generated WebApp URL => {$webAppUrl}");
         }
-
 
         $inlineKeyboard = Keyboard::make()
             ->inline()
@@ -93,22 +85,26 @@ class TelegramBotService
             ->row([Keyboard::button($this->getBackButtonText($language))]);
 
         try {
+            // Avval inline tugma (registratsiya)
             Telegram::bot('mybot')->sendMessage([
                 'chat_id'      => $chatId,
                 'text'         => $text,
                 'reply_markup' => $inlineKeyboard,
             ]);
 
+            // Keyin “Orqaga” tugmasi chiqadi
             Telegram::bot('mybot')->sendMessage([
                 'chat_id'      => $chatId,
-                'text'         => '',
+                'text'         => "⬇️",
                 'reply_markup' => $backKeyboard,
             ]);
+
             Log::info("handleLanguageSelection => messages sent successfully!");
         } catch (\Exception $e) {
             Log::error("handleLanguageSelection ERROR: " . $e->getMessage());
         }
     }
+
 
     public function getViewProductsText($language)
     {
