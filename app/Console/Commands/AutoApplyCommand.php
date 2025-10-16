@@ -54,7 +54,12 @@ class AutoApplyCommand extends Command
             }
             $this->line("User {$user->id} can apply to {$remaining} vacancies.");
 
-            $matches = $user->resumes->flatMap->matchResults->where('score_percent', '>=', 50)->where('source', 'hh');
+            $matches = $user->resumes
+                ->flatMap->matchResults
+                ->filter(function ($match) {
+                    return $match->score_percent >= 50
+                        && optional($match->vacancy)->source === 'hh';
+                });
             Log::info(['User ' . $user->id . ' matches: ' => $matches]);
             foreach ($matches as $match) {
                 if ($remaining <= 0) {
@@ -81,7 +86,7 @@ class AutoApplyCommand extends Command
                 });
 
                 $remaining--;
-                $setting->increment('auto_apply_count'); 
+                $setting->increment('auto_apply_count');
                 $user->credit->decrement('balance');
             }
         }
