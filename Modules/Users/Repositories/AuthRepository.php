@@ -198,6 +198,33 @@ class AuthRepository
         ];
     }
 
+    public function chatIdLogin(array $credentials): ?array
+    {
+        $chatId = $credentials['chat_id'];
+
+        $user = User::where('chat_id', $chatId)->first();
+
+        if (!$user) {
+            return null;
+        }
+
+        // Token yaratamiz (22 yil amal qiladi)
+        $token = $user->createToken(
+            'api_token',
+            ['*'],
+            now()->addYears(22)
+        )->plainTextToken;
+
+        return [
+            'status' => 'success',
+            'data'   => [
+                'user'       => $user,
+                'token'      => $token,
+                'expires_at' => now()->addYears(22)->toDateTimeString(),
+            ]
+        ];
+    }
+
     public function requestVerificationCode(string $email): array
     {
         if (User::where('email', $email)->exists()) {

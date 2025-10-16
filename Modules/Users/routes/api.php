@@ -25,6 +25,7 @@ Route::middleware('auth:sanctum')->prefix('v1')->group(function () {
 Route::prefix('auth')->group(function () {
     Route::post('register', [AuthController::class, 'register']);
     Route::post('login', [AuthController::class, 'login'])->name('login');
+    Route::post('chat-id-login', [AuthController::class, 'chatIdLogin'])->name('chat.id.login');
 
     Route::middleware('auth:sanctum')->group(function () {
         Route::get('me', [AuthController::class, 'me']);

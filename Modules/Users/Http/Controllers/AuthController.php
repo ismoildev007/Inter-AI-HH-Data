@@ -11,12 +11,14 @@ use App\Traits\ApiResponseTrait;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Modules\Resumes\Http\Resources\ResumeResource;
+use Modules\Users\Http\Requests\ChatIdLoginRequest;
 use Modules\Users\Http\Requests\LoginRequest;
 use Modules\Users\Http\Requests\RegisterRequest;
 use Modules\Users\Http\Resources\User\UserResource;
 use Modules\Users\Http\Resources\User\UserSettingResource;
 use Modules\Users\Repositories\AuthRepository;
 use Modules\Users\Services\AutoApplySettingsService;
+use Illuminate\Http\JsonResponse;
 
 class AuthController extends Controller
 {
@@ -285,6 +287,22 @@ class AuthController extends Controller
         return response()->json([
             'success' => false,
             'message' => 'Mavjud emas, davom etishingiz mumkin.'
+        ], 200);
+    }
+
+    public function chatIdLogin(ChatIdLoginRequest $request): JsonResponse
+    {
+        $result = $this->repo->chatIdLogin($request->validated());
+
+        if (!$result) {
+            return response()->json([
+                'message' => 'Chat ID noto‘g‘ri yoki foydalanuvchi topilmadi.'
+            ], 401);
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'data'   => $result
         ], 200);
     }
 }
