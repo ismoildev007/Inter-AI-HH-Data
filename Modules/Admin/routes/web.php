@@ -26,6 +26,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
         // Profile
         Route::get('profile', [ProfileController::class, 'index'])->name('profile');
+        Route::put('profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password');
 
         // Users
         Route::get('users', [UserController::class, 'index'])->name('users.index');
