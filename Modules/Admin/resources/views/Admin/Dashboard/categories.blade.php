@@ -10,13 +10,17 @@
         $isPaginator = $rows instanceof \Illuminate\Contracts\Pagination\Paginator;
         $collection = $isPaginator ? $rows->getCollection() : collect($rows);
         $pageCount = $collection->count();
-        $totalCategories = $rows instanceof \Illuminate\Contracts\Pagination\LengthAwarePaginator ? $rows->total() : ($totalCount ?? $collection->count());
-        $totalVacanciesOnPage = $collection->sum('c');
+        $totalVacanciesOnPage = $collection->sum('count');
+        $rangeTotalVacancies = $totalCount ?? $totalVacanciesOnPage;
+        $totalVacancies = $rangeTotalVacancies;
         $activeFilterLabel = [
             'all' => 'All sources',
             'telegram' => 'Telegram',
             'hh' => 'HeadHunter',
         ][$currentFilter] ?? ucfirst($currentFilter);
+        $dateFilter = $dateFilter ?? ['from' => request('from', ''), 'to' => request('to', '')];
+        $dateRangeFrom = $dateFilter['from'] ?? '';
+        $dateRangeTo = $dateFilter['to'] ?? '';
     @endphp
 
     <style>
@@ -302,6 +306,85 @@
             color: #fff;
         }
 
+        .categories-range-filter {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            flex-wrap: wrap;
+        }
+
+        .categories-range-filter .range-field {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            background: #f5f7ff;
+            border-radius: 14px;
+            padding: 8px 12px;
+            border: 1px solid rgba(79, 107, 255, 0.1);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+        }
+
+        .categories-range-filter .range-field i {
+            color: #4f6bff;
+            font-size: 1rem;
+        }
+
+        .categories-range-filter .range-field input[type="date"] {
+            border: none;
+            background: transparent;
+            padding: 6px 0;
+            font-size: 0.92rem;
+            color: #1f2f7a;
+            min-width: 150px;
+        }
+
+        .categories-range-filter .range-field input[type="date"]:focus {
+            outline: none;
+        }
+
+        .categories-range-filter .range-field input[type="date"]::-webkit-calendar-picker-indicator {
+            filter: hue-rotate(210deg);
+        }
+
+        .categories-range-filter .divider {
+            font-size: 0.85rem;
+            color: #94a3b8;
+            font-weight: 600;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        .categories-range-filter .btn {
+            border-radius: 12px;
+            padding: 8px 18px;
+            font-weight: 600;
+        }
+
+        .categories-results-meta {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .categories-range-summary {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 14px;
+            border-radius: 999px;
+            background: linear-gradient(135deg, rgba(79, 107, 255, 0.16), rgba(38, 91, 255, 0.18));
+            color: #1a2f70;
+            font-size: 0.85rem;
+            font-weight: 600;
+            box-shadow: 0 12px 24px rgba(38, 91, 255, 0.18);
+        }
+
+        .categories-range-summary i {
+            color: #4f6bff;
+            font-size: 0.95rem;
+        }
+
         .categories-card .table thead th {
             padding: 18px 20px;
             background: rgba(31, 60, 253, 0.08);
@@ -449,6 +532,31 @@
                 max-width: 100%;
             }
 
+            .categories-range-filter {
+                width: 100%;
+                justify-content: flex-start;
+            }
+
+            .categories-range-filter .range-field {
+                flex: 1 1 auto;
+            }
+
+            .categories-range-filter .btn {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .categories-results-meta {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+
+            .categories-range-summary {
+                width: 100%;
+                justify-content: flex-start;
+            }
+
             .categories-card .table thead {
                 display: none;
             }
@@ -520,7 +628,7 @@
                 <h1 class="categories-hero__title">Vacancies by category</h1>
                 <div class="categories-hero__meta">
                     <span class="categories-hero__meta-item"><i class="feather-filter"></i>{{ $activeFilterLabel }}</span>
-                    <span class="categories-hero__meta-item"><i class="feather-users"></i>Total Vacancies: {{ number_format($totalCategories) }}</span>
+                    <span class="categories-hero__meta-item"><i class="feather-users"></i>Total Vacancies: {{ number_format($totalVacancies) }}</span>
                 </div>
             </div>
             <div class="categories-stats">
@@ -572,7 +680,46 @@
 
     <div class="card categories-card">
         <div class="card-header">
-            <h6 class="mb-0">Results</h6>
+            @php
+                $rangeClearParams = array_filter([
+                    'filter' => $currentFilter !== 'all' ? $currentFilter : null,
+                    'q' => $searchTerm !== '' ? $searchTerm : null,
+                ], static fn ($value) => !is_null($value) && $value !== '');
+                $rangeActive = ($dateRangeFrom !== '') || ($dateRangeTo !== '');
+            @endphp
+            <div class="filters">
+                <div class="categories-results-meta">
+                    <h6 class="mb-0">Results</h6>
+                    <span class="categories-range-summary">
+                        <i class="feather-bar-chart-2"></i>
+                        <span>Filtered vacancies: {{ number_format($rangeTotalVacancies) }}</span>
+                    </span>
+                </div>
+                <form method="GET" action="{{ route('admin.vacancies.categories') }}" class="categories-range-filter">
+                    @if($currentFilter !== 'all')
+                        <input type="hidden" name="filter" value="{{ $currentFilter }}">
+                    @endif
+                    @if($searchTerm !== '')
+                        <input type="hidden" name="q" value="{{ $searchTerm }}">
+                    @endif
+                    <div class="range-field">
+                        <i class="feather-calendar"></i>
+                        <input type="date" name="from" value="{{ $dateRangeFrom }}" aria-label="From date">
+                    </div>
+                    <span class="divider">to</span>
+                    <div class="range-field">
+                        <i class="feather-calendar"></i>
+                        <input type="date" name="to" value="{{ $dateRangeTo }}" aria-label="To date">
+                    </div>
+                    <button type="submit" class="btn btn-primary shadow-sm">Apply</button>
+                    @if($rangeActive)
+                        <a href="{{ route('admin.vacancies.categories', $rangeClearParams) }}" class="categories-clear-btn">
+                            <i class="feather-x-circle"></i>
+                            Clear
+                        </a>
+                    @endif
+                </form>
+            </div>
         </div>
         <div class="table-responsive">
             <table class="table align-middle mb-0">
@@ -593,6 +740,8 @@
                                 'category' => $categorySlug,
                                 'filter' => $currentFilter !== 'all' ? $currentFilter : null,
                                 'q' => !empty($searchTerm) ? $searchTerm : null,
+                                'from' => $dateRangeFrom !== '' ? $dateRangeFrom : null,
+                                'to' => $dateRangeTo !== '' ? $dateRangeTo : null,
                             ], fn ($value) => !is_null($value));
                         @endphp
                         <tr class="categories-list-row" onclick="window.location.href='{{ route('admin.vacancies.by_category', $viewParams) }}'">
@@ -601,7 +750,7 @@
                             </td>
                             
                             <td class="text-capitalize fw-semibold text-dark" data-label="Category">{{ $row->category ?: 'other' }}</td>
-                            <td class="text-end fw-semibold" data-label="Vacancies">{{ number_format($row->c) }}</td>
+                            <td class="text-end fw-semibold" data-label="Vacancies">{{ number_format($row->count) }}</td>
                         </tr>
                     @empty
                         <tr>
