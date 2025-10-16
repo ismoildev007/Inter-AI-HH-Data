@@ -5,10 +5,12 @@ namespace Modules\Vacancies\Repositories;
 use App\Models\HhAccount;
 use App\Models\Vacancy;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Modules\Vacancies\Interfaces\HHVacancyInterface;
 use Modules\Users\Repositories\HhAccountRepositoryInterface;
+use Stichoza\GoogleTranslate\GoogleTranslate;
 
 class HHVacancyRepository implements HHVacancyInterface
 {
@@ -44,6 +46,81 @@ class HHVacancyRepository implements HHVacancyInterface
     //     return $response->json();
     // }
 
+    // public function search(string $query, int $page = 0, int $perPage = 100, array $options = ['area' => 97]): array
+    // {
+    //     $query = trim($query);
+    //     if ($query === '') {
+    //         Log::warning('HH search called with empty query');
+    //         return ['items' => []];
+    //     }
+
+    //     $terms = array_filter(array_map('trim', explode(',', $query)));
+
+    //     $perPage = min($perPage, 100);
+
+    //     $dateFrom = now()->subDays(30)->startOfDay()->toIso8601String();
+    //     $dateTo   = now()->endOfDay()->toIso8601String();
+
+    //     $baseParams = [
+    //         'page'       => $page,
+    //         'per_page'   => $perPage,
+    //         'archived'   => false,
+    //         'date_from'  => $dateFrom,
+    //         'date_to'    => $dateTo,
+    //     ] + $options;
+
+    //     $mergedItems = [];
+
+    //     foreach ($terms as $term) {
+    //         $cacheKey = "hh:search:" . md5("{$term}:{$page}:{$perPage}:" . json_encode($options));
+
+    //         $data = cache()->remember($cacheKey, now()->addMinutes(30), function () use ($term, $baseParams) {
+    //             $params = ['text' => $term] + $baseParams;
+
+    //             try {
+    //                 $response = $this->http()->get("{$this->baseUrl}/vacancies", $params);
+
+    //                 if ($response->failed()) {
+    //                     Log::error('HH API request failed', [
+    //                         'term' => $term,
+    //                         'params' => $params,
+    //                         'body' => $response->body(),
+    //                     ]);
+    //                     return ['items' => []];
+    //                 }
+
+    //                 $json = $response->json();
+    //                 return is_array($json) ? $json : ['items' => []];
+    //             } catch (\Throwable $e) {
+    //                 Log::error('HH API exception', [
+    //                     'term' => $term,
+    //                     'message' => $e->getMessage(),
+    //                 ]);
+    //                 return ['items' => []];
+    //             }
+    //         });
+
+    //         if (isset($data['items']) && is_array($data['items'])) {
+    //             $mergedItems = array_merge($mergedItems, $data['items']);
+    //         }
+    //     }
+
+    //     // 🔹 Deduplicate by vacancy ID
+    //     $mergedItems = collect($mergedItems)
+    //         ->filter(fn($v) => isset($v['id']))
+    //         ->unique('id')
+    //         ->values()
+    //         ->all();
+
+    //     Log::info('HH search completed', [
+    //         'query' => $query,
+    //         'terms' => $terms,
+    //         'total_items' => count($mergedItems),
+    //     ]);
+
+    //     return ['items' => $mergedItems];
+    // }
+
     public function search(string $query, int $page = 0, int $perPage = 100, array $options = ['area' => 97]): array
     {
         $query = trim($query);
@@ -52,8 +129,23 @@ class HHVacancyRepository implements HHVacancyInterface
             return ['items' => []];
         }
 
+        // 🔹 Split multiple comma-separated queries
         $terms = array_filter(array_map('trim', explode(',', $query)));
 
+        // 🔹 Translate each term into English
+        $translator = new GoogleTranslate();
+        $translator->setSource('uz'); // auto-detect source
+        $translator->setTarget('en');
+        $translatedTerms = [];
+        foreach ($terms as $term) {
+            try {
+                $translated = $translator->translate(trim($term));
+                $translatedTerms[] = ucfirst($translated);
+            } catch (\Throwable $e) {
+                Log::warning("Translation failed for term '{$term}': " . $e->getMessage());
+                $translatedTerms[] = $term;
+            }
+        }
         $perPage = min($perPage, 100);
 
         $dateFrom = now()->subDays(30)->startOfDay()->toIso8601String();
@@ -69,10 +161,10 @@ class HHVacancyRepository implements HHVacancyInterface
 
         $mergedItems = [];
 
-        foreach ($terms as $term) {
+        foreach ($translatedTerms as $term) {
             $cacheKey = "hh:search:" . md5("{$term}:{$page}:{$perPage}:" . json_encode($options));
 
-            $data = cache()->remember($cacheKey, now()->addMinutes(30), function () use ($term, $baseParams) {
+            $data = Cache::remember($cacheKey, now()->addMinutes(30), function () use ($term, $baseParams) {
                 $params = ['text' => $term] + $baseParams;
 
                 try {
@@ -111,15 +203,13 @@ class HHVacancyRepository implements HHVacancyInterface
             ->all();
 
         Log::info('HH search completed', [
-            'query' => $query,
-            'terms' => $terms,
-            'total_items' => count($mergedItems),
+            'original_query'   => $query,
+            'translated_terms' => $translatedTerms,
+            'total_items'      => count($mergedItems),
         ]);
 
         return ['items' => $mergedItems];
     }
-
-
 
 
     public function getById(string $id): array

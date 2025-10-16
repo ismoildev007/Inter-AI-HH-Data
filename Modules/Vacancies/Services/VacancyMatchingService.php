@@ -116,8 +116,8 @@ class VacancyMatchingService
                 'id'   => $v['id'] ? (string) $v['id'] : null,
                 'text' => $v['text'],
             ], $vacanciesPayload),
-            'top_k'     => 100,
-            'min_score' => 50,
+            'top_k'     => count($vacanciesPayload),
+            'min_score' => 60,
         ]);
 
         Log::info('Fetch HH details took: ' . (microtime(true) - $start) . 's');
