@@ -144,6 +144,7 @@ class HHVacancyRepository implements HHVacancyInterface
                 $translatedTerms[] = $term;
             }
         }
+        dd($translatedTerms);
         $perPage = min($perPage, 100);
 
         $dateFrom = now()->subDays(30)->startOfDay()->toIso8601String();

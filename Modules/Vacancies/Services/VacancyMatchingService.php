@@ -38,7 +38,7 @@ class VacancyMatchingService
         $words = array_map('trim', explode(',', $query));
 
         $translator = new GoogleTranslate();
-        $translator->setSource(); 
+        $translator->setSource('uz'); 
         $translator->setTarget('uz');
         $uzQuery = $translator->translate("\"{$query}\"");
 

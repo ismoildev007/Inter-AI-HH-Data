@@ -89,6 +89,7 @@ class HhApiService
     // }
     public function apply($id)
     {
+        Log::info("Starting application process for vacancy ID: {$id}");
         $user = auth()->user();
 
         $resumeId = $user->settings->resume_id;
