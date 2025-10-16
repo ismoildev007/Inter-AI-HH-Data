@@ -12,6 +12,7 @@ use Modules\Vacancies\Interfaces\HHVacancyInterface;
 use Modules\Vacancies\Interfaces\VacancyInterface;
 use Spatie\Async\Pool;
 use App\Helpers\TranslitHelper;
+use Stichoza\GoogleTranslate\GoogleTranslate;
 
 class VacancyMatchingService
 {
@@ -36,6 +37,34 @@ class VacancyMatchingService
 
         $words = array_map('trim', explode(',', $query));
 
+        $translator = new GoogleTranslate();
+        $translator->setSource(); 
+        $translator->setTarget('uz');
+        $uzQuery = $translator->translate("\"{$query}\"");
+
+        $translator->setTarget('ru');
+        $ruQuery = $translator->translate("\"{$query}\"");
+
+        $translator->setTarget('en');
+        $enQuery = $translator->translate("\"{$query}\"");
+
+        $translations = [
+            'uz' => $uzQuery,
+            'ru' => $ruQuery,
+            'en' => $enQuery,
+        ];
+
+        $allVariants = collect([$query, $uzQuery, $ruQuery, $enQuery])
+            ->unique()
+            ->filter()
+            ->values()
+            ->all();
+
+        $multiWords = array_unique(array_merge(
+            ...array_map(fn($q) => array_map('trim', explode(',', $q)), $allVariants)
+        ));
+        Log::info('Searching vacancies for terms', ['terms' => $allVariants, 'multi_words' => $multiWords]);  
+
         [$hhVacancies, $localVacancies] = Concurrency::run([
             fn() => cache()->remember(
                 "hh:search:{$query}:area97",
@@ -44,24 +73,28 @@ class VacancyMatchingService
             ),
             fn() => Vacancy::query()
                 ->where('status', 'publish')
-                ->where(function ($q) use ($words, $latinQuery, $cyrilQuery) {
-                    foreach ($words as $word) {
-                        $latin = TranslitHelper::toLatin($word);
-                        $cyril = TranslitHelper::toCyrillic($word);
-                        $q->orWhere(function ($sub) use ($word, $latin, $cyril) {
-                            $sub->where('title', 'ilike', "%{$word}%")
+                ->where(function ($queryBuilder) use ($multiWords, $latinQuery, $cyrilQuery) {
+                    foreach ($multiWords as $term) {
+                        $latin = TranslitHelper::toLatin($term);
+                        $cyril = TranslitHelper::toCyrillic($term);
+
+                        $queryBuilder->orWhere(function ($sub) use ($term, $latin, $cyril) {
+                            $sub->where('title', 'ilike', "%{$term}%")
                                 ->orWhere('title', 'ilike', "%{$latin}%")
                                 ->orWhere('title', 'ilike', "%{$cyril}%")
-                                ->orWhere('description', 'ilike', "%{$word}%")
+                                ->orWhere('description', 'ilike', "%{$term}%")
                                 ->orWhere('description', 'ilike', "%{$latin}%")
                                 ->orWhere('description', 'ilike', "%{$cyril}%");
                         });
                     }
-                    $q->orWhere('title', 'ilike', "%{$latinQuery}%")
+
+                    $queryBuilder->orWhere('title', 'ilike', "%{$latinQuery}%")
                         ->orWhere('title', 'ilike', "%{$cyrilQuery}%")
                         ->orWhere('description', 'ilike', "%{$latinQuery}%")
                         ->orWhere('description', 'ilike', "%{$cyrilQuery}%");
                 })
+                ->select(['id', 'title', 'description', 'source', 'external_id'])
+                ->limit(300) 
                 ->get()
                 ->keyBy(
                     fn($v) => $v->source === 'hh' && $v->external_id
@@ -121,7 +154,7 @@ class VacancyMatchingService
         ]);
 
         Log::info('Fetch HH details took: ' . (microtime(true) - $start) . 's');
-        Log::info('hh response count:'. count($response->json()));
+        Log::info('hh response count:' . count($response->json()));
         if ($response->failed()) {
             Log::error('Matcher API failed', ['resume_id' => $resume->id, 'body' => $response->body()]);
             return [];

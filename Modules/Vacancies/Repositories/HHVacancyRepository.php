@@ -129,12 +129,10 @@ class HHVacancyRepository implements HHVacancyInterface
             return ['items' => []];
         }
 
-        // 🔹 Split multiple comma-separated queries
         $terms = array_filter(array_map('trim', explode(',', $query)));
 
-        // 🔹 Translate each term into English
         $translator = new GoogleTranslate();
-        $translator->setSource('uz'); // auto-detect source
+        $translator->setSource('uz'); 
         $translator->setTarget('en');
         $translatedTerms = [];
         foreach ($terms as $term) {
