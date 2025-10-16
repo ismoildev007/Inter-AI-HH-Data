@@ -38,7 +38,9 @@ class TelegramBotController extends Controller
 
             if ($this->botService->isBackButton($chatId, $text)) {
                 $this->botService->sendLanguageSelection($chatId);
+                return;
             }
+
         }
 
         return response('OK', 200);

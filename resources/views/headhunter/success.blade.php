@@ -57,11 +57,6 @@
             document.body.style.transition = 'opacity 0.8s';
             document.body.style.opacity = 1;
         });
-
-        // Auto-redirect after 4 seconds
-        setTimeout(() => {
-            window.location.href = 'https://vacancies.inter-ai.uz/';
-        }, 4000);
     </script>
 </body>
 </html>
