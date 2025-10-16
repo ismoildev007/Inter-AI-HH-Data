@@ -103,5 +103,4 @@ Schedule::command('app:send-notification-command')
     // ->onOneServer()    // ensures it runs only once across all servers
     ->withoutOverlapping();
 
-//----------------------------
 

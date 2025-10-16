@@ -210,6 +210,13 @@ return [
             'timeout' => 180,
             'nice' => 0,
         ],
+        'autoapply' => [
+            'connection' => 'redis',
+            'queue' => ['autoapply'],
+            'balance' => 'simple',
+            'processes' => 1,
+            'tries' => 3,
+        ],
     ],
 
     'environments' => [
@@ -231,6 +238,13 @@ return [
                 'maxProcesses' => 3,
                 'timeout' => 180,
             ],
+            'autoapply' => [
+                'connection' => 'redis',
+                'queue' => ['autoapply'],
+                'balance' => 'simple',
+                'processes' => 1,
+                'tries' => 3,
+            ],
         ],
 
         'local' => [
@@ -240,6 +254,9 @@ return [
             'telegram-relay' => [
                 // Keep single process locally as well
                 'maxProcesses' => 3,
+            ],
+            'autoapply' => [
+                'processes' => 1,
             ],
         ],
     ],
