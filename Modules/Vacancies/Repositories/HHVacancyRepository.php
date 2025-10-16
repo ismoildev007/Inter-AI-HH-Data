@@ -31,8 +31,8 @@ class HHVacancyRepository implements HHVacancyInterface
             'page'      => $page,
             'per_page'  => $perPage,
             'archived'  => false,
-            'date_from' => $dateFrom,
-            'date_to'   => $dateTo,
+            // 'date_from' => $dateFrom,
+            // 'date_to'   => $dateTo,
         ], $options);
 
         $response = $this->http()->get("{$this->baseUrl}/vacancies", $params);
