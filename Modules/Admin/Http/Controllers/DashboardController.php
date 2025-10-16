@@ -518,12 +518,51 @@ class DashboardController extends Controller
         }
 
         $search = trim((string) $request->query('q', ''));
+        $dateFromRaw = $request->query('from', '');
+        $dateToRaw = $request->query('to', '');
+        $dateFrom = null;
+        $dateTo = null;
+        $dateFromDisplay = '';
+        $dateToDisplay = '';
+
+        if ($dateFromRaw !== '') {
+            $dateFromDisplay = (string) $dateFromRaw;
+            try {
+                $parsed = Carbon::parse($dateFromDisplay);
+                $dateFrom = (clone $parsed)->startOfDay();
+                $dateFromDisplay = $parsed->toDateString();
+            } catch (\Throwable $e) {
+                $dateFromDisplay = '';
+            }
+        }
+
+        if ($dateToRaw !== '') {
+            $dateToDisplay = (string) $dateToRaw;
+            try {
+                $parsed = Carbon::parse($dateToDisplay);
+                $dateTo = (clone $parsed)->endOfDay();
+                $dateToDisplay = $parsed->toDateString();
+            } catch (\Throwable $e) {
+                $dateToDisplay = '';
+            }
+        }
+
+        if ($dateFrom && $dateTo && $dateFrom->gt($dateTo)) {
+            $dateTo = null;
+            $dateToDisplay = '';
+        }
         $normalizedSearch = $search !== '' ? mb_strtolower($search, 'UTF-8') : null;
 
         $categorizer = app(\Modules\TelegramChannel\Services\VacancyCategoryService::class);
         $catExpr = "COALESCE(NULLIF(category, ''), 'Other')";
         $rowsRaw = DB::table('vacancies')
             ->selectRaw($catExpr . ' as category, COUNT(*) as c')
+            ->when($dateFrom, function ($query) use ($dateFrom) {
+                $query->where('created_at', '>=', $dateFrom);
+            })
+            ->when($dateTo, function ($query) use ($dateTo) {
+                $query->where('created_at', '<=', $dateTo);
+            })
             ->when($filter === 'telegram', function ($query) {
                 $query->whereRaw('LOWER(source) LIKE ?', ['telegram%']);
             })
@@ -541,6 +580,7 @@ class DashboardController extends Controller
                     'category' => $canonical,
                     'slug' => $slug,
                     'count' => (int) $row->c,
+                    'c' => (int) $row->c,
                 ];
             })
             ->groupBy('category')
@@ -550,6 +590,7 @@ class DashboardController extends Controller
                 return (object) [
                     'category' => $category,
                     'slug' => $slug,
+                    'count' => $total,
                     'c' => $total,
                 ];
             })
@@ -568,6 +609,12 @@ class DashboardController extends Controller
             ->when($filter === 'telegram', function ($query) {
                 $query->whereRaw('LOWER(source) LIKE ?', ['telegram%']);
             })
+            ->when($dateFrom, function ($query) use ($dateFrom) {
+                $query->where('created_at', '>=', $dateFrom);
+            })
+            ->when($dateTo, function ($query) use ($dateTo) {
+                $query->where('created_at', '<=', $dateTo);
+            })
             ->when($filter === 'hh', function ($query) {
                 $query->whereRaw('LOWER(source) LIKE ?', ['hh%']);
             })
@@ -578,6 +625,10 @@ class DashboardController extends Controller
             'totalCount' => $totalCount,
             'filter' => $filter,
             'search' => $search,
+            'dateFilter' => [
+                'from' => $dateFromDisplay,
+                'to' => $dateToDisplay,
+            ],
         ]);
     }
 
@@ -592,6 +643,39 @@ class DashboardController extends Controller
         }
 
         $search = trim((string) $request->query('q', ''));
+        $dateFromRaw = $request->query('from', '');
+        $dateToRaw = $request->query('to', '');
+        $dateFrom = null;
+        $dateTo = null;
+        $dateFromDisplay = '';
+        $dateToDisplay = '';
+
+        if ($dateFromRaw !== '') {
+            $dateFromDisplay = (string) $dateFromRaw;
+            try {
+                $parsed = Carbon::parse($dateFromDisplay);
+                $dateFrom = (clone $parsed)->startOfDay();
+                $dateFromDisplay = $parsed->toDateString();
+            } catch (\Throwable $e) {
+                $dateFromDisplay = '';
+            }
+        }
+
+        if ($dateToRaw !== '') {
+            $dateToDisplay = (string) $dateToRaw;
+            try {
+                $parsed = Carbon::parse($dateToDisplay);
+                $dateTo = (clone $parsed)->endOfDay();
+                $dateToDisplay = $parsed->toDateString();
+            } catch (\Throwable $e) {
+                $dateToDisplay = '';
+            }
+        }
+
+        if ($dateFrom && $dateTo && $dateFrom->gt($dateTo)) {
+            $dateTo = null;
+            $dateToDisplay = '';
+        }
 
         $categorizer = app(\Modules\TelegramChannel\Services\VacancyCategoryService::class);
         $canonical = $categorizer->fromSlug($category) ?? $categorizer->categorize($category, null, '', $category);
@@ -612,6 +696,10 @@ class DashboardController extends Controller
             $q->whereRaw('LOWER(source) LIKE ?', ['telegram%']);
         })->when($filter === 'hh', function ($q) {
             $q->whereRaw('LOWER(source) LIKE ?', ['hh%']);
+        })->when($dateFrom, function ($q) use ($dateFrom) {
+            $q->where('created_at', '>=', $dateFrom);
+        })->when($dateTo, function ($q) use ($dateTo) {
+            $q->where('created_at', '<=', $dateTo);
         });
 
         if ($search !== '') {
@@ -641,6 +729,10 @@ class DashboardController extends Controller
             'filter' => $filter,
             'search' => $search,
             'categoryOptions' => array_values($categorizer->getCanonicalCategories()),
+            'dateFilter' => [
+                'from' => $dateFromDisplay,
+                'to' => $dateToDisplay,
+            ],
         ]);
     }
 

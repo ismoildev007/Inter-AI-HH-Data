@@ -13,13 +13,33 @@
         ];
         $filterLabel = $filterLabels[$currentFilter] ?? ucfirst($currentFilter);
         $searchTerm = $search ?? request('q', '');
+        $dateFilter = $dateFilter ?? ['from' => request('from', ''), 'to' => request('to', '')];
+        $dateRangeFrom = $dateFilter['from'] ?? '';
+        $dateRangeTo = $dateFilter['to'] ?? '';
+        $rangeActive = ($dateRangeFrom !== '') || ($dateRangeTo !== '');
+        $rangeSummary = '';
+        if ($rangeActive) {
+            if ($dateRangeFrom !== '' && $dateRangeTo !== '') {
+                $rangeSummary = $dateRangeFrom . ' → ' . $dateRangeTo;
+            } elseif ($dateRangeFrom !== '') {
+                $rangeSummary = 'From ' . $dateRangeFrom;
+            } else {
+                $rangeSummary = 'Until ' . $dateRangeTo;
+            }
+        }
+        $totalLabel = $rangeActive ? 'Vacancies in range' : 'All vacancies';
+        $rangeHint = $rangeActive ? 'Across current filters' : 'Across pagination';
         $formRouteParams = array_filter([
             'category' => $categorySlug,
             'filter' => $currentFilter !== 'all' ? $currentFilter : null,
+            'from' => $dateRangeFrom !== '' ? $dateRangeFrom : null,
+            'to' => $dateRangeTo !== '' ? $dateRangeTo : null,
         ], fn ($value) => !is_null($value));
         $indexParams = array_filter([
             'filter' => $currentFilter !== 'all' ? $currentFilter : null,
             'q' => !empty($searchTerm) ? $searchTerm : null,
+            'from' => $dateRangeFrom !== '' ? $dateRangeFrom : null,
+            'to' => $dateRangeTo !== '' ? $dateRangeTo : null,
         ], fn ($value) => !is_null($value));
         $isPaginator = $vacancies instanceof \Illuminate\Contracts\Pagination\Paginator;
         $collection = $isPaginator ? $vacancies->getCollection() : collect($vacancies);
@@ -439,6 +459,9 @@
                 <div class="category-vacancies-hero__meta">
                     <span class="category-vacancies-hero__meta-item"><i class="feather-hash"></i>ID {{ $categorySlug }}</span>
                     <span class="category-vacancies-hero__meta-item"><i class="feather-layers"></i>Total vacancies: {{ number_format($count) }}</span>
+                    @if($rangeActive)
+                        <span class="category-vacancies-hero__meta-item"><i class="feather-calendar"></i>{{ $rangeSummary }}</span>
+                    @endif
                 </div>
             </div>
             <div class="category-vacancies-stats">
@@ -448,9 +471,9 @@
                     <span class="hint">Current page size</span>
                 </div>
                 <div class="category-vacancies-stat-card">
-                    <span class="label">All vacancies</span>
+                    <span class="label">{{ $totalLabel }}</span>
                     <span class="value">{{ number_format($totalVacancies) }}</span>
-                    <span class="hint">Across pagination</span>
+                    <span class="hint">{{ $rangeHint }}</span>
                 </div>
                 <div class="category-vacancies-stat-card">
                     <span class="label">Latest published</span>
@@ -489,6 +512,8 @@
                             $viewParams = array_filter([
                                 'id' => $vacancy->id,
                                 'filter' => $currentFilter !== 'all' ? $currentFilter : null,
+                                'from' => $dateRangeFrom !== '' ? $dateRangeFrom : null,
+                                'to' => $dateRangeTo !== '' ? $dateRangeTo : null,
                             ], fn ($value) => !is_null($value));
                         @endphp
                         <tr class="category-vacancies-list-row" onclick="window.location.href='{{ route('admin.vacancies.show', $viewParams) }}'">
