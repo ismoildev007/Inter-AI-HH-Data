@@ -50,7 +50,7 @@ class RegisterRequest extends FormRequest
 //            'auto_apply_enabled'    => 'nullable|boolean',
 //            'auto_apply_limit'      => 'nullable|integer',
 //            'notifications_enabled' => 'nullable|boolean',
-//            'language'              => 'nullable|string|max:5',
+            'language'              => 'nullable|string|max:5',
         ];
     }
 
