@@ -1,9 +1,12 @@
 <?php
 
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    return redirect('/admin/login');
+    return Auth::check()
+        ? redirect()->route('admin.dashboard')
+        : redirect()->route('admin.login');
 });
 
 Route::fallback(function () {
