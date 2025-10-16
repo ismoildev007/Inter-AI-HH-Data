@@ -20,8 +20,8 @@ Route::prefix('v1')
          */
         Route::apiResource('vacancies', VacanciesController::class)
             ->names('vacancies');
-        // Route::get('hhsearch', [HHVacancyController::class, 'hhSearch'])
-        //     ->name('hh.search');
+        Route::get('hhsearch', [HHVacancyController::class, 'hhSearch'])
+            ->name('hh.search');
         /**
          * Resume → Vacancy matching
          */

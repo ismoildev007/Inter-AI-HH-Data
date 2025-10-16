@@ -21,28 +21,104 @@ class HHVacancyRepository implements HHVacancyInterface
         ]);
     }
 
+    // public function search(string $query, int $page = 0, int $perPage = 100, array $options = ['area' => 97]): array
+    // {
+    //     $dateFrom = now()->subMonth()->startOfDay()->toIso8601String();
+    //     $dateTo   = now()->endOfDay()->toIso8601String();
+
+    //     $params = array_merge([
+    //         'text'      => $query,
+    //         'page'      => $page,
+    //         'per_page'  => $perPage,
+    //         'archived'  => false,
+    //         'date_from' => $dateFrom,
+    //         'date_to'   => $dateTo,
+    //     ], $options);
+
+    //     $response = $this->http()->get("{$this->baseUrl}/vacancies", $params);
+
+    //     if ($response->failed()) {
+    //         throw new \RuntimeException("HH API search failed: " . $response->body());
+    //     }
+
+    //     return $response->json();
+    // }
+
     public function search(string $query, int $page = 0, int $perPage = 100, array $options = ['area' => 97]): array
     {
-        // $dateFrom = now()->subMonth()->startOfDay()->toIso8601String();
-        // $dateTo   = now()->endOfDay()->toIso8601String();
-
-        $params = array_merge([
-            'text'      => $query,
-            'page'      => $page,
-            'per_page'  => $perPage,
-            'archived'  => false,
-            // 'date_from' => $dateFrom,
-            // 'date_to'   => $dateTo,
-        ], $options);
-
-        $response = $this->http()->get("{$this->baseUrl}/vacancies", $params);
-
-        if ($response->failed()) {
-            throw new \RuntimeException("HH API search failed: " . $response->body());
+        $query = trim($query);
+        if ($query === '') {
+            Log::warning('HH search called with empty query');
+            return ['items' => []];
         }
 
-        return $response->json();
+        $terms = array_filter(array_map('trim', explode(',', $query)));
+
+        $perPage = min($perPage, 100);
+
+        $dateFrom = now()->subDays(30)->startOfDay()->toIso8601String();
+        $dateTo   = now()->endOfDay()->toIso8601String();
+
+        $baseParams = [
+            'page'       => $page,
+            'per_page'   => $perPage,
+            'archived'   => false,
+            'date_from'  => $dateFrom,
+            'date_to'    => $dateTo,
+        ] + $options;
+
+        $mergedItems = [];
+
+        foreach ($terms as $term) {
+            $cacheKey = "hh:search:" . md5("{$term}:{$page}:{$perPage}:" . json_encode($options));
+
+            $data = cache()->remember($cacheKey, now()->addMinutes(30), function () use ($term, $baseParams) {
+                $params = ['text' => $term] + $baseParams;
+
+                try {
+                    $response = $this->http()->get("{$this->baseUrl}/vacancies", $params);
+
+                    if ($response->failed()) {
+                        Log::error('HH API request failed', [
+                            'term' => $term,
+                            'params' => $params,
+                            'body' => $response->body(),
+                        ]);
+                        return ['items' => []];
+                    }
+
+                    $json = $response->json();
+                    return is_array($json) ? $json : ['items' => []];
+                } catch (\Throwable $e) {
+                    Log::error('HH API exception', [
+                        'term' => $term,
+                        'message' => $e->getMessage(),
+                    ]);
+                    return ['items' => []];
+                }
+            });
+
+            if (isset($data['items']) && is_array($data['items'])) {
+                $mergedItems = array_merge($mergedItems, $data['items']);
+            }
+        }
+
+        // 🔹 Deduplicate by vacancy ID
+        $mergedItems = collect($mergedItems)
+            ->filter(fn($v) => isset($v['id']))
+            ->unique('id')
+            ->values()
+            ->all();
+
+        Log::info('HH search completed', [
+            'query' => $query,
+            'terms' => $terms,
+            'total_items' => count($mergedItems),
+        ]);
+
+        return ['items' => $mergedItems];
     }
+
 
 
 

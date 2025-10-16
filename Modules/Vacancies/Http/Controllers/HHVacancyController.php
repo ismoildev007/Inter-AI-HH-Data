@@ -165,25 +165,25 @@ class HHVacancyController extends Controller
         });
     }
 
-    // public function hhSearch(Request $request)
-    // {
+    public function hhSearch(Request $request)
+    {
         
-    //     $query = $request->get('query', 'developer');
-    //     $page = (int) $request->get('page', 0);
-    //     $perPage = (int) $request->get('per_page', 100);
+        $query = $request->get('query', 'developer');
+        $page = (int) $request->get('page', 0);
+        $perPage = (int) $request->get('per_page', 100);
 
-    //     try {
-    //         $vacancies = $this->hh->search($query, $page, $perPage);
-
-    //         return response()->json([
-    //             'success' => true,
-    //             'data' => $vacancies,
-    //         ]);
-    //     } catch (\Throwable $e) {
-    //         return response()->json([
-    //             'success' => false,
-    //             'error' => $e->getMessage(),
-    //         ], 500);
-    //     }
-    // }
+        try {
+            $vacancies = $this->hh->search($query, $page, $perPage);
+            return response()->json([
+                'success' => true,
+                'count' => count($vacancies['items']),
+                'data' => $vacancies,
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
 }
