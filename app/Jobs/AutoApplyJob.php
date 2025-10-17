@@ -55,7 +55,8 @@ class AutoApplyJob implements ShouldQueue
             });
         } catch (\Throwable $e) {
             try {
-                $application->delete();
+                $application->status = 'already_applied';
+                $application->save();
             } catch (\Throwable $ex) {
                 Log::error("Failed to delete application after error", [
                     'application_id' => $application->id,
