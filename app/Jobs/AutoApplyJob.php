@@ -29,6 +29,7 @@ class AutoApplyJob implements ShouldQueue
      */
     public function handle(HhApiService $hhService): void
     {
+        Log::info("Executing AutoApplyJob for Application ID: {$this->application->id}");
         $application = $this->application;
         $user = $application->user;
         $setting = $user->settings;

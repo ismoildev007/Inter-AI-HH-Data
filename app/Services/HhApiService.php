@@ -21,6 +21,7 @@ class HhApiService
      */
     public function apply(Application $application)
     {
+        Log::info("Starting HH application for Application ID: {$application->id}");
         $hhAccount   = $application->user->hhAccount;
         $coverLetter = optional($application->user->preference)->cover_letter;
 
