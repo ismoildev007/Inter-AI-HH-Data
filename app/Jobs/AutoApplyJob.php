@@ -44,7 +44,7 @@ class AutoApplyJob implements ShouldQueue
 
                 CreditTransaction::create([
                     'user_id' => $user->id,
-                    'type'    => 'spend', 
+                    'type'    => 'spend',
                     'amount'  => -1,
                     'balance_after' => $newBalance,
                     'related_application_id' => $application->id,
@@ -53,12 +53,22 @@ class AutoApplyJob implements ShouldQueue
                 $application->update(['status' => 'response']);
             });
         } catch (\Throwable $e) {
-            $application->update(['status' => 'failed']);
+            try {
+                $application->delete();
+            } catch (\Throwable $ex) {
+                Log::error("Failed to delete application after error", [
+                    'application_id' => $application->id,
+                    'error' => $ex->getMessage(),
+                ]);
+            }
+
             Log::error("Auto apply job failed", [
                 'application_id' => $application->id,
-                'user_id'        => $user->id,
+                'user_id'        => $application->user_id,
                 'error'          => $e->getMessage(),
             ]);
+
+            $this->fail($e);
         }
     }
 }
