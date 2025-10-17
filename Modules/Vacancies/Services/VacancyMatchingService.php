@@ -75,7 +75,8 @@ class VacancyMatchingService
                 fn() => cache()->remember(
                     "hh:search:{$query}:area97",
                     now()->addMinutes(30),
-                    fn() => $this->hhRepository->search($query, 0, 100, ['area' => 97])
+                    fn() => app(\Modules\Vacancies\Interfaces\HHVacancyInterface::class)
+                        ->search($query, 0, 100, ['area' => 97])
                 ),
                 fn() => Vacancy::query()
                     ->where('status', 'publish')
@@ -83,7 +84,7 @@ class VacancyMatchingService
                         foreach ($multiWords as $term) {
                             $latin = TranslitHelper::toLatin($term);
                             $cyril = TranslitHelper::toCyrillic($term);
-
+            
                             $queryBuilder->orWhere(function ($sub) use ($term, $latin, $cyril) {
                                 $sub->where('title', 'ilike', "%{$term}%")
                                     ->orWhere('title', 'ilike', "%{$latin}%")
@@ -93,7 +94,7 @@ class VacancyMatchingService
                                     ->orWhere('description', 'ilike', "%{$cyril}%");
                             });
                         }
-
+            
                         $queryBuilder->orWhere('title', 'ilike', "%{$latinQuery}%")
                             ->orWhere('title', 'ilike', "%{$cyrilQuery}%")
                             ->orWhere('description', 'ilike', "%{$latinQuery}%")
@@ -108,6 +109,7 @@ class VacancyMatchingService
                             : "local_{$v->id}"
                     ),
             ]);
+            
         } catch (Throwable $e) {
             Log::error('[Concurrency] failed, running sequentially', [
                 'error' => $e->getMessage(),
