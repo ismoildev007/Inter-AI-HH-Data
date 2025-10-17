@@ -106,14 +106,15 @@ class VacancyMatchingService
         // ]);
 
         [$hhVacancies, $localVacancies] = \Illuminate\Support\Facades\Concurrency::run([
-            // ---- Task 1: HH vacancies ----
+            // HH search process
             function () use ($query) {
                 try {
                     Log::info('[Concurrency] HH search started', ['query' => $query]);
         
-                    $hhRepo = app(\Modules\Vacancies\Interfaces\HHVacancyInterface::class);
+                    // ⚠️ Re-resolve repository INSIDE the closure (don't use $this)
+                    $hhRepo = app(HHVacancyInterface::class);
         
-                    $result = cache()->remember(
+                    $result = Cache::remember(
                         "hh:search:{$query}:area97",
                         now()->addMinutes(30),
                         fn() => $hhRepo->search($query, 0, 100, ['area' => 97])
@@ -129,11 +130,12 @@ class VacancyMatchingService
                         'error' => $e->getMessage(),
                         'trace' => $e->getTraceAsString(),
                     ]);
+        
                     return ['items' => []];
                 }
             },
         
-            // ---- Task 2: Local vacancies ----
+            // Local DB search process
             function () use ($multiWords, $latinQuery, $cyrilQuery) {
                 try {
                     Log::info('[Concurrency] Local query started');
