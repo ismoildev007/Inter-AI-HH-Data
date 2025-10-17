@@ -7,6 +7,7 @@ use App\Models\MatchResult;
 use App\Models\User;
 use App\Models\Vacancy;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 
 class UserController extends Controller
 {
@@ -92,6 +93,14 @@ class UserController extends Controller
             })
             ->orderByDesc('id');
 
+        /** @var Collection<string,int> $sourceCounts */
+        $sourceCounts = (clone $vacancyQuery)
+            ->reorder()
+            ->selectRaw("LOWER(COALESCE(source, 'unknown')) as source_key, COUNT(*) as aggregate")
+            ->groupBy('source_key')
+            ->pluck('aggregate', 'source_key')
+            ->map(fn ($count) => (int) $count);
+
         $vacancies = $vacancyQuery->paginate(20);
 
         $matchSummaries = MatchResult::query()
@@ -125,6 +134,10 @@ class UserController extends Controller
             'user' => $user,
             'vacancies' => $vacancies,
             'matchSummaries' => $matchSummaries,
+            'sourceTotals' => [
+                'telegram' => $sourceCounts->get('telegram', 0),
+                'hh' => $sourceCounts->get('hh', 0),
+            ],
         ]);
     }
 }

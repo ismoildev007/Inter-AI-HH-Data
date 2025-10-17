@@ -475,6 +475,8 @@
             ->filter()
             ->max();
         $bestScoreDisplay = is_null($bestScoreValue) ? '—' : number_format((float) $bestScoreValue, 2) . '%';
+        $telegramCount = (int) ($sourceTotals['telegram'] ?? 0);
+        $hhCount = (int) ($sourceTotals['hh'] ?? 0);
     @endphp
 
     <div class="page-header">
@@ -542,6 +544,16 @@
                     <span class="label">Last matched</span>
                     <span class="value">{{ $latestMatchFormatted }}</span>
                     <span class="hint">{{ $latestMatchAgo ? 'Updated ' . $latestMatchAgo : 'No matches yet' }}</span>
+                </div>
+                <div class="user-vacancies-stat-card">
+                    <span class="label">Telegram sourced</span>
+                    <span class="value">{{ number_format($telegramCount) }}</span>
+                    <span class="hint">Matches originating from Telegram</span>
+                </div>
+                <div class="user-vacancies-stat-card">
+                    <span class="label">HH sourced</span>
+                    <span class="value">{{ number_format($hhCount) }}</span>
+                    <span class="hint">Matches originating from hh.uz</span>
                 </div>
             </div>
         </div>
