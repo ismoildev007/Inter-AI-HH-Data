@@ -45,7 +45,7 @@ PROMPT;
 
         $response = Http::withToken($apiKey)
             ->timeout(60)
-            ->retry(3, fn ($attempt) => [500, 2000, 5000][$attempt - 1] ?? 5000)
+            ->retry(3, fn($attempt) => [500, 2000, 5000][$attempt - 1] ?? 5000)
             ->post('https://api.openai.com/v1/chat/completions', [
                 'model' => $model,
                 'messages' => [
@@ -57,7 +57,7 @@ PROMPT;
 
         if ($response->failed()) {
             Log::error('Vacancy classification failed', ['status' => $response->status(), 'body' => $response->body()]);
-            throw new \RuntimeException('OpenAI classification request failed: '.$response->status());
+            throw new \RuntimeException('OpenAI classification request failed: ' . $response->status());
         }
 
         $content = (string) $response->json('choices.0.message.content', '');
@@ -68,12 +68,12 @@ PROMPT;
 
         $data = json_decode($content, true);
         if (!is_array($data)) {
-            throw new \RuntimeException('Invalid JSON from OpenAI (classification): '.$content);
+            throw new \RuntimeException('Invalid JSON from OpenAI (classification): ' . $content);
         }
 
         return [
             'label'     => (string) ($data['label'] ?? ''),
-            'confidence'=> (float)  ($data['confidence'] ?? 0.0),
+            'confidence' => (float)  ($data['confidence'] ?? 0.0),
             'language'  => (string) ($data['language'] ?? ''),
         ];
     }
