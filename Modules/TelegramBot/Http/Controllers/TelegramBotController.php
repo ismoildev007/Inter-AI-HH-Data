@@ -32,14 +32,16 @@ class TelegramBotController extends Controller
                 $this->botService->sendLanguageSelection($chatId);
             }
 
-            if (in_array($text, ['🇺🇿 O\'zbek', '🇷🇺 Русский', '🇬🇧 English'])) {
-                $this->botService->handleLanguageSelection($chatId, $text);
-            }
-
             if ($this->botService->isBackButton($chatId, $text)) {
                 $this->botService->sendLanguageSelection($chatId);
                 return;
             }
+
+            if (in_array($text, ['🇺🇿 O\'zbek', '🇷🇺 Русский', '🇬🇧 English'])) {
+                $this->botService->handleLanguageSelection($chatId, $text);
+            }
+
+            
         }
 
         return response('OK', 200);

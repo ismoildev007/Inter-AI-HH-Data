@@ -92,17 +92,15 @@ class TelegramBotService
                 'reply_markup' => $inlineKeyboard,
             ]);
             
+            // Wait 0.5s for Telegram to render the inline keyboard
+            usleep(500000);
             
-            usleep(300000); // wait 0.6 seconds
-            
-            
-            
-            // 2️⃣ Send “Back” button message separately
             Telegram::bot('mybot')->sendMessage([
                 'chat_id'      => $chatId,
-                'text'         => " ",
+                'text'         => ' ', // blank text to only show keyboard
                 'reply_markup' => $backKeyboard,
             ]);
+            
 
             Log::info("handleLanguageSelection => messages sent successfully!");
         } catch (\Exception $e) {
