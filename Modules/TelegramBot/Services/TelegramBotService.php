@@ -83,7 +83,7 @@ class TelegramBotService
         $backKeyboard = Keyboard::make()
             ->setResizeKeyboard(true)
             ->row([Keyboard::button($this->getBackButtonText($language))]);
-        
+
 
         try {
             Telegram::bot('mybot')->sendMessage([
@@ -91,16 +91,22 @@ class TelegramBotService
                 'text'         => $text,
                 'reply_markup' => $inlineKeyboard,
             ]);
-            
+
             // Wait 0.5s for Telegram to render the inline keyboard
-            usleep(500000);
-            
+            $backInstructionTexts = [
+                '🇺🇿 O\'zbek' => "Agar tilni o‘zgartirmoqchi bo‘lsangiz, ⬅️ Orqaga tugmasini bosing.",
+                '🇷🇺 Русский' => "Если хотите изменить язык, нажмите кнопку ⬅️ Назад.",
+                '🇬🇧 English' => "If you want to change the language, press ⬅️ Back.",
+            ];
+
+            $backInstruction = $backInstructionTexts[$language] ?? $backInstructionTexts['🇺🇿 O\'zbek'];
+
             Telegram::bot('mybot')->sendMessage([
                 'chat_id'      => $chatId,
-                'text'         => ' test', // blank text to only show keyboard
+                'text'         => $backInstruction,
                 'reply_markup' => $backKeyboard,
             ]);
-            
+
 
             Log::info("handleLanguageSelection => messages sent successfully!");
         } catch (\Exception $e) {
