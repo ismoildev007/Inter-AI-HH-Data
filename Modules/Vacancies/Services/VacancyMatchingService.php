@@ -97,7 +97,7 @@ class VacancyMatchingService
                         ->orWhere('description', 'ilike', "%{$cyrilQuery}%");
                 })
                 ->select(['id', 'title', 'description', 'source', 'external_id'])
-                ->limit(300)
+                ->limit(500)
                 ->get()
                 ->keyBy(
                     fn($v) => $v->source === 'hh' && $v->external_id
@@ -105,87 +105,6 @@ class VacancyMatchingService
                         : "local_{$v->id}"
                 ),
         ]);
-
-
-
-
-        // [$hhVacancies, $localVacancies] = \Illuminate\Support\Facades\Concurrency::run([
-        //     // HH search process
-        //     function () use ($query) {
-        //         try {
-        //             Log::info('[Concurrency] HH search started', ['query' => $query]);
-
-        //             // ⚠️ Re-resolve repository INSIDE the closure (don't use $this)
-        //             $hhRepo = app(HHVacancyInterface::class);
-
-        //             $result = Cache::remember(
-        //                 "hh:search:{$query}:area97",
-        //                 now()->addMinutes(30),
-        //                 fn() => $hhRepo->search($query, 0, 100, ['area' => 97])
-        //             );
-
-        //             Log::info('[Concurrency] HH search finished', [
-        //                 'count' => count($result['items'] ?? []),
-        //             ]);
-
-        //             return $result;
-        //         } catch (Throwable $e) {
-        //             Log::error('[Concurrency] HH search crashed', [
-        //                 'error' => $e->getMessage(),
-        //                 'trace' => $e->getTraceAsString(),
-        //             ]);
-
-        //             return ['items' => []];
-        //         }
-        //     },
-
-        //     // Local DB search process
-        //     function () use ($multiWords, $latinQuery, $cyrilQuery) {
-        //         try {
-        //             Log::info('[Concurrency] Local query started');
-
-        //             $queryBuilder = Vacancy::query()
-        //                 ->where('status', 'publish')
-        //                 ->where(function ($queryBuilder) use ($multiWords, $latinQuery, $cyrilQuery) {
-        //                     foreach ($multiWords as $term) {
-        //                         $latin = TranslitHelper::toLatin($term);
-        //                         $cyril = TranslitHelper::toCyrillic($term);
-        //                         $queryBuilder->orWhere(function ($sub) use ($term, $latin, $cyril) {
-        //                             $sub->where('title', 'ilike', "%{$term}%")
-        //                                 ->orWhere('title', 'ilike', "%{$latin}%")
-        //                                 ->orWhere('title', 'ilike', "%{$cyril}%")
-        //                                 ->orWhere('description', 'ilike', "%{$term}%")
-        //                                 ->orWhere('description', 'ilike', "%{$latin}%")
-        //                                 ->orWhere('description', 'ilike', "%{$cyril}%");
-        //                         });
-        //                     }
-
-        //                     $queryBuilder->orWhere('title', 'ilike', "%{$latinQuery}%")
-        //                         ->orWhere('title', 'ilike', "%{$cyrilQuery}%")
-        //                         ->orWhere('description', 'ilike', "%{$latinQuery}%")
-        //                         ->orWhere('description', 'ilike', "%{$cyrilQuery}%");
-        //                 })
-        //                 ->select(['id', 'title', 'description', 'source', 'external_id'])
-        //                 ->limit(300);
-
-        //             $vacancies = $queryBuilder->get()->keyBy(function ($v) {
-        //                 return $v->source === 'hh' && $v->external_id
-        //                     ? $v->external_id
-        //                     : "local_{$v->id}";
-        //             });
-
-        //             Log::info('[Concurrency] Local query finished', ['count' => $vacancies->count()]);
-
-        //             return $vacancies;
-        //         } catch (Throwable $e) {
-        //             Log::error('[Concurrency] Local query crashed', [
-        //                 'error' => $e->getMessage(),
-        //                 'trace' => $e->getTraceAsString(),
-        //             ]);
-        //             return collect();
-        //         }
-        //     },
-        // ]);
 
         Log::info('Data fetch took:' . (microtime(true) - $start) . 's');
         Log::info('Local vacancies: ' . $localVacancies->count());
@@ -203,7 +122,7 @@ class VacancyMatchingService
         }
         $toFetch = collect($hhItems)
             ->filter(fn($item) => isset($item['id']) && !$localVacancies->has($item['id']))
-            ->take(70);
+            ->take(200);
         foreach ($toFetch as $item) {
             $extId = $item['id'] ?? null;
             if (!$extId || $localVacancies->has($extId)) {
