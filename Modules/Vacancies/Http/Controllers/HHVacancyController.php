@@ -93,9 +93,9 @@ class HHVacancyController extends Controller
         ]);
     }
 
-    public function apply(Request $request, $id)
+    public function apply($id)
     {
-        $coverLetter = $request->input('cover_letter', null);
+        // $coverLetter = $request->input('cover_letter', null);
         $user = auth()->user();
 
         $resumeId = $user->settings->resume_id;
@@ -116,7 +116,7 @@ class HHVacancyController extends Controller
             ->where('resume_id', $userResume->id)
             ->first();
 
-        // $coverLetter = $user->preference?->cover_letter ?? null;
+        $coverLetter = $user->preference?->cover_letter ?? null;
 
         return DB::transaction(function () use ($user, $vacancy, $resumeId, $coverLetter, $matchResult, $userResume) {
             $existing = Application::where('user_id', $user->id)

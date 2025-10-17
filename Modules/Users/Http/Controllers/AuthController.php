@@ -317,4 +317,31 @@ class AuthController extends Controller
             'cover_letter' => $coverLetter?->cover_letter ?? null,
         ]);
     }
+
+    public function updateCoverLetter(Request $request)
+    {
+        $user = Auth::user();
+        if (!$user) {
+            return $this->error('Unauthenticated', 401);
+        }
+
+        $request->validate([
+            'cover_letter' => 'required|string',
+        ]);
+
+        $preference = $user->preference()->first();
+        if (!$preference) {
+            $preference = $user->preference()->create([
+                'cover_letter' => $request->cover_letter,
+            ]);
+        } else {
+            $preference->cover_letter = $request->cover_letter;
+            $preference->save();
+        }
+
+        return response()->json([
+            'message' => 'Cover letter updated successfully',
+            'cover_letter' => $preference->cover_letter,
+        ]);
+    }
 }
