@@ -90,7 +90,7 @@ class UserController extends Controller
                     ->where('match_results.vacancy_id', '>', 0)
                     ->where('resumes.user_id', $user->id);
             })
-            ->orderByDesc('created_at');
+            ->orderByDesc('id');
 
         $vacancies = $vacancyQuery->paginate(20);
 
