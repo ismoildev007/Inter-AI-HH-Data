@@ -297,15 +297,15 @@
                 <div class="user-profile-stat-card">
                     <span class="label">Matched vacancies</span>
                     <span class="value">{{ $matchedVacancyCount }}</span>
-                    <span class="hint">
+                    <div class="hint">
                         @if($matchedVacancyCount > 0)
-                            <a href="{{ route('admin.users.vacancies.index', $user->id) }}" class="text-white text-decoration-underline">
-                                View matched list
+                            <a href="{{ route('admin.users.vacancies.index', $user->id) }}" class="btn btn-sm btn-primary shadow-sm">
+                                <i class="feather-external-link me-1"></i> View matches
                             </a>
                         @else
                             No matches yet
                         @endif
-                    </span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -352,10 +352,17 @@
                 <div class="user-summary-item">
                     <span class="label">Matched vacancies</span>
                     <div class="value d-flex flex-column gap-2">
-                        <span class="fw-semibold">{{ $matchedVacancyCount }}</span>
-                        <a href="{{ route('admin.users.vacancies.index', $user->id) }}" class="btn btn-sm btn-outline-primary shadow-sm">
-                            <i class="feather-briefcase me-1"></i> View matched vacancies
-                        </a>
+                        @if($matchedVacancyCount > 0)
+                            <span>{{ $matchedVacancyCount }} vacancies linked to this user</span>
+                            <span class="text-muted small">Latest matches listed below</span>
+                            <div>
+                                <a href="{{ route('admin.users.vacancies.index', $user->id) }}" class="btn btn-sm btn-primary shadow-sm">
+                                    <i class="feather-briefcase me-1"></i> View matched vacancies
+                                </a>
+                            </div>
+                        @else
+                            <span class="text-muted">No matches yet</span>
+                        @endif
                     </div>
                 </div>
                 <div class="user-summary-item">
