@@ -80,6 +80,7 @@ class AutoApplyCommand extends Command
                         'match_score' => $match->score_percent,
                         'submitted_at' => now(),
                     ]);
+                    $this->line("Dispatching AutoApplyJob for application {$application->id}.");
 
                     AutoApplyJob::dispatch($application)
                         ->onQueue('autoapply');
