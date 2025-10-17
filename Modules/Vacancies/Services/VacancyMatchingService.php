@@ -67,43 +67,128 @@ class VacancyMatchingService
         ));
         Log::info('Searching vacancies for terms', ['terms' => $allVariants, 'multi_words' => $multiWords]);  
 
-        [$hhVacancies, $localVacancies] = Concurrency::run([
-            fn() => cache()->remember(
-                "hh:search:{$query}:area97",
-                now()->addMinutes(30),
-                fn() => $this->hhRepository->search($query, 0, 100, ['area' => 97])
-            ),
-            fn() => Vacancy::query()
-                ->where('status', 'publish')
-                ->where(function ($queryBuilder) use ($multiWords, $latinQuery, $cyrilQuery) {
-                    foreach ($multiWords as $term) {
-                        $latin = TranslitHelper::toLatin($term);
-                        $cyril = TranslitHelper::toCyrillic($term);
+        try {
+            Log::info('[Concurrency] 🚀 Started both concurrent tasks', ['query' => $query]);
+        
+            [$hhVacancies, $localVacancies] = Concurrency::run([
+                // === HH search process ===
+                function () use ($query) {
+                    Log::info('[Concurrency] HH closure started', ['query' => $query]);
+        
+                    $result = cache()->remember(
+                        "hh:search:{$query}:area97",
+                        now()->addMinutes(30),
+                        function () use ($query) {
+                            Log::info('[Concurrency] HH inner cache callback started', ['query' => $query]);
+                            $response = $this->hhRepository->search($query, 0, 100, ['area' => 97]);
+                            Log::info('[Concurrency] HH inner cache callback finished', [
+                                'query' => $query,
+                                'result_items' => is_array($response['items'] ?? null)
+                                    ? count($response['items'])
+                                    : 'no_items_key',
+                            ]);
+                            return $response;
+                        }
+                    );
+        
+                    Log::info('[Concurrency] HH closure finished', [
+                        'count' => count($result['items'] ?? []),
+                    ]);
+        
+                    return $result;
+                },
+        
+                // === Local DB search process ===
+                function () use ($multiWords, $latinQuery, $cyrilQuery) {
+                    Log::info('[Concurrency] Local closure started');
+        
+                    $vacancies = Vacancy::query()
+                        ->where('status', 'publish')
+                        ->where(function ($queryBuilder) use ($multiWords, $latinQuery, $cyrilQuery) {
+                            foreach ($multiWords as $term) {
+                                $latin = TranslitHelper::toLatin($term);
+                                $cyril = TranslitHelper::toCyrillic($term);
+        
+                                $queryBuilder->orWhere(function ($sub) use ($term, $latin, $cyril) {
+                                    $sub->where('title', 'ilike', "%{$term}%")
+                                        ->orWhere('title', 'ilike', "%{$latin}%")
+                                        ->orWhere('title', 'ilike', "%{$cyril}%")
+                                        ->orWhere('description', 'ilike', "%{$term}%")
+                                        ->orWhere('description', 'ilike', "%{$latin}%")
+                                        ->orWhere('description', 'ilike', "%{$cyril}%");
+                                });
+                            }
+        
+                            $queryBuilder->orWhere('title', 'ilike', "%{$latinQuery}%")
+                                ->orWhere('title', 'ilike', "%{$cyrilQuery}%")
+                                ->orWhere('description', 'ilike', "%{$latinQuery}%")
+                                ->orWhere('description', 'ilike', "%{$cyrilQuery}%");
+                        })
+                        ->select(['id', 'title', 'description', 'source', 'external_id'])
+                        ->limit(300)
+                        ->get()
+                        ->keyBy(
+                            fn($v) => $v->source === 'hh' && $v->external_id
+                                ? $v->external_id
+                                : "local_{$v->id}"
+                        );
+        
+                    Log::info('[Concurrency] Local closure finished', [
+                        'vacancies_count' => $vacancies->count(),
+                    ]);
+        
+                    return $vacancies;
+                },
+            ]);
+        
+            Log::info('[Concurrency] ✅ Both concurrent tasks finished successfully', [
+                'hh_items' => count($hhVacancies['items'] ?? []),
+                'local_count' => $localVacancies->count() ?? null,
+            ]);
+        } catch (Throwable $e) {
+            Log::error('[Concurrency] ❌ Crash detected', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+        }
+        // [$hhVacancies, $localVacancies] = Concurrency::run([
+        //     fn() => cache()->remember(
+        //         "hh:search:{$query}:area97",
+        //         now()->addMinutes(30),
+        //         fn() => $this->hhRepository->search($query, 0, 100, ['area' => 97])
+        //     ),
+        //     fn() => Vacancy::query()
+        //         ->where('status', 'publish')
+        //         ->where(function ($queryBuilder) use ($multiWords, $latinQuery, $cyrilQuery) {
+        //             foreach ($multiWords as $term) {
+        //                 $latin = TranslitHelper::toLatin($term);
+        //                 $cyril = TranslitHelper::toCyrillic($term);
 
-                        $queryBuilder->orWhere(function ($sub) use ($term, $latin, $cyril) {
-                            $sub->where('title', 'ilike', "%{$term}%")
-                                ->orWhere('title', 'ilike', "%{$latin}%")
-                                ->orWhere('title', 'ilike', "%{$cyril}%")
-                                ->orWhere('description', 'ilike', "%{$term}%")
-                                ->orWhere('description', 'ilike', "%{$latin}%")
-                                ->orWhere('description', 'ilike', "%{$cyril}%");
-                        });
-                    }
+        //                 $queryBuilder->orWhere(function ($sub) use ($term, $latin, $cyril) {
+        //                     $sub->where('title', 'ilike', "%{$term}%")
+        //                         ->orWhere('title', 'ilike', "%{$latin}%")
+        //                         ->orWhere('title', 'ilike', "%{$cyril}%")
+        //                         ->orWhere('description', 'ilike', "%{$term}%")
+        //                         ->orWhere('description', 'ilike', "%{$latin}%")
+        //                         ->orWhere('description', 'ilike', "%{$cyril}%");
+        //                 });
+        //             }
 
-                    $queryBuilder->orWhere('title', 'ilike', "%{$latinQuery}%")
-                        ->orWhere('title', 'ilike', "%{$cyrilQuery}%")
-                        ->orWhere('description', 'ilike', "%{$latinQuery}%")
-                        ->orWhere('description', 'ilike', "%{$cyrilQuery}%");
-                })
-                ->select(['id', 'title', 'description', 'source', 'external_id'])
-                ->limit(300) 
-                ->get()
-                ->keyBy(
-                    fn($v) => $v->source === 'hh' && $v->external_id
-                        ? $v->external_id
-                        : "local_{$v->id}"
-                ),
-        ]);
+        //             $queryBuilder->orWhere('title', 'ilike', "%{$latinQuery}%")
+        //                 ->orWhere('title', 'ilike', "%{$cyrilQuery}%")
+        //                 ->orWhere('description', 'ilike', "%{$latinQuery}%")
+        //                 ->orWhere('description', 'ilike', "%{$cyrilQuery}%");
+        //         })
+        //         ->select(['id', 'title', 'description', 'source', 'external_id'])
+        //         ->limit(300) 
+        //         ->get()
+        //         ->keyBy(
+        //             fn($v) => $v->source === 'hh' && $v->external_id
+        //                 ? $v->external_id
+        //                 : "local_{$v->id}"
+        //         ),
+        // ]);
+
 
         // [$hhVacancies, $localVacancies] = \Illuminate\Support\Facades\Concurrency::run([
         //     // HH search process
