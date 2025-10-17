@@ -83,19 +83,29 @@ class TelegramBotService
         $backKeyboard = Keyboard::make()
             ->setResizeKeyboard(true)
             ->row([Keyboard::button($this->getBackButtonText($language))]);
+        $keyboard = Keyboard::make()
+            ->setResizeKeyboard(true)
+            ->row([Keyboard::button($this->getViewProductsText($language))])
+            ->row([Keyboard::button($this->getBackButtonText($language))]);
 
         try {
+            // Telegram::bot('mybot')->sendMessage([
+            //     'chat_id'      => $chatId,
+            //     'text'         => $text,
+            //     'reply_markup' => $inlineKeyboard,
+            // ]);
+
+            // // 2️⃣ Send “Back” button message separately
+            // Telegram::bot('mybot')->sendMessage([
+            //     'chat_id'      => $chatId,
+            //     'text'         => " ",
+            //     'reply_markup' => $backKeyboard,
+            // ]);
+
             Telegram::bot('mybot')->sendMessage([
                 'chat_id'      => $chatId,
                 'text'         => $text,
-                'reply_markup' => $inlineKeyboard,
-            ]);
-    
-            // 2️⃣ Send “Back” button message separately
-            Telegram::bot('mybot')->sendMessage([
-                'chat_id'      => $chatId,
-                'text'         => " ",
-                'reply_markup' => $backKeyboard,
+                'reply_markup' => $keyboard,
             ]);
 
             Log::info("handleLanguageSelection => messages sent successfully!");
