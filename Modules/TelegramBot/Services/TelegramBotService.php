@@ -66,9 +66,11 @@ class TelegramBotService
 
         if (!$user) {
             $webAppUrl = "https://vacancies.inter-ai.uz/#/register?locale={$langCode}&chat_id={$chatId}";
+            Log::info("webAppUrl: {$webAppUrl}");
         } else {
             $token = $user->createToken('api_token', ['*'], now()->addYears(22))->plainTextToken;
             $webAppUrl = "https://vacancies.inter-ai.uz/#?locale={$langCode}&token={$token}&chat_id={$chatId}";
+            Log::info("webAppUrl or Toekn: {$webAppUrl}");
         }
 
         $inlineKeyboard = Keyboard::make()
