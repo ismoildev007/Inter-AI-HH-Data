@@ -235,6 +235,8 @@
             ->max();
         $latestResumeFormatted = $latestResume ? $latestResume->format('M d, Y H:i') : '—';
         $latestResumeAgo = $latestResume ? $latestResume->diffForHumans() : null;
+        $matchedVacancyCount = $matchedVacancyCount ?? 0;
+        $vacancyPreviewMatches = collect($recentVacancyMatches ?? [])->filter(fn ($match) => $match->vacancy)->values();
     @endphp
 
     <div class="page-header">
@@ -291,6 +293,20 @@
                     <span class="value">{{ $latestResumeFormatted }}</span>
                     <span class="hint">{{ $latestResumeAgo ? 'Updated ' . $latestResumeAgo : 'No resumes yet' }}</span>
                 </div>
+
+                <div class="user-profile-stat-card">
+                    <span class="label">Matched vacancies</span>
+                    <span class="value">{{ $matchedVacancyCount }}</span>
+                    <span class="hint">
+                        @if($matchedVacancyCount > 0)
+                            <a href="{{ route('admin.users.vacancies.index', $user->id) }}" class="text-white text-decoration-underline">
+                                View matched list
+                            </a>
+                        @else
+                            No matches yet
+                        @endif
+                    </span>
+                </div>
             </div>
         </div>
     </div>
@@ -334,6 +350,15 @@
                     <span class="value">{{ optional($user->updated_at)->format('M d, Y H:i') ?? '—' }}</span>
                 </div>
                 <div class="user-summary-item">
+                    <span class="label">Matched vacancies</span>
+                    <div class="value d-flex flex-column gap-2">
+                        <span class="fw-semibold">{{ $matchedVacancyCount }}</span>
+                        <a href="{{ route('admin.users.vacancies.index', $user->id) }}" class="btn btn-sm btn-outline-primary shadow-sm">
+                            <i class="feather-briefcase me-1"></i> View matched vacancies
+                        </a>
+                    </div>
+                </div>
+                <div class="user-summary-item">
                     <span class="label">Resume</span>
                     <div class="value d-flex flex-column gap-2">
                         @if($primaryResume)
@@ -351,6 +376,78 @@
                         @endif
                     </div>
                 </div>
+            </div>
+        </div>
+        <div class="user-profile-card card">
+            <div class="card-header d-flex align-items-center justify-content-between">
+                <h6 class="mb-0">Recent vacancy matches</h6>
+                <a href="{{ route('admin.users.vacancies.index', $user->id) }}" class="btn btn-sm btn-outline-primary">
+                    View all
+                </a>
+            </div>
+            <div class="card-body p-0">
+                @if($vacancyPreviewMatches->isEmpty())
+                    <div class="p-4 text-center text-muted">
+                        No vacancies have been matched to this user yet.
+                    </div>
+                @else
+                    <div class="table-responsive">
+                        <table class="table mb-0 align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th style="width: 90px;">ID</th>
+                                    <th>Vacancy</th>
+                                    <th style="width: 160px;">Score</th>
+                                    <th style="width: 220px;">Matched at</th>
+                                    <th style="width: 140px;" class="text-end">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            @foreach($vacancyPreviewMatches as $match)
+                                @php $vacancy = $match->vacancy; @endphp
+                                @continue(!$vacancy)
+                                @php
+                                    $matchMoment = $match->created_at ?? $match->updated_at;
+                                    $scorePercent = $match->score_percent;
+                                    $resumeTitle = $match->resume->title ?? null;
+                                @endphp
+                                <tr>
+                                    <td>
+                                        <span class="badge bg-light text-dark fw-semibold">#{{ $vacancy->id }}</span>
+                                    </td>
+                                    <td>
+                                        <div class="fw-semibold">{{ $vacancy->title ?? '—' }}</div>
+                                        <div class="text-muted small">{{ ucfirst($vacancy->source ?? 'unknown') }}</div>
+                                    </td>
+                                    <td>
+                                        @if(!is_null($scorePercent))
+                                            <div class="fw-semibold">{{ number_format((float) $scorePercent, 2) }}%</div>
+                                            @if($resumeTitle)
+                                                <div class="text-muted small">via "{{ $resumeTitle }}"</div>
+                                            @endif
+                                        @else
+                                            <span class="text-muted">—</span>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        @if($matchMoment)
+                                            <div>{{ $matchMoment->format('M d, Y H:i') }}</div>
+                                            <div class="text-muted small">{{ $matchMoment->diffForHumans() }}</div>
+                                        @else
+                                            <span class="text-muted">—</span>
+                                        @endif
+                                    </td>
+                                    <td class="text-end">
+                                        <a href="{{ route('admin.vacancies.show', ['id' => $vacancy->id]) }}" class="btn btn-sm btn-primary">
+                                            <i class="feather-eye me-1"></i>View
+                                        </a>
+                                    </td>
+                                </tr>
+                            @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                @endif
             </div>
         </div>
     </div>
