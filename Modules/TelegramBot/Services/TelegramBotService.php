@@ -85,19 +85,18 @@ class TelegramBotService
             ->row([Keyboard::button($this->getBackButtonText($language))]);
 
         try {
-            // Avval inline tugma (registratsiya)
             Telegram::bot('mybot')->sendMessage([
                 'chat_id'      => $chatId,
                 'text'         => $text,
                 'reply_markup' => $inlineKeyboard,
             ]);
-
-            // Keyin “Orqaga” tugmasi chiqadi
-            // Telegram::bot('mybot')->sendMessage([
-            //     'chat_id'      => $chatId,
-            //     'text'         => "⬇️",
-            //     'reply_markup' => $backKeyboard,
-            // ]);
+    
+            // 2️⃣ Send “Back” button message separately
+            Telegram::bot('mybot')->sendMessage([
+                'chat_id'      => $chatId,
+                'text'         => "⬅️",
+                'reply_markup' => $backKeyboard,
+            ]);
 
             Log::info("handleLanguageSelection => messages sent successfully!");
         } catch (\Exception $e) {

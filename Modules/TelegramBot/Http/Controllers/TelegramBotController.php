@@ -40,10 +40,33 @@ class TelegramBotController extends Controller
                 $this->botService->sendLanguageSelection($chatId);
                 return;
             }
-
         }
 
         return response('OK', 200);
     }
 
+    public function handleUpdate()
+    {
+        $update = Telegram::bot('mybot')->getWebhookUpdate();
+        $message = $update->getMessage();
+        $chatId = $message->chat->id;
+        $text = $message->text;
+
+        $service = app(\Modules\TelegramBot\Services\TelegramBotService::class);
+
+        // 🔙 If user clicks "Back"
+        if ($service->isBackButton($chatId, $text)) {
+            $service->sendLanguageSelection($chatId);
+            return;
+        }
+
+        // 🌐 If user selects a language
+        if (in_array($text, ['🇺🇿 O\'zbek', '🇷🇺 Русский', '🇬🇧 English'])) {
+            $service->handleLanguageSelection($chatId, $text);
+            return;
+        }
+
+        // 👋 Otherwise, default welcome
+        $service->sendWelcomeMessage($chatId);
+    }
 }
