@@ -106,32 +106,37 @@ class VacancyMatchingService
         // ]);
 
         [$hhVacancies, $localVacancies] = \Illuminate\Support\Facades\Concurrency::run([
-            // ---- HH vacancies fetch ----
+            // ---- Task 1: HH vacancies ----
             function () use ($query) {
                 try {
-                    Log::info('Starting concurrent HH search', ['query' => $query]);
+                    Log::info('[Concurrency] HH search started', ['query' => $query]);
         
-                    $hhRepo = app(HHVacancyInterface::class);
+                    $hhRepo = app(\Modules\Vacancies\Interfaces\HHVacancyInterface::class);
         
-                    $result = Cache::remember(
+                    $result = cache()->remember(
                         "hh:search:{$query}:area97",
                         now()->addMinutes(30),
                         fn() => $hhRepo->search($query, 0, 100, ['area' => 97])
                     );
         
-                    Log::info('HH search done', ['items' => count($result['items'] ?? [])]);
+                    Log::info('[Concurrency] HH search finished', [
+                        'count' => count($result['items'] ?? []),
+                    ]);
         
                     return $result;
                 } catch (Throwable $e) {
-                    Log::error('HH search failed', ['error' => $e->getMessage()]);
+                    Log::error('[Concurrency] HH search crashed', [
+                        'error' => $e->getMessage(),
+                        'trace' => $e->getTraceAsString(),
+                    ]);
                     return ['items' => []];
                 }
             },
         
-            // ---- Local vacancies fetch ----
+            // ---- Task 2: Local vacancies ----
             function () use ($multiWords, $latinQuery, $cyrilQuery) {
                 try {
-                    Log::info('Starting concurrent local vacancy query');
+                    Log::info('[Concurrency] Local query started');
         
                     $queryBuilder = Vacancy::query()
                         ->where('status', 'publish')
@@ -139,7 +144,6 @@ class VacancyMatchingService
                             foreach ($multiWords as $term) {
                                 $latin = TranslitHelper::toLatin($term);
                                 $cyril = TranslitHelper::toCyrillic($term);
-        
                                 $queryBuilder->orWhere(function ($sub) use ($term, $latin, $cyril) {
                                     $sub->where('title', 'ilike', "%{$term}%")
                                         ->orWhere('title', 'ilike', "%{$latin}%")
@@ -164,11 +168,14 @@ class VacancyMatchingService
                             : "local_{$v->id}";
                     });
         
-                    Log::info('Local vacancies fetched', ['count' => $vacancies->count()]);
+                    Log::info('[Concurrency] Local query finished', ['count' => $vacancies->count()]);
         
                     return $vacancies;
                 } catch (Throwable $e) {
-                    Log::error('Local vacancy query failed', ['error' => $e->getMessage()]);
+                    Log::error('[Concurrency] Local query crashed', [
+                        'error' => $e->getMessage(),
+                        'trace' => $e->getTraceAsString(),
+                    ]);
                     return collect();
                 }
             },
