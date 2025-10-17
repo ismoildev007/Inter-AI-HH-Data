@@ -7,21 +7,21 @@ use Illuminate\Support\Facades\Log;
 
 class VacancyNormalizationService
 {
-    /**
-     * Normalize a raw vacancy text into a structured array using OpenAI.
-     * - Keeps original language (no translation)
-     * - Extracts title, company, contacts, description, and category
-     */
-    public function normalize(string $rawText, string $sourceUsername, int $messageId): array
-    {
-        $model = config('telegramchannel.openai_model', env('OPENAI_MODEL', 'gpt-4.1-nano'));
-        $apiKey = config('telegramchannel.openai_key', env('OPENAI_API_KEY'));
+  /**
+   * Normalize a raw vacancy text into a structured array using OpenAI.
+   * - Keeps original language (no translation)
+   * - Extracts title, company, contacts, description, and category
+   */
+  public function normalize(string $rawText, string $sourceUsername, int $messageId): array
+  {
+    $model = config('telegramchannel.openai_model', env('OPENAI_MODEL', 'gpt-4.1-nano'));
+    $apiKey = config('telegramchannel.openai_key', env('OPENAI_API_KEY'));
 
-        if (!$apiKey) {
-            throw new \RuntimeException('OPENAI_API_KEY is not configured.');
-        }
+    if (!$apiKey) {
+      throw new \RuntimeException('OPENAI_API_KEY is not configured.');
+    }
 
-        $prompt = <<<PROMPT
+    $prompt = <<<PROMPT
 You are an assistant that cleans and standardizes job vacancy posts into a fixed JSON schema. Always read the full title and description before you classify the vacancy.
 
 Rules:
@@ -112,48 +112,48 @@ Input text:
 Context (do not include in output): source_username={$sourceUsername} message_id={$messageId}
 PROMPT;
 
-        $response = Http::withToken($apiKey)
-            ->timeout(60)
-            ->retry(3, fn($attempt) => [500, 2000, 5000][$attempt - 1] ?? 5000)
-            ->post('https://api.openai.com/v1/chat/completions', [
-                'model' => $model,
-                'messages' => [
-                    ['role' => 'system', 'content' => 'You format vacancies into a fixed JSON schema.'],
-                    ['role' => 'user', 'content' => $prompt],
-                ],
-                'temperature' => 0.1,
-            ]);
+    $response = Http::withToken($apiKey)
+      ->timeout(60)
+      ->retry(3, fn($attempt) => [500, 2000, 5000][$attempt - 1] ?? 5000)
+      ->post('https://api.openai.com/v1/chat/completions', [
+        'model' => $model,
+        'messages' => [
+          ['role' => 'system', 'content' => 'You format vacancies into a fixed JSON schema.'],
+          ['role' => 'user', 'content' => $prompt],
+        ],
+        'temperature' => 0.1,
+      ]);
 
-        if ($response->failed()) {
-            Log::error('Vacancy normalization failed', ['status' => $response->status(), 'body' => $response->body()]);
-            throw new \RuntimeException('OpenAI request failed: ' . $response->status());
-        }
-
-        $content = (string) $response->json('choices.0.message.content', '');
-        $content = trim($content);
-        $content = preg_replace('/^```(json)?/i', '', $content);
-        $content = preg_replace('/```$/', '', $content);
-        $content = trim($content);
-
-        $data = json_decode($content, true);
-        if (!is_array($data)) {
-            throw new \RuntimeException('Invalid JSON from OpenAI: ' . $content);
-        }
-
-        // Ensure shape
-        $normalized = [
-            'language' => (string) ($data['language'] ?? ''),
-            'title' => (string) ($data['title'] ?? ''),
-            'company' => (string) ($data['company'] ?? ''),
-            'contact' => [
-                'phones' => array_values(array_filter(array_map('strval', (array) ($data['contact']['phones'] ?? [])))),
-                'telegram_usernames' => array_values(array_filter(array_map('strval', (array) ($data['contact']['telegram_usernames'] ?? [])))),
-            ],
-            'description' => (string) ($data['description'] ?? ''),
-            'category_raw' => (string) ($data['category_raw'] ?? ''),
-            'category' => (string) ($data['category'] ?? ''),
-        ];
-
-        return $normalized;
+    if ($response->failed()) {
+      Log::error('Vacancy normalization failed', ['status' => $response->status(), 'body' => $response->body()]);
+      throw new \RuntimeException('OpenAI request failed: ' . $response->status());
     }
+
+    $content = (string) $response->json('choices.0.message.content', '');
+    $content = trim($content);
+    $content = preg_replace('/^```(json)?/i', '', $content);
+    $content = preg_replace('/```$/', '', $content);
+    $content = trim($content);
+
+    $data = json_decode($content, true);
+    if (!is_array($data)) {
+      throw new \RuntimeException('Invalid JSON from OpenAI: ' . $content);
+    }
+
+    // Ensure shape
+    $normalized = [
+      'language' => (string) ($data['language'] ?? ''),
+      'title' => (string) ($data['title'] ?? ''),
+      'company' => (string) ($data['company'] ?? ''),
+      'contact' => [
+        'phones' => array_values(array_filter(array_map('strval', (array) ($data['contact']['phones'] ?? [])))),
+        'telegram_usernames' => array_values(array_filter(array_map('strval', (array) ($data['contact']['telegram_usernames'] ?? [])))),
+      ],
+      'description' => (string) ($data['description'] ?? ''),
+      'category_raw' => (string) ($data['category_raw'] ?? ''),
+      'category' => (string) ($data['category'] ?? ''),
+    ];
+
+    return $normalized;
+  }
 }
