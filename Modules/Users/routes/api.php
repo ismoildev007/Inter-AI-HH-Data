@@ -12,6 +12,7 @@ Route::post('/demo-resume-check', [AuthController::class, 'resumeCheck']);
 
 // Public OAuth endpoints (no auth required yet)
 Route::middleware('auth:sanctum')->prefix('v1')->group(function () {
+    Route::get('cover-letter', [AuthController::class, 'coverLetter']);
     Route::get('hh-accounts/authorize', [HhAccountsController::class, 'authorizeUrl']);
     Route::get('hh-accounts/callback', [HhAccountsController::class, 'callback']);
     Route::get('balance', [AuthController::class, 'balance']);

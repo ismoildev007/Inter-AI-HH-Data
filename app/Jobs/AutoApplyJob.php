@@ -36,7 +36,7 @@ class AutoApplyJob implements ShouldQueue
         try {
             DB::transaction(function () use ($application, $user, $setting, $hhService) {
                 $vacancy = $application->vacancy;
-                $hhService->apply($vacancy->id);
+                $hhService->apply($application);
 
                 // $setting->increment('auto_apply_count');
                 // $user->credit->decrement('balance');

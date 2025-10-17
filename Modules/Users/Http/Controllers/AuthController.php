@@ -57,7 +57,6 @@ class AuthController extends Controller
     public function login(LoginRequest $request)
     {
         $result = $this->repo->login($request->validated());
-
         if (!$result) {
             return response()->json([
                 'message' => 'Invalid credentials'
@@ -304,5 +303,18 @@ class AuthController extends Controller
             'status' => 'success',
             'data'   => $result
         ], 200);
+    }
+
+    public function coverLetter()
+    {
+        $user = Auth::user();
+        if (!$user) {
+            return $this->error('Unauthenticated', 401);
+        }
+        $coverLetter = $user->preference()->first();
+
+        return response()->json([
+            'cover_letter' => $coverLetter?->cover_letter ?? null,
+        ]);
     }
 }

@@ -179,9 +179,8 @@ class AuthRepository
         if (!Auth::attempt($credentials)) {
             return null;
         }
-
         $user = Auth::user();
-
+        
         $token = $user->createToken(
             'api_token',
             ['*'],
