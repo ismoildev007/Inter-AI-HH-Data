@@ -97,7 +97,7 @@ class TelegramBotService
             
             Telegram::bot('mybot')->sendMessage([
                 'chat_id'      => $chatId,
-                'text'         => ' ', // blank text to only show keyboard
+                'text'         => ' test', // blank text to only show keyboard
                 'reply_markup' => $backKeyboard,
             ]);
             
