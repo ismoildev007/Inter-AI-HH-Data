@@ -230,7 +230,7 @@ class VacancyMatchingService
         Log::info('Prepared payload with ' . count($vacanciesPayload) . ' vacancies');
         $url = config('services.matcher.url', 'https://python.inter-ai.uz/bulk-match-fast');
         $response = Http::retry(3, 200)
-            ->timeout(30)
+            ->timeout(90)
             ->post($url, [
                 'resumes' => [[
                     'title'       => mb_substr($resume->title ?? '', 0, 200),
