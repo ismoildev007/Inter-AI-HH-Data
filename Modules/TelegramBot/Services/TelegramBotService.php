@@ -94,7 +94,7 @@ class TelegramBotService
             // 2️⃣ Send “Back” button message separately
             Telegram::bot('mybot')->sendMessage([
                 'chat_id'      => $chatId,
-                'text'         => "⬅️",
+                'text'         => " ",
                 'reply_markup' => $backKeyboard,
             ]);
 
