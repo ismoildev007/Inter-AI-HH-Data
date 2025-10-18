@@ -182,7 +182,7 @@ class VacancyRepository implements VacancyInterface
             $employer = Employer::updateOrCreate(
                 [
                     'source'      => 'hh',
-                    'external_id' => $hhVacancy['employer']['id'],
+                    'external_id' => $hhVacancy['employer']['id'] ?? null,
                 ],
                 [
                     'name'     => $hhVacancy['employer']['name'] ?? '',
@@ -199,7 +199,7 @@ class VacancyRepository implements VacancyInterface
             $area = Area::updateOrCreate(
                 [
                     'source'      => 'hh',
-                    'external_id' => $hhVacancy['area']['id'],
+                    'external_id' => $hhVacancy['area']['id'] ?? null,
                 ],
                 [
                     'name'     => $hhVacancy['area']['name'] ?? '',
@@ -259,10 +259,10 @@ class VacancyRepository implements VacancyInterface
             ?? (($hhVacancy['snippet']['requirement'] ?? '') . "\n" . ($hhVacancy['snippet']['responsibility'] ?? ''));
 
         $vacancy->fill([
-            'employer_id'     => $employerId,
-            'area_id'         => $areaId,
-            'schedule_id'     => $scheduleId,
-            'employment_id'   => $employmentId,
+            'employer_id'     => $employerId ?? null,
+            'area_id'         => $areaId ?? null,
+            'schedule_id'     => $scheduleId ?? null,
+            'employment_id'   => $employmentId ?? null,
             'title'           => $hhVacancy['name'] ?? '',
             'description'     => $description,
             'salary_from'     => $salary['from'] ?? null,
