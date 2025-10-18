@@ -97,7 +97,8 @@ class VacancyMatchingService
                         ->orWhere('description', 'ilike', "%{$cyrilQuery}%");
                 })
                 ->select(['id', 'title', 'description', 'source', 'external_id'])
-                ->limit(500)
+                ->limit(300)
+                ->orderBy('id', 'desc')
                 ->get()
                 ->keyBy(
                     fn($v) => $v->source === 'hh' && $v->external_id
@@ -122,7 +123,7 @@ class VacancyMatchingService
         }
         $toFetch = collect($hhItems)
             ->filter(fn($item) => isset($item['id']) && !$localVacancies->has($item['id']))
-            ->take(200);
+            ->take(100);
         foreach ($toFetch as $item) {
             $extId = $item['id'] ?? null;
             if (!$extId || $localVacancies->has($extId)) {
