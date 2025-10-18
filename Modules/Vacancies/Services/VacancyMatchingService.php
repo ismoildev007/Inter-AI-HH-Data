@@ -162,7 +162,7 @@ class VacancyMatchingService
                     'text'  => $v['text'] ?? '',
                 ], $vacanciesPayload),
                 'top_k'          => min(count($vacanciesPayload), 20),
-                'min_score'      => 60,
+                'min_score'      => 50,
                 'weight_embed'   => 0.75,
                 'weight_jaccard' => 0.15,
                 'weight_cov'     => 0.1,
