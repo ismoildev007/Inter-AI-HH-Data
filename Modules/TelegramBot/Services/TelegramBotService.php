@@ -63,7 +63,7 @@ class TelegramBotService
         $langCode = $langCodeMap[$language] ?? 'uz';
 
         $user = User::where('chat_id', $chatId)->first();
-
+        Log::info(['user info' => $user]);
         if (!$user) {
             $webAppUrl = "https://vacancies.inter-ai.uz/#/register?locale={$langCode}&chat_id={$chatId}";
             Log::info("webAppUrl: {$webAppUrl}");
