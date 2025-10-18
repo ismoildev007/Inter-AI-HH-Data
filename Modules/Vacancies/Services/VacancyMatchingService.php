@@ -161,7 +161,7 @@ class VacancyMatchingService
                     // 'title' => $v['title'] ?? '',
                     'text'  => $v['text'] ?? '',
                 ], $vacanciesPayload),
-                'top_k'          => min(count($vacanciesPayload), 20),
+                'top_k'          => count($vacanciesPayload),
                 'min_score'      => 0,
                 'weight_embed'   => 0.75,
                 'weight_jaccard' => 0.15,
@@ -183,7 +183,7 @@ class VacancyMatchingService
 
         $savedData = [];
         foreach ($matches as $match) {
-            if ($match['score'] < 30) continue;
+            if ($match['score'] < 49) continue;
 
             $vacId = $match['vacancy_id'] ?? null;
             $vac   = $vacId ? Vacancy::find($vacId) : null;
