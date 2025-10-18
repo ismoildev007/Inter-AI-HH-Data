@@ -177,12 +177,13 @@ class VacancyMatchingService
 
         $results = $response->json();
         $matches = $results['results'][0] ?? [];
+        Log::info('Matches found: ' . count($matches));
         Log::info('example match', ['match' => $matches[0] ?? null]);
         $vacancyMap = collect($vacanciesPayload)->keyBy(fn($v, $k) => $v['id'] ?? "new_{$k}");
 
         $savedData = [];
         foreach ($matches as $match) {
-            if ($match['score'] < 50) continue;
+            if ($match['score'] < 49) continue;
 
             $vacId = $match['vacancy_id'] ?? null;
             $vac   = $vacId ? Vacancy::find($vacId) : null;
