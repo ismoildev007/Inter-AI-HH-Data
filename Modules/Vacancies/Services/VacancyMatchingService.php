@@ -166,6 +166,7 @@ class VacancyMatchingService
                 'weight_embed'   => 0.75,
                 'weight_jaccard' => 0.15,
                 'weight_cov'     => 0.1,
+                "title_threshold" => 0.5
             ]);
 
         Log::info('Fetch HH details took: ' . (microtime(true) - $start) . 's');
