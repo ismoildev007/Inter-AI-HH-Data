@@ -72,7 +72,7 @@ class VacancyMatchingService
             fn() => cache()->remember(
                 "hh:search:{$query}:area97",
                 now()->addMinutes(30),
-                fn() => $this->hhRepository->search($query, 0, 100, ['area' => 97])
+                fn() => $this->hhRepository->search($query, 0, 1000, ['area' => 97])
             ),
             fn() => Vacancy::query()
                 ->where('status', 'publish')
@@ -97,7 +97,7 @@ class VacancyMatchingService
                         ->orWhere('description', 'ilike', "%{$cyrilQuery}%");
                 })
                 ->select(['id', 'title', 'description', 'source', 'external_id'])
-                ->limit(300)
+                ->limit(1000)
                 ->orderBy('id', 'desc')
                 ->get()
                 ->keyBy(
@@ -123,7 +123,7 @@ class VacancyMatchingService
         }
         $toFetch = collect($hhItems)
             ->filter(fn($item) => isset($item['id']) && !$localVacancies->has($item['id']))
-            ->take(100);
+            ->take(1000);
         foreach ($toFetch as $item) {
             $extId = $item['id'] ?? null;
             if (!$extId || $localVacancies->has($extId)) {
