@@ -117,7 +117,7 @@ class VacancyMatchingService
         foreach ($localVacancies as $v) {
             $vacanciesPayload[] = [
                 'id'   => $v->id,
-                'title' => $v->title,
+                // 'title' => $v->title,
                 'text' => mb_substr(strip_tags($v->description), 0, 2000),
             ];
         }
@@ -129,14 +129,14 @@ class VacancyMatchingService
             if (!$extId || $localVacancies->has($extId)) {
                 continue;
             }
-            $title = $item['name'] ?? 'No title';
+            // $title = $item['name'] ?? 'No title';
             $text = ($item['snippet']['requirement'] ?? '') . "\n" .
                 ($item['snippet']['responsibility'] ?? '');
 
             if (!empty(trim($text))) {
                 $vacanciesPayload[] = [
                     'id'          => null,
-                    'title'       => mb_substr(strip_tags($title), 0, 200),
+                    // 'title'       => mb_substr(strip_tags($title), 0, 200),
                     'text'        => mb_substr(strip_tags($text), 0, 1000),
                     'external_id' => $extId,
                     'raw'         => $item,
@@ -153,12 +153,12 @@ class VacancyMatchingService
             ->timeout(600)
             ->post($url, [
                 'resumes' => [[
-                    'title'       => mb_substr($resume->title ?? '', 0, 200),
+                    // 'title'       => mb_substr($resume->title ?? '', 0, 200),
                     'description' => mb_substr($resume->parsed_text ?? '', 0, 3000),
                 ]],
                 'vacancies'      => array_map(fn($v) => [
                     'id'    => $v['id'] ? (string)$v['id'] : null,
-                    'title' => $v['title'] ?? '',
+                    // 'title' => $v['title'] ?? '',
                     'text'  => $v['text'] ?? '',
                 ], $vacanciesPayload),
                 'top_k'          => count($vacanciesPayload),
@@ -166,7 +166,7 @@ class VacancyMatchingService
                 'weight_embed'   => 0.75,
                 'weight_jaccard' => 0.15,
                 'weight_cov'     => 0.1,
-                "title_threshold" => 0.5
+                // "title_threshold" => 0.5
             ]);
 
         Log::info('Fetch HH details took: ' . (microtime(true) - $start) . 's');
