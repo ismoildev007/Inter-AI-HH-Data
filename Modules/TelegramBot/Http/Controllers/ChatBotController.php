@@ -100,23 +100,23 @@ class ChatBotController extends Controller
                 return response('ok', 500);
             }
 
-//            try {
-//                $response = $telegram->sendMessage([
-//                    'chat_id' => env('TELEGRAM_ADMIN_GROUP_ID'),
-//                    'text'    => "📩 Yangi murojaat\n\n"
-//                        ."👤 Foydalanuvchi: {$fullName}\n"
-//                        .($username ? "🔗 Telegram: @{$username}\n" : '')
-//                        ."💬 Xabar: {$text}",
-//                ]);
-//
-//                $telegramMessageId = $response->getMessageId();
-//
-//                $support->update([
-//                    'telegram_message_id' => $telegramMessageId
-//                ]);
-//            } catch (\Exception $e) {
-//                Log::error('Telegram send to admin failed: ' . $e->getMessage());
-//            }
+            try {
+                $response = $telegram->sendMessage([
+                    'chat_id' => env('TELEGRAM_ADMIN_GROUP_ID'),
+                    'text'    => "📩 Yangi murojaat\n\n"
+                        ."👤 Foydalanuvchi: {$fullName}\n"
+                        .($username ? "🔗 Telegram: @{$username}\n" : '')
+                        ."💬 Xabar: {$text}",
+                ]);
+
+                $telegramMessageId = $response->getMessageId();
+
+                $support->update([
+                    'telegram_message_id' => $telegramMessageId
+                ]);
+            } catch (\Exception $e) {
+                Log::error('Telegram send to admin failed: ' . $e->getMessage());
+            }
 
             try {
                 $telegram->sendMessage([
