@@ -85,7 +85,14 @@ class SyncHhNegotiationsCommand extends Command
                         if ($resumeId !== '' && $app->hh_resume_id && (string) $app->hh_resume_id !== $resumeId) {
                             continue;
                         }
-
+                        Log::info('Matching negotiation found', [
+                            'application_id' => $app->id,
+                            'vacancy_id' => $vacancy->id,
+                            'vacancy_external_id' => $vacancyExternalId,
+                            'current_hh_status' => $app->hh_status,
+                            'new_hh_status' => $stateId,
+                        ]);
+                        $this->line(" - Application ID {$app->id}: HH status {$app->hh_status} -> {$stateId}");
                         if ($app->hh_status !== $stateId) {
                             $app->update(['hh_status' => $stateId, 'status' => $stateId]);
                             $updatedCount++;
