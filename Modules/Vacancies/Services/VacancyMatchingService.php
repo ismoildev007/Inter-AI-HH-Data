@@ -74,37 +74,31 @@ class VacancyMatchingService
                 now()->addMinutes(30),
                 fn() => $this->hhRepository->search($query, 0, 200, ['area' => 97])
             ),
-            fn() => Vacancy::query()
+            fn() => DB::table('vacancies')
                 ->where('status', 'publish')
-                ->where(function ($queryBuilder) use ($multiWords, $latinQuery, $cyrilQuery) {
-                    foreach ($multiWords as $term) {
-                        $latin = TranslitHelper::toLatin($term);
-                        $cyril = TranslitHelper::toCyrillic($term);
-
-                        $queryBuilder->orWhere(function ($sub) use ($term, $latin, $cyril) {
-                            $sub->where('title', 'ilike', "%{$term}%")
-                                ->orWhere('title', 'ilike', "%{$latin}%")
-                                ->orWhere('title', 'ilike', "%{$cyril}%")
-                                ->orWhere('description', 'ilike', "%{$term}%")
-                                ->orWhere('description', 'ilike', "%{$latin}%")
-                                ->orWhere('description', 'ilike', "%{$cyril}%");
-                        });
-                    }
-
-                    $queryBuilder->orWhere('title', 'ilike', "%{$latinQuery}%")
-                        ->orWhere('title', 'ilike', "%{$cyrilQuery}%")
-                        ->orWhere('description', 'ilike', "%{$latinQuery}%")
-                        ->orWhere('description', 'ilike', "%{$cyrilQuery}%");
+                ->whereNotIn('id', function ($q) use ($resume) {
+                    $q->select('vacancy_id')
+                        ->from('match_results')
+                        ->where('resume_id', $resume->id);
                 })
-                ->select(['id', 'title', 'description', 'source', 'external_id'])
+                ->whereRaw("
+                        (
+                            title ILIKE ANY (ARRAY['%" . implode("%','%", $multiWords) . "%']) OR
+                            description ILIKE ANY (ARRAY['%" . implode("%','%", $multiWords) . "%'])
+                        )
+                        OR title ILIKE '%{$latinQuery}%'
+                        OR description ILIKE '%{$latinQuery}%'
+                        OR title ILIKE '%{$cyrilQuery}%'
+                        OR description ILIKE '%{$cyrilQuery}%'
+                    ")
+                ->select('id', 'title', 'description', 'source', 'external_id')
                 ->limit(200)
-                ->orderBy('id', 'desc')
+                ->orderByDesc('id')
                 ->get()
-                ->keyBy(
-                    fn($v) => $v->source === 'hh' && $v->external_id
-                        ? $v->external_id
-                        : "local_{$v->id}"
-                ),
+                ->keyBy(fn($v) => $v->source === 'hh' && $v->external_id
+                    ? $v->external_id
+                    : "local_{$v->id}")
+
         ]);
 
         Log::info('Data fetch took:' . (microtime(true) - $start) . 's');
