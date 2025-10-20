@@ -64,28 +64,48 @@ class TelegramBotService
 
         $user = User::where('chat_id', $chatId)->first();
         Log::info(['user info' => $user]);
-        if (!$user) {
-            $registerUrl = "https://vacancies.inter-ai.uz/#/register?locale={$langCode}&chat_id={$chatId}";
-            $inlineKeyboard = Keyboard::make()
-                ->inline()
-                ->row([
-                    Keyboard::inlineButton([
-                        'text'    => $this->getViewRegisterText($language),
-                        'web_app' => ['url' => $registerUrl],
-                    ]),
-                ]);
-        } else {
+
+        if ($user) {
+            // Agar user mavjud bo‘lsa — token yaratamiz
             $token = $user->createToken('api_token', ['*'], now()->addYears(22))->plainTextToken;
-            $loginUrl = "https://vacancies.inter-ai.uz/#?locale={$langCode}&token={$token}&chat_id={$chatId}";
-            $inlineKeyboard = Keyboard::make()
-                ->inline()
-                ->row([
-                    Keyboard::inlineButton([
-                        'text'    => $this->getViewVacanciesText($language),
-                        'web_app' => ['url' => $loginUrl],
-                    ]),
-                ]);
+            $url = "https://vacancies.inter-ai.uz/#?locale={$langCode}&token={$token}&chat_id={$chatId}";
+        } else {
+            // User hali ro‘yxatdan o‘tmagan bo‘lsa — oddiy register URL
+            $url = "https://vacancies.inter-ai.uz/#/register?locale={$langCode}&chat_id={$chatId}";
         }
+        
+        $inlineKeyboard = Keyboard::make()
+            ->inline()
+            ->row([
+                Keyboard::inlineButton([
+                    'text'    => $user
+                        ? $this->getViewVacanciesText($language)
+                        : $this->getViewRegisterText($language),
+                    'web_app' => ['url' => $url],
+                ]),
+            ]);
+        // if (!$user) {
+        //     $registerUrl = "https://vacancies.inter-ai.uz/#/register?locale={$langCode}&chat_id={$chatId}";
+        //     $inlineKeyboard = Keyboard::make()
+        //         ->inline()
+        //         ->row([
+        //             Keyboard::inlineButton([
+        //                 'text'    => $this->getViewRegisterText($language),
+        //                 'web_app' => ['url' => $registerUrl],
+        //             ]),
+        //         ]);
+        // } else {
+        //     $token = $user->createToken('api_token', ['*'], now()->addYears(22))->plainTextToken;
+        //     $loginUrl = "https://vacancies.inter-ai.uz/#?locale={$langCode}&token={$token}&chat_id={$chatId}";
+        //     $inlineKeyboard = Keyboard::make()
+        //         ->inline()
+        //         ->row([
+        //             Keyboard::inlineButton([
+        //                 'text'    => $this->getViewVacanciesText($language),
+        //                 'web_app' => ['url' => $loginUrl],
+        //             ]),
+        //         ]);
+        // }
 
         $backKeyboard = Keyboard::make()
             ->setResizeKeyboard(true)
