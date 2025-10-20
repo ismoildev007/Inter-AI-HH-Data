@@ -29,7 +29,7 @@ class ChatBotController extends Controller
             if ($text === '/start') {
                 $telegram->sendMessage([
                     'chat_id' => $chatId,
-                    'text'    => "Salom! $firstName Qanday yordam bera olaman?"
+                    'text'    => "Assalomu alaykum! $firstName Savol va Takliflar?"
                 ]);
                 return response('ok');
             }
