@@ -105,7 +105,7 @@ class VacancyMatchingService
                         ? $v->external_id
                         : "local_{$v->id}"
                 ),
-        ]);
+        ], timeout: 300);
 
         Log::info('Data fetch took:' . (microtime(true) - $start) . 's');
         Log::info('Local vacancies: ' . $localVacancies->count());
