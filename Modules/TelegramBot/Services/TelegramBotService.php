@@ -49,9 +49,9 @@ class TelegramBotService
         Log::info("handleLanguageSelection => chatId: {$chatId}, lang: {$language}");
 
         $texts = [
-            '🇺🇿 O\'zbek' => 'Til tanlandi ✅ Platformamizdan foydalanish uchun quyidagi tugmalardan birini bosing!',
-            '🇷🇺 Русский' => 'Язык выбран ✅ Нажмите одну из кнопок ниже, чтобы использовать платформу!',
-            '🇬🇧 English' => 'Language selected ✅ Click one of the buttons below to use the platform!',
+            '🇺🇿 O\'zbek' => 'Platformamizdan foydalanish uchun "Dasturga kirish" tugmasini bosing!',
+            '🇷🇺 Русский' => 'Чтобы использовать нашу платформу, нажмите кнопку «Войти в программу»!',
+            '🇬🇧 English' => 'To use our platform, please click the "Sign in" button!',
         ];
         $text = $texts[$language] ?? $texts['🇺🇿 O\'zbek'];
 
@@ -150,8 +150,8 @@ class TelegramBotService
     public function getViewVacanciesText($language)
     {
         $texts = [
-            '🇺🇿 O\'zbek' => 'Tizimga Kirish',
-            '🇷🇺 Русский' => 'K Cистеме Войти',
+            '🇺🇿 O\'zbek' => 'Dasturga Kirish',
+            '🇷🇺 Русский' => 'Войти в программу',
             '🇬🇧 English' => 'Sign in',
         ];
         return $texts[$language] ?? 'Kirish';
