@@ -38,7 +38,6 @@ class ChatBotController extends Controller
             $date = Carbon::now()->format('Y-m-d');
             $cacheKey = "support_daily_count:{$chatId}:{$date}";
 
-            // Hisoblagichni o'qish
             $currentCount = (int) Cache::get($cacheKey, 0);
 
             if ($currentCount >= $this->dailyLimit) {
@@ -71,10 +70,21 @@ class ChatBotController extends Controller
                 $endOfDay = $now->copy()->endOfDay();
                 $secondsUntilEndOfDay = $endOfDay->diffInSeconds($now);
 
+                // Redisdan o'qib inkrement qilish
                 $currentCount = (int) Cache::get($cacheKey, 0);
                 $currentCount++;
-
                 Cache::put($cacheKey, $currentCount, $secondsUntilEndOfDay);
+
+                // Endi yangilangan sonni tekshiramiz
+                Log::info("User {$chatId} sent message #{$currentCount} of {$this->dailyLimit}");
+
+                if ($currentCount > $this->dailyLimit) {
+                    $telegram->sendMessage([
+                        'chat_id' => $chatId,
+                        'text'    => "⚠️ Kechirasiz, siz bugun {$this->dailyLimit} ta xabar yuborishingiz mumkin edi. Iltimos, ertaga qayta urinib ko‘ring.",
+                    ]);
+                    return response('ok');
+                }
             } catch (\Exception $e) {
                 Log::error('Cache increment error: ' . $e->getMessage());
             }
@@ -111,7 +121,7 @@ class ChatBotController extends Controller
             try {
                 $telegram->sendMessage([
                     'chat_id' => $chatId,
-                    'text'    => "✅ {$firstName}!\nSavol va taklifingiz uchun raxmat \ntez orada sizga javob beramiz. 🙂",
+                    'text'    => "{$firstName}!\nSavol va taklifingiz uchun raxmat \ntez orada sizga javob beramiz. 🙂",
                 ]);
             } catch (\Exception $e) {
                 Log::error('Telegram send confirmation failed: ' . $e->getMessage());
