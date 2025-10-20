@@ -87,7 +87,7 @@ class SendNotificationCommand extends Command
                     }
 
                     $token = $user->createToken('api_token', ['*'], now()->addYears(22))->plainTextToken;
-                    $webAppUrl = "https://vacancies.inter-ai.uz/#?chat_id={$user->chat_id}&locale={$langCode}";
+                    $webAppUrl = "https://vacancies.inter-ai.uz/#?chat_id={$user->chat_id}&token={$token}&locale={$langCode}";
 
                     $inlineKeyboard = Keyboard::make()
                         ->inline()
