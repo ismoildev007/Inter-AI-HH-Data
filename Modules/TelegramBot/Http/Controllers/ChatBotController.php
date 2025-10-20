@@ -26,11 +26,10 @@ class ChatBotController extends Controller
             $username = $user->username ?? '';
             $fullName = trim("$firstName $lastName");
 
-
             if ($text === '/start') {
                 $telegram->sendMessage([
                     'chat_id' => $chatId,
-                    'text'    => "Salom $firstName! Qanday yordam bera olaman?"
+                    'text'    => "Salom! $firstName Qanday yordam bera olaman?"
                 ]);
                 return response('ok');
             }
@@ -47,7 +46,6 @@ class ChatBotController extends Controller
                     ($username ? "(@{$username})\n" : '').
                     " xabar qoldirdi:\n\n".
                     $text,
-                'parse_mode' => 'Markdown'
             ]);
 
             $telegramMessageId = $response->getMessageId();
@@ -73,7 +71,7 @@ class ChatBotController extends Controller
                 if ($support) {
                     $telegram->sendMessage([
                         'chat_id' => $support->user_chat_id,
-                        'text'    => "Admin javobi:\n\n" . $replyText
+                        'text'    => "$replyText"
                     ]);
 
                     $support->update([
