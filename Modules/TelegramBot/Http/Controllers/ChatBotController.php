@@ -51,7 +51,7 @@ class ChatBotController extends Controller
                 'text'    => "📩 *Yangi murojaat*\n\n"
                     ."👤 Foydalanuvchi: *{$fullName}*\n"
                     .($username ? "🔗 Telegram: [@{$username}](https://t.me/{$username})\n" : '')
-                    ."💬 Xabar:\n{$text}",
+                    ."💬 Xabar: {$text}",
                 'parse_mode' => 'Markdown'
             ]);
 
