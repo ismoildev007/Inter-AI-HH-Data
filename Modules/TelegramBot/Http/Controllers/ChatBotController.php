@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
 use App\Models\SupportMessage;
-use Telegram\Bot\Laravel\Facades\Telegram;
 use Telegram\Bot\Api;
 use Illuminate\Support\Facades\Cache;
 use Carbon\Carbon;
@@ -44,12 +43,11 @@ class ChatBotController extends Controller
                 try {
                     $telegram->sendMessage([
                         'chat_id' => $chatId,
-                        'text'    => "⚠️ Kechirasiz, kunlik limit: Siz bugun xabar yuborish uchun ruxsat etilgan maksimal {$this->dailyLimit} marta yubordingiz. Ertaga yana urinib ko‘ring.",
+                        'text'    => "⚠️ Kechirasiz, siz bugunlik limitingizni tugatdingiz. {$this->dailyLimit} ta xabar yubordingiz. Ertaga qayta urinib ko‘ring.",
                     ]);
                 } catch (\Exception $e) {
-                    Log::error('Telegram send rate-limit message failed: ' . $e->getMessage());
+                    Log::error('Telegram send limit exceeded message failed: ' . $e->getMessage());
                 }
-
                 return response('ok');
             }
 
@@ -65,17 +63,16 @@ class ChatBotController extends Controller
                 return response('ok');
             }
 
+
             try {
                 $now = Carbon::now();
                 $endOfDay = $now->copy()->endOfDay();
                 $secondsUntilEndOfDay = $endOfDay->diffInSeconds($now);
 
-                // Redisdan o'qib inkrement qilish
                 $currentCount = (int) Cache::get($cacheKey, 0);
                 $currentCount++;
                 Cache::put($cacheKey, $currentCount, $secondsUntilEndOfDay);
 
-                // Endi yangilangan sonni tekshiramiz
                 Log::info("User {$chatId} sent message #{$currentCount} of {$this->dailyLimit}");
 
                 if ($currentCount > $this->dailyLimit) {
@@ -90,44 +87,45 @@ class ChatBotController extends Controller
             }
 
             try {
+                $now = Carbon::now();
+                $endOfDay = $now->copy()->endOfDay();
+                $secondsUntilEndOfDay = $endOfDay->diffInSeconds($now);
+
+                $currentCount = (int) Cache::get($cacheKey, 0);
+                $currentCount++;
+                Cache::put($cacheKey, $currentCount, $secondsUntilEndOfDay);
+
+                Log::info("User {$chatId} sent message #{$currentCount} of {$this->dailyLimit}");
+
                 $support = SupportMessage::create([
                     'user_chat_id' => $chatId,
                     'message_text' => $text,
                     'status'       => 'pending',
                 ]);
+
+                $response = $telegram->sendMessage([
+                    'chat_id' => env('TELEGRAM_ADMIN_GROUP_ID'),
+                    'text'    => "📩 Yangi murojaat\n\n"
+                        ."👤 Foydalanuvchi: {$fullName}\n"
+                        .($username ? "🔗 Telegram: @{$username}\n" : '')
+                        ."💬 Xabar: {$text}",
+                ]);
+
+                $telegramMessageId = $response->getMessageId();
+
+                $support->update([
+                    'telegram_message_id' => $telegramMessageId
+                ]);
+
+                $telegram->sendMessage([
+                    'chat_id' => $chatId,
+                    'text'    => "{$firstName}!\nSavol va taklifingiz uchun rahmat \ntez orada sizga javob beramiz. 🙂",
+                ]);
             } catch (\Exception $e) {
-                Log::error('SupportMessage create failed: ' . $e->getMessage());
+                Log::error('Telegram send or save message failed: ' . $e->getMessage());
                 return response('ok', 500);
             }
 
-//            try {
-//                $response = $telegram->sendMessage([
-//                    'chat_id' => env('TELEGRAM_ADMIN_GROUP_ID'),
-//                    'text'    => "📩 Yangi murojaat\n\n"
-//                        ."👤 Foydalanuvchi: {$fullName}\n"
-//                        .($username ? "🔗 Telegram: @{$username}\n" : '')
-//                        ."💬 Xabar: {$text}",
-//                ]);
-//
-//                $telegramMessageId = $response->getMessageId();
-//
-//                $support->update([
-//                    'telegram_message_id' => $telegramMessageId
-//                ]);
-//            } catch (\Exception $e) {
-//                Log::error('Telegram send to admin failed: ' . $e->getMessage());
-//            }
-
-            try {
-                $telegram->sendMessage([
-                    'chat_id' => $chatId,
-                    'text'    => "{$firstName}!\nSavol va taklifingiz uchun raxmat \ntez orada sizga javob beramiz. 🙂",
-                ]);
-            } catch (\Exception $e) {
-                Log::error('Telegram send confirmation failed: ' . $e->getMessage());
-            }
-
-            return response('ok');
         }
 
         if ($update->isType('message') && $update->message->chat->id == env('TELEGRAM_ADMIN_GROUP_ID')) {
