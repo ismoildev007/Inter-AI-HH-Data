@@ -21,7 +21,7 @@ class ChatBotController extends Controller
             $text   = $update->message->text;
 
             if ($text === '/start') {
-                Telegram::sendMessage([
+                $telegram->sendMessage([
                     'chat_id' => $chatId,
                     'text'    => "Salom! Qanday yordam bera olaman?"
                 ]);
@@ -34,7 +34,7 @@ class ChatBotController extends Controller
                 'status'          => 'pending',
             ]);
 
-            $response = Telegram::sendMessage([
+            $response = $telegram->sendMessage([
                 'chat_id' => env('TELEGRAM_ADMIN_GROUP_ID'),
                 'text'    => "Foydalanuvchi (chat_id={$chatId}) xabar qoldirdi:\n\n". $text
             ]);
@@ -60,7 +60,7 @@ class ChatBotController extends Controller
                     ->first();
 
                 if ($support) {
-                    Telegram::sendMessage([
+                    $telegram->sendMessage([
                         'chat_id' => $support->user_chat_id,
                         'text'    => "Admin javobi:\n\n" . $replyText
                     ]);
