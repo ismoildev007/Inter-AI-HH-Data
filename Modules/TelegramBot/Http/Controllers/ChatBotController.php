@@ -16,38 +16,42 @@ class ChatBotController extends Controller
         $telegram = new Api(env('TELEGRAM_CHAT_BOT_TOKEN'));
         $update = $telegram->getWebhookUpdate();
 
+        // 1️⃣ Foydalanuvchi xabari (private chat)
         if ($update->isType('message') && $update->message->chat->type === 'private') {
             $chatId = $update->message->chat->id;
             $text   = $update->message->text;
 
+            // Foydalanuvchi ma'lumotlari
             $user = $update->message->from;
             $firstName = $user->first_name ?? '';
             $lastName = $user->last_name ?? '';
             $username = $user->username ?? '';
             $fullName = trim("$firstName $lastName");
 
+            // ✅ START komandasi
             if ($text === '/start') {
                 $telegram->sendMessage([
                     'chat_id' => $chatId,
-                    'text'    => "Assalomu alaykum! $firstName Savol va Takliflar?"
+                    'text'    => "👋 Assalomu alaykum, $firstName!\n\nIltimos, savolingiz yoki taklifingizni yozib qoldiring, tez orada siz bilan bog‘lanamiz 😊",
+                    'parse_mode' => 'Markdown'
                 ]);
                 return response('ok');
             }
 
+            // ✅ Foydalanuvchi xabarini saqlaymiz
             $support = SupportMessage::create([
-                'user_chat_id'    => $chatId,
-                'message_text'    => $text,
-                'status'          => 'pending',
+                'user_chat_id' => $chatId,
+                'message_text' => $text,
+                'status'       => 'pending',
             ]);
-            $escapedName = str_replace(['*', '_', '[', ']', '(', ')'], '', $fullName);
-            $escapedText = str_replace(['*', '_', '[', ']', '(', ')'], '', $text);
 
+            // ✅ Admin guruhiga yuborish
             $response = $telegram->sendMessage([
-                'chat_id'    => env('TELEGRAM_ADMIN_GROUP_ID'),
-                'text'       => "🧑‍💼 Foydalanuvchi: *{$escapedName}*\n" .
-                    ($username ? "(@{$username})\n" : '') .
-                    " xabar qoldirdi:\n\n" .
-                    $escapedText,
+                'chat_id' => env('TELEGRAM_ADMIN_GROUP_ID'),
+                'text'    => "📩 *Yangi murojaat*\n\n"
+                    ."👤 Foydalanuvchi: *{$fullName}*\n"
+                    .($username ? "🔗 Telegram: [@{$username}](https://t.me/{$username})\n" : '')
+                    ."💬 Xabar:\n{$text}",
                 'parse_mode' => 'Markdown'
             ]);
 
@@ -57,9 +61,17 @@ class ChatBotController extends Controller
                 'telegram_message_id' => $telegramMessageId
             ]);
 
+            $telegram->sendMessage([
+                'chat_id' => $chatId,
+                'text'    => "✅ Rahmat, $firstName!\nSizning savolingiz qabul qilindi.\n"
+                    ."Bizning jamoa tez orada siz bilan bog‘lanadi. 🙂",
+                'parse_mode' => 'Markdown'
+            ]);
+
             return response('ok');
         }
 
+        // 2️⃣ Admin javobi
         if ($update->isType('message') && $update->message->chat->id == env('TELEGRAM_ADMIN_GROUP_ID')) {
             if (isset($update->message->reply_to_message)) {
                 $origMsg = $update->message->reply_to_message;
@@ -74,7 +86,7 @@ class ChatBotController extends Controller
                 if ($support) {
                     $telegram->sendMessage([
                         'chat_id' => $support->user_chat_id,
-                        'text'    => "$replyText"
+                        'text'    => "👨‍💼 Admin javobi:\n\n" . $replyText
                     ]);
 
                     $support->update([
@@ -88,4 +100,5 @@ class ChatBotController extends Controller
 
         return response('ok');
     }
+
 }
