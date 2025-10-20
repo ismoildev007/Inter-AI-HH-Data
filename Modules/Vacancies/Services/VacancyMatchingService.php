@@ -148,7 +148,7 @@ class VacancyMatchingService
             return [];
         }
         Log::info('Prepared payload with ' . count($vacanciesPayload) . ' vacancies');
-        $url = config('services.matcher.url', 'https://as2xv5kutntmwp-8000.proxy.runpod.net/bulk-match-fast');
+        $url = config('services.matcher.url', 'https://gh5dkn3hxyr9vj-8000.proxy.runpod.net/bulk-match-fast');
         $response = Http::retry(3, 200)
             ->timeout(600)
             ->post($url, [
