@@ -100,10 +100,10 @@ Schedule::command('telegram:session:soft-reset')
 // Schedule::command('app:send-notification-command')
 //     ->twiceDaily(3, 15) // 03:00 va 15:00 da ishga tushadi
 //     ->withoutOverlapping();
-$schedule->command('app:send-notification-command')
+Schedule::command('app:send-notification-command')
     ->dailyAt('03:30')
     ->withoutOverlapping();
 
-$schedule->command('app:send-notification-command')
+Schedule::command('app:send-notification-command')
     ->dailyAt('15:30')
     ->withoutOverlapping();
