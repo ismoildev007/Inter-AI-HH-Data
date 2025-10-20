@@ -29,7 +29,7 @@ class OpenAiQuestionGenerator implements AiQuestionGeneratorInterface
         $attempts = 0;
         do {
             try {
-                $key = env('OPENAI_API_KEY');
+                $key = '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';
                 if (empty($key)) {
                     Log::error('❌ Missing OpenAI API key in environment');
                     throw new \RuntimeException('OpenAI API key not configured');
