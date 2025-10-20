@@ -77,18 +77,18 @@ class SendNotificationCommand extends Command
 
                     if ($user->language === 'uz') {
                         $message = "Sun’iy intellekt siz uchun aynan mos bo‘lgan ish o‘rnini topdi! 🚀\n\nImkonni qo‘ldan boy bermang — batafsil ma’lumotni ilovada ko’rishingiz mumkin👇";
-                        $buttonText = "Akkauntga kirish";
+                        $buttonText = "Kirish";
                     } elseif ($user->language === 'ru') {
                         $message = "Наш ИИ нашёл для вас вакансию, которая идеально подходит! 🚀 \n\nНе упустите шанс — посмотрите подробности прямо сейчас в приложении 👇";
-                        $buttonText = "Войти в аккаунт";
+                        $buttonText = "Войти";
                     } else {
                         $message = "Our AI has found a job that perfectly matches your profile! 🚀\n\nDon’t miss this opportunity — check the details in the app right now 👇";
-                        $buttonText = "Enter Account";
+                        $buttonText = "Sign In";
                     }
 
                     $token = $user->createToken('api_token', ['*'], now()->addYears(22))->plainTextToken;
-                    $webAppUrl = "https://vacancies.inter-ai.uz/#?token={$token}&chat_id={$user->chat_id}&locale={$langCode}";
-                    
+                    $webAppUrl = "https://vacancies.inter-ai.uz/#?chat_id={$user->chat_id}&locale={$langCode}";
+
                     $inlineKeyboard = Keyboard::make()
                         ->inline()
                         ->row([
