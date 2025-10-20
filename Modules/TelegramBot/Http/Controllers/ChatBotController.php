@@ -20,10 +20,17 @@ class ChatBotController extends Controller
             $chatId = $update->message->chat->id;
             $text   = $update->message->text;
 
+            $user = $update->message->from;
+            $firstName = $user->first_name ?? '';
+            $lastName = $user->last_name ?? '';
+            $username = $user->username ?? '';
+            $fullName = trim("$firstName $lastName");
+
+
             if ($text === '/start') {
                 $telegram->sendMessage([
                     'chat_id' => $chatId,
-                    'text'    => "Salom! Qanday yordam bera olaman?"
+                    'text'    => "Salom $firstName! Qanday yordam bera olaman?"
                 ]);
                 return response('ok');
             }
@@ -36,7 +43,11 @@ class ChatBotController extends Controller
 
             $response = $telegram->sendMessage([
                 'chat_id' => env('TELEGRAM_ADMIN_GROUP_ID'),
-                'text'    => "Foydalanuvchi (chat_id={$chatId}) xabar qoldirdi:\n\n". $text
+                'text'    => "🧑‍💼 Foydalanuvchi: *{$fullName}*\n".
+                    ($username ? "(@{$username})\n" : '').
+                    " xabar qoldirdi:\n\n".
+                    $text,
+                'parse_mode' => 'Markdown'
             ]);
 
             $telegramMessageId = $response->getMessageId();
