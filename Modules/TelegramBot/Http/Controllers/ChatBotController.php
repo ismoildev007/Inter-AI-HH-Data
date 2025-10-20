@@ -67,16 +67,14 @@ class ChatBotController extends Controller
             }
 
             try {
-                if (!Cache::has($cacheKey)) {
-                    $now = Carbon::now();
-                    $endOfDay = $now->copy()->endOfDay();
-                    $secondsUntilEndOfDay = $endOfDay->diffInSeconds($now);
+                $now = Carbon::now();
+                $endOfDay = $now->copy()->endOfDay();
+                $secondsUntilEndOfDay = $endOfDay->diffInSeconds($now);
 
-                    Cache::put($cacheKey, 1, $secondsUntilEndOfDay);
-                    $currentCount = 1;
-                } else {
-                    $currentCount = Cache::increment($cacheKey);
-                }
+                $currentCount = (int) Cache::get($cacheKey, 0);
+                $currentCount++;
+
+                Cache::put($cacheKey, $currentCount, $secondsUntilEndOfDay);
             } catch (\Exception $e) {
                 Log::error('Cache increment error: ' . $e->getMessage());
             }
