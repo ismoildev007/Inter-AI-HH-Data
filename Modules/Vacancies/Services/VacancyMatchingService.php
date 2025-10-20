@@ -72,7 +72,7 @@ class VacancyMatchingService
             fn() => cache()->remember(
                 "hh:search:{$query}:area97",
                 now()->addMinutes(30),
-                fn() => $this->hhRepository->search($query, 0, 500, ['area' => 97])
+                fn() => $this->hhRepository->search($query, 0, 200, ['area' => 97])
             ),
             fn() => Vacancy::query()
                 ->where('status', 'publish')
@@ -97,7 +97,7 @@ class VacancyMatchingService
                         ->orWhere('description', 'ilike', "%{$cyrilQuery}%");
                 })
                 ->select(['id', 'title', 'description', 'source', 'external_id'])
-                ->limit(500)
+                ->limit(200)
                 ->orderBy('id', 'desc')
                 ->get()
                 ->keyBy(
