@@ -39,13 +39,16 @@ class ChatBotController extends Controller
                 'message_text'    => $text,
                 'status'          => 'pending',
             ]);
+            $escapedName = str_replace(['*', '_', '[', ']', '(', ')'], '', $fullName);
+            $escapedText = str_replace(['*', '_', '[', ']', '(', ')'], '', $text);
 
             $response = $telegram->sendMessage([
-                'chat_id' => env('TELEGRAM_ADMIN_GROUP_ID'),
-                'text'    => "🧑‍💼 Foydalanuvchi: *{$fullName}*\n".
-                    ($username ? "(@{$username})\n" : '').
-                    " xabar qoldirdi:\n\n".
-                    $text,
+                'chat_id'    => env('TELEGRAM_ADMIN_GROUP_ID'),
+                'text'       => "🧑‍💼 Foydalanuvchi: *{$escapedName}*\n" .
+                    ($username ? "(@{$username})\n" : '') .
+                    " xabar qoldirdi:\n\n" .
+                    $escapedText,
+                'parse_mode' => 'Markdown'
             ]);
 
             $telegramMessageId = $response->getMessageId();
