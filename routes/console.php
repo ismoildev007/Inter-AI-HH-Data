@@ -63,7 +63,7 @@ Schedule::command('hh:sync-negotiations')
 // Auto apply (misol):
 Schedule::command('autoapply:start')
     ->everyMinute()
-   // ->onOneServer()
+    // ->onOneServer()
     ->withoutOverlapping();
 // queue: autoapply — Horizon `--queue=autoapply` tinglab turadi (Horizon UI orqali sozlanadi)
 
@@ -90,17 +90,20 @@ Schedule::command('telegram:session:backup')
 
 // Ixtiyoriy: Agar rejalashtirilgan “yumshoq” profilaktika xohlasangiz, quyidagini YOQISH mumkin.
 // Eslatma: Auto‑healing (soft reset) getHistory ichida allaqachon ishlaydi; quyidagini faqat istasangiz yoqing.
- Schedule::command('telegram:session:soft-reset')
+Schedule::command('telegram:session:soft-reset')
     ->dailyAt('04:30')
     //->onOneServer()
     ->withoutOverlapping();
 // queue kerak emas
 
 // 🔔 Nightly matching and notification job
-Schedule::command('app:send-notification-command')
-    ->dailyAt('03:30') // run every night at 03:30 AM
-    // ->everyMinute()
-    // ->onOneServer()    // ensures it runs only once across all servers
+// Schedule::command('app:send-notification-command')
+//     ->twiceDaily(3, 15) // 03:00 va 15:00 da ishga tushadi
+//     ->withoutOverlapping();
+$schedule->command('app:send-notification-command')
+    ->dailyAt('03:30')
     ->withoutOverlapping();
 
-
+$schedule->command('app:send-notification-command')
+    ->dailyAt('15:30')
+    ->withoutOverlapping();
