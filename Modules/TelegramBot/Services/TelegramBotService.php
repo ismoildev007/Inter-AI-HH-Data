@@ -130,8 +130,8 @@ class TelegramBotService
     public function getViewVacanciesText($language)
     {
         $texts = [
-            '🇺🇿 O\'zbek' => 'Kirish',
-            '🇷🇺 Русский' => 'Войти',
+            '🇺🇿 O\'zbek' => 'Tizimga Kirish',
+            '🇷🇺 Русский' => 'K Cистеме Войти',
             '🇬🇧 English' => 'Sign in',
         ];
         return $texts[$language] ?? 'Kirish';

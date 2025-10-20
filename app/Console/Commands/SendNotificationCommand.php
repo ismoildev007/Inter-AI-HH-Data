@@ -76,13 +76,13 @@ class SendNotificationCommand extends Command
                     $langCode = $user->language ?? 'ru';
 
                     if ($user->language === 'uz') {
-                        $message = "Sun’iy intellekt siz uchun aynan mos bo‘lgan ish o‘rnini topdi! 🚀\n\nImkonni qo‘ldan boy bermang — batafsil ma’lumotni ilovada ko’rishingiz mumkin👇";
-                        $buttonText = "Kirish";
+                        $message = "Sun’iy intellekt siz uchun aynan mos bo‘lgan ish o‘rnlarini topdi! 🚀\n\nImkonni qo‘ldan boy bermang — batafsil ma’lumotni ilovada ko’rishingiz mumkin👇";
+                        $buttonText = "Tizimga Kirish";
                     } elseif ($user->language === 'ru') {
                         $message = "Наш ИИ нашёл для вас вакансию, которая идеально подходит! 🚀 \n\nНе упустите шанс — посмотрите подробности прямо сейчас в приложении 👇";
-                        $buttonText = "Войти";
+                        $buttonText = "K Cистеме Войти";
                     } else {
-                        $message = "Our AI has found a job that perfectly matches your profile! 🚀\n\nDon’t miss this opportunity — check the details in the app right now 👇";
+                        $message = "Our AI has found a jobs that perfectly matches your profile! 🚀\n\nDon’t miss this opportunity — check the details in the app right now 👇";
                         $buttonText = "Sign In";
                     }
 
