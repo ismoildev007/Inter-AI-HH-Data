@@ -48,7 +48,7 @@ class AutoApplySettingsService
             if ($limit > $balance) {
                 return [
                     'error'   => true,
-                    'message' => "Limit cannot be higher than current balance ({$balance})."
+                    'message' => "Limit cannot be higher than current balance ({$balance}). 1"
                 ];
             }
 
@@ -71,7 +71,7 @@ class AutoApplySettingsService
             if ($newLimit > $balance) {
                 return [
                     'error'   => true,
-                    'message' => "Limit cannot be higher than current balance ({$balance})."
+                    'message' => "Limit cannot be higher than current balance ({$balance}). 2"
                 ];
             }
 
