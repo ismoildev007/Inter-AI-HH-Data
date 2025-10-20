@@ -49,9 +49,9 @@ class TelegramBotService
         Log::info("handleLanguageSelection => chatId: {$chatId}, lang: {$language}");
 
         $texts = [
-            '🇺🇿 O\'zbek' => 'Til tanlandi ✅ Platformamizdan ro‘yxatdan o‘tish uchun quyidagi tugmani bosing!',
-            '🇷🇺 Русский' => 'Язык выбран ✅ Нажмите кнопку ниже, чтобы зарегистрироваться на нашей платформе!',
-            '🇬🇧 English' => 'Language selected ✅ Click the button below to register on our platform!',
+            '🇺🇿 O\'zbek' => 'Til tanlandi ✅ Platformamizdan foydalanish uchun quyidagi tugmalardan birini bosing!',
+            '🇷🇺 Русский' => 'Язык выбран ✅ Нажмите одну из кнопок ниже, чтобы использовать платформу!',
+            '🇬🇧 English' => 'Language selected ✅ Click one of the buttons below to use the platform!',
         ];
         $text = $texts[$language] ?? $texts['🇺🇿 O\'zbek'];
 
@@ -65,27 +65,31 @@ class TelegramBotService
         $user = User::where('chat_id', $chatId)->first();
         Log::info(['user info' => $user]);
         if (!$user) {
-            $webAppUrl = "https://vacancies.inter-ai.uz/#/register?locale={$langCode}&chat_id={$chatId}";
-            Log::info("webAppUrl: {$webAppUrl}");
+            $registerUrl = "https://vacancies.inter-ai.uz/#/register?locale={$langCode}&chat_id={$chatId}";
+            $inlineKeyboard = Keyboard::make()
+                ->inline()
+                ->row([
+                    Keyboard::inlineButton([
+                        'text'    => $this->getViewRegisterText($language),
+                        'web_app' => ['url' => $registerUrl],
+                    ]),
+                ]);
         } else {
             $token = $user->createToken('api_token', ['*'], now()->addYears(22))->plainTextToken;
-            $webAppUrl = "https://vacancies.inter-ai.uz/#?locale={$langCode}&token={$token}&chat_id={$chatId}";
-            Log::info("webAppUrl or Toekn: {$webAppUrl}");
+            $loginUrl = "https://vacancies.inter-ai.uz/#?locale={$langCode}&token={$token}&chat_id={$chatId}";
+            $inlineKeyboard = Keyboard::make()
+                ->inline()
+                ->row([
+                    Keyboard::inlineButton([
+                        'text'    => $this->getViewVacanciesText($language),
+                        'web_app' => ['url' => $loginUrl],
+                    ]),
+                ]);
         }
-
-        $inlineKeyboard = Keyboard::make()
-            ->inline()
-            ->row([
-                Keyboard::inlineButton([
-                    'text'    => $this->getViewProductsText($language),
-                    'web_app' => ['url' => $webAppUrl],
-                ]),
-            ]);
 
         $backKeyboard = Keyboard::make()
             ->setResizeKeyboard(true)
             ->row([Keyboard::button($this->getBackButtonText($language))]);
-
 
         try {
             Telegram::bot('mybot')->sendMessage([
@@ -94,13 +98,11 @@ class TelegramBotService
                 'reply_markup' => $inlineKeyboard,
             ]);
 
-            // Wait 0.5s for Telegram to render the inline keyboard
             $backInstructionTexts = [
                 '🇺🇿 O\'zbek' => "Agar tilni o‘zgartirmoqchi bo‘lsangiz, ⬅️ Orqaga tugmasini bosing.",
                 '🇷🇺 Русский' => "Если хотите изменить язык, нажмите кнопку ⬅️ Назад.",
                 '🇬🇧 English' => "If you want to change the language, press ⬅️ Back.",
             ];
-
             $backInstruction = $backInstructionTexts[$language] ?? $backInstructionTexts['🇺🇿 O\'zbek'];
 
             Telegram::bot('mybot')->sendMessage([
@@ -109,7 +111,6 @@ class TelegramBotService
                 'reply_markup' => $backKeyboard,
             ]);
 
-
             Log::info("handleLanguageSelection => messages sent successfully!");
         } catch (\Exception $e) {
             Log::error("handleLanguageSelection ERROR: " . $e->getMessage());
@@ -117,7 +118,7 @@ class TelegramBotService
     }
 
 
-    public function getViewProductsText($language)
+    public function getViewRegisterText($language)
     {
         $texts = [
             '🇺🇿 O\'zbek' => 'Ro\'yxatdan o\'tish',
@@ -125,6 +126,15 @@ class TelegramBotService
             '🇬🇧 English' => 'Sign up',
         ];
         return $texts[$language] ?? 'Ro\'yxatdan o\'tish';
+    }
+    public function getViewVacanciesText($language)
+    {
+        $texts = [
+            '🇺🇿 O\'zbek' => 'Kirish',
+            '🇷🇺 Русский' => 'Войти',
+            '🇬🇧 English' => 'Sign in',
+        ];
+        return $texts[$language] ?? 'Kirish';
     }
 
     public function getBackButtonText($language)
