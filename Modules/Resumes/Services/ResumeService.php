@@ -86,7 +86,7 @@ class ResumeService
             - "language": Detect the main language of the resume text (e.g., "en", "ru", "uz").
             - "cover_letter": Write a short professional cover letter (5–7 sentences) introducing the candidate,
                 tailored for general job applications. Keep it polite, confident, and concise.
-                Always include the candidate’s real name at the end (no placeholders like [Your Name]).
+                Always include the candidate’s real name at the end (no placeholders like [Your Name]) it should be in russian language.
 
 
             Return only valid JSON. Do not include explanations outside the JSON.
