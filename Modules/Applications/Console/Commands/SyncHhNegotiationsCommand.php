@@ -90,7 +90,7 @@ class SyncHhNegotiationsCommand extends Command
                             $app->update(['hh_status' => $stateId, 'status' => $stateId]);
                             $updatedCount++;
 
-                            $triggerStates = ['interview', 'interview_scheduled', 'invitation', 'offer', 'hired'];
+                            $triggerStates = ['interview', 'interview_scheduled', 'invitation', 'offer', 'hired','invited', 'assessments', 'assessment', 'test'];
 
                             if (in_array($stateId, $triggerStates, true)) {
                                 if ($vacancy->source === config('interviews.source_filter', 'hh')) {
