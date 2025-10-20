@@ -86,7 +86,7 @@ class ChatBotController extends Controller
                 if ($support) {
                     $telegram->sendMessage([
                         'chat_id' => $support->user_chat_id,
-                        'text'    => "👨‍💼 Admin javobi:\n\n" . $replyText
+                        'text'    => "👨‍💼 Inter-AI Support:\n\n" . $replyText
                     ]);
 
                     $support->update([
