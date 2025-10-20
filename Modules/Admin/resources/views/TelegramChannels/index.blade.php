@@ -526,7 +526,7 @@
                                             {{ '@' . ltrim($ch->username, '@') }}
                                         </a>
                                     @else
-                                        <span class="text-muted">—</span>
+                                        <span class="text-muted">★ Private Channel ★</span>
                                     @endif
                                 </div>
                             </td>
