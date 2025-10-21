@@ -14,6 +14,14 @@ class User extends Authenticatable
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable, HasApiTokens;
 
+    public const STATUS_WORKING = 'working';
+    public const STATUS_NOT_WORKING = 'not working';
+
+    public const STATUSES = [
+        self::STATUS_WORKING,
+        self::STATUS_NOT_WORKING,
+    ];
+
     /**
      * The attributes that are mass assignable.
      *
@@ -30,7 +38,12 @@ class User extends Authenticatable
         'verify_code',
         'role_id',
         'chat_id',
-        'language'
+        'language',
+        'is_trial_active',
+        'trial_start_date',
+        'trial_end_date',
+        'status',
+        'admin_check_status',
     ];
 
     /**
@@ -53,6 +66,10 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_trial_active' => 'boolean',
+            'trial_start_date' => 'datetime',
+            'trial_end_date' => 'datetime',
+            'admin_check_status' => 'boolean',
         ];
     }
 

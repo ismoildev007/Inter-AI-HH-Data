@@ -107,3 +107,8 @@ Schedule::command('app:send-notification-command')
 Schedule::command('app:send-notification-command')
     ->dailyAt('15:30')
     ->withoutOverlapping();
+
+// Foydalanuvchi trial davrini nazorat qiluvchi cron
+Schedule::command('users:trials:deactivate')
+    ->daily()
+    ->withoutOverlapping();

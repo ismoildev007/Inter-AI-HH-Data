@@ -84,7 +84,8 @@ class AuthController extends Controller
     //         'data'   => $result
     //     ], 200);
     // }
-    public function chatIdLogin(Request $request) {
+    public function chatIdLogin(Request $request)
+    {
         Log::info('Chat ID login request', ['request' => $request->all()]);
         $chatId = $request->input('chat_id');
 
@@ -106,7 +107,7 @@ class AuthController extends Controller
         ], 200);
     }
 
-    public function checkToken(Request $request) 
+    public function checkToken(Request $request)
     {
         Log::info('Check token request', ['token' => $request->bearerToken()]);
         $user = $request->user();
@@ -123,7 +124,7 @@ class AuthController extends Controller
 
         $user->load([
             'resumes',
-//            'role',
+            //            'role',
             'settings',
             'credit',
             'preferences.industry',
@@ -287,7 +288,7 @@ class AuthController extends Controller
     public function userVerify(Request $request)
     {
         $request->validate([
-//            'email' => 'required|email',
+            //            'email' => 'required|email',
             'phone' => 'required',
         ]);
 
@@ -372,5 +373,4 @@ class AuthController extends Controller
             'cover_letter' => $preference->cover_letter,
         ]);
     }
-
 }

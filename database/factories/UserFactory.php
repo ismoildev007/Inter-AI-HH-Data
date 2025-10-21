@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -36,6 +37,11 @@ class UserFactory extends Factory
             'avatar_path' => null,
             'verify_code' => null,
             'remember_token' => Str::random(10),
+            'is_trial_active' => false,
+            'trial_start_date' => null,
+            'trial_end_date' => null,
+            'status' => User::STATUS_NOT_WORKING,
+            'admin_check_status' => false,
         ];
     }
 
