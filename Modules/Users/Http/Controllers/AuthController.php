@@ -68,6 +68,21 @@ class AuthController extends Controller
             'data'   => $result
         ], 200);
     }
+    public function chatIdLogin(ChatIdLoginRequest $request)
+    {
+        $result = $this->repo->chatIdLogin($request->validated());
+
+        if (!$result) {
+            return response()->json([
+                'message' => 'Chat ID noto‘g‘ri yoki foydalanuvchi topilmadi.'
+            ], 401);
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'data'   => $result
+        ], 200);
+    }
 
     public function me(Request $request)
     {
@@ -286,22 +301,6 @@ class AuthController extends Controller
         return response()->json([
             'success' => false,
             'message' => 'Mavjud emas, davom etishingiz mumkin.'
-        ], 200);
-    }
-
-    public function chatIdLogin(ChatIdLoginRequest $request): JsonResponse
-    {
-        $result = $this->repo->chatIdLogin($request->validated());
-
-        if (!$result) {
-            return response()->json([
-                'message' => 'Chat ID noto‘g‘ri yoki foydalanuvchi topilmadi.'
-            ], 401);
-        }
-
-        return response()->json([
-            'status' => 'success',
-            'data'   => $result
         ], 200);
     }
 

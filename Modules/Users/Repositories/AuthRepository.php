@@ -180,7 +180,7 @@ class AuthRepository
             return null;
         }
         $user = Auth::user();
-        
+
         $token = $user->createToken(
             'api_token',
             ['*'],
@@ -207,7 +207,6 @@ class AuthRepository
             return null;
         }
 
-        // Token yaratamiz (22 yil amal qiladi)
         $token = $user->createToken(
             'api_token',
             ['*'],
