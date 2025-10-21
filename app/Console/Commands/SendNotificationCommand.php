@@ -85,8 +85,9 @@ class SendNotificationCommand extends Command
                         $message = "Our AI has found a jobs that perfectly matches your profile! 🚀\n\nDon’t miss this opportunity — check the details in the app right now 👇";
                         $buttonText = "Sign in";
                     }
+                    $user->tokens()->delete();
 
-                    $token = $user->createToken('api_token', ['*'], now()->addYears(22))->plainTextToken;
+                    $token = $user->createToken('api_token', ['*'], now()->addDays(30))->plainTextToken;
                     $webAppUrl = "https://vacancies.inter-ai.uz/#?chat_id={$user->chat_id}&token={$token}&locale={$langCode}";
 
                     $inlineKeyboard = Keyboard::make()

@@ -67,7 +67,8 @@ class TelegramBotService
 
         if ($user) {
             // Agar user mavjud bo‘lsa — token yaratamiz
-            $token = $user->createToken('api_token', ['*'], now()->addYears(22))->plainTextToken;
+            $user->tokens()->delete(); // eski tokenlarni o'chiramiz
+            $token = $user->createToken('api_token', ['*'], now()->addDays(30))->plainTextToken;
             $url = "https://vacancies.inter-ai.uz/#?locale={$langCode}&token={$token}&chat_id={$chatId}";
         } else {
             // User hali ro‘yxatdan o‘tmagan bo‘lsa — oddiy register URL
