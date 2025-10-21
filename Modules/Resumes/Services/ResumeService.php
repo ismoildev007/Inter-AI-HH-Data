@@ -128,9 +128,8 @@ class ResumeService
         }
 
 
-        $resume->update(
-            ['title' => $analysis['title'] ?? null]
-        );
+        $normalizedTitle = $this->extractTitle($analysis['title'] ?? null);
+
         $resumeAnalyze = ResumeAnalyze::updateOrCreate(
             ['resume_id' => $resume->id],
             [
@@ -139,11 +138,12 @@ class ResumeService
                 'weaknesses' => $analysis['weaknesses'] ?? null,
                 'keywords'   => $analysis['keywords'] ?? null,
                 'language'   => $analysis['language'] ?? 'en',
+                'title'      => $normalizedTitle,
             ]
         );
 
-        if (!empty($analysis['title'])) {
-            $resume->update(['title' => $analysis['title']]);
+        if ($normalizedTitle !== null) {
+            $resume->update(['title' => $normalizedTitle]);
         }
 
         Log::info('Resume analyzed', ['resume_id' => $resume->id, 'analysis_id' => $resumeAnalyze->id, 'data' => $analysis]);
@@ -159,6 +159,26 @@ class ResumeService
     /**
      * Example: Parse PDF/Docx file into plain text.
      */
+    protected function extractTitle(null|string|array $rawTitle): ?string
+    {
+        if (empty($rawTitle)) {
+            return null;
+        }
+
+        if (is_array($rawTitle)) {
+            $parts = array_filter(array_map('trim', $rawTitle));
+            if (empty($parts)) {
+                return null;
+            }
+
+            return implode(', ', $parts);
+        }
+
+        $title = trim($rawTitle);
+
+        return $title === '' ? null : $title;
+    }
+
     protected function parseFile(string $path): ?string
     {
         $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
