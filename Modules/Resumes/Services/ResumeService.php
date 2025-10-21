@@ -89,19 +89,19 @@ class ResumeService
                 Always include the candidate’s real name at the end (no placeholders like [Your Name]) it should be in russian language.
             - "title": From the resume, identify up to three (maximum 3) of the most specific and relevant professional titles that accurately represent the candidate’s main expertise and experience.
                 Rules:
-                 • Each title must be specific and, if applicable, include both the main role and its associated technology or framework 
-                 (e.g., "PHP Backend Developer", "React Frontend Developer", "Java Spring Developer", "Python Fullstack Developer").
-                 • If a title refers to Backend, Frontend, or Fullstack development, it must include at least one programming language or framework
-                  (e.g., PHP, Java, .NET, React, Vue, Node.js, etc.).
-                 • Titles such as "Backend Developer", "Frontend Developer", or "Fullstack Developer" alone are strictly forbidden — they cannot appear by themselves.
-                 • Do not include parentheses or any additional context in the titles — only plain text titles separated by commas.
-                 • Include other relevant non-programming roles (e.g., "Project Manager", "Marketing Specialist", "UI/UX Designer") if they clearly apply.
-                 • Prioritize titles that reflect the most emphasized or most recent experience.
-                 • Return up to three concise and distinct titles, separated by commas.
-
+                • Each title must be specific and, if applicable, include both the main role and its associated technology or framework 
+                (e.g., "PHP Backend Developer", "React Frontend Developer", "Java Spring Developer", "Python Fullstack Developer").
+                • If a title refers to Backend, Frontend, or Fullstack development, it **must include at least one programming language or framework**
+                (e.g., PHP, Java, .NET, React, Vue, Node.js, etc.).
+                • Titles such as **"Backend Developer"**, **"Frontend Developer"**, or **"Fullstack Developer"** alone are **strictly forbidden** — 
+                they cannot appear by themselves or as part of any other title without a technology specified.
+                • Do not include any parentheses, extra explanations, or context — titles must be plain text only.
+                • Include other relevant non-programming roles (e.g., "Project Manager", "Marketing Specialist", "UI/UX Designer") if they clearly apply.
+                • Prioritize titles that reflect the most emphasized or most recent experience.
+                • Return up to three concise and distinct titles, separated by commas.
 
             Return only valid JSON. Do not include explanations outside the JSON.
-
+ 
             Resume text:
 
             " . ($resume->parsed_text ?? $resume->description) . "
