@@ -142,6 +142,10 @@ class ResumeService
             ]
         );
 
+        if (!empty($analysis['title'])) {
+            $resume->update(['title' => $analysis['title']]);
+        }
+
         Log::info('Resume analyzed', ['resume_id' => $resume->id, 'analysis_id' => $resumeAnalyze->id, 'data' => $analysis]);
 
         if (!empty($analysis['cover_letter'])) {

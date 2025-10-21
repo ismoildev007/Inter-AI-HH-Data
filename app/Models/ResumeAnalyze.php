@@ -17,6 +17,7 @@ class ResumeAnalyze extends Model
         'keywords',
         'language',
         'skills',
+        'title',
     ];
 
     protected $casts = [

@@ -65,6 +65,7 @@ class DemoResumeService
             - "language": Detect the main language of the resume text (e.g., "en", "ru", "uz").
             - "cover_letter": Write a short professional cover letter (5–7 sentences) introducing the candidate,
                           tailored for general job applications. Keep it polite, confident, and concise.
+            - "title": Identify the fields and professions that apply to this resume and write them down using commas in sequence.
 
             Return only valid JSON. Do not include explanations outside the JSON.
 
@@ -111,8 +112,13 @@ class DemoResumeService
                 'weaknesses' => $analysis['weaknesses'] ?? null,
                 'keywords'   => $analysis['keywords'] ?? null,
                 'language'   => $analysis['language'] ?? 'en',
+                'title'      => $analysis['title'] ?? null,
             ]
         );
+
+        if (!empty($analysis['title'])) {
+            $resume->update(['title' => $analysis['title']]);
+        }
 
         if (!empty($analysis['cover_letter'])) {
             UserPreference::updateOrCreate(
