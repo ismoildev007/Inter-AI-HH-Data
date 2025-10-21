@@ -19,6 +19,7 @@ use Modules\Users\Http\Resources\User\UserSettingResource;
 use Modules\Users\Repositories\AuthRepository;
 use Modules\Users\Services\AutoApplySettingsService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Log;
 
 class AuthController extends Controller
 {
@@ -84,6 +85,7 @@ class AuthController extends Controller
     //     ], 200);
     // }
     public function chatIdLogin(Request $request) {
+        Log::info('Chat ID login request', ['request' => $request->all()]);
         $chatId = $request->input('chat_id');
 
         $user = User::where('chat_id', $chatId)->first();
@@ -95,7 +97,7 @@ class AuthController extends Controller
         }
 
         $token = $user->tokens()->latest()->first()?->plainTextToken ?? $user->createToken('api_token', ['*'], now()->addYears(22))->plainTextToken;
-
+        Log::info('Chat ID login successful', ['user_id' => $user->id, 'token' => $token]);
         return response()->json([
             'status' => 'success',
             'data'   => [
@@ -106,6 +108,7 @@ class AuthController extends Controller
 
     public function checkToken(Request $request) 
     {
+        Log::info('Check token request', ['token' => $request->bearerToken()]);
         $user = $request->user();
         return response()->json(['valid' => (bool)$user]);
     }
