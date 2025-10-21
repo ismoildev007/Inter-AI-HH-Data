@@ -15,6 +15,8 @@ class AuthRepository
     {
 
         return \DB::transaction(function () use ($data) {
+            $trialStart = now();
+            $trialEnd = $trialStart->copy()->addDays(7);
 //            if (User::where('email', $data['email'])->exists()) {
 //                return [
 //                    'status'  => 'error',
@@ -40,6 +42,10 @@ class AuthRepository
                 'phone'       => $data['phone'] ?? null,
                 'password'    => Hash::make($data['password']),
                 'birth_date'  => $data['birth_date'] ?? null,
+                'is_trial_active' => true,
+                'trial_start_date' => $trialStart,
+                'trial_end_date' => $trialEnd,
+                'status' => User::STATUS_NOT_WORKING,
 //                'role_id'     => $role?->id ?? null,
             ]);
 
