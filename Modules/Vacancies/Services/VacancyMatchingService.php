@@ -29,7 +29,7 @@ class VacancyMatchingService
         $this->hhRepository = $hhRepository;
     }
 
-    public function matchResume(Resume $resume, string $query): array
+    public function matchResume(Resume $resume, $query): array
     {
         Log::info('Job started for resume', ['resume_id' => $resume->id, 'query' => $query]);
         $start = microtime(true);
