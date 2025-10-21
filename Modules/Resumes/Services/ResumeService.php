@@ -93,10 +93,12 @@ class ResumeService
                 (e.g., "PHP Backend Developer", "React Frontend Developer", "Java Spring Developer", "Python Fullstack Developer").
                 • If a title refers to Backend, Frontend, or Fullstack development, it **must include at least one programming language or framework**
                 (e.g., PHP, Java, .NET, React, Vue, Node.js, etc.).
-                • Titles such as **"Backend Developer"**, **"Frontend Developer"**, or **"Fullstack Developer"** alone are **strictly forbidden** — 
-                they cannot appear by themselves or as part of any other title without a technology specified.
-                • Do not include any parentheses, extra explanations, or context — titles must be plain text only.
+                • Titles such as **"Backend Developer"**, **"Frontend Developer"**, or **"Fullstack Developer"** alone are **strictly forbidden** —
+                they cannot appear by themselves **nor as secondary or repeated titles after others.**
+                • Do NOT output any title that ends with or contains only the words “Backend Developer”, “Frontend Developer”, or “Fullstack Developer”
+                without an attached technology name.
                 • Include other relevant non-programming roles (e.g., "Project Manager", "Marketing Specialist", "UI/UX Designer") if they clearly apply.
+                • Do not include parentheses, notes, or explanations — only plain text titles separated by commas.
                 • Prioritize titles that reflect the most emphasized or most recent experience.
                 • Return up to three concise and distinct titles, separated by commas.
 
