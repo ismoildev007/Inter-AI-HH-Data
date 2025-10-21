@@ -71,16 +71,14 @@ class TelegramBotService
             $url = "https://vacancies.inter-ai.uz/#?locale={$langCode}&token={$token}&chat_id={$chatId}";
         } else {
             // User hali ro‘yxatdan o‘tmagan bo‘lsa — oddiy register URL
-            $url = "https://vacancies.inter-ai.uz/#/register?locale={$langCode}&chat_id={$chatId}";
+            $url = "https://vacancies.inter-ai.uz/#?locale={$langCode}&chat_id={$chatId}";
         }
-        
+
         $inlineKeyboard = Keyboard::make()
             ->inline()
             ->row([
                 Keyboard::inlineButton([
-                    'text'    => $user
-                        ? $this->getViewVacanciesText($language)
-                        : $this->getViewRegisterText($language),
+                    'text'    => $this->getViewVacanciesText($language),
                     'web_app' => ['url' => $url],
                 ]),
             ]);
