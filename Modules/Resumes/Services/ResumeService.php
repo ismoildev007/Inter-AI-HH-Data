@@ -195,9 +195,39 @@ class ResumeService
             switch ($ext) {
                 case 'pdf':
                     Log::info("Parsing PDF file: " . $path);
+                
                     $parser = new \Smalot\PdfParser\Parser();
-                    $pdf = $parser->parseFile($path);
-                    return trim($pdf->getText());
+                
+                    try {
+                        $pdf = $parser->parseFile($path);
+                        $text = trim($pdf->getText());
+                
+                        if (!$text || strlen($text) < 50) {
+                            Log::warning("Smalot returned empty text, switching to pdftotext fallback...");
+                
+                            $tmpTxt = tempnam(sys_get_temp_dir(), 'pdf_') . '.txt';
+                            $cmd = sprintf(
+                                'pdftotext -layout %s %s',
+                                escapeshellarg($path),
+                                escapeshellarg($tmpTxt)
+                            );
+                            exec($cmd, $output, $code);
+                
+                            if ($code === 0 && file_exists($tmpTxt)) {
+                                $text = file_get_contents($tmpTxt);
+                                @unlink($tmpTxt);
+                                return trim($text);
+                            } else {
+                                Log::error("pdftotext failed [code=$code]: " . implode("\n", $output));
+                                return null;
+                            }
+                        }
+                
+                        return $text;
+                    } catch (\Throwable $e) {
+                        Log::error("PDF parse failed: " . $e->getMessage());
+                        return null;
+                    }
 
                 case 'docx':
                 case 'doc':
