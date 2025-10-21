@@ -87,11 +87,15 @@ class ResumeService
             - "cover_letter": Write a short professional cover letter (5–7 sentences) introducing the candidate,
                 tailored for general job applications. Keep it polite, confident, and concise.
                 Always include the candidate’s real name at the end (no placeholders like [Your Name]) it should be in russian language.
-            - "title": From the resume, determine the single most specific professional title that best reflects the candidate's main technology stack and role.
-                The title must include both the main role **and** the primary technology or framework (e.g., "PHP Backend Developer", "Laravel Developer", "Java Spring Developer", "React Frontend Developer").
-                If multiple technologies are mentioned, select the one most emphasized or most recently used in professional experience.
-                Avoid generic titles like "Backend Developer", "Full Stack Developer", or "Software Engineer" unless no technology context is available.
-                Return only one concise and specific title.
+            - "title": From the resume, identify up to three (maximum 3) of the most specific and relevant professional titles that accurately represent the candidate’s main expertise and experience.
+                Rules:
+                • Each title must be specific and, if applicable, include both the main role and its associated technology or framework 
+                (e.g., "PHP Backend Developer", "React Frontend Developer", "Java Spring Developer", "Python Fullstack Developer").
+                • If a title refers to Backend or Frontend development, it must include at least one programming language or framework.
+                Avoid vague titles like "Backend Developer" or "Frontend Developer" alone.
+                • Include other relevant non-programming roles (e.g., "Project Manager", "Marketing Specialist", "UI/UX Designer") if they clearly apply.
+                • Prioritize titles that reflect the most emphasized or most recent experience in the resume.
+                • Return up to three concise and distinct titles, separated by commas.
 
 
             Return only valid JSON. Do not include explanations outside the JSON.
