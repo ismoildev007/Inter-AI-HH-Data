@@ -87,7 +87,11 @@ class ResumeService
             - "cover_letter": Write a short professional cover letter (5–7 sentences) introducing the candidate,
                 tailored for general job applications. Keep it polite, confident, and concise.
                 Always include the candidate’s real name at the end (no placeholders like [Your Name]) it should be in russian language.
-            - "title": Identify the fields and professions that apply to this resume and write them down using commas in sequence.
+            - "title": From the resume, determine the single most specific professional title that best reflects the candidate's main technology stack and role.
+                The title must include both the main role **and** the primary technology or framework (e.g., "PHP Backend Developer", "Laravel Developer", "Java Spring Developer", "React Frontend Developer").
+                If multiple technologies are mentioned, select the one most emphasized or most recently used in professional experience.
+                Avoid generic titles like "Backend Developer", "Full Stack Developer", or "Software Engineer" unless no technology context is available.
+                Return only one concise and specific title.
 
 
             Return only valid JSON. Do not include explanations outside the JSON.
