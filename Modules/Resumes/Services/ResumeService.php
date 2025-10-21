@@ -32,7 +32,7 @@ class ResumeService
             $data['file_path'] = $path;
             $data['file_mime'] = $data['file']->getMimeType();
             $data['file_size'] = $data['file']->getSize();
-        
+
             $originalExt = strtolower(pathinfo($data['file']->getClientOriginalName(), PATHINFO_EXTENSION));
             $tempPath = tempnam(sys_get_temp_dir(), 'resume_') . '.' . $originalExt;
 
@@ -41,7 +41,7 @@ class ResumeService
             $data['parsed_text'] = $this->parseFile($tempPath);
             unlink($tempPath);
         }
-        
+
 
         $resume = $this->repo->store($data);
 
@@ -128,6 +128,9 @@ class ResumeService
         }
 
 
+        $resume->update(
+            ['title' => $analysis['title'] ?? null]
+        );
         $resumeAnalyze = ResumeAnalyze::updateOrCreate(
             ['resume_id' => $resume->id],
             [
@@ -136,7 +139,6 @@ class ResumeService
                 'weaknesses' => $analysis['weaknesses'] ?? null,
                 'keywords'   => $analysis['keywords'] ?? null,
                 'language'   => $analysis['language'] ?? 'en',
-                'title'      => $analysis['title'] ?? null,
             ]
         );
 
