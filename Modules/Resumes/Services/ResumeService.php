@@ -87,6 +87,7 @@ class ResumeService
             - "cover_letter": Write a short professional cover letter (5–7 sentences) introducing the candidate,
                 tailored for general job applications. Keep it polite, confident, and concise.
                 Always include the candidate’s real name at the end (no placeholders like [Your Name]) it should be in russian language.
+            - "title": Identify the fields and professions that apply to this resume and write them down using commas in sequence.
 
 
             Return only valid JSON. Do not include explanations outside the JSON.
@@ -135,6 +136,7 @@ class ResumeService
                 'weaknesses' => $analysis['weaknesses'] ?? null,
                 'keywords'   => $analysis['keywords'] ?? null,
                 'language'   => $analysis['language'] ?? 'en',
+                'title'      => $analysis['title'] ?? null,
             ]
         );
 
