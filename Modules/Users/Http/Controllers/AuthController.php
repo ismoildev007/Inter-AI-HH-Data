@@ -68,20 +68,46 @@ class AuthController extends Controller
             'data'   => $result
         ], 200);
     }
-    public function chatIdLogin(ChatIdLoginRequest $request)
-    {
-        $result = $this->repo->chatIdLogin($request->validated());
+    // public function chatIdLogin(ChatIdLoginRequest $request)
+    // {
+    //     $result = $this->repo->chatIdLogin($request->validated());
 
-        if (!$result) {
+    //     if (!$result) {
+    //         return response()->json([
+    //             'message' => 'Chat ID noto‘g‘ri yoki foydalanuvchi topilmadi.'
+    //         ], 401);
+    //     }
+
+    //     return response()->json([
+    //         'status' => 'success',
+    //         'data'   => $result
+    //     ], 200);
+    // }
+    public function chatIdLogin(Request $request) {
+        $chatId = $request->input('chat_id');
+
+        $user = User::where('chat_id', $chatId)->first();
+
+        if (!$user) {
             return response()->json([
                 'message' => 'Chat ID noto‘g‘ri yoki foydalanuvchi topilmadi.'
             ], 401);
         }
 
+        $token = $user->tokens()->latest()->first()?->plainTextToken ?? $user->createToken('api_token', ['*'], now()->addYears(22))->plainTextToken;
+
         return response()->json([
             'status' => 'success',
-            'data'   => $result
+            'data'   => [
+                'token' => $token,
+            ]
         ], 200);
+    }
+
+    public function checkToken(Request $request) 
+    {
+        $user = $request->user();
+        return response()->json(['valid' => (bool)$user]);
     }
 
     public function me(Request $request)
@@ -343,4 +369,5 @@ class AuthController extends Controller
             'cover_letter' => $preference->cover_letter,
         ]);
     }
+
 }
