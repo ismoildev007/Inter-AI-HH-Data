@@ -197,16 +197,17 @@ class ResumeService
             switch ($ext) {
                 case 'pdf':
                     Log::info("Parsing PDF file: " . $path);
-                
+
                     $parser = new \Smalot\PdfParser\Parser();
-                
+
                     try {
                         $pdf = $parser->parseFile($path);
                         $text = trim($pdf->getText());
-                
+
+                        // Agar Smalot bo‘sh qaytarsa, pdftotext fallback ishlatamiz
                         if (!$text || strlen($text) < 50) {
                             Log::warning("Smalot returned empty text, switching to pdftotext fallback...");
-                
+
                             $tmpTxt = tempnam(sys_get_temp_dir(), 'pdf_') . '.txt';
                             $cmd = sprintf(
                                 'pdftotext -layout %s %s',
@@ -214,22 +215,26 @@ class ResumeService
                                 escapeshellarg($tmpTxt)
                             );
                             exec($cmd, $output, $code);
-                
+
                             if ($code === 0 && file_exists($tmpTxt)) {
                                 $text = file_get_contents($tmpTxt);
                                 @unlink($tmpTxt);
-                                return trim($text);
                             } else {
                                 Log::error("pdftotext failed [code=$code]: " . implode("\n", $output));
                                 return null;
                             }
                         }
-                
-                        return $text;
+
+                        // ✅ UTF-8 tozalash (ENG MUHIM QISM)
+                        $text = $this->sanitizeText($text);
+
+                        Log::info("Parsed text length: " . strlen($text));
+                        return trim($text);
                     } catch (\Throwable $e) {
                         Log::error("PDF parse failed: " . $e->getMessage());
                         return null;
                     }
+
 
                 case 'docx':
                 case 'doc':
@@ -271,6 +276,26 @@ class ResumeService
             return null;
         }
     }
+
+    protected function sanitizeText(?string $text): string
+    {
+        if (!$text) return '';
+
+        // 1️⃣ Noto‘g‘ri baytlarni olib tashlash
+        $text = iconv('UTF-8', 'UTF-8//IGNORE', $text);
+
+        // 2️⃣ Boshqaruv belgilarini olib tashlash (\x00 - \x1F, \x7F)
+        $text = preg_replace('/[^\P{C}\n]+/u', '', $text);
+
+        // 3️⃣ Ba’zi PDF parserlar “hidden unicode” belgilari kiritadi
+        $text = str_replace(["\xEF\xBB\xBF", "\u{FEFF}"], '', $text);
+
+        // 4️⃣ Qayta UTF-8 normalizatsiya
+        $text = mb_convert_encoding($text, 'UTF-8', 'UTF-8');
+
+        return trim($text);
+    }
+
 
 
     public function setPrimary(Resume $resume): Resume
