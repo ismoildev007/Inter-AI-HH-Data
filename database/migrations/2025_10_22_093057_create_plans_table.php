@@ -15,8 +15,8 @@ return new class extends Migration
             $table->id();
             $table->string('name')->unique();
             $table->text('description')->nullable();
-            $table->decimal('fake_price', 10, 2)->nullable();
-            $table->decimal('price', 10, 2)->nullable();
+            $table->bigInteger('fake_price')->nullable();
+            $table->bigInteger('price')->nullable();
             $table->integer('auto_response_limit')->default(0);
             $table->date('duration')->nullable();
             $table->timestamps();
