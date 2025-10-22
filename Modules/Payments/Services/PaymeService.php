@@ -100,10 +100,12 @@ class PaymeService
             if (!$prepare) {
                 return self::OrderNotFound();
             }
-            $prepare->create_time = $time;
-            $prepare->transaction_id = $param['params']['id'];
-            $prepare->state = 1;
-            $prepare->save();
+            if (!$prepare->transaction_id) {
+                $prepare->create_time = $time;
+                $prepare->transaction_id = $param['params']['id'];
+                $prepare->state = 1;
+                $prepare->save();
+            }
             return response()->json([
                 'result' => [
                     'create_time' => $prepare->create_time,
