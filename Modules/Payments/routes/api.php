@@ -6,7 +6,7 @@ use Modules\Payments\Http\Controllers\ClickController;
 
 Route::middleware(['auth:sanctum'])->prefix('payme')->group(function () {
     Route::post('callback', [PaymeController::class, 'handleCallback']);
-    Route::get('booking', [PaymeController::class, 'booking']);
+    Route::post('booking', [PaymeController::class, 'booking']);
  });
 
 Route::prefix('payment/click')->group(function () {
