@@ -50,10 +50,10 @@ class PaymeService
             return $this->canceled($prepare);
         }
 
-        $prepare->create_time = 0;
+        $prepare->create_time = null;
         $prepare->transaction_id = null;
-        $prepare->perform_time = 0;
-        $prepare->cancel_time = 0;
+        $prepare->perform_time = null;
+        $prepare->cancel_time = null;
         $prepare->state = 0;
         $prepare->reason = null;
         $prepare->save();
