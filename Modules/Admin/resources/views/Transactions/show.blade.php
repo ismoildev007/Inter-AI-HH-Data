@@ -61,7 +61,7 @@
                         <span class="label">Subscription</span>
                         <span class="value">
                             @if($subscription)
-                                #{{ $subscription->id }} ({{ ucfirst($subscription->status ?? 'unknown') }})
+                                {{ $subscription->id }} ({{ ucfirst($subscription->status ?? 'unknown') }})
                             @else
                                 —
                             @endif

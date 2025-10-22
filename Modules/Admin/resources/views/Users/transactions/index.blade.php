@@ -91,6 +91,7 @@
 <div class="transactions-table card">
     <div class="card-body p-0">
         <div class="transactions-table__head">
+            <div class="cell">ID</div>
             <div class="cell">Transaction</div>
             <div class="cell">Status</div>
             <div class="cell">Method</div>
@@ -101,9 +102,12 @@
         <div class="transactions-table__body">
             @forelse($transactions as $transaction)
                 <a href="{{ route('admin.transactions.show', $transaction) }}" class="transactions-table__row">
-                    <div class="cell">
-                        <span class="fw-semibold">#{{ $transaction->id }}</span>
-                        <span class="text-muted small">{{ $transaction->transaction_id ?? '—' }}</span>
+                    <div class="cell cell--id">
+                        <span class="table-id-pill">{{ $transaction->id }}</span>
+                    </div>
+                    <div class="cell cell--transaction">
+                        <span class="fw-semibold">{{ $transaction->transaction_id ?? '—' }}</span>
+                        <span class="text-muted small">Gateway reference</span>
                     </div>
                     <div class="cell cell--status">
                         @php $statusLabel = strtolower($transaction->payment_status ?? 'unknown'); @endphp
@@ -219,7 +223,7 @@
 }
     .transactions-table__head {
         display: grid;
-        grid-template-columns: 20% 14% 14% 20% 16% 16%;
+        grid-template-columns: 12% 18% 14% 14% 18% 12% 12%;
         padding: 18px 26px;
         background: rgba(248, 250, 252, 0.92);
         border-bottom: 1px solid rgba(226, 232, 240, 0.8);
@@ -230,7 +234,7 @@
     }
     .transactions-table__row {
         display: grid;
-        grid-template-columns: 20% 14% 14% 20% 16% 16%;
+        grid-template-columns: 12% 18% 14% 14% 18% 12% 12%;
         padding: 18px 26px;
         border-bottom: 1px solid rgba(226, 232, 240, 0.6);
         transition: background 0.18s ease;
@@ -243,6 +247,11 @@
         flex-direction: column;
         gap: 4px;
         justify-content: center;
+    }
+    .transactions-table__row .cell--id,
+    .transactions-table__row .cell--transaction,
+    .transactions-table__row .cell--plan {
+        align-items: flex-start;
     }
     .transactions-table__row .cell--status {
         align-items: flex-start;
@@ -265,6 +274,19 @@
     .status-pill--pending { background: rgba(251, 191, 36, 0.2); color: #b45309; }
     .status-pill--failed { background: rgba(239, 68, 68, 0.22); color: #b91c1c; }
     .status-pill--cancelled { background: rgba(148, 163, 184, 0.22); color: #475569; }
+    .table-id-pill {
+        min-width: 44px;
+        height: 44px;
+        border-radius: 14px;
+        background: linear-gradient(135deg, #eff3ff, #dce5ff);
+        color: #1f2f7a;
+        font-weight: 600;
+        font-size: 0.9rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 12px 22px rgba(31, 51, 126, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.85);
+    }
 
     .transactions-table__empty {
         padding: 36px;

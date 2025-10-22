@@ -78,6 +78,7 @@
 <div class="subscriptions-table card">
     <div class="card-body p-0">
         <div class="subscriptions-table__head">
+            <div class="cell">ID</div>
             <div class="cell">Plan</div>
             <div class="cell">Status</div>
             <div class="cell">Period</div>
@@ -87,9 +88,18 @@
         <div class="subscriptions-table__body">
             @forelse($subscriptions as $subscription)
                 <a href="{{ route('admin.subscriptions.show', $subscription) }}" class="subscriptions-table__row">
-                    <div class="cell">
+                    <div class="cell cell--id">
+                        <span class="table-id-pill">{{ $subscription->id }}</span>
+                    </div>
+                    <div class="cell cell--plan">
                         <span class="plan-name">{{ $subscription->plan?->name ?? '—' }}</span>
-                        <span class="plan-id text-muted small">#{{ $subscription->id }}</span>
+                        <span class="plan-meta">
+                            @if($subscription->plan)
+                                Plan #{{ $subscription->plan->id }}
+                            @else
+                                —
+                            @endif
+                        </span>
                     </div>
                     <div class="cell cell--status">
                         @php $statusLabel = strtolower($subscription->status ?? 'unknown'); @endphp
@@ -201,7 +211,7 @@
     }
     .subscriptions-table__head {
         display: grid;
-        grid-template-columns: 28% 18% 22% 12% 20%;
+        grid-template-columns: 12% 24% 16% 18% 12% 18%;
         padding: 18px 26px;
         background: rgba(248, 250, 252, 0.92);
         border-bottom: 1px solid rgba(226, 232, 240, 0.8);
@@ -212,7 +222,7 @@
     }
     .subscriptions-table__row {
         display: grid;
-        grid-template-columns: 28% 18% 22% 12% 20%;
+        grid-template-columns: 12% 24% 16% 18% 12% 18%;
         padding: 18px 26px;
         border-bottom: 1px solid rgba(226, 232, 240, 0.6);
         transition: background 0.18s ease;
@@ -226,15 +236,34 @@
         gap: 4px;
         justify-content: center;
     }
-    .subscriptions-table__row .cell--status {
+    .subscriptions-table__row .cell--id,
+    .subscriptions-table__row .cell--plan {
         align-items: flex-start;
     }
     .subscriptions-table__row .cell--status {
         align-items: flex-start;
+        justify-content: center;
     }
     .plan-name {
         font-weight: 600;
         color: #2563eb;
+    }
+    .plan-meta {
+        font-size: 0.82rem;
+        color: #94a3b8;
+    }
+    .table-id-pill {
+        min-width: 44px;
+        height: 44px;
+        border-radius: 14px;
+        background: linear-gradient(135deg, #eff3ff, #dce5ff);
+        color: #1f2f7a;
+        font-weight: 600;
+        font-size: 0.9rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 12px 22px rgba(31, 51, 126, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.85);
     }
     .status-pill {
         display: inline-flex;

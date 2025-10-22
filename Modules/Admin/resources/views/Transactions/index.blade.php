@@ -116,7 +116,7 @@
 <div class="transactions-table card">
     <div class="card-body p-0">
         <div class="transactions-table__head">
-            <div class="cell">Transaction</div>
+            <div class="cell">ID</div>
             <div class="cell">Subscriber</div>
             <div class="cell">Plan</div>
             <div class="cell">Status</div>
@@ -127,15 +127,14 @@
         <div class="transactions-table__body">
             @forelse($transactions as $tx)
                 <a href="{{ route('admin.transactions.show', $tx) }}" class="transactions-table__row">
-                    <div class="cell">
-                        <span class="tx-id">#{{ $tx->id }}</span>
-                        <span class="tx-meta">{{ $tx->transaction_id ?? '—' }}</span>
+                    <div class="cell cell--id">
+                        <span class="table-id-pill">{{ $tx->id }}</span>
                     </div>
-                    <div class="cell">
+                    <div class="cell cell--subscriber">
                         <span class="subscriber-name">{{ trim(($tx->user->first_name ?? '').' '.($tx->user->last_name ?? '')) ?: 'User #'.$tx->user_id }}</span>
                         <span class="subscriber-meta">{{ $tx->user?->email }}</span>
                     </div>
-                    <div class="cell">
+                    <div class="cell cell--plan">
                         @php
                             $subscription = $tx->subscription;
                             $plan = $subscription?->plan;
@@ -152,7 +151,7 @@
                             @endif
                         </span>
                     </div>
-                    <div class="cell">
+                    <div class="cell cell--status">
                         <span class="txn-status-pill txn-status-pill--{{ $tx->payment_status ?? 'unknown' }}">{{ ucfirst($tx->payment_status ?? 'unknown') }}</span>
                     </div>
                     <div class="cell">
@@ -312,7 +311,7 @@
     }
     .transactions-table__head {
         display: grid;
-        grid-template-columns: 15% 20% 15% 12% 12% 13% 13%;
+        grid-template-columns: 8% 22% 20% 16% 14% 10% 10%;
         padding: 18px 26px;
         background: rgba(248, 250, 252, 0.92);
         border-bottom: 1px solid rgba(226, 232, 240, 0.8);
@@ -323,7 +322,7 @@
     }
     .transactions-table__row {
         display: grid;
-        grid-template-columns: 15% 20% 15% 12% 12% 13% 13%;
+        grid-template-columns: 8% 22% 20% 16% 14% 10% 10%;
         padding: 20px 26px;
         border-bottom: 1px solid rgba(226, 232, 240, 0.6);
         text-decoration: none;
@@ -340,12 +339,24 @@
         gap: 4px;
         justify-content: center;
     }
-    .transactions-table__row .cell:nth-child(4) {
+    .transactions-table__row .cell--id,
+    .transactions-table__row .cell--subscriber,
+    .transactions-table__row .cell--plan,
+    .transactions-table__row .cell--status {
         align-items: flex-start;
     }
-    .tx-id {
+    .table-id-pill {
+        min-width: 44px;
+        height: 44px;
+        border-radius: 14px;
+        background: linear-gradient(135deg, #eff3ff, #dce5ff);
+        color: #1f2f7a;
         font-weight: 600;
-        color: #0f172a;
+        font-size: 0.9rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 12px 22px rgba(31, 51, 126, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.85);
     }
     .tx-meta,
     .subscriber-meta,

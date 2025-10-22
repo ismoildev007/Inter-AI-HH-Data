@@ -107,11 +107,14 @@
             @endphp
             @forelse($plans as $plan)
                 <div class="plan-table__row" data-href="{{ route('admin.plans.show', $plan) }}">
-                    <div class="plan-table__cell">
-                        <span class="plan-table__title">
-                            {{ $plan->name }}
-                        </span>
-                        <span class="plan-table__description">{{ \Illuminate\Support\Str::limit($plan->description, 80) ?: 'No description provided' }}</span>
+                    <div class="plan-table__cell plan-table__cell--primary">
+                        <span class="table-id-pill">{{ $plan->id }}</span>
+                        <div class="plan-table__primary">
+                            <span class="plan-table__title">
+                                {{ $plan->name }}
+                            </span>
+                            <span class="plan-table__description">{{ \Illuminate\Support\Str::limit($plan->description, 80) ?: 'No description provided' }}</span>
+                        </div>
                     </div>
                     <div class="plan-table__cell">
                         <div class="plan-price">
@@ -329,11 +332,34 @@
 .plan-table__head .plan-table__cell.text-end {
     padding-right: 20px;
     }
-    .plan-table__cell {
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-    }
+.plan-table__cell {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.plan-table__cell--primary {
+    flex-direction: row;
+    align-items: center;
+    gap: 16px;
+}
+.plan-table__primary {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.table-id-pill {
+    min-width: 48px;
+    height: 48px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #eff3ff, #dce5ff);
+    color: #1f2f7a;
+    font-weight: 600;
+    font-size: 0.95rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 12px 24px rgba(31, 51, 126, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.85);
+}
 .plan-table__body {
     display: flex;
     flex-direction: column;
@@ -426,6 +452,9 @@
         }
         .plan-table__cell {
             align-items: flex-start;
+        }
+        .plan-table__cell--primary {
+            flex-direction: column;
         }
         .plan-table__actions {
             justify-content: flex-start;

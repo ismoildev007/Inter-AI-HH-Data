@@ -84,9 +84,6 @@ class ResumeService
             - "weaknesses": 2–4 short bullet points describing areas that might need improvement.
             - "keywords": A list of important keywords or technologies mentioned in the resume (useful for search/matching).
             - "language": Detect the main language of the resume text (e.g., "en", "ru", "uz").
-            - "cover_letter": Write a short professional cover letter (5–7 sentences) introducing the candidate,
-                tailored for general job applications. Keep it polite, confident, and concise.
-                Always include the candidate’s real name at the end (no placeholders like [Your Name]) it should be in russian language.
             - "title": From the resume, identify up to three (maximum 3) of the most specific and relevant professional titles that accurately represent the candidate’s main expertise and experience.
                 Rules:
                 • Each title must be specific and, if applicable, include both the main role and its associated technology or framework 
@@ -101,7 +98,8 @@ class ResumeService
                 • Do not include parentheses, notes, or explanations — only plain text titles separated by commas.
                 • Prioritize titles that reflect the most emphasized or most recent experience.
                 • Return up to three concise and distinct titles, separated by commas.
-
+            - "cover_letter": Write a short, professional cover letter (5-7 sentences) focusing on three key areas that best suit the candidate you listed above. Be polite, confident, concise, and literate.
+                Always include the candidate's real name at the end, in a new paragraph, with the caption "Sincerely" and their name. The letter must be in Russian.
             Return only valid JSON. Do not include explanations outside the JSON.
  
             Resume text:
