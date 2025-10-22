@@ -7,7 +7,7 @@ use App\Models\Resume;
 use App\Models\User;
 use App\Models\UserCredit;
 use App\Models\UserSetting;
-use App\Traits\ApiResponseTrait;
+use App\Traits\PaymeResponseTrait;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Modules\Resumes\Http\Resources\ResumeResource;
@@ -23,7 +23,7 @@ use Illuminate\Support\Facades\Log;
 
 class AuthController extends Controller
 {
-    use ApiResponseTrait;
+    use PaymeResponseTrait;
     protected AuthRepository $repo;
     protected AutoApplySettingsService $autoApplySettingsService;
 
