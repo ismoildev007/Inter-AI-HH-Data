@@ -23,7 +23,6 @@ class Transaction extends Model
         'reason',
     ];
 
-
     public static function getTransactionsByTimeRange($from, $to)
     {
         return self::whereIn('state', [1, 2, -1, -2])
