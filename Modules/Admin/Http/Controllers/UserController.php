@@ -4,6 +4,8 @@ namespace Modules\Admin\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Models\MatchResult;
+use App\Models\Subscription;
+use App\Models\Transaction;
 use App\Models\User;
 use App\Models\Vacancy;
 use Illuminate\Http\Request;
@@ -48,7 +50,11 @@ class UserController extends Controller
      */
     public function show($id)
     {
-        $user = User::with(['role', 'resumes'])->findOrFail($id);
+        $user = User::with([
+            'role',
+            'resumes',
+            'subscriptions.plan',
+        ])->findOrFail($id);
 
         $matchResultsQuery = MatchResult::query()
             ->whereNotNull('vacancy_id')
@@ -70,10 +76,44 @@ class UserController extends Controller
             ->take(5)
             ->values();
 
+        $subscriptions = $user->subscriptions()
+            ->with('plan')
+            ->orderByDesc('starts_at')
+            ->get();
+
+        $subscriptionStats = [
+            'total' => $subscriptions->count(),
+            'active' => $subscriptions->where('status', 'active')->count(),
+            'pending' => $subscriptions->where('status', 'pending')->count(),
+            'expired' => $subscriptions->where('status', 'expired')->count(),
+            'remainingCredits' => $subscriptions->sum('remaining_auto_responses'),
+        ];
+
+        $transactionBase = Transaction::query()->where('user_id', $user->id);
+
+        $recentTransactions = (clone $transactionBase)
+            ->with(['subscription.plan'])
+            ->orderByDesc('create_time')
+            ->limit(8)
+            ->get();
+
+        $transactionStats = [
+            'totalCount' => (clone $transactionBase)->count(),
+            'successCount' => (clone $transactionBase)->where('payment_status', 'success')->count(),
+            'failedCount' => (clone $transactionBase)->where('payment_status', 'failed')->count(),
+            'pendingCount' => (clone $transactionBase)->where('payment_status', 'pending')->count(),
+            'totalVolume' => (clone $transactionBase)->sum('amount'),
+            'successVolume' => (clone $transactionBase)->where('payment_status', 'success')->sum('amount'),
+        ];
+
         return view('admin::Users.show', [
             'user' => $user,
             'matchedVacancyCount' => $matchedVacancyCount,
             'recentVacancyMatches' => $recentVacancyMatches,
+            'subscriptions' => $subscriptions,
+            'subscriptionStats' => $subscriptionStats,
+            'recentTransactions' => $recentTransactions,
+            'transactionStats' => $transactionStats,
         ]);
     }
 
@@ -138,6 +178,94 @@ class UserController extends Controller
                 'telegram' => $sourceCounts->get('telegram', 0),
                 'hh' => $sourceCounts->get('hh', 0),
             ],
+        ]);
+    }
+
+    /**
+     * Show subscriptions belonging to a specific user.
+     */
+    public function subscriptions(User $user, Request $request)
+    {
+        $status = strtolower((string) $request->query('status', 'all'));
+
+        $subscriptionQuery = Subscription::query()
+            ->where('user_id', $user->id)
+            ->with('plan')
+            ->orderByDesc('starts_at');
+
+        if (in_array($status, ['active', 'pending', 'expired', 'cancelled'], true)) {
+            $subscriptionQuery->where('status', $status);
+        }
+
+        $subscriptions = $subscriptionQuery->paginate(12)->withQueryString();
+
+        $stats = [
+            'total' => Subscription::where('user_id', $user->id)->count(),
+            'active' => Subscription::where('user_id', $user->id)->where('status', 'active')->count(),
+            'pending' => Subscription::where('user_id', $user->id)->where('status', 'pending')->count(),
+            'expired' => Subscription::where('user_id', $user->id)->where('status', 'expired')->count(),
+            'remainingCredits' => Subscription::where('user_id', $user->id)->sum('remaining_auto_responses'),
+        ];
+
+        return view('admin::Users.subscriptions.index', [
+            'user' => $user,
+            'subscriptions' => $subscriptions,
+            'status' => $status,
+            'stats' => $stats,
+        ]);
+    }
+
+    /**
+     * Show transactions belonging to a specific user.
+     */
+    public function transactions(User $user, Request $request)
+    {
+        $status = strtolower((string) $request->query('status', 'all'));
+        $method = strtolower((string) $request->query('method', 'all'));
+
+        $transactionQuery = Transaction::query()
+            ->where('user_id', $user->id)
+            ->with(['subscription.plan'])
+            ->orderByDesc('create_time');
+
+        if ($status !== 'all' && $status !== '') {
+            $transactionQuery->whereRaw('LOWER(COALESCE(payment_status, \'\')) = ?', [$status]);
+        }
+
+        if ($method !== 'all' && $method !== '') {
+            $transactionQuery->whereRaw('LOWER(COALESCE(payment_method, \'\')) = ?', [$method]);
+        }
+
+        $transactions = $transactionQuery->paginate(15)->withQueryString();
+
+        $baseAggregate = Transaction::query()->where('user_id', $user->id);
+
+        $stats = [
+            'total' => (clone $baseAggregate)->count(),
+            'success' => (clone $baseAggregate)->where('payment_status', 'success')->count(),
+            'pending' => (clone $baseAggregate)->where('payment_status', 'pending')->count(),
+            'failed' => (clone $baseAggregate)->where('payment_status', 'failed')->count(),
+            'totalVolume' => (clone $baseAggregate)->sum('amount'),
+            'successVolume' => (clone $baseAggregate)->where('payment_status', 'success')->sum('amount'),
+        ];
+
+        $methods = Transaction::query()
+            ->where('user_id', $user->id)
+            ->selectRaw('LOWER(payment_method) as method')
+            ->whereNotNull('payment_method')
+            ->groupBy('method')
+            ->pluck('method')
+            ->filter()
+            ->unique()
+            ->values();
+
+        return view('admin::Users.transactions.index', [
+            'user' => $user,
+            'transactions' => $transactions,
+            'status' => $status,
+            'method' => $method,
+            'stats' => $stats,
+            'methods' => $methods,
         ]);
     }
 }

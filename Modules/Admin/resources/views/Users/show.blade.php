@@ -199,6 +199,138 @@
             color: #2140ff;
         }
 
+        .user-billing-card .card-header {
+            padding: 24px 28px;
+            border-bottom: 1px solid rgba(15, 35, 87, 0.06);
+        }
+
+        .billing-overview {
+            padding: 22px 28px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px;
+            background: #f4f6ff;
+            border-bottom: 1px solid rgba(82, 97, 172, 0.12);
+        }
+
+        .billing-stat-card {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            padding: 16px 18px;
+            border-radius: 18px;
+            background: #fff;
+            border: 1px solid rgba(82, 97, 172, 0.12);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.6);
+        }
+
+        .billing-stat-card span.label {
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: #8a94b8;
+        }
+
+        .billing-stat-card span.value {
+            font-weight: 700;
+            font-size: 1.35rem;
+            color: #172655;
+        }
+
+        .billing-stat-card span.hint {
+            font-size: 0.82rem;
+            color: #99a8d3;
+        }
+
+        .billing-sections {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 0;
+        }
+
+        .billing-section {
+            padding: 24px 28px;
+            border-right: 1px solid rgba(226, 232, 240, 0.7);
+        }
+
+        .billing-section:last-child {
+            border-right: none;
+        }
+
+        .billing-section__header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+        }
+
+        .billing-section__header h6 {
+            margin: 0;
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        .user-subscription-table,
+        .user-transaction-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0 10px;
+        }
+
+        .user-subscription-table tbody tr,
+        .user-transaction-table tbody tr {
+            background: #f8f9ff;
+            border-radius: 14px;
+            overflow: hidden;
+        }
+
+        .user-subscription-table tbody tr td,
+        .user-transaction-table tbody tr td {
+            padding: 12px 16px;
+            border-top: 1px solid rgba(226, 232, 240, 0.6);
+        }
+
+        .user-subscription-table tbody tr td:first-child,
+        .user-transaction-table tbody tr td:first-child {
+            border-left: 1px solid rgba(226, 232, 240, 0.6);
+            border-radius: 12px 0 0 12px;
+        }
+
+        .user-subscription-table tbody tr td:last-child,
+        .user-transaction-table tbody tr td:last-child {
+            border-right: 1px solid rgba(226, 232, 240, 0.6);
+            border-radius: 0 12px 12px 0;
+        }
+
+        .subscription-status-pill,
+        .transaction-status-pill {
+            display: inline-flex;
+            align-items: center;
+            padding: 6px 12px;
+            border-radius: 999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        .subscription-status-pill.active { background: rgba(20, 184, 166, 0.18); color: #047857; }
+        .subscription-status-pill.pending { background: rgba(251, 191, 36, 0.2); color: #b45309; }
+        .subscription-status-pill.expired { background: rgba(148, 163, 184, 0.2); color: #4b5563; }
+        .transaction-status-pill.success { background: rgba(20, 184, 166, 0.18); color: #047857; }
+        .transaction-status-pill.failed { background: rgba(239, 68, 68, 0.22); color: #b91c1c; }
+        .transaction-status-pill.pending { background: rgba(251, 191, 36, 0.2); color: #b45309; }
+        .transaction-status-pill.cancelled { background: rgba(148, 163, 184, 0.22); color: #475569; }
+
+        .billing-empty {
+            padding: 18px;
+            border-radius: 14px;
+            background: #f8f9ff;
+            border: 1px dashed rgba(148, 163, 184, 0.5);
+            color: #64748b;
+            text-align: center;
+        }
+
         @media (max-width: 991px) {
             .user-profile-hero {
                 margin-inline: 1rem;
@@ -212,6 +344,20 @@
 
             .user-summary-item {
                 padding: 12px 14px;
+            }
+
+            .billing-sections {
+                grid-template-columns: 1fr;
+                border-top: 1px solid rgba(226, 232, 240, 0.7);
+            }
+
+            .billing-section {
+                border-right: none;
+                border-bottom: 1px solid rgba(226, 232, 240, 0.7);
+            }
+
+            .billing-section:last-child {
+                border-bottom: none;
             }
 
         }
@@ -385,6 +531,141 @@
                 </div>
             </div>
         </div>
+
+        <div class="user-profile-card card user-billing-card mb-4">
+            <div class="card-header d-flex align-items-center justify-content-between">
+                <div>
+                    <h6 class="mb-0">Billing overview</h6>
+                    <span class="text-muted small">Plans, subscriptions, and payment activity</span>
+                </div>
+                <a href="{{ route('admin.users.subscriptions.index', $user->id) }}" class="btn btn-sm btn-outline-primary">
+                    Manage billing
+                </a>
+            </div>
+            <div class="billing-overview">
+                <div class="billing-stat-card">
+                    <span class="label">Subscriptions</span>
+                    <span class="value">{{ number_format($subscriptionStats['total'] ?? 0) }}</span>
+                    <span class="hint">{{ number_format($subscriptionStats['active'] ?? 0) }} active • {{ number_format($subscriptionStats['pending'] ?? 0) }} pending</span>
+                </div>
+                <div class="billing-stat-card">
+                    <span class="label">Remaining credits</span>
+                    <span class="value">{{ number_format($subscriptionStats['remainingCredits'] ?? 0) }}</span>
+                    <span class="hint">Across all plans</span>
+                </div>
+                <div class="billing-stat-card">
+                    <span class="label">Transactions</span>
+                    <span class="value">{{ number_format($transactionStats['totalCount'] ?? 0) }}</span>
+                    <span class="hint">{{ number_format($transactionStats['successCount'] ?? 0) }} successful • {{ number_format($transactionStats['pendingCount'] ?? 0) }} pending</span>
+                </div>
+                <div class="billing-stat-card">
+                    <span class="label">Total spend</span>
+                    <span class="value">{{ number_format((float)($transactionStats['totalVolume'] ?? 0), 2, '.', ' ') }} UZS</span>
+                    <span class="hint">Success: {{ number_format((float)($transactionStats['successVolume'] ?? 0), 2, '.', ' ') }} UZS</span>
+                </div>
+            </div>
+            <div class="billing-sections">
+                <div class="billing-section">
+                    <div class="billing-section__header">
+                        <h6 class="mb-0">Subscriptions</h6>
+                        <a href="{{ route('admin.users.subscriptions.index', $user->id) }}" class="btn btn-sm btn-light">
+                            View all
+                        </a>
+                    </div>
+                    @php $subscriptionSlice = $subscriptions->take(6); @endphp
+                    @if($subscriptionSlice->isEmpty())
+                        <div class="billing-empty">
+                            This user has no subscriptions yet.
+                        </div>
+                    @else
+                        <table class="user-subscription-table">
+                            <tbody>
+                            @foreach($subscriptionSlice as $subscription)
+                                <tr>
+                                    <td style="width: 32%;">
+                                        <div class="fw-semibold">{{ $subscription->plan?->name ?? '—' }}</div>
+                                        <div class="text-muted small">#{{ $subscription->id }}</div>
+                                    </td>
+                                    <td style="width: 20%;">
+                                        @php $status = strtolower($subscription->status ?? 'unknown'); @endphp
+                                        <span class="subscription-status-pill {{ $status }}">
+                                            {{ ucfirst($subscription->status ?? 'unknown') }}
+                                        </span>
+                                    </td>
+                                    <td style="width: 28%;">
+                                        <div>{{ optional($subscription->starts_at)->format('M d, Y') ?? '—' }} → {{ optional($subscription->ends_at)->format('M d, Y') ?? '—' }}</div>
+                                        <div class="text-muted small">{{ optional($subscription->ends_at)->diffForHumans() }}</div>
+                                    </td>
+                                    <td style="width: 20%;" class="text-end">
+                                        <div class="fw-semibold">{{ number_format((int) $subscription->remaining_auto_responses) }}</div>
+                                        <div class="text-muted small">credits left</div>
+                                    </td>
+                                    <td class="text-end" style="width: 80px;">
+                                        <a href="{{ route('admin.subscriptions.show', $subscription) }}" class="btn btn-sm btn-outline-primary">
+                                            Details
+                                        </a>
+                                    </td>
+                                </tr>
+                            @endforeach
+                            </tbody>
+                        </table>
+                    @endif
+                </div>
+                <div class="billing-section">
+                    <div class="billing-section__header">
+                        <h6 class="mb-0">Transactions</h6>
+                        <a href="{{ route('admin.users.transactions.index', $user->id) }}" class="btn btn-sm btn-light">
+                            View all
+                        </a>
+                    </div>
+                    @if($recentTransactions->isEmpty())
+                        <div class="billing-empty">
+                            No payment activity recorded for this user yet.
+                        </div>
+                    @else
+                        <table class="user-transaction-table">
+                            <tbody>
+                            @foreach($recentTransactions as $transaction)
+                                @php
+                                    $txStatus = strtolower($transaction->payment_status ?? 'unknown');
+                                    $linkedPlan = $transaction->subscription?->plan?->name ?? '—';
+                                @endphp
+                                <tr>
+                                    <td style="width: 30%;">
+                                        <div class="fw-semibold">#{{ $transaction->id }}</div>
+                                        <div class="text-muted small">{{ $transaction->transaction_id ?? '—' }}</div>
+                                    </td>
+                                    <td style="width: 20%;">
+                                        <span class="transaction-status-pill {{ $txStatus }}">
+                                            {{ ucfirst($transaction->payment_status ?? 'unknown') }}
+                                        </span>
+                                    </td>
+                                    <td style="width: 30%;">
+                                        <div class="fw-semibold">{{ number_format((float) $transaction->amount, 2, '.', ' ') }} {{ strtoupper($transaction->currency ?? 'UZS') }}</div>
+                                        <div class="text-muted small">{{ ucfirst($transaction->payment_method ?? '—') }}</div>
+                                    </td>
+                                    <td style="width: 20%;">
+                                        <div>{{ optional($transaction->create_time)->format('M d, Y • H:i') ?? '—' }}</div>
+                                        <div class="text-muted small">{{ optional($transaction->create_time)->diffForHumans() }}</div>
+                                    </td>
+                                    <td style="width: 20%;">
+                                        <div class="text-muted small">Plan</div>
+                                        <div class="fw-semibold">{{ $linkedPlan }}</div>
+                                    </td>
+                                    <td class="text-end" style="width: 80px;">
+                                        <a href="{{ route('admin.transactions.show', $transaction) }}" class="btn btn-sm btn-outline-primary">
+                                            Details
+                                        </a>
+                                    </td>
+                                </tr>
+                            @endforeach
+                            </tbody>
+                        </table>
+                    @endif
+                </div>
+            </div>
+        </div>
+
         <div class="user-profile-card card">
             <div class="card-header d-flex align-items-center justify-content-between">
                 <h6 class="mb-0">Recent vacancy matches</h6>

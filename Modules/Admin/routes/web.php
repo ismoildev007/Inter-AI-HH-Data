@@ -35,6 +35,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('users', [UserController::class, 'index'])->name('users.index');
         Route::get('users/{id}', [UserController::class, 'show'])->name('users.show');
         Route::get('users/{user}/vacancies', [UserController::class, 'vacancies'])->name('users.vacancies.index');
+        Route::get('users/{user}/subscriptions', [UserController::class, 'subscriptions'])->name('users.subscriptions.index');
+        Route::get('users/{user}/transactions', [UserController::class, 'transactions'])->name('users.transactions.index');
 
         // Resumes
         Route::get('resumes', [ResumeController::class, 'index'])->name('resumes.index');
