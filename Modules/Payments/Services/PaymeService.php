@@ -96,6 +96,7 @@ class PaymeService
                 return self::OrderNotFound();
             }
             $prepare->create_time = $time;
+            $prepare->perform_time = $param['params']['time'];
             $prepare->transaction_id = $param['params']['id'];
             $prepare->state = 1;
             $prepare->save();
@@ -197,13 +198,13 @@ class PaymeService
                 $subscription->reason = $param['params']['reason'];
                 $subscription->save();
             }
-            return [
+            return response()->json([
                 'result' => [
                     'transaction' => (string)$subscription->id,
                     'state' => $subscription->state,
                     'cancel_time' => $subscription->cancel_time,
                 ]
-            ];
+            ]);
         }
 
         return self::OrderNotFound();
