@@ -74,14 +74,6 @@ class PaymeService
         if ($prepare_id) {
             $prepare = Transaction::where('id', $prepare_id)->first();
             if (($param['params']['amount']) != ($prepare->amount * 100)) return self::notCorrectAmount();
-            if ($prepare->state == 1 && $prepare->transaction_id != $transaction_id && $prepare->state != 0) {
-                $prepare->update([
-                    'transaction_id' => $transaction_id,
-                ]);
-            }
-            if ($prepare->state == 1 && $prepare->transaction_id != $transaction_id) {
-                return self::pending();
-            }
             if ($prepare->state == 1) {
                 return response()->json([
                     'result' => [
@@ -90,6 +82,9 @@ class PaymeService
                         'state' => 1,
                     ]
                 ]);
+            }
+            if ($prepare->state == 1 && $prepare->transaction_id != $transaction_id) {
+                return self::pending();
             }
             if ($prepare->payment_status == 1) {
                 return self::OrderNotFound();
@@ -100,12 +95,11 @@ class PaymeService
             if (!$prepare) {
                 return self::OrderNotFound();
             }
-            if ($prepare->transaction_id == null) {
-                $prepare->create_time = $time;
-                $prepare->transaction_id = $param['params']['id'];
-                $prepare->state = 1;
-                $prepare->save();
-            }
+
+            $prepare->create_time = $time;
+            $prepare->transaction_id = $param['params']['id'];
+            $prepare->state = 1;
+            $prepare->save();
             return response()->json([
                 'result' => [
                     'create_time' => $prepare->create_time,
