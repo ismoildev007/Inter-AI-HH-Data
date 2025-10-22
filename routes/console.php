@@ -101,11 +101,11 @@ Schedule::command('telegram:session:soft-reset')
 //     ->twiceDaily(3, 15) // 03:00 va 15:00 da ishga tushadi
 //     ->withoutOverlapping();
 Schedule::command('app:send-notification-command')
-    ->dailyAt('03:30')
+    ->dailyAt('06:30')
     ->withoutOverlapping();
 
 Schedule::command('app:send-notification-command')
-    ->dailyAt('15:30')
+    ->dailyAt('18:30')
     ->withoutOverlapping();
 
 // Foydalanuvchi trial davrini nazorat qiluvchi cron

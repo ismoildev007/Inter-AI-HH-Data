@@ -121,4 +121,9 @@ class User extends Authenticatable
     {
         return $this->hasManyThrough(MatchResult::class, Resume::class);
     }
+
+    public function subscriptions()
+    {
+        return $this->hasMany(Subscription::class);
+    }
 }
