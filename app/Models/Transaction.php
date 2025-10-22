@@ -12,6 +12,7 @@ class Transaction extends Model
     protected $fillable = [
         'user_id',
         'plan_id',
+        'subscription_id',
         'payment_status',
         'transaction_id',
         'payment_method',
@@ -39,5 +40,10 @@ class Transaction extends Model
     public function plan()
     {
         return $this->belongsTo(Plan::class);
+    }
+
+    public function subscription()
+    {
+        return $this->belongsTo(Subscription::class);
     }
 }
