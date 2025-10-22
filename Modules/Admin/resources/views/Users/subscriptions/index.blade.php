@@ -17,11 +17,7 @@
             <li class="breadcrumb-item">Subscriptions</li>
         </ul>
     </div>
-    <div class="ms-auto">
-        <a href="{{ route('admin.users.show', $user->id) }}" class="btn btn-outline-secondary">
-            <i class="feather-arrow-left me-1"></i> Back to profile
-        </a>
-    </div>
+
 </div>
 
 <div class="user-subscriptions-hero">
@@ -134,13 +130,25 @@
 </div>
 
 <style>
-    .user-subscriptions-hero {
-        margin-bottom: 1.5rem;
+.user-subscriptions-hero {
+    margin: 0 1.5rem 1.5rem;
         border-radius: 26px;
         padding: 38px 44px;
         background: linear-gradient(135deg, rgba(99, 102, 241, 0.12), rgba(59, 130, 246, 0.12));
         border: 1px solid rgba(99, 102, 241, 0.18);
         box-shadow: 0 24px 60px rgba(15, 23, 42, 0.08);
+    }
+    .subscriptions-filter {
+        margin: 0 1.5rem 1.5rem;
+        border-radius: 22px;
+        border: 1px solid rgba(226, 232, 240, 0.9);
+        box-shadow: 0 22px 52px rgba(15, 46, 122, 0.12);
+    }
+    .subscriptions-filter .card-body {
+        padding: 26px 28px;
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
     }
     .user-subscriptions-hero__content {
         display: flex;
@@ -191,6 +199,7 @@
     }
 
     .subscriptions-table {
+        margin: 0 1.5rem 1.5rem;
         border-radius: 22px;
         border: 1px solid rgba(226, 232, 240, 0.85);
         box-shadow: 0 24px 60px rgba(15, 23, 42, 0.08);

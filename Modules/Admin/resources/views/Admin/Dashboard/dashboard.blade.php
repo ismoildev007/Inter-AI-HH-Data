@@ -293,6 +293,7 @@
         display: flex;
         flex-direction: column;
         gap: 28px;
+        margin: 0 1.5rem 1.5rem;
     }
     .dashboard-hero {
         display: grid;

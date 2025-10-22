@@ -86,7 +86,7 @@
         </form>
     </div>
 </div>
-<div class="mb-3 d-flex justify-content-end me-3">
+<div class="plan-actions d-flex justify-content-end">
     <a href="{{ route('admin.plans.create') }}" class="btn btn-primary">
         <i class="feather-plus me-1"></i>Create New Plan
     </a>
@@ -167,27 +167,28 @@
 </div>
 
 <style>
-    .plan-alert {
-        border-radius: 16px;
-        border: 1px solid rgba(34, 197, 94, 0.35);
-        background: rgba(220, 252, 231, 0.6);
-        padding: 14px 18px;
-        margin-bottom: 18px;
-    }
-    .plan-hero {
-        margin: 0 0 1.5rem;
-        border-radius: 28px;
-        padding: 42px 48px;
+.plan-alert {
+    border-radius: 16px;
+    border: 1px solid rgba(34, 197, 94, 0.35);
+    background: rgba(220, 252, 231, 0.6);
+    padding: 14px 18px;
+    margin: 1rem 1.5rem;
+}
+.plan-hero {
+    margin: 0 1.5rem 1.5rem;
+    border-radius: 28px;
+    padding: 42px 48px;
         background: linear-gradient(135deg, rgba(37, 99, 235, 0.08), rgba(14, 165, 233, 0.12));
         border: 1px solid rgba(59, 130, 246, 0.16);
         box-shadow: 0 26px 58px rgba(15, 23, 42, 0.08);
     }
-    .plan-hero__content {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 32px;
-        align-items: flex-start;
-    }
+.plan-hero__content {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 32px;
+    align-items: flex-start;
+    padding: 16px;
+}
     .plan-hero__left {
         flex: 1 1 320px;
     }
@@ -216,12 +217,12 @@
         color: #475569;
         line-height: 1.6;
     }
-    .plan-hero__stats {
-        flex: 1 1 280px;
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-        gap: 16px;
-    }
+.plan-hero__stats {
+    flex: 1 1 280px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+}
     .plan-stat-card {
         background: rgba(255, 255, 255, 0.85);
         border-radius: 20px;
@@ -255,8 +256,9 @@
         color: #94a3b8;
         font-size: 0.85rem;
     }
-    .plan-filter-card {
-        border-radius: 22px;
+.plan-filter-card {
+    margin: 0 1.5rem 1.5rem;
+    border-radius: 22px;
         margin-bottom: 1.5rem;
         box-shadow: 0 20px 46px rgba(15, 46, 122, 0.12);
         border: 1px solid rgba(226, 232, 240, 0.9);
@@ -304,8 +306,9 @@
         display: inline-flex;
         align-items: center;
     }
-    .plan-table {
-        border-radius: 22px;
+.plan-table {
+    margin: 0 1.5rem 1.5rem;
+    border-radius: 22px;
         overflow: hidden;
         box-shadow: 0 24px 56px rgba(15, 23, 42, 0.08);
         border: 1px solid rgba(226, 232, 240, 0.9);
@@ -326,10 +329,13 @@
         flex-direction: column;
         gap: 4px;
     }
-    .plan-table__body {
-        display: flex;
-        flex-direction: column;
-    }
+.plan-table__body {
+    display: flex;
+    flex-direction: column;
+}
+.plan-actions {
+    margin: 0 1.5rem 1rem;
+}
     .plan-table__row {
         display: grid;
         grid-template-columns: 25% 18% 15% 15% 12% 15%;

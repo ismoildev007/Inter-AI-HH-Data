@@ -12,13 +12,10 @@
             <li class="breadcrumb-item">#{{ $subscription->id }}</li>
         </ul>
     </div>
-    <div class="ms-auto">
-        <a href="{{ route('admin.subscriptions.index') }}" class="btn btn-outline-secondary">
-            <i class="feather-arrow-left me-1"></i> Back
-        </a>
-    </div>
+
 </div>
 
+<div class="subscription-layout">
 <div class="row g-3">
     <div class="col-xxl-8">
         <div class="card subscription-summary">
@@ -150,8 +147,12 @@
         </div>
     </div>
 </div>
+</div>
 
 <style>
+    .subscription-layout {
+        margin: 0 1.5rem 1.5rem;
+    }
     .subscription-summary {
         border-radius: 26px;
         border: 1px solid rgba(148, 163, 184, 0.2);

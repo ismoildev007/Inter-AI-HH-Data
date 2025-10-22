@@ -25,6 +25,7 @@
 </div>
 @endif
 
+<div class="plan-detail-wrap">
 <div class="row g-3 mt-1">
     <div class="col-xxl-7 col-xl-8">
         <div class="card plan-overview">
@@ -119,14 +120,18 @@
         </div>
     </div>
 </div>
+</div>
 
 <style>
-    .plan-notice {
-        border-radius: 16px;
-        border: 1px solid rgba(34, 197, 94, 0.35);
-        background: rgba(220, 252, 231, 0.6);
-        padding: 14px 18px;
-        margin-bottom: 16px;
+.plan-detail-wrap {
+    margin: 0 1.5rem 1.5rem;
+}
+.plan-notice {
+    border-radius: 16px;
+    border: 1px solid rgba(34, 197, 94, 0.35);
+    background: rgba(220, 252, 231, 0.6);
+    padding: 14px 18px;
+        margin: 0 1.5rem 16px;
     }
 
     .plan-overview {

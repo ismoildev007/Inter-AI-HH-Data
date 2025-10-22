@@ -17,11 +17,7 @@
             <li class="breadcrumb-item">Transactions</li>
         </ul>
     </div>
-    <div class="ms-auto">
-        <a href="{{ route('admin.users.show', $user->id) }}" class="btn btn-outline-secondary">
-            <i class="feather-arrow-left me-1"></i> Back to profile
-        </a>
-    </div>
+
 </div>
 
 <div class="user-transactions-hero">
@@ -157,13 +153,19 @@
 </div>
 
 <style>
-    .user-transactions-hero {
-        margin-bottom: 1.5rem;
+.user-transactions-hero {
+    margin: 0 1.5rem 1.5rem;
         border-radius: 26px;
         padding: 38px 44px;
         background: linear-gradient(140deg, rgba(59, 130, 246, 0.09), rgba(96, 165, 250, 0.12));
         border: 1px solid rgba(59, 130, 246, 0.18);
         box-shadow: 0 24px 60px rgba(15, 23, 42, 0.08);
+    }
+    .transactions-filter {
+        margin: 0 1.5rem 1.5rem;
+        border-radius: 22px;
+        border: 1px solid rgba(226, 232, 240, 0.9);
+        box-shadow: 0 22px 52px rgba(15, 46, 122, 0.12);
     }
     .user-transactions-hero__content {
         display: flex;
@@ -214,12 +216,13 @@
         color: #64748b;
     }
 
-    .transactions-table {
-        border-radius: 22px;
-        border: 1px solid rgba(226, 232, 240, 0.85);
-        box-shadow: 0 24px 60px rgba(15, 23, 42, 0.08);
-        overflow: hidden;
-    }
+.transactions-table {
+    margin: 0 1.5rem 1.5rem;
+    border-radius: 22px;
+    border: 1px solid rgba(226, 232, 240, 0.85);
+    box-shadow: 0 24px 60px rgba(15, 23, 42, 0.08);
+    overflow: hidden;
+}
     .transactions-table__head {
         display: grid;
         grid-template-columns: 18% 12% 14% 18% 14% 16% 8%;
