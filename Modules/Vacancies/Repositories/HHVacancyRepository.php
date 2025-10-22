@@ -131,19 +131,38 @@ class HHVacancyRepository implements HHVacancyInterface
 
         $terms = array_filter(array_map('trim', explode(',', $query)));
 
+        $languages = ['uz', 'ru', 'en'];
         $translator = new GoogleTranslate();
-        $translator->setSource('uz'); 
-        $translator->setTarget('en');
+        $translator->setSource('auto');
+
         $translatedTerms = [];
         foreach ($terms as $term) {
-            try {
-                $translated = $translator->translate(trim($term));
-                $translatedTerms[] = ucfirst($translated);
-            } catch (\Throwable $e) {
-                Log::warning("Translation failed for term '{$term}': " . $e->getMessage());
-                $translatedTerms[] = $term;
+            if ($term === '') {
+                continue;
+            }
+
+            $translatedTerms[] = $term;
+
+            foreach ($languages as $language) {
+                try {
+                    $translator->setTarget($language);
+                    $translated = trim($translator->translate($term));
+
+                    if ($translated !== '') {
+                        $translatedTerms[] = $translated;
+                    }
+                } catch (\Throwable $e) {
+                    Log::warning("Translation failed for term '{$term}' to '{$language}': " . $e->getMessage());
+                }
             }
         }
+
+        $searchTerms = collect($translatedTerms)
+            ->map(fn($term) => trim($term))
+            ->filter()
+            ->unique(fn($term) => mb_strtolower($term, 'UTF-8'))
+            ->values()
+            ->all();
         $perPage = min($perPage, 100);
 
         $dateFrom = now()->subDays(30)->startOfDay()->toIso8601String();
@@ -159,7 +178,7 @@ class HHVacancyRepository implements HHVacancyInterface
 
         $mergedItems = [];
 
-        foreach ($translatedTerms as $term) {
+        foreach ($searchTerms as $term) {
             $cacheKey = "hh:search:" . md5("{$term}:{$page}:{$perPage}:" . json_encode($options));
 
             $data = Cache::remember($cacheKey, now()->addMinutes(30), function () use ($term, $baseParams) {
@@ -201,9 +220,9 @@ class HHVacancyRepository implements HHVacancyInterface
             ->all();
 
         Log::info('HH search completed', [
-            'original_query'   => $query,
-            'translated_terms' => $translatedTerms,
-            'total_items'      => count($mergedItems),
+            'original_query' => $query,
+            'search_terms'   => $searchTerms,
+            'total_items'    => count($mergedItems),
         ]);
 
         return ['items' => $mergedItems];
