@@ -83,11 +83,10 @@
             <div class="cell">Period</div>
             <div class="cell text-center">Credits</div>
             <div class="cell text-end">Created</div>
-            <div class="cell text-end">Action</div>
         </div>
         <div class="subscriptions-table__body">
             @forelse($subscriptions as $subscription)
-                <div class="subscriptions-table__row">
+                <a href="{{ route('admin.subscriptions.show', $subscription) }}" class="subscriptions-table__row">
                     <div class="cell">
                         <span class="plan-name">{{ $subscription->plan?->name ?? '—' }}</span>
                         <span class="plan-id text-muted small">#{{ $subscription->id }}</span>
@@ -108,12 +107,7 @@
                         <div>{{ optional($subscription->created_at)->format('M d, Y') ?? '—' }}</div>
                         <span class="text-muted small">{{ optional($subscription->created_at)->diffForHumans() }}</span>
                     </div>
-                    <div class="cell text-end">
-                        <a href="{{ route('admin.subscriptions.show', $subscription) }}" class="btn btn-sm btn-outline-primary">
-                            Details
-                        </a>
-                    </div>
-                </div>
+                </a>
             @empty
                 <div class="subscriptions-table__empty text-center py-5">
                     <h6 class="fw-semibold mb-1">No subscriptions yet</h6>
@@ -207,7 +201,7 @@
     }
     .subscriptions-table__head {
         display: grid;
-        grid-template-columns: 26% 15% 24% 13% 14% 8%;
+        grid-template-columns: 28% 18% 22% 12% 20%;
         padding: 18px 26px;
         background: rgba(248, 250, 252, 0.92);
         border-bottom: 1px solid rgba(226, 232, 240, 0.8);
@@ -218,7 +212,7 @@
     }
     .subscriptions-table__row {
         display: grid;
-        grid-template-columns: 26% 15% 24% 13% 14% 8%;
+        grid-template-columns: 28% 18% 22% 12% 20%;
         padding: 18px 26px;
         border-bottom: 1px solid rgba(226, 232, 240, 0.6);
         transition: background 0.18s ease;
@@ -231,6 +225,9 @@
         flex-direction: column;
         gap: 4px;
         justify-content: center;
+    }
+    .subscriptions-table__row .cell--status {
+        align-items: flex-start;
     }
     .subscriptions-table__row .cell--status {
         align-items: flex-start;

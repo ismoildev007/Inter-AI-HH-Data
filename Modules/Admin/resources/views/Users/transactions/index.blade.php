@@ -97,11 +97,10 @@
             <div class="cell">Plan</div>
             <div class="cell text-end">Amount</div>
             <div class="cell text-end">Created</div>
-            <div class="cell text-end">Action</div>
         </div>
         <div class="transactions-table__body">
             @forelse($transactions as $transaction)
-                <div class="transactions-table__row">
+                <a href="{{ route('admin.transactions.show', $transaction) }}" class="transactions-table__row">
                     <div class="cell">
                         <span class="fw-semibold">#{{ $transaction->id }}</span>
                         <span class="text-muted small">{{ $transaction->transaction_id ?? '—' }}</span>
@@ -131,12 +130,7 @@
                         <div>{{ optional($transaction->create_time)->format('M d, Y • H:i') ?? '—' }}</div>
                         <span class="text-muted small">{{ optional($transaction->create_time)->diffForHumans() }}</span>
                     </div>
-                    <div class="cell text-end">
-                        <a href="{{ route('admin.transactions.show', $transaction) }}" class="btn btn-sm btn-outline-primary">
-                            Details
-                        </a>
-                    </div>
-                </div>
+                </a>
             @empty
                 <div class="transactions-table__empty text-center py-5">
                     <h6 class="fw-semibold mb-1">No transactions found</h6>
@@ -225,7 +219,7 @@
 }
     .transactions-table__head {
         display: grid;
-        grid-template-columns: 18% 12% 14% 18% 14% 16% 8%;
+        grid-template-columns: 20% 14% 14% 20% 16% 16%;
         padding: 18px 26px;
         background: rgba(248, 250, 252, 0.92);
         border-bottom: 1px solid rgba(226, 232, 240, 0.8);
@@ -236,7 +230,7 @@
     }
     .transactions-table__row {
         display: grid;
-        grid-template-columns: 18% 12% 14% 18% 14% 16% 8%;
+        grid-template-columns: 20% 14% 14% 20% 16% 16%;
         padding: 18px 26px;
         border-bottom: 1px solid rgba(226, 232, 240, 0.6);
         transition: background 0.18s ease;
