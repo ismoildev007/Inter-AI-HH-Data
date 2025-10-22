@@ -23,7 +23,7 @@
                 <div class="transaction-summary__header">
                     <div>
                         <span class="badge bg-soft-primary text-primary text-uppercase fw-semibold">Payment overview</span>
-                        <h2 class="transaction-summary__title mt-3 mb-2">{{ $transaction->transaction_id ?? 'Internal ID #'.$transaction->id }}</h2>
+                        <!-- <h2 class="transaction-summary__title mt-3 mb-2">{{ $transaction->transaction_id ?? 'Internal ID #'.$transaction->id }}</h2> -->
                         <p class="transaction-summary__subtitle mb-0">
                             {{ ucfirst($transaction->payment_status ?? 'unknown') }} • {{ optional($transaction->create_time)->format('M d, Y • H:i') ?? 'N/A' }}
                         </p>
@@ -118,10 +118,10 @@
                         <span class="label">Transaction ID</span>
                         <span class="value">#{{ $transaction->id }}</span>
                     </div>
-                    <div class="sidecard-info__item">
+                    <!-- <div class="sidecard-info__item">
                         <span class="label">Gateway ID</span>
                         <span class="value">{{ $transaction->transaction_id ?? '—' }}</span>
-                    </div>
+                    </div> -->
                     <div class="sidecard-info__item">
                         <span class="label">Customer</span>
                         <span class="value">#{{ $transaction->user_id ?? '—' }}</span>
