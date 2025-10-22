@@ -37,7 +37,7 @@
         </p>
 
         <!-- Button -->
-        <a href="https://vacancies.inter-ai.uz/"
+        <a href="t.me//inter_ai_vacancies_bot"
            target="_blank"
            class="inline-block bg-blue-600 text-white px-6 py-3 rounded-lg shadow-lg hover:bg-blue-700 hover:shadow-xl transition transform hover:scale-105">
             Go to Dashboard

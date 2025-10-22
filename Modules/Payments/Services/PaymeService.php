@@ -110,27 +110,32 @@ class PaymeService
         return self::notParam();
     }
 
-    public function checkTransaction($param)
+    public function checkTransaction(Request $request)
     {
-        $transaction_id = $param['params']['id'] ?? null;
+        $transaction_id = $request->input('params.id');
+        $id = $request->input('id');
 
         $order = Transaction::where('transaction_id', $transaction_id)->first();
-        if ($order) {
-            if ($order->state == -2) return $this->canceled($order);
-            return response()->json([
-                'result' => [
-                    'create_time' => $order->create_time,
-                    'perform_time' => $order->perform_time,
-                    'cancel_time' => $order->cancel_time,
-                    'transaction' => (string)$order->id,
-                    'state' => $order->state,
-                    'reason' => $order->reason,
-                ]
-            ]);
+        if (!$order) {
+            return self::OrderNotFound();
         }
 
-        return self::OrderNotFound();
+        if ($order->state == -2) return $this->canceled($order);
+
+        return response()->json([
+            'jsonrpc' => '2.0',
+            'result' => [
+                'create_time' => (int)$order->create_time,
+                'perform_time' => (int)($order->perform_time ?? 0),
+                'cancel_time' => (int)($order->cancel_time ?? 0),
+                'transaction' => (string)$order->id,
+                'state' => (int)$order->state,
+                'reason' => $order->reason ?? null,
+            ],
+            'id' => $id,
+        ]);
     }
+
     public function performTransaction($param)
     {
         $transactionId = null;
