@@ -92,7 +92,7 @@
                         <span class="plan-name">{{ $subscription->plan?->name ?? '—' }}</span>
                         <span class="plan-id text-muted small">#{{ $subscription->id }}</span>
                     </div>
-                    <div class="cell">
+                    <div class="cell cell--status">
                         @php $statusLabel = strtolower($subscription->status ?? 'unknown'); @endphp
                         <span class="status-pill status-pill--{{ $statusLabel }}">{{ ucfirst($subscription->status ?? 'unknown') }}</span>
                     </div>
@@ -232,6 +232,9 @@
         gap: 4px;
         justify-content: center;
     }
+    .subscriptions-table__row .cell--status {
+        align-items: flex-start;
+    }
     .plan-name {
         font-weight: 600;
         color: #2563eb;
@@ -239,14 +242,16 @@
     .status-pill {
         display: inline-flex;
         align-items: center;
-        padding: 6px 12px;
+        justify-content: center;
+        padding: 4px 12px;
         border-radius: 999px;
-        font-size: 0.74rem;
+        font-size: 0.7rem;
         font-weight: 600;
         text-transform: uppercase;
-        letter-spacing: 0.1em;
+        letter-spacing: 0.14em;
         background: rgba(148, 163, 184, 0.22);
         color: #0f172a;
+        margin-top: 6px;
     }
     .status-pill--active { background: rgba(20, 184, 166, 0.18); color: #047857; }
     .status-pill--pending { background: rgba(251, 191, 36, 0.2); color: #b45309; }

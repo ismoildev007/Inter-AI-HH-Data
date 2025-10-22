@@ -153,7 +153,7 @@
                         </span>
                     </div>
                     <div class="cell">
-                        <span class="status-pill status-pill--{{ $tx->payment_status ?? 'unknown' }}">{{ ucfirst($tx->payment_status ?? 'unknown') }}</span>
+                        <span class="txn-status-pill txn-status-pill--{{ $tx->payment_status ?? 'unknown' }}">{{ ucfirst($tx->payment_status ?? 'unknown') }}</span>
                     </div>
                     <div class="cell">
                         <span class="method">{{ ucfirst($tx->payment_method ?? '—') }}</span>
@@ -340,6 +340,9 @@
         gap: 4px;
         justify-content: center;
     }
+    .transactions-table__row .cell:nth-child(4) {
+        align-items: flex-start;
+    }
     .tx-id {
         font-weight: 600;
         color: #0f172a;
@@ -359,22 +362,25 @@
         font-weight: 600;
         color: #2563eb;
     }
-    .status-pill {
+    .txn-status-pill {
         display: inline-flex;
         align-items: center;
-        padding: 6px 12px;
+        justify-content: center;
+        padding: 4px 12px;
         border-radius: 999px;
-        font-size: 0.74rem;
+        font-size: 0.7rem;
         text-transform: uppercase;
         font-weight: 600;
-        letter-spacing: 0.1em;
+        letter-spacing: 0.14em;
         background: rgba(148, 163, 184, 0.22);
         color: #0f172a;
+        max-width: 160px;
+        min-width: 0;
     }
-    .status-pill--success { background: rgba(20, 184, 166, 0.2); color: #047857; }
-    .status-pill--pending { background: rgba(251, 191, 36, 0.25); color: #b45309; }
-    .status-pill--failed { background: rgba(239, 68, 68, 0.22); color: #b91c1c; }
-    .status-pill--cancelled { background: rgba(148, 163, 184, 0.22); color: #475569; }
+    .txn-status-pill--success { background: rgba(20, 184, 166, 0.2); color: #047857; }
+    .txn-status-pill--pending { background: rgba(251, 191, 36, 0.25); color: #b45309; }
+    .txn-status-pill--failed { background: rgba(239, 68, 68, 0.22); color: #b91c1c; }
+    .txn-status-pill--cancelled { background: rgba(148, 163, 184, 0.22); color: #475569; }
     .amount {
         font-weight: 600;
         color: #0f172a;

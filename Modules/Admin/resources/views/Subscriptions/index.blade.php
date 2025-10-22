@@ -318,6 +318,12 @@
         gap: 4px;
         justify-content: center;
     }
+    .subscriptions-table__row .cell:nth-child(3) {
+        align-items: flex-start;
+    }
+    .subscriptions-table__row .cell--status {
+        justify-content: center;
+    }
     .subscriber-name {
         font-weight: 600;
         color: #0f172a;
@@ -334,15 +340,17 @@
     .status-pill {
         display: inline-flex;
         align-items: center;
-        gap: 6px;
-        padding: 6px 12px;
+        justify-content: center;
+        padding: 4px 12px;
         border-radius: 999px;
-        font-size: 0.78rem;
+        font-size: 0.7rem;
         font-weight: 600;
         text-transform: uppercase;
-        letter-spacing: 0.1em;
+        letter-spacing: 0.14em;
         color: #0f172a;
         background: rgba(148, 163, 184, 0.2);
+        max-width: 160px;
+        min-width: 0;
     }
     .status-pill--active { background: rgba(20, 184, 166, 0.18); color: #047857; }
     .status-pill--pending { background: rgba(251, 191, 36, 0.2); color: #b45309; }

@@ -106,7 +106,7 @@
                         <span class="fw-semibold">#{{ $transaction->id }}</span>
                         <span class="text-muted small">{{ $transaction->transaction_id ?? '—' }}</span>
                     </div>
-                    <div class="cell">
+                    <div class="cell cell--status">
                         @php $statusLabel = strtolower($transaction->payment_status ?? 'unknown'); @endphp
                         <span class="status-pill status-pill--{{ $statusLabel }}">{{ ucfirst($transaction->payment_status ?? 'unknown') }}</span>
                     </div>
@@ -250,17 +250,22 @@
         gap: 4px;
         justify-content: center;
     }
+    .transactions-table__row .cell--status {
+        align-items: flex-start;
+    }
     .status-pill {
         display: inline-flex;
         align-items: center;
-        padding: 6px 12px;
+        justify-content: center;
+        padding: 4px 12px;
         border-radius: 999px;
-        font-size: 0.74rem;
+        font-size: 0.7rem;
         font-weight: 600;
         text-transform: uppercase;
-        letter-spacing: 0.1em;
+        letter-spacing: 0.14em;
         background: rgba(148, 163, 184, 0.22);
         color: #0f172a;
+        margin-top: 6px;
     }
     .status-pill--success { background: rgba(20, 184, 166, 0.2); color: #047857; }
     .status-pill--pending { background: rgba(251, 191, 36, 0.2); color: #b45309; }
