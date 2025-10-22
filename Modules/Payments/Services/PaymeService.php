@@ -78,13 +78,13 @@ class PaymeService
                 return self::pending();
             }
             if ($prepare->state == 1) {
-                return [
+                return response()->json([
                     'result' => [
                         'create_time' => $prepare->create_time,
                         'transaction' => (string)$prepare->id,
                         'state' => 1,
                     ]
-                ];
+                ]);
             }
             if ($prepare->payment_status == 1) {
                 return self::OrderNotFound();
@@ -96,7 +96,6 @@ class PaymeService
                 return self::OrderNotFound();
             }
             $prepare->create_time = $time;
-            $prepare->perform_time = $param['params']['time'];
             $prepare->transaction_id = $param['params']['id'];
             $prepare->state = 1;
             $prepare->save();
