@@ -86,7 +86,7 @@
         </form>
     </div>
 </div>
-<div class="plan-actions d-flex justify-content-end">
+<div class="plan-header-actions d-flex justify-content-end">
     <a href="{{ route('admin.plans.create') }}" class="btn btn-primary">
         <i class="feather-plus me-1"></i>Create New Plan
     </a>
@@ -131,10 +131,11 @@
                     <div class="plan-table__cell text-end">
                         <span class="plan-date">{{ optional($plan->created_at)->format('M d, Y') ?? '—' }}</span>
                     </div>
-                    <div class="plan-table__cell text-end plan-actions">
+                    <div class="plan-table__cell text-end">
+                        <div class="plan-table__actions">
                         <a href="{{ route('admin.plans.edit', $plan) }}" class="btn btn-outline-primary plan-action-btn">
                             <i class="feather-edit-3 me-1"></i>
-                            Edit
+                           
                         </a>
                         <form action="{{ route('admin.plans.destroy', $plan) }}"
                               method="POST"
@@ -143,9 +144,10 @@
                             @method('DELETE')
                             <button type="submit" class="btn btn-outline-danger plan-action-btn">
                                 <i class="feather-trash-2 me-1"></i>
-                                Delete
+                              
                             </button>
                         </form>
+                        </div>
                     </div>
                 </div>
             @empty
@@ -316,6 +318,7 @@
     .plan-table__head {
         display: grid;
         grid-template-columns: 25% 18% 15% 15% 12% 15%;
+        padding: 18px 26px 18px 26px;
         padding: 18px 26px;
         background: rgba(248, 250, 252, 0.92);
         border-bottom: 1px solid rgba(226, 232, 240, 0.8);
@@ -333,7 +336,7 @@
     display: flex;
     flex-direction: column;
 }
-.plan-actions {
+.plan-header-actions {
     margin: 0 1.5rem 1rem;
 }
     .plan-table__row {
@@ -370,16 +373,19 @@
         color: #ef4444;
         text-decoration: line-through;
     }
-    .plan-actions {
+    .plan-table__actions {
         display: flex;
-        flex-direction: row;
         justify-content: flex-end;
         gap: 8px;
         align-items: center;
+        padding-right: 20px;
     }
-    .plan-actions form {
-        margin: 0;
-    }
+.plan-table__head .plan-table__cell.text-end {
+    padding-right: 20px;
+}
+.plan-table__actions form {
+    margin: 0;
+}
     .plan-action-btn {
         display: inline-flex;
         align-items: center;
