@@ -71,7 +71,7 @@ class PaymeController extends Controller
 
         $subscription = Subscription::create([
             'user_id' => $user->id,
-            'plan_id' => $request->plan_id,
+            'plan_id' => 1,
             'starts_at' => null,
             'ends_at' => null,
             'remaining_auto_responses' => $request->remaining_auto_responses ?? 0,
