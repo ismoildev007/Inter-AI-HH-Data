@@ -4,7 +4,6 @@ namespace Modules\Payments\Services;
 
 use App\Models\Subscription;
 use App\Models\Transaction;
-use App\Models\User;
 use App\Traits\PaymeResponseTrait;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -13,7 +12,7 @@ use Modules\Payments\Http\Resources\TransactionResource;
 class PaymeService
 {
     use PaymeResponseTrait;
-    protected function checkPerformTransaction(Request $request)
+    public function checkPerformTransaction(Request $request)
     {
 
         $params = $request->params;
@@ -210,7 +209,7 @@ class PaymeService
         return self::OrderNotFound();
     }
 
-    protected function getStatement(Request $request)
+    public function getStatement(Request $request)
     {
         $from = $request->params['from'] ?? null;
         $to = $request->params['to'] ?? null;
@@ -230,7 +229,7 @@ class PaymeService
         ]);
     }
 
-    protected function changePassword(Request $request)
+    public function changePassword(Request $request)
     {
         return $this->error($request->id, -32504, [
             "uz" => "Metodni bajarish uchun yetarli huquqlar yo'q",
