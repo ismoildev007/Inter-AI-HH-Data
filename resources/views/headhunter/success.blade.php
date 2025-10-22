@@ -37,14 +37,14 @@
         </p>
 
         <!-- Button -->
-        <a href="t.me//inter_ai_vacancies_bot"
+        <a href="https://t.me/inter_ai_vacancies_bot"
            target="_blank"
            class="inline-block bg-blue-600 text-white px-6 py-3 rounded-lg shadow-lg hover:bg-blue-700 hover:shadow-xl transition transform hover:scale-105">
             Go to Dashboard
         </a>
 
         <!-- Auto redirect notice -->
-        <p class="text-sm text-gray-400 mt-4">Redirecting you automatically in a few seconds...</p>
+{{--        <p class="text-sm text-gray-400 mt-4">Redirecting you automatically in a few seconds...</p>--}}
 
         <!-- Bottom decorative line -->
         <div class="absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r from-indigo-800 to-blue-600 rounded-b-2xl"></div>
