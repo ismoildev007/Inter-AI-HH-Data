@@ -10,6 +10,7 @@ use Modules\Admin\Http\Controllers\TelegramChannelController;
 use Modules\Admin\Http\Controllers\ProfileController;
 use Modules\Admin\Http\Controllers\PlanController;
 use Modules\Admin\Http\Controllers\SubscriptionController;
+use Modules\Admin\Http\Controllers\TransactionController;
 
 Route::prefix('admin')->name('admin.')->group(function () {
     // Auth pages (no UI changes here)
@@ -60,6 +61,13 @@ Route::prefix('admin')->name('admin.')->group(function () {
             ->only(['index', 'show'])
             ->parameters([
                 'subscriptions' => 'subscription',
+            ]);
+
+        // Transactions
+        Route::resource('transactions', TransactionController::class)
+            ->only(['index', 'show'])
+            ->parameters([
+                'transactions' => 'transaction',
             ]);
 
         // Vacancies by Category → list titles for a category

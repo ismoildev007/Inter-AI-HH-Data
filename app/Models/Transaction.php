@@ -24,6 +24,13 @@ class Transaction extends Model
         'reason',
     ];
 
+    protected $casts = [
+        'amount' => 'decimal:2',
+        'create_time' => 'datetime',
+        'perform_time' => 'datetime',
+        'cancel_time' => 'datetime',
+    ];
+
     public static function getTransactionsByTimeRange($from, $to)
     {
         return self::whereIn('state', [1, 2, -1, -2])

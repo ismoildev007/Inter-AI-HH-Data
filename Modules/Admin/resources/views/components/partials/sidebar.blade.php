@@ -1,4 +1,14 @@
 @php
+    $primaryLinks = [
+        [
+            'label' => 'Dashboard',
+            'icon' => 'airplay',
+            'route' => 'admin.dashboard',
+            'match' => ['admin.dashboard'],
+            'hint' => 'Overview metrics',
+        ],
+    ];
+
     $navigationGroups = [
         
         [
@@ -37,13 +47,18 @@
                     'match' => ['admin.telegram_channels.*'],
                     'hint' => 'Broadcast control',
                 ],
-                                [
+                [
                     'label' => 'All Vacancies',
                     'icon' => 'clipboard',
                     'route' => 'admin.vacancies.categories',
                     'match' => ['admin.vacancies.*'],
                     'hint' => 'Broadcast control',
                 ],
+            ],
+        ],
+        [
+            'label' => 'Billing',
+            'items' => [
                 [
                     'label' => 'Plans',
                     'icon' => 'credit-card',
@@ -57,6 +72,13 @@
                     'route' => 'admin.subscriptions.index',
                     'match' => ['admin.subscriptions.*'],
                     'hint' => 'Revenue stream',
+                ],
+                [
+                    'label' => 'Transactions',
+                    'icon' => 'credit-card',
+                    'route' => 'admin.transactions.index',
+                    'match' => ['admin.transactions.*'],
+                    'hint' => 'Payments ledger',
                 ],
             ],
         ],
@@ -72,21 +94,30 @@
 
             </a>
         </div>
-
-        <div class="admin-sidebar__single">
-            <a href="{{ route('admin.dashboard') }}" class="admin-sidebar__single-link {{ request()->routeIs('admin.dashboard') ? 'is-active' : '' }}">
-                <span class="admin-sidebar__single-icon">
-                    <i class="feather-airplay"></i>
-                </span>
-                <span class="admin-sidebar__single-text">
-                    <span class="label">Dashboard</span>
-                    <span class="hint">Overview metrics</span>
-                </span>
-                <span class="admin-sidebar__single-arrow">
-                    <i class="feather-chevron-right"></i>
-                </span>
-            </a>
-        </div>
+        @if (!empty($primaryLinks))
+            <div class="admin-sidebar__singles">
+                @foreach ($primaryLinks as $link)
+                    @php
+                        $patterns = (array)($link['match'] ?? $link['route']);
+                        $isActiveSingle = request()->routeIs(...$patterns);
+                    @endphp
+                    <a href="{{ route($link['route']) }}" class="admin-sidebar__single-link {{ $isActiveSingle ? 'is-active' : '' }}">
+                        <span class="admin-sidebar__single-icon">
+                            <i class="feather-{{ $link['icon'] }}"></i>
+                        </span>
+                        <span class="admin-sidebar__single-text">
+                            <span class="label">{{ $link['label'] }}</span>
+                            @if (!empty($link['hint']))
+                                <span class="hint">{{ $link['hint'] }}</span>
+                            @endif
+                        </span>
+                        <span class="admin-sidebar__single-arrow">
+                            <i class="feather-chevron-right"></i>
+                        </span>
+                    </a>
+                @endforeach
+            </div>
+        @endif
 
         <div class="admin-sidebar__content">
             @foreach ($navigationGroups as $index => $group)
@@ -185,9 +216,10 @@
     letter-spacing: 0.08em;
     text-transform: uppercase;
 }
-.admin-sidebar__single {
+.admin-sidebar__singles {
     display: flex;
     flex-direction: column;
+    gap: 10px;
 }
 .admin-sidebar__single-link {
     display: grid;
