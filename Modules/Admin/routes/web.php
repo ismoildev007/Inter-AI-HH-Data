@@ -8,6 +8,7 @@ use Modules\Admin\Http\Controllers\ResumeController;
 use Modules\Admin\Http\Controllers\ApplicationController;
 use Modules\Admin\Http\Controllers\TelegramChannelController;
 use Modules\Admin\Http\Controllers\ProfileController;
+use Modules\Admin\Http\Controllers\PlanController;
 
 Route::prefix('admin')->name('admin.')->group(function () {
     // Auth pages (no UI changes here)
@@ -47,6 +48,11 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('telegram-channels/create', [TelegramChannelController::class, 'create'])->name('telegram_channels.create');
         Route::post('telegram-channels', [TelegramChannelController::class, 'store'])->name('telegram_channels.store');
         Route::delete('telegram-channels/{channel}', [TelegramChannelController::class, 'destroy'])->name('telegram_channels.destroy');
+
+        // Plans
+        Route::resource('plans', PlanController::class)->parameters([
+            'plans' => 'plan',
+        ]);
 
         // Vacancies by Category → list titles for a category
         Route::get('vacancies/category/{category}', [DashboardController::class, 'vacanciesByCategory'])->name('vacancies.by_category');

@@ -1,17 +1,6 @@
 @php
     $navigationGroups = [
-        [
-            'label' => 'Overview',
-            'items' => [
-                [
-                    'label' => 'Dashboard',
-                    'icon' => 'airplay',
-                    'route' => 'admin.dashboard',
-                    'match' => ['admin.dashboard', 'admin.visits.*'],
-                    'hint' => 'Metrics & analytics',
-                ],
-            ],
-        ],
+        
         [
             'label' => 'People',
             'items' => [
@@ -55,6 +44,13 @@
                     'match' => ['admin.vacancies.*'],
                     'hint' => 'Broadcast control',
                 ],
+                [
+                    'label' => 'Plans',
+                    'icon' => 'credit-card',
+                    'route' => 'admin.plans.index',
+                    'match' => ['admin.plans.*'],
+                    'hint' => 'Pricing blueprints',
+                ],
             ],
         ],
     ];
@@ -70,10 +66,37 @@
             </a>
         </div>
 
+        <div class="admin-sidebar__single">
+            <a href="{{ route('admin.dashboard') }}" class="admin-sidebar__single-link {{ request()->routeIs('admin.dashboard') ? 'is-active' : '' }}">
+                <span class="admin-sidebar__single-icon">
+                    <i class="feather-airplay"></i>
+                </span>
+                <span class="admin-sidebar__single-text">
+                    <span class="label">Dashboard</span>
+                    <span class="hint">Overview metrics</span>
+                </span>
+                <span class="admin-sidebar__single-arrow">
+                    <i class="feather-chevron-right"></i>
+                </span>
+            </a>
+        </div>
+
         <div class="admin-sidebar__content">
-            @foreach ($navigationGroups as $group)
-                <div class="admin-sidebar__section">
-                    <p class="admin-sidebar__section-label">{{ $group['label'] }}</p>
+            @foreach ($navigationGroups as $index => $group)
+                @php
+                    $groupItems = collect($group['items']);
+                    $groupIsOpen = $groupItems->contains(function ($item) {
+                        $patterns = (array)($item['match'] ?? $item['route']);
+                        return request()->routeIs(...$patterns);
+                    });
+                @endphp
+                <div class="admin-sidebar__section {{ $groupIsOpen ? 'is-open' : '' }}" data-group="{{ $index }}">
+                    <button type="button" class="admin-sidebar__section-toggle" aria-expanded="{{ $groupIsOpen ? 'true' : 'false' }}">
+                        <span class="admin-sidebar__section-label">{{ $group['label'] }}</span>
+                        <span class="admin-sidebar__section-arrow">
+                            <i class="feather-chevron-down"></i>
+                        </span>
+                    </button>
                     <ul class="admin-sidebar__list">
                         @foreach ($group['items'] as $item)
                             @php
@@ -149,24 +172,117 @@
         font-weight: 600;
         letter-spacing: 0.04em;
     }
-    .admin-sidebar__brand-sub {
-        font-size: 0.78rem;
-        color: #6b7280;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-    }
+.admin-sidebar__brand-sub {
+    font-size: 0.78rem;
+    color: #6b7280;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+.admin-sidebar__single {
+    display: flex;
+    flex-direction: column;
+}
+.admin-sidebar__single-link {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 12px;
+    border-radius: 12px;
+    border: 1px solid rgba(226, 232, 240, 0.9);
+    background: rgba(248, 250, 252, 0.7);
+    text-decoration: none;
+    color: #334155;
+    transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease, background 0.18s ease;
+}
+.admin-sidebar__single-link:hover {
+    border-color: rgba(59, 130, 246, 0.35);
+    box-shadow: 0 6px 14px rgba(15, 23, 42, 0.08);
+    transform: translateY(-1px);
+    background: rgba(238, 242, 255, 0.7);
+}
+.admin-sidebar__single-link.is-active {
+    border-color: rgba(59, 130, 246, 0.45);
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.12), rgba(59, 130, 246, 0.04));
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6), 0 10px 18px rgba(59, 130, 246, 0.12);
+    color: #1d4ed8;
+}
+.admin-sidebar__single-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 11px;
+    display: grid;
+    place-items: center;
+    background: rgba(59, 130, 246, 0.12);
+    color: #1d4ed8;
+    font-size: 1rem;
+}
+.admin-sidebar__single-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+.admin-sidebar__single-text .label {
+    font-weight: 500;
+    font-size: 0.9rem;
+}
+.admin-sidebar__single-text .hint {
+    font-size: 0.78rem;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+}
+.admin-sidebar__single-arrow {
+    color: #94a3b8;
+    transition: transform 0.18s ease, color 0.18s ease;
+}
+.admin-sidebar__single-link:hover .admin-sidebar__single-arrow,
+.admin-sidebar__single-link.is-active .admin-sidebar__single-arrow {
+    transform: translateX(4px);
+    color: #1d4ed8;
+}
     .admin-sidebar__section {
         display: flex;
         flex-direction: column;
         gap: 10px;
     }
-    .admin-sidebar__section-label {
-        margin: 0;
-        padding-inline: 4px;
+    .admin-sidebar__section-toggle {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border: 1px solid #e2e8f0;
+        background: #f8fafc;
+        padding: 10px 14px;
+        color: #475569;
         font-size: 0.68rem;
         letter-spacing: 0.14em;
         text-transform: uppercase;
-        color: #94a3b8;
+        font-weight: 600;
+        cursor: pointer;
+        border-radius: 12px;
+        transition: color 0.18s ease, border-color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
+    }
+    .admin-sidebar__section-toggle:hover {
+        color: #1d4ed8;
+        border-color: rgba(59, 130, 246, 0.35);
+        box-shadow: 0 6px 14px rgba(15, 23, 42, 0.08);
+        background: #f1f5ff;
+    }
+    .admin-sidebar__section.is-open .admin-sidebar__section-toggle {
+        color: #1f2937;
+        border-color: rgba(59, 130, 246, 0.45);
+        background: linear-gradient(135deg, rgba(59, 130, 246, 0.12), rgba(59, 130, 246, 0.05));
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6), 0 10px 18px rgba(59, 130, 246, 0.12);
+    }
+    .admin-sidebar__section-arrow {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.9rem;
+        transition: transform 0.18s ease;
+    }
+    .admin-sidebar__section.is-open .admin-sidebar__section-arrow {
+        transform: rotate(180deg);
     }
     .admin-sidebar__list {
         list-style: none;
@@ -175,6 +291,16 @@
         display: flex;
         flex-direction: column;
         gap: 4px;
+        max-height: 0;
+        overflow: hidden;
+        opacity: 0;
+        transform: translateY(-4px);
+        transition: max-height 0.2s ease, opacity 0.2s ease, transform 0.2s ease;
+    }
+    .admin-sidebar__section.is-open .admin-sidebar__list {
+        max-height: 480px;
+        opacity: 1;
+        transform: translateY(0);
     }
     .admin-sidebar__item {
         position: relative;
@@ -250,3 +376,47 @@
         }
     }
 </style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const storageKey = 'adminSidebarGroups';
+        let persisted = {};
+
+        try {
+            persisted = JSON.parse(window.localStorage.getItem(storageKey) || '{}');
+        } catch (error) {
+            persisted = {};
+        }
+
+        document.querySelectorAll('.admin-sidebar__section').forEach((section) => {
+            const key = section.dataset.group;
+            const toggle = section.querySelector('.admin-sidebar__section-toggle');
+            if (!toggle) {
+                return;
+            }
+
+            const serverOpen = section.classList.contains('is-open');
+
+            if (Object.prototype.hasOwnProperty.call(persisted, key)) {
+                const shouldOpen = serverOpen || !!persisted[key];
+                section.classList.toggle('is-open', shouldOpen);
+                toggle.setAttribute('aria-expanded', shouldOpen ? 'true' : 'false');
+            } else {
+                toggle.setAttribute('aria-expanded', serverOpen ? 'true' : 'false');
+            }
+
+            toggle.addEventListener('click', () => {
+                const nextState = !section.classList.contains('is-open');
+                section.classList.toggle('is-open', nextState);
+                toggle.setAttribute('aria-expanded', nextState ? 'true' : 'false');
+
+                persisted[key] = nextState;
+                try {
+                    window.localStorage.setItem(storageKey, JSON.stringify(persisted));
+                } catch (error) {
+                    // noop
+                }
+            });
+        });
+    });
+</script>

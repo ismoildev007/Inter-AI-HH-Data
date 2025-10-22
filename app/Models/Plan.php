@@ -15,6 +15,13 @@ class Plan extends Model
         'duration',
     ];
 
+    protected $casts = [
+        'duration' => 'date',
+        'fake_price' => 'decimal:2',
+        'price' => 'decimal:2',
+        'auto_response_limit' => 'integer',
+    ];
+
     public function subscriptions()
     {
         return $this->hasMany(Subscription::class);
