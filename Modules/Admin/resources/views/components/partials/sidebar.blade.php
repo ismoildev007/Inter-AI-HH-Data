@@ -51,6 +51,13 @@
                     'match' => ['admin.plans.*'],
                     'hint' => 'Pricing blueprints',
                 ],
+                [
+                    'label' => 'Subscriptions',
+                    'icon' => 'repeat',
+                    'route' => 'admin.subscriptions.index',
+                    'match' => ['admin.subscriptions.*'],
+                    'hint' => 'Revenue stream',
+                ],
             ],
         ],
     ];

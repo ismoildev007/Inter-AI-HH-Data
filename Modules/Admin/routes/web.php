@@ -9,6 +9,7 @@ use Modules\Admin\Http\Controllers\ApplicationController;
 use Modules\Admin\Http\Controllers\TelegramChannelController;
 use Modules\Admin\Http\Controllers\ProfileController;
 use Modules\Admin\Http\Controllers\PlanController;
+use Modules\Admin\Http\Controllers\SubscriptionController;
 
 Route::prefix('admin')->name('admin.')->group(function () {
     // Auth pages (no UI changes here)
@@ -53,6 +54,13 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::resource('plans', PlanController::class)->parameters([
             'plans' => 'plan',
         ]);
+
+        // Subscriptions
+        Route::resource('subscriptions', SubscriptionController::class)
+            ->only(['index', 'show'])
+            ->parameters([
+                'subscriptions' => 'subscription',
+            ]);
 
         // Vacancies by Category → list titles for a category
         Route::get('vacancies/category/{category}', [DashboardController::class, 'vacanciesByCategory'])->name('vacancies.by_category');
