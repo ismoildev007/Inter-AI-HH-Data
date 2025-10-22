@@ -100,7 +100,7 @@ class PaymeService
             if (!$prepare) {
                 return self::OrderNotFound();
             }
-            if (empty($prepare->transaction_id)) {
+            if (!empty($prepare->transaction_id)) {
                 $prepare->create_time = $time;
                 $prepare->transaction_id = $param['params']['id'];
                 $prepare->state = 1;
