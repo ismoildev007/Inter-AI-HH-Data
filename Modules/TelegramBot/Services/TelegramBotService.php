@@ -45,6 +45,18 @@ class TelegramBotService
 
     public function handleLanguageSelection($chatId, $language)
     {
+        $lastMessageId = Cache::get("last_message_{$chatId}");
+        if ($lastMessageId) {
+            try {
+                Telegram::bot('mybot')->deleteMessage([
+                    'chat_id'    => $chatId,
+                    'message_id' => $lastMessageId,
+                ]);
+            } catch (\Exception $e) {
+                Log::warning("Xabar o‘chirishda xatolik: " . $e->getMessage());
+            }
+        }
+
         Cache::put("lang_{$chatId}", $language, now()->addHours(24));
         Log::info("handleLanguageSelection => chatId: {$chatId}, lang: {$language}");
 
@@ -63,15 +75,12 @@ class TelegramBotService
         $langCode = $langCodeMap[$language] ?? 'uz';
 
         $user = User::where('chat_id', $chatId)->first();
-        Log::info(['user info' => $user]);
 
         if ($user) {
-            // Agar user mavjud bo‘lsa — token yaratamiz
-            $user->tokens()->delete(); // eski tokenlarni o'chiramiz
+            $user->tokens()->delete();
             $token = $user->createToken('api_token', ['*'], now()->addDays(30))->plainTextToken;
             $url = "https://vacancies.inter-ai.uz/#?locale={$langCode}&token={$token}&chat_id={$chatId}";
         } else {
-            // User hali ro‘yxatdan o‘tmagan bo‘lsa — oddiy register URL
             $url = "https://vacancies.inter-ai.uz/#?locale={$langCode}&chat_id={$chatId}";
         }
 
@@ -83,39 +92,19 @@ class TelegramBotService
                     'web_app' => ['url' => $url],
                 ]),
             ]);
-        // if (!$user) {
-        //     $registerUrl = "https://vacancies.inter-ai.uz/#/register?locale={$langCode}&chat_id={$chatId}";
-        //     $inlineKeyboard = Keyboard::make()
-        //         ->inline()
-        //         ->row([
-        //             Keyboard::inlineButton([
-        //                 'text'    => $this->getViewRegisterText($language),
-        //                 'web_app' => ['url' => $registerUrl],
-        //             ]),
-        //         ]);
-        // } else {
-        //     $token = $user->createToken('api_token', ['*'], now()->addYears(22))->plainTextToken;
-        //     $loginUrl = "https://vacancies.inter-ai.uz/#?locale={$langCode}&token={$token}&chat_id={$chatId}";
-        //     $inlineKeyboard = Keyboard::make()
-        //         ->inline()
-        //         ->row([
-        //             Keyboard::inlineButton([
-        //                 'text'    => $this->getViewVacanciesText($language),
-        //                 'web_app' => ['url' => $loginUrl],
-        //             ]),
-        //         ]);
-        // }
 
         $backKeyboard = Keyboard::make()
             ->setResizeKeyboard(true)
             ->row([Keyboard::button($this->getBackButtonText($language))]);
 
         try {
-            Telegram::bot('mybot')->sendMessage([
+            $response = Telegram::bot('mybot')->sendMessage([
                 'chat_id'      => $chatId,
                 'text'         => $text,
                 'reply_markup' => $inlineKeyboard,
             ]);
+
+            Cache::put("last_message_{$chatId}", $response->getMessageId(), now()->addHours(24));
 
             $backInstructionTexts = [
                 '🇺🇿 O\'zbek' => "Agar tilni o‘zgartirmoqchi bo‘lsangiz, ⬅️ Orqaga tugmasini bosing.",
@@ -135,6 +124,7 @@ class TelegramBotService
             Log::error("handleLanguageSelection ERROR: " . $e->getMessage());
         }
     }
+
 
 
     public function getViewRegisterText($language)
