@@ -74,7 +74,7 @@ class PaymeService
         if ($prepare_id) {
             $prepare = Transaction::where('id', $prepare_id)->first();
             if (($param['params']['amount']) != ($prepare->amount * 100)) return self::notCorrectAmount();
-            if ($prepare->state == 1 && $prepare->transaction_id != $transaction_id) {
+            if ($prepare->state == 1) {
                 return self::pending();
             }
             if ($prepare->state == 1) {
