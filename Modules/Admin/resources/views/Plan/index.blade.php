@@ -106,11 +106,11 @@
                 $formatPrice = fn ($value) => is_null($value) ? '—' : number_format((float) $value, 2, '.', ' ');
             @endphp
             @forelse($plans as $plan)
-                <div class="plan-table__row">
+                <div class="plan-table__row" data-href="{{ route('admin.plans.show', $plan) }}">
                     <div class="plan-table__cell">
-                        <a href="{{ route('admin.plans.show', $plan) }}" class="plan-table__title">
+                        <span class="plan-table__title">
                             {{ $plan->name }}
-                        </a>
+                        </span>
                         <span class="plan-table__description">{{ \Illuminate\Support\Str::limit($plan->description, 80) ?: 'No description provided' }}</span>
                     </div>
                     <div class="plan-table__cell">
@@ -318,7 +318,6 @@
     .plan-table__head {
         display: grid;
         grid-template-columns: 25% 18% 15% 15% 12% 15%;
-        padding: 18px 26px 18px 26px;
         padding: 18px 26px;
         background: rgba(248, 250, 252, 0.92);
         border-bottom: 1px solid rgba(226, 232, 240, 0.8);
@@ -326,6 +325,9 @@
         text-transform: uppercase;
         letter-spacing: 0.12em;
         color: #64748b;
+    }
+.plan-table__head .plan-table__cell.text-end {
+    padding-right: 20px;
     }
     .plan-table__cell {
         display: flex;
@@ -348,6 +350,7 @@
         border-bottom: 1px solid rgba(226, 232, 240, 0.6);
         transition: background 0.2s ease, transform 0.18s ease;
         align-items: center;
+        cursor: pointer;
     }
     .plan-table__row:hover {
         background: rgba(59, 130, 246, 0.08);
@@ -373,15 +376,13 @@
         color: #ef4444;
         text-decoration: line-through;
     }
-    .plan-table__actions {
-        display: flex;
-        justify-content: flex-end;
-        gap: 8px;
-        align-items: center;
-        padding-right: 20px;
-    }
-.plan-table__head .plan-table__cell.text-end {
+.plan-table__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    align-items: center;
     padding-right: 20px;
+    cursor: default;
 }
 .plan-table__actions form {
     margin: 0;
@@ -426,7 +427,7 @@
         .plan-table__cell {
             align-items: flex-start;
         }
-        .plan-actions {
+        .plan-table__actions {
             justify-content: flex-start;
         }
         .plan-price, .plan-count {
@@ -434,4 +435,19 @@
         }
     }
 </style>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('.plan-table__row[data-href]').forEach(function (row) {
+            row.addEventListener('click', function (event) {
+                if (event.target.closest('.plan-table__actions')) {
+                    return;
+                }
+                var href = row.getAttribute('data-href');
+                if (href) {
+                    window.location.href = href;
+                }
+            });
+        });
+    });
+</script>
 @endsection
