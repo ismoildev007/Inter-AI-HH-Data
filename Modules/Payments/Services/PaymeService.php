@@ -117,7 +117,7 @@ class PaymeService
         $order = Transaction::where('transaction_id', $transaction_id)->first();
         if ($order) {
             if ($order->state == -2) return $this->canceled($order);
-            return [
+            return response()->json([
                 'result' => [
                     'create_time' => $order->create_time,
                     'perform_time' => $order->perform_time,
@@ -126,7 +126,7 @@ class PaymeService
                     'state' => $order->state,
                     'reason' => $order->reason,
                 ]
-            ];
+            ]);
         }
 
         return self::OrderNotFound();
