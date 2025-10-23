@@ -104,73 +104,75 @@
 
             </a>
         </div>
-        @if (!empty($primaryLinks))
-            <div class="admin-sidebar__singles">
-                @foreach ($primaryLinks as $link)
+        <div class="admin-sidebar__body">
+            @if (!empty($primaryLinks))
+                <div class="admin-sidebar__singles">
+                    @foreach ($primaryLinks as $link)
+                        @php
+                            $patterns = (array)($link['match'] ?? $link['route']);
+                            $isActiveSingle = request()->routeIs(...$patterns);
+                        @endphp
+                        <a href="{{ route($link['route']) }}" class="admin-sidebar__single-link {{ $isActiveSingle ? 'is-active' : '' }}">
+                            <span class="admin-sidebar__single-icon">
+                                <i class="feather-{{ $link['icon'] }}"></i>
+                            </span>
+                            <span class="admin-sidebar__single-text">
+                                <span class="label">{{ $link['label'] }}</span>
+                                @if (!empty($link['hint']))
+                                    <span class="hint">{{ $link['hint'] }}</span>
+                                @endif
+                            </span>
+                            <span class="admin-sidebar__single-arrow">
+                                <i class="feather-chevron-right"></i>
+                            </span>
+                        </a>
+                    @endforeach
+                </div>
+            @endif
+
+            <div class="admin-sidebar__content">
+                @foreach ($navigationGroups as $index => $group)
                     @php
-                        $patterns = (array)($link['match'] ?? $link['route']);
-                        $isActiveSingle = request()->routeIs(...$patterns);
+                        $groupItems = collect($group['items']);
+                        $groupIsOpen = $groupItems->contains(function ($item) {
+                            $patterns = (array)($item['match'] ?? $item['route']);
+                            return request()->routeIs(...$patterns);
+                        });
                     @endphp
-                    <a href="{{ route($link['route']) }}" class="admin-sidebar__single-link {{ $isActiveSingle ? 'is-active' : '' }}">
-                        <span class="admin-sidebar__single-icon">
-                            <i class="feather-{{ $link['icon'] }}"></i>
-                        </span>
-                        <span class="admin-sidebar__single-text">
-                            <span class="label">{{ $link['label'] }}</span>
-                            @if (!empty($link['hint']))
-                                <span class="hint">{{ $link['hint'] }}</span>
-                            @endif
-                        </span>
-                        <span class="admin-sidebar__single-arrow">
-                            <i class="feather-chevron-right"></i>
-                        </span>
-                    </a>
+                    <div class="admin-sidebar__section {{ $groupIsOpen ? 'is-open' : '' }}" data-group="{{ $index }}">
+                        <button type="button" class="admin-sidebar__section-toggle" aria-expanded="{{ $groupIsOpen ? 'true' : 'false' }}">
+                            <span class="admin-sidebar__section-label">{{ $group['label'] }}</span>
+                            <span class="admin-sidebar__section-arrow">
+                                <i class="feather-chevron-down"></i>
+                            </span>
+                        </button>
+                        <ul class="admin-sidebar__list">
+                            @foreach ($group['items'] as $item)
+                                @php
+                                    $patterns = (array)($item['match'] ?? $item['route']);
+                                    $isActive = request()->routeIs(...$patterns);
+                                @endphp
+                                <li class="admin-sidebar__item {{ $isActive ? 'is-active' : '' }}">
+                                    <a href="{{ route($item['route']) }}" class="admin-sidebar__link">
+                                        <span class="admin-sidebar__icon">
+                                            <i class="feather-{{ $item['icon'] }}"></i>
+                                        </span>
+                                        <span class="admin-sidebar__text">
+                                            <span class="admin-sidebar__label">{{ $item['label'] }}</span>
+                                            @if (!empty($item['hint']))
+                                                <span class="admin-sidebar__hint">{{ $item['hint'] }}</span>
+                                            @endif
+                                        </span>
+                                        <span class="admin-sidebar__chevron">
+                                            <i class="feather-chevron-right"></i>
+                                        </span>
+                                    </a>
+                                </li>
+                            @endforeach
+                        </ul>
+                    </div>
                 @endforeach
             </div>
-        @endif
-
-        <div class="admin-sidebar__content">
-            @foreach ($navigationGroups as $index => $group)
-                @php
-                    $groupItems = collect($group['items']);
-                    $groupIsOpen = $groupItems->contains(function ($item) {
-                        $patterns = (array)($item['match'] ?? $item['route']);
-                        return request()->routeIs(...$patterns);
-                    });
-                @endphp
-                <div class="admin-sidebar__section {{ $groupIsOpen ? 'is-open' : '' }}" data-group="{{ $index }}">
-                    <button type="button" class="admin-sidebar__section-toggle" aria-expanded="{{ $groupIsOpen ? 'true' : 'false' }}">
-                        <span class="admin-sidebar__section-label">{{ $group['label'] }}</span>
-                        <span class="admin-sidebar__section-arrow">
-                            <i class="feather-chevron-down"></i>
-                        </span>
-                    </button>
-                    <ul class="admin-sidebar__list">
-                        @foreach ($group['items'] as $item)
-                            @php
-                                $patterns = (array)($item['match'] ?? $item['route']);
-                                $isActive = request()->routeIs(...$patterns);
-                            @endphp
-                            <li class="admin-sidebar__item {{ $isActive ? 'is-active' : '' }}">
-                                <a href="{{ route($item['route']) }}" class="admin-sidebar__link">
-                                    <span class="admin-sidebar__icon">
-                                        <i class="feather-{{ $item['icon'] }}"></i>
-                                    </span>
-                                    <span class="admin-sidebar__text">
-                                        <span class="admin-sidebar__label">{{ $item['label'] }}</span>
-                                        @if (!empty($item['hint']))
-                                            <span class="admin-sidebar__hint">{{ $item['hint'] }}</span>
-                                        @endif
-                                    </span>
-                                    <span class="admin-sidebar__chevron">
-                                        <i class="feather-chevron-right"></i>
-                                    </span>
-                                </a>
-                            </li>
-                        @endforeach
-                    </ul>
-                </div>
-            @endforeach
         </div>
     </div>
 </nav>
@@ -185,8 +187,34 @@
         display: flex;
         flex-direction: column;
         height: 100%;
+        min-height: 100vh;
         padding: 18px 16px;
         gap: 22px;
+        overflow: hidden;
+    }
+    .admin-sidebar__body {
+        flex: 1 1 auto;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 22px;
+        padding-right: 6px;
+        margin-right: -6px;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(148, 163, 184, 0.4) transparent;
+    }
+    .admin-sidebar__body::-webkit-scrollbar {
+        width: 6px;
+    }
+    .admin-sidebar__body::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    .admin-sidebar__body::-webkit-scrollbar-thumb {
+        background: rgba(148, 163, 184, 0.35);
+        border-radius: 9999px;
+    }
+    .admin-sidebar__body:hover::-webkit-scrollbar-thumb {
+        background: rgba(59, 130, 246, 0.45);
     }
     .admin-sidebar__brand {
         padding: 12px;
@@ -194,6 +222,7 @@
         background: #f8fafc;
         border: 1px solid #e2e8f0;
         box-shadow: none;
+        flex-shrink: 0;
     }
     .admin-sidebar__brand-link {
         display: flex;
@@ -230,6 +259,13 @@
     display: flex;
     flex-direction: column;
     gap: 10px;
+}
+.admin-sidebar__content {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    flex: 1 1 auto;
+    padding-bottom: 24px;
 }
 .admin-sidebar__single-link {
     display: grid;
@@ -416,6 +452,11 @@
     @media (max-width: 1199px) {
         .admin-sidebar__inner {
             padding: 16px 12px;
+            gap: 18px;
+        }
+        .admin-sidebar__body {
+            padding-right: 4px;
+            margin-right: -4px;
         }
         .admin-sidebar__label {
             font-size: 0.88rem;
