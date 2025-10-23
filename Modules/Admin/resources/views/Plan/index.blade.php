@@ -104,15 +104,18 @@
         <div class="plan-table__body">
             @php
                 $formatPrice = fn ($value) => is_null($value) ? '—' : number_format((float) $value, 2, '.', ' ');
+                $rowStart = method_exists($plans, 'firstItem') ? ($plans->firstItem() ?? 1) : 1;
             @endphp
             @forelse($plans as $plan)
+                @php $rowNumber = $rowStart + $loop->index; @endphp
                 <div class="plan-table__row" data-href="{{ route('admin.plans.show', $plan) }}">
                     <div class="plan-table__cell plan-table__cell--primary">
-                        <span class="table-id-pill">{{ $plan->id }}</span>
+                        <span class="table-id-pill">{{ $rowNumber }}</span>
                         <div class="plan-table__primary">
                             <span class="plan-table__title">
                                 {{ $plan->name }}
                             </span>
+                            <!-- <span class="plan-table__meta">Plan ID #{{ $plan->id }}</span> -->
                             <span class="plan-table__description">{{ \Illuminate\Support\Str::limit($plan->description, 80) ?: 'No description provided' }}</span>
                         </div>
                     </div>
@@ -342,6 +345,12 @@
     display: flex;
     flex-direction: column;
     gap: 4px;
+}
+.plan-table__meta {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: #94a3b8;
 }
 .table-id-pill {
     min-width: 48px;

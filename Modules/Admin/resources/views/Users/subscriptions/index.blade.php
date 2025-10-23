@@ -86,10 +86,15 @@
             <div class="cell text-end">Created</div>
         </div>
         <div class="subscriptions-table__body">
+            @php
+                $rowStart = method_exists($subscriptions, 'firstItem') ? ($subscriptions->firstItem() ?? 1) : 1;
+            @endphp
             @forelse($subscriptions as $subscription)
+                @php $rowNumber = $rowStart + $loop->index; @endphp
                 <a href="{{ route('admin.subscriptions.show', $subscription) }}" class="subscriptions-table__row">
                     <div class="cell cell--id">
-                        <span class="table-id-pill">{{ $subscription->id }}</span>
+                        <span class="table-id-pill">{{ $rowNumber }}</span>
+                        <!-- <span class="table-id-hint">ID #{{ $subscription->id }}</span> -->
                     </div>
                     <div class="cell cell--plan">
                         <span class="plan-name">{{ $subscription->plan?->name ?? '—' }}</span>
@@ -272,6 +277,14 @@
         align-items: center;
         justify-content: center;
         box-shadow: 0 12px 22px rgba(31, 51, 126, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.85);
+    }
+    .table-id-hint {
+        display: block;
+        margin-top: 6px;
+        font-size: 0.68rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: #94a3b8;
     }
     .status-pill {
         display: inline-flex;

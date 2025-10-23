@@ -100,10 +100,15 @@
             <div class="cell text-end">Created</div>
         </div>
         <div class="transactions-table__body">
+            @php
+                $rowStart = method_exists($transactions, 'firstItem') ? ($transactions->firstItem() ?? 1) : 1;
+            @endphp
             @forelse($transactions as $transaction)
+                @php $rowNumber = $rowStart + $loop->index; @endphp
                 <a href="{{ route('admin.transactions.show', $transaction) }}" class="transactions-table__row">
                     <div class="cell cell--id">
-                        <span class="table-id-pill">{{ $transaction->id }}</span>
+                        <span class="table-id-pill">{{ $rowNumber }}</span>
+                        <!-- <span class="table-id-hint">ID #{{ $transaction->id }}</span> -->
                     </div>
                     <div class="cell cell--transaction">
                         <span class="fw-semibold">{{ $transaction->transaction_id ?? '—' }}</span>
@@ -294,6 +299,14 @@
         align-items: center;
         justify-content: center;
         box-shadow: 0 12px 22px rgba(31, 51, 126, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.85);
+    }
+    .table-id-hint {
+        display: block;
+        margin-top: 6px;
+        font-size: 0.68rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: #94a3b8;
     }
 
     .transactions-table__empty {
