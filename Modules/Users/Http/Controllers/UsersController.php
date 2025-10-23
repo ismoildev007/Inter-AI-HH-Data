@@ -51,9 +51,6 @@ class UsersController extends Controller
      */
     public function update(Request $request, $id) {}
 
-    use Illuminate\Support\Facades\Auth;
-    use Illuminate\Support\Facades\Cache;
-
     public function workedStatusUpdate(Request $request)
     {
         $user = Auth::user();
