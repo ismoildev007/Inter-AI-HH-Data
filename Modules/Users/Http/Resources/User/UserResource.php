@@ -23,7 +23,7 @@ class UserResource extends JsonResource
 //            'email'      => $this->email,
             'phone'      => $this->phone,
             'is_trial_active' => (bool) $this->is_trial_active,
-//            'birth_date' => $this->birth_date,
+            'status' => $this->status,
 //            'avatar'     => $this->avatar_path,
 //            'role'       => new RoleResource($this->whenLoaded('role')),
             'resumes' => ResumeResource::collection($this->whenLoaded('resumes')),
