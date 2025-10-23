@@ -173,11 +173,7 @@
             @endforelse
         </div>
     </div>
-    @if($transactions instanceof \Illuminate\Contracts\Pagination\Paginator || $transactions instanceof \Illuminate\Contracts\Pagination\LengthAwarePaginator)
-        <div class="transactions-table__pagination">
-            {{ $transactions->links('vendor.pagination.bootstrap-5') }}
-        </div>
-    @endif
+    @include('admin::components.pagination', ['paginator' => $transactions])
 </div>
 
 <style>
@@ -320,18 +316,29 @@
         letter-spacing: 0.12em;
         color: #64748b;
     }
+    .transactions-table__body {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        padding: 20px 26px 28px;
+        background: linear-gradient(135deg, rgba(248, 250, 252, 0.78), rgba(241, 245, 255, 0.65));
+    }
     .transactions-table__row {
         display: grid;
         grid-template-columns: 8% 22% 20% 16% 14% 10% 10%;
         padding: 20px 26px;
-        border-bottom: 1px solid rgba(226, 232, 240, 0.6);
         text-decoration: none;
         color: inherit;
-        transition: background 0.18s ease, transform 0.18s ease;
+        border-radius: 20px;
+        border: 1px solid rgba(226, 232, 240, 0.9);
+        background: #ffffff;
+        box-shadow: 0 16px 32px rgba(15, 23, 42, 0.06);
+        transition: transform 0.18s ease, box-shadow 0.2s ease, border-color 0.2s ease;
     }
     .transactions-table__row:hover {
-        background: rgba(59, 130, 246, 0.08);
-        transform: translateY(-1px);
+        border-color: rgba(59, 130, 246, 0.28);
+        box-shadow: 0 22px 42px rgba(59, 130, 246, 0.12);
+        transform: translateY(-3px);
     }
     .transactions-table__row .cell {
         display: flex;
@@ -400,17 +407,18 @@
         font-weight: 500;
         color: #475569;
     }
-    .transactions-table__pagination {
-        padding: 18px 26px;
-        background: #ffffff;
-    }
     @media (max-width: 991px) {
         .transactions-table__head {
             display: none;
         }
+        .transactions-table__body {
+            padding: 18px 18px 24px;
+            gap: 12px;
+        }
         .transactions-table__row {
             grid-template-columns: 1fr;
             gap: 12px;
+            padding: 18px;
         }
         .transactions-table__row .cell {
             align-items: flex-start;

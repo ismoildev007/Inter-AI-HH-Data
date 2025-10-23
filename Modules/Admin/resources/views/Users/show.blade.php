@@ -572,7 +572,7 @@
                             View all
                         </a>
                     </div>
-                    @php $subscriptionSlice = $subscriptions->take(6); @endphp
+                    @php $subscriptionSlice = $subscriptions->take(3); @endphp
                     @if($subscriptionSlice->isEmpty())
                         <div class="billing-empty">
                             This user has no subscriptions yet.
@@ -618,14 +618,15 @@
                             View all
                         </a>
                     </div>
-                    @if($recentTransactions->isEmpty())
+                    @php $transactionSlice = $recentTransactions->take(3); @endphp
+                    @if($transactionSlice->isEmpty())
                         <div class="billing-empty">
                             No payment activity recorded for this user yet.
                         </div>
                     @else
                         <table class="user-transaction-table">
                             <tbody>
-                            @foreach($recentTransactions as $transaction)
+                            @foreach($transactionSlice as $transaction)
                                 @php
                                     $txStatus = strtolower($transaction->payment_status ?? 'unknown');
                                     $linkedPlan = $transaction->subscription?->plan?->name ?? '—';
@@ -633,7 +634,7 @@
                                 <tr>
                                     <td style="width: 30%;">
                                         <div class="fw-semibold">#{{ $transaction->id }}</div>
-                                        <div class="text-muted small">{{ $transaction->transaction_id ?? '—' }}</div>
+                                        <!-- <div class="text-muted small">{{ $transaction->transaction_id ?? '—' }}</div> -->
                                     </td>
                                     <td style="width: 20%;">
                                         <span class="transaction-status-pill {{ $txStatus }}">

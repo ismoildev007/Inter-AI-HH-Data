@@ -177,9 +177,10 @@
         .category-vacancies-card {
             margin: 0 1.5rem 2rem;
             border: none;
-            border-radius: 24px;
-            box-shadow: 0 24px 50px rgba(21, 37, 97, 0.12);
-            overflow: hidden;
+            border-radius: 26px;
+            box-shadow: 0 28px 58px rgba(21, 37, 97, 0.14);
+            background: linear-gradient(135deg, rgba(248, 250, 252, 0.85), rgba(232, 240, 255, 0.8));
+            overflow: visible;
         }
 
         .category-vacancies-card .card-header {
@@ -216,9 +217,19 @@
 
         .category-vacancies-card .search-form input:focus { box-shadow: none; }
 
+        .category-vacancies-card .table-responsive {
+            padding: 0 32px 32px;
+        }
+
+        .category-vacancies-card .table {
+            margin: 0;
+            border-collapse: separate;
+            border-spacing: 0 14px;
+        }
+
         .category-vacancies-card .table thead th {
-            padding: 18px 20px;
-            background: rgba(31, 60, 253, 0.08);
+            padding: 0 20px 12px;
+            background: transparent;
             border: none;
             font-size: 0.78rem;
             text-transform: uppercase;
@@ -235,19 +246,34 @@
         }
 
         .category-vacancies-card .table tbody td {
-            padding: 18px 20px;
-            border-top: 1px solid rgba(15, 35, 87, 0.06);
+            padding: 18px 22px;
+            border: none;
             vertical-align: middle;
         }
 
         .category-vacancies-list-row {
             cursor: pointer;
-            transition: all 0.2s ease;
+            border-radius: 20px;
+            border: 1px solid rgba(226, 232, 240, 0.9);
+            background: #ffffff;
+            box-shadow: 0 16px 32px rgba(15, 23, 42, 0.06);
+            transition: transform 0.18s ease, box-shadow 0.2s ease, border-color 0.2s ease;
         }
 
         .category-vacancies-list-row:hover {
-            background: rgba(86, 134, 255, 0.08);
-            transform: translateY(-1px);
+            border-color: rgba(59, 130, 246, 0.28);
+            box-shadow: 0 22px 44px rgba(59, 130, 246, 0.14);
+            transform: translateY(-3px);
+        }
+
+        .category-vacancies-list-row td:first-child {
+            border-top-left-radius: 20px;
+            border-bottom-left-radius: 20px;
+        }
+
+        .category-vacancies-list-row td:last-child {
+            border-top-right-radius: 20px;
+            border-bottom-right-radius: 20px;
         }
 
         .category-vacancies-index-pill {
@@ -358,6 +384,15 @@
 
             .category-vacancies-card {
                 margin-inline: 1rem;
+                padding-bottom: 26px;
+            }
+
+            .category-vacancies-card .table-responsive {
+                padding: 0 20px 24px;
+            }
+
+            .category-vacancies-card .table {
+                border-spacing: 0;
             }
 
             .category-vacancies-card .filters {
@@ -377,17 +412,24 @@
                 display: block;
                 margin-bottom: 18px;
                 border-radius: 20px;
-                border: 1px solid rgba(15, 35, 87, 0.08);
+                border: 1px solid rgba(226, 232, 240, 0.9);
                 padding: 18px;
-                background: #fff;
+                background: #ffffff;
+                box-shadow: 0 16px 32px rgba(15, 23, 42, 0.08);
                 transform: none !important;
             }
 
             .category-vacancies-card .table tbody td {
                 display: flex;
                 justify-content: space-between;
-                padding: 10px 0;
+                padding: 12px 18px;
                 border: none;
+                gap: 12px;
+            }
+
+            .category-vacancies-card .table tbody td:first-child,
+            .category-vacancies-card .table tbody td:last-child {
+                border-radius: 0;
             }
 
             .category-vacancies-card .table tbody td::before {

@@ -148,13 +148,21 @@
             color: #94a3b8;
         }
 
-        .categories-filter-card,
-        .categories-card {
+        .categories-filter-card {
             margin: 0 1.5rem 2rem;
             border: none;
             border-radius: 24px;
             box-shadow: 0 24px 50px rgba(21, 37, 97, 0.12);
             overflow: hidden;
+        }
+
+        .categories-card {
+            margin: 0 1.5rem 2rem;
+            border: none;
+            border-radius: 26px;
+            box-shadow: 0 28px 58px rgba(21, 37, 97, 0.14);
+            background: linear-gradient(135deg, rgba(248, 250, 252, 0.85), rgba(232, 240, 255, 0.8));
+            overflow: visible;
         }
 
         .categories-filter-card {
@@ -385,9 +393,19 @@
             font-size: 0.95rem;
         }
 
+        .categories-card .table-responsive {
+            padding: 0 32px 32px;
+        }
+
+        .categories-card .table {
+            margin: 0;
+            border-collapse: separate;
+            border-spacing: 0 14px;
+        }
+
         .categories-card .table thead th {
-            padding: 18px 20px;
-            background: rgba(31, 60, 253, 0.08);
+            padding: 0 20px 12px;
+            background: transparent;
             border: none;
             font-size: 0.78rem;
             text-transform: uppercase;
@@ -396,19 +414,35 @@
         }
 
         .categories-card .table tbody td {
-            padding: 18px 20px;
-            border-top: 1px solid rgba(15, 35, 87, 0.06);
+            padding: 18px 22px;
+            border: none;
             vertical-align: middle;
         }
 
         .categories-list-row {
             cursor: pointer;
-            transition: all 0.2s ease;
+            border-radius: 20px;
+            border: 1px solid rgba(226, 232, 240, 0.9);
+            background: #ffffff;
+            box-shadow: 0 16px 32px rgba(15, 23, 42, 0.06);
+            transition: transform 0.18s ease, box-shadow 0.2s ease, border-color 0.2s ease;
         }
 
         .categories-list-row:hover {
-            background: rgba(86, 134, 255, 0.08);
-            transform: translateY(-1px);
+            border-color: rgba(59, 130, 246, 0.28);
+            box-shadow: 0 22px 44px rgba(59, 130, 246, 0.14);
+            transform: translateY(-3px);
+        }
+
+        .categories-list-row td:first-child {
+            width: 70px;
+            border-top-left-radius: 20px;
+            border-bottom-left-radius: 20px;
+        }
+
+        .categories-list-row td:last-child {
+            border-top-right-radius: 20px;
+            border-bottom-right-radius: 20px;
         }
 
         .categories-index-pill {
@@ -423,10 +457,6 @@
             font-size: 0.95rem;
             color: #1f2f7a;
             box-shadow: 0 8px 18px rgba(31, 51, 126, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.85);
-        }
-
-        .categories-list-row td:first-child {
-            width: 70px;
         }
 
         .categories-empty {
@@ -522,6 +552,18 @@
                 margin-inline: 1rem;
             }
 
+            .categories-card {
+                padding-bottom: 26px;
+            }
+
+            .categories-card .table-responsive {
+                padding: 0 20px 24px;
+            }
+
+            .categories-card .table {
+                border-spacing: 0;
+            }
+
             .categories-filter-header {
                 flex-direction: column;
                 align-items: stretch;
@@ -562,13 +604,30 @@
             }
 
             .categories-list-row {
+                display: block;
                 cursor: pointer;
-                transition: all 0.2s ease;
+                margin-bottom: 18px;
+                border-radius: 20px;
+                border: 1px solid rgba(226, 232, 240, 0.9);
+                background: #ffffff;
+                box-shadow: 0 16px 32px rgba(15, 23, 42, 0.08);
             }
 
             .categories-list-row:hover {
-                background: rgba(86, 134, 255, 0.08);
-                transform: translateY(-1px);
+                border-color: rgba(59, 130, 246, 0.28);
+                box-shadow: 0 20px 40px rgba(59, 130, 246, 0.16);
+            }
+
+            .categories-card .table tbody td {
+                display: flex;
+                justify-content: space-between;
+                gap: 12px;
+                padding: 12px 18px;
+            }
+
+            .categories-card .table tbody td:first-child,
+            .categories-card .table tbody td:last-child {
+                border-radius: 0;
             }
 
             .categories-pagination nav > ul,

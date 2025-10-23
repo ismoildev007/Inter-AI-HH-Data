@@ -214,18 +214,22 @@
         .users-table-card {
             margin: 0 1.5rem 2rem;
             border: none;
-            border-radius: 24px;
-            box-shadow: 0 24px 50px rgba(21, 37, 97, 0.14);
-            overflow: hidden;
+            border-radius: 26px;
+            box-shadow: 0 28px 58px rgba(21, 37, 97, 0.16);
+            background: linear-gradient(135deg, rgba(248, 250, 252, 0.85), rgba(236, 240, 255, 0.8));
+            padding: 26px 30px 32px;
+            overflow: visible;
         }
 
         .users-table-card .table {
             margin: 0;
+            border-collapse: separate;
+            border-spacing: 0 14px;
         }
 
         .users-table-card .table thead th {
-            padding: 18px 20px;
-            background: rgba(31, 60, 253, 0.08);
+            padding: 0 20px 12px;
+            background: transparent;
             border: none;
             font-size: 0.78rem;
             text-transform: uppercase;
@@ -233,20 +237,35 @@
             color: #58618c;
         }
 
-        .users-table-card .table tbody td {
-            padding: 20px;
-            border-top: 1px solid rgba(15, 35, 87, 0.06);
-            vertical-align: middle;
-        }
-
         .users-table-card .table tbody tr {
             cursor: pointer;
+            border-radius: 20px;
+            border: 1px solid rgba(226, 232, 240, 0.9);
+            background: #ffffff;
+            box-shadow: 0 16px 32px rgba(15, 23, 42, 0.06);
+            transition: transform 0.18s ease, box-shadow 0.2s ease, border-color 0.2s ease;
         }
 
         .users-table-card .table tbody tr:hover {
-            background: rgba(80, 118, 255, 0.08);
-            transform: translateY(-1px);
-            transition: all 0.2s ease;
+            border-color: rgba(59, 130, 246, 0.28);
+            box-shadow: 0 22px 44px rgba(59, 130, 246, 0.14);
+            transform: translateY(-3px);
+        }
+
+        .users-table-card .table tbody td {
+            padding: 18px 22px;
+            border: none;
+            vertical-align: middle;
+        }
+
+        .users-table-card .table tbody tr td:first-child {
+            border-top-left-radius: 20px;
+            border-bottom-left-radius: 20px;
+        }
+
+        .users-table-card .table tbody tr td:last-child {
+            border-top-right-radius: 20px;
+            border-bottom-right-radius: 20px;
         }
 
         .users-index-pill {
@@ -336,82 +355,6 @@
             color: #7d88ad;
         }
 
-        .users-pagination {
-            padding: 20px 32px 40px;
-            border-top: 1px solid rgba(15, 35, 87, 0.06);
-            background: #fff;
-            display: flex;
-            justify-content: center;
-        }
-
-        .users-pagination nav > ul,
-        .users-pagination nav > div > ul,
-        .users-pagination nav > div > div > ul,
-        .users-pagination nav .pagination {
-            display: inline-flex;
-            gap: 12px;
-            padding: 10px 16px;
-            border-radius: 999px;
-            background: linear-gradient(135deg, rgba(230, 236, 255, 0.92), rgba(206, 220, 255, 0.88));
-            box-shadow: 0 12px 24px rgba(26, 44, 104, 0.18);
-            align-items: center;
-        }
-
-        .users-pagination nav > ul li a,
-        .users-pagination nav > ul li span,
-        .users-pagination nav > div > ul li a,
-        .users-pagination nav > div > ul li span,
-        .users-pagination nav > div > div > ul li a,
-        .users-pagination nav > div > div > ul li span,
-        .users-pagination nav .pagination li a,
-        .users-pagination nav .pagination li span {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 42px;
-            height: 42px;
-            border-radius: 50%;
-            font-weight: 600;
-            font-size: 0.95rem;
-            color: #1a2f70;
-            text-decoration: none;
-            transition: all 0.2s ease;
-        }
-
-        .users-pagination nav > ul li a:hover,
-        .users-pagination nav > div > ul li a:hover,
-        .users-pagination nav > div > div > ul li a:hover,
-        .users-pagination nav .pagination li a:hover {
-            background: #ffffff;
-            box-shadow: 0 8px 18px rgba(26, 44, 104, 0.22);
-            transform: translateY(-2px);
-        }
-
-        .users-pagination nav > ul li span[aria-current="page"],
-        .users-pagination nav > div > ul li span[aria-current="page"],
-        .users-pagination nav > div > div > ul li span[aria-current="page"],
-        .users-pagination nav .pagination li span[aria-current="page"] {
-            background: linear-gradient(135deg, #4a76ff, #265bff);
-            color: #fff;
-            box-shadow: 0 12px 24px rgba(38, 91, 255, 0.35);
-        }
-
-        .users-pagination nav > ul li:first-child a,
-        .users-pagination nav > ul li:last-child a,
-        .users-pagination nav > div > ul li:first-child a,
-        .users-pagination nav > div > ul li:last-child a,
-        .users-pagination nav > div > div > ul li:first-child a,
-        .users-pagination nav > div > div > ul li:last-child a,
-        .users-pagination nav .pagination li:first-child a,
-        .users-pagination nav .pagination li:last-child a {
-            width: auto;
-            padding: 0 18px;
-            border-radius: 999px;
-            font-size: 0.85rem;
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-        }
-
         @media (max-width: 991px) {
             .users-hero {
                 margin-inline: 1rem;
@@ -422,6 +365,11 @@
             .users-filter-card,
             .users-table-card {
                 margin-inline: 1rem;
+                padding: 24px 20px 26px;
+            }
+
+            .users-table-card .table {
+                border-spacing: 0;
             }
 
             .users-table-card .table thead {
@@ -433,8 +381,9 @@
                 border-radius: 20px;
                 margin-bottom: 18px;
                 padding: 18px;
-                border: 1px solid rgba(15, 35, 87, 0.08);
-                background: #fff;
+                border: 1px solid rgba(226, 232, 240, 0.9);
+                background: #ffffff;
+                box-shadow: 0 16px 32px rgba(15, 23, 42, 0.08);
                 transform: none !important;
             }
 
@@ -468,39 +417,6 @@
                 justify-content: flex-start;
             }
 
-            .users-pagination nav > ul,
-            .users-pagination nav > div > ul,
-            .users-pagination nav > div > div > ul,
-            .users-pagination nav .pagination {
-                gap: 6px;
-                padding: 8px 10px;
-            }
-
-            .users-pagination nav > ul li a,
-            .users-pagination nav > ul li span,
-            .users-pagination nav > div > ul li a,
-            .users-pagination nav > div > ul li span,
-            .users-pagination nav > div > div > ul li a,
-            .users-pagination nav > div > div > ul li span,
-            .users-pagination nav .pagination li a,
-            .users-pagination nav .pagination li span {
-                width: 36px;
-                height: 36px;
-                font-size: 0.85rem;
-            }
-
-            .users-pagination nav > ul li:first-child a,
-            .users-pagination nav > ul li:last-child a,
-            .users-pagination nav > div > ul li:first-child a,
-            .users-pagination nav > div > ul li:last-child a,
-            .users-pagination nav > div > div > ul li:first-child a,
-            .users-pagination nav > div > div > ul li:last-child a,
-            .users-pagination nav .pagination li:first-child a,
-            .users-pagination nav .pagination li:last-child a {
-                padding: 0 12px;
-                font-size: 0.75rem;
-            }
-        }
     </style>
 
     @php
@@ -659,10 +575,6 @@
             </table>
         </div>
 
-        @if($users instanceof \Illuminate\Contracts\Pagination\Paginator || $users instanceof \Illuminate\Contracts\Pagination\LengthAwarePaginator)
-            <div class="users-pagination">
-                {{ $users->links('vendor.pagination.bootstrap-5') }}
-            </div>
-        @endif
+        @include('admin::components.pagination', ['paginator' => $users])
     </div>
 @endsection
