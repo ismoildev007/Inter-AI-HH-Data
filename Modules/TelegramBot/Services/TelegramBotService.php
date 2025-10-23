@@ -3,7 +3,6 @@
 namespace Modules\TelegramBot\Services;
 
 use App\Models\User;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Telegram\Bot\Keyboard\Keyboard;
@@ -22,25 +21,55 @@ class TelegramBotService
         ]);
     }
 
-
     public function sendLanguageSelection($chatId)
     {
         $text = "Iltimos, tilni tanlang / Пожалуйста, выберите язык / Please select a language:";
-        Log::info("sendLanguageSelection => chatId: {$chatId}");
+        Log::info("sendLanguageSelection (INLINE) => chatId: {$chatId}");
 
         $keyboard = Keyboard::make()
-            ->setResizeKeyboard(true)
-            ->row([
-                Keyboard::button('🇺🇿 O\'zbek'),
-                Keyboard::button('🇷🇺 Русский'),
-                Keyboard::button('🇬🇧 English'),
-            ]);
+            ->inline()
+            ->row(
+                Keyboard::inlineButton(['text' => "🇺🇿 O'zbek", 'callback_data' => 'lang_uz']),
+                Keyboard::inlineButton(['text' => "🇷🇺 Русский", 'callback_data' => 'lang_ru']),
+                Keyboard::inlineButton(['text' => "🇬🇧 English", 'callback_data' => 'lang_en'])
+            );
 
         Telegram::bot('mybot')->sendMessage([
             'chat_id'      => $chatId,
             'text'         => $text,
             'reply_markup' => $keyboard,
         ]);
+    }
+
+    public function handleCallbackQuery($update)
+    {
+        if (!isset($update['callback_query'])) {
+            return;
+        }
+
+        $callback = $update['callback_query'];
+        $chatId = $callback['message']['chat']['id'];
+        $messageId = $callback['message']['message_id'];
+        $data = $callback['data'];
+
+        if (str_starts_with($data, 'lang_')) {
+            $langCode = str_replace('lang_', '', $data);
+            $languages = [
+                'uz' => '🇺🇿 O\'zbek',
+                'ru' => '🇷🇺 Русский',
+                'en' => '🇬🇧 English',
+            ];
+            $language = $languages[$langCode] ?? '🇺🇿 O\'zbek';
+
+            // Edit the original message instead of sending a new one
+            Telegram::bot('mybot')->editMessageText([
+                'chat_id'    => $chatId,
+                'message_id' => $messageId,
+                'text'       => "✅ {$language} tili tanlandi!",
+            ]);
+
+            $this->handleLanguageSelection($chatId, $language);
+        }
     }
 
     public function handleLanguageSelection($chatId, $language)
@@ -125,17 +154,6 @@ class TelegramBotService
         }
     }
 
-
-
-    public function getViewRegisterText($language)
-    {
-        $texts = [
-            '🇺🇿 O\'zbek' => 'Ro\'yxatdan o\'tish',
-            '🇷🇺 Русский' => 'Зарегистрироваться',
-            '🇬🇧 English' => 'Sign up',
-        ];
-        return $texts[$language] ?? 'Ro\'yxatdan o\'tish';
-    }
     public function getViewVacanciesText($language)
     {
         $texts = [
