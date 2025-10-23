@@ -42,7 +42,9 @@ Route::prefix('auth')->group(function () {
         Route::post('settings/auto-apply', [AuthController::class, 'createAutoApply']);
         Route::patch('settings/auto-apply', [AuthController::class, 'updateAutoApply']);
 
+        // User Worked status Update
 
-        Route::apiResource('users', UsersController::class)->names('users');
+        Route::post('worked-status-update', [UsersController::class, 'workedStatusUpdate']);
+
     });
 });
