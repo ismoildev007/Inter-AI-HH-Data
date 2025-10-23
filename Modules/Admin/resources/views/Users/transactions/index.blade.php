@@ -108,11 +108,10 @@
                 <a href="{{ route('admin.transactions.show', $transaction) }}" class="transactions-table__row">
                     <div class="cell cell--id">
                         <span class="table-id-pill">{{ $rowNumber }}</span>
-                        <!-- <span class="table-id-hint">ID #{{ $transaction->id }}</span> -->
                     </div>
                     <div class="cell cell--transaction">
-                        <span class="fw-semibold">{{ $transaction->transaction_id ?? '—' }}</span>
-                        <span class="text-muted small">Gateway reference</span>
+                        <span class="fw-semibold">Transaction {{ $rowNumber }}</span>
+                        <span class="text-muted small">Gateway reference hidden</span>
                     </div>
                     <div class="cell cell--status">
                         @php $statusLabel = strtolower($transaction->payment_status ?? 'unknown'); @endphp
@@ -300,15 +299,6 @@
         justify-content: center;
         box-shadow: 0 12px 22px rgba(31, 51, 126, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.85);
     }
-    .table-id-hint {
-        display: block;
-        margin-top: 6px;
-        font-size: 0.68rem;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-        color: #94a3b8;
-    }
-
     .transactions-table__empty {
         padding: 36px;
         border-bottom: 1px solid rgba(226, 232, 240, 0.6);
