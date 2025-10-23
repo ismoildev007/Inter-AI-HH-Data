@@ -31,9 +31,9 @@ class TelegramBotService
         $keyboard = Keyboard::make()
             ->setResizeKeyboard(true)
             ->row([
-                Keyboard::button('🇺🇿 O\'zbek'),
-                Keyboard::button('🇷🇺 Русский'),
-                Keyboard::button('🇬🇧 English'),
+                Keyboard::inlineButton('🇺🇿 O\'zbek'),
+                Keyboard::inlineButton('🇷🇺 Русский'),
+                Keyboard::inlineButton('🇬🇧 English'),
             ]);
 
         Telegram::bot('mybot')->sendMessage([
@@ -123,18 +123,6 @@ class TelegramBotService
         } catch (\Exception $e) {
             Log::error("handleLanguageSelection ERROR: " . $e->getMessage());
         }
-    }
-
-
-
-    public function getViewRegisterText($language)
-    {
-        $texts = [
-            '🇺🇿 O\'zbek' => 'Ro\'yxatdan o\'tish',
-            '🇷🇺 Русский' => 'Зарегистрироваться',
-            '🇬🇧 English' => 'Sign up',
-        ];
-        return $texts[$language] ?? 'Ro\'yxatdan o\'tish';
     }
     public function getViewVacanciesText($language)
     {
