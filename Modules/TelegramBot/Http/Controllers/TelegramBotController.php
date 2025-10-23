@@ -10,13 +10,6 @@ use Telegram\Bot\Laravel\Facades\Telegram;
 
 class TelegramBotController extends Controller
 {
-    protected $botService;
-
-    public function __construct(TelegramBotService $botService)
-    {
-        $this->botService = $botService;
-    }
-
     public function handleWebhook(Request $request)
     {
         $update = Telegram::getWebhookUpdate();
@@ -26,26 +19,33 @@ class TelegramBotController extends Controller
             $message = $update['message'];
             $chatId  = $message['chat']['id'];
             $text    = $message['text'] ?? null;
-            Log::info("Message received => chatId: {$chatId}, text: {$text}");
+
             if ($text === '/start') {
                 $this->botService->sendWelcomeMessage($chatId);
                 $this->botService->sendLanguageSelection($chatId);
             }
+        }
 
-            if ($this->botService->isBackButton($chatId, $text)) {
-                $this->botService->sendLanguageSelection($chatId);
-                return;
+        // 🔹 Inline button (callback) uchun
+        if (isset($update['callback_query'])) {
+            $callback = $update['callback_query'];
+            $chatId   = $callback['message']['chat']['id'];
+            $data     = $callback['data'];
+
+            if (str_starts_with($data, 'lang_')) {
+                $lang = str_replace('lang_', '', $data);
+                $this->botService->handleLanguageSelection($chatId, $lang);
+
+                // 🔹 Callback javobini yopish
+                Telegram::bot('mybot')->answerCallbackQuery([
+                    'callback_query_id' => $callback['id'],
+                ]);
             }
-
-            if (in_array($text, ['🇺🇿 O\'zbek', '🇷🇺 Русский', '🇬🇧 English'])) {
-                $this->botService->handleLanguageSelection($chatId, $text);
-            }
-
-
         }
 
         return response('OK', 200);
     }
+
 
     public function handleUpdate()
     {
