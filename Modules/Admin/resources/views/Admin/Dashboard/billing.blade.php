@@ -19,7 +19,7 @@
     <header class="billing-dashboard__hero">
         <div class="billing-dashboard__hero-copy">
             <span class="badge badge-primary-soft">Billing Suite</span>
-            <h1>Yangi avlod to‘lov analitikasi</h1>
+            <h1>To‘lovlar analitikasi</h1>
             <p>
                 Planlar, obunalar va foydalanuvchi xarajatlarini zamonaviy ko‘rinishda kuzating.
                 Hamma muhim metrikalar bitta boshqaruv panelida jamlangan.
