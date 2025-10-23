@@ -27,7 +27,6 @@ class TelegramBotService
         $text = "Iltimos, tilni tanlang / Пожалуйста, выберите язык / Please select a language:";
         Log::info("sendLanguageSelection => chatId: {$chatId}");
 
-        // 🔹 Inline keyboard (reply_markup emas!)
         $keyboard = Keyboard::make()
             ->inline()
             ->row([
@@ -67,7 +66,6 @@ class TelegramBotService
             $url = "https://vacancies.inter-ai.uz/#?locale={$langCode}&chat_id={$chatId}";
         }
 
-        // 🔹 Inline button (pastki xabar uchun)
         $inlineKeyboard = Keyboard::make()
             ->inline()
             ->row([
@@ -77,7 +75,6 @@ class TelegramBotService
                 ]),
             ]);
 
-        // 🔹 Endi orqaga tugmasi YO‘Q
         try {
             Telegram::bot('mybot')->sendMessage([
                 'chat_id'      => $chatId,
@@ -90,6 +87,21 @@ class TelegramBotService
             Log::error("handleLanguageSelection ERROR: " . $e->getMessage());
         }
     }
+    public function setBotCommands()
+    {
+        $commands = [
+            [
+                'command' => 'start',
+            ]
+        ];
+
+        Telegram::bot('mybot')->setMyCommands([
+            'commands' => $commands,
+        ]);
+
+        Log::info("Bot commands set successfully!");
+    }
+
 
     public function getViewVacanciesText($lang)
     {
