@@ -36,7 +36,7 @@ class UsersController extends Controller
         Cache::put($cacheKey, $requestCount + 1, now()->addDay());
 
         $validated = $request->validate([
-            'status' => 'required|string|in:active,inactive,busy,offline'
+            'status' => 'required|string'
         ]);
 
         $user->update([
