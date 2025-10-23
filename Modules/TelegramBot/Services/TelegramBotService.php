@@ -92,6 +92,7 @@ class TelegramBotService
         $commands = [
             [
                 'command' => 'start',
+                'description' => 'Botni ishga tushirish / Start the bot',
             ]
         ];
 
