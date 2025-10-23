@@ -6,7 +6,7 @@
             'label' => 'Dashboards',
             'items' => [
                 [
-                    'label' => 'Overview',
+                    'label' => 'Default Dashboard',
                     'icon' => 'airplay',
                     'route' => 'admin.dashboard',
                     'match' => ['admin.dashboard'],
