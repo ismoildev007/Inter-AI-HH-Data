@@ -44,6 +44,10 @@ Route::prefix('auth')->group(function () {
         Route::post('settings/auto-apply', [AuthController::class, 'createAutoApply']);
         Route::patch('settings/auto-apply', [AuthController::class, 'updateAutoApply']);
 
+//        User delete
+
+        Route::delete('/user/self-if-no-resume', [UsersController::class, 'destroyIfNoResumes']);
+
         // User Worked status Update
 
         Route::post('worked-status-update', [UsersController::class, 'workedStatusUpdate']);

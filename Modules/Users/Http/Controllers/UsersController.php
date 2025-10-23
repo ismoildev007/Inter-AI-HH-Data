@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 
 class UsersController extends Controller
 {
@@ -16,40 +17,6 @@ class UsersController extends Controller
     {
         return view('users::index');
     }
-
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        return view('users::create');
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request) {}
-
-    /**
-     * Show the specified resource.
-     */
-    public function show($id)
-    {
-        return view('users::show');
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit($id)
-    {
-        return view('users::edit');
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, $id) {}
 
     public function workedStatusUpdate(Request $request)
     {
@@ -85,6 +52,43 @@ class UsersController extends Controller
                 'requests_today' => $requestCount + 1
             ]
         ]);
+    }
+
+    public function destroyIfNoResumes(Request $request)
+    {
+        $user = $request->user();
+
+        if (! $user) {
+            return response()->json(['message' => 'Unauthenticated.'], 401);
+        }
+
+        if ($user->resumes()->exists()) {
+            return response()->json([
+                'message' => 'Cannot delete user: user has one or more resumes.'
+            ], 422);
+        }
+
+        DB::transaction(function () use ($user) {
+            $user->preferences()->delete();
+            $user->preference()->delete();
+            $user->locations()->delete();
+            $user->jobTypes()->delete();
+            $user->credit()->delete();
+            $user->profileViews()->delete();
+            $user->settings()->delete();
+
+            if (method_exists($user, 'tokens')) {
+                $user->tokens()->delete();
+            }
+            if (method_exists($user, 'tokens') === false && \Schema::hasTable('oauth_access_tokens')) {
+                // Agar Passport ishlatilsa va modeli mos bo'lsa, alohida: (ixtiyoriy)
+                // \DB::table('oauth_access_tokens')->where('user_id', $user->id)->delete();
+            }
+
+            $user->delete();
+        });
+
+        return response()->json(['message' => 'User deleted (no resumes found).'], 200);
     }
 
 }
