@@ -12,18 +12,27 @@ class UserResource extends JsonResource
     public function toArray($request): array
     {
         $hhAccount = HhAccount::where('user_id', $this->id)->first();
+        $subscription = $this->whenLoaded('subscriptions', function () {
+            return $this->subscriptions->first();
+        });
+
         return [
             'id'         => $this->id,
             'first_name' => $this->first_name,
             'last_name'  => $this->last_name,
 //            'email'      => $this->email,
             'phone'      => $this->phone,
+            'is_trial_active' => (bool) $this->is_trial_active,
 //            'birth_date' => $this->birth_date,
 //            'avatar'     => $this->avatar_path,
 //            'role'       => new RoleResource($this->whenLoaded('role')),
             'resumes' => ResumeResource::collection($this->whenLoaded('resumes')),
             'settings'   => new UserSettingResource($this->whenLoaded('settings')),
             'credit'     => new UserCreditResource($this->whenLoaded('credit')),
+            'subscription' => $this->when(
+                $subscription,
+                fn ($subscription) => new UserSubscriptionResource($subscription)
+            ),
 //            'preferences'=> UserPreferenceResource::collection($this->whenLoaded('preferences')),
 //            'locations'  => UserLocationResource::collection($this->whenLoaded('locations')),
 //            'job_types'  => UserJobTypeResource::collection($this->whenLoaded('jobTypes')),

@@ -131,6 +131,10 @@ class AuthController extends Controller
             'locations.area',
             'jobTypes',
             'profileViews.employer',
+            'subscriptions' => function ($query) {
+                $query->orderByDesc('starts_at')
+                    ->orderByDesc('created_at');
+            },
         ]);
 
         return new UserResource($user);
