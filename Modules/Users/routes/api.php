@@ -1,14 +1,16 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use Modules\Users\Http\Controllers\UsersController;
 use Modules\Users\Http\Controllers\AuthController;
 use Modules\Users\Http\Controllers\HhAccountsController;
+use Modules\Users\Http\Controllers\PlanController;
+use Modules\Users\Http\Controllers\UsersController;
 
 Route::post('/user-verify', [AuthController::class, 'userVerify']);
 Route::post('/sending-code', [AuthController::class, 'requestVerificationCode']);
 Route::post('/verify-email', [AuthController::class, 'verifyEmail']);
 Route::post('/demo-resume-check', [AuthController::class, 'resumeCheck']);
+Route::get('/plans', [PlanController::class, 'index']);
 
 // Public OAuth endpoints (no auth required yet)
 Route::middleware('auth:sanctum')->prefix('v1')->group(function () {
