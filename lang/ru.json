@@ -1,0 +1,41 @@
+{
+    "admin.header.language.uz": "Узбекский",
+    "admin.header.language.ru": "Русский",
+    "admin.header.language.en": "Английский",
+    "admin.header.language.switch_to": "Переключиться на :language",
+    "admin.header.refresh": "Обновить",
+    "admin.header.refresh_title": "Обновить",
+    "admin.header.profile": "Профиль",
+    "admin.header.profile_title": "Профиль",
+    "admin.header.logout": "Выйти",
+    "admin.header.logout_title": "Выйти",
+    "admin.header.language.choose": "Выберите язык",
+
+    "admin.sidebar.groups.dashboards.label": "Панели",
+    "admin.sidebar.items.default_dashboard": "Основная панель",
+    "admin.sidebar.items.billing_dashboard": "Панель оплаты",
+    "admin.sidebar.hints.overview_metrics": "Обзор метрик",
+    "admin.sidebar.hints.revenue_insights": "Аналитика доходов",
+
+    "admin.sidebar.groups.users.label": "Пользователи",
+    "admin.sidebar.items.users": "Пользователи",
+    "admin.sidebar.items.resumes": "Резюме",
+    "admin.sidebar.items.applications": "Заявки",
+    "admin.sidebar.hints.directory_profiles": "Каталог и профили",
+    "admin.sidebar.hints.talent_archive": "Архив талантов",
+    "admin.sidebar.hints.recruiting_pipeline": "Воронка найма",
+
+    "admin.sidebar.groups.vacancies_channels.label": "Вакансии и каналы",
+    "admin.sidebar.items.telegram_channels": "Telegram-каналы",
+    "admin.sidebar.items.all_vacancies": "Все вакансии",
+    "admin.sidebar.hints.broadcast_control": "Управление рассылкой",
+
+    "admin.sidebar.groups.billing.label": "Биллинг",
+    "admin.sidebar.items.plans": "Тарифы",
+    "admin.sidebar.items.subscriptions": "Подписки",
+    "admin.sidebar.items.transactions": "Транзакции",
+    "admin.sidebar.hints.pricing_blueprints": "Планы цен",
+    "admin.sidebar.hints.revenue_stream": "Поток доходов",
+    "admin.sidebar.hints.payments_ledger": "Журнал платежей",
+    "elnurbek": "Elnurbek ru"
+}

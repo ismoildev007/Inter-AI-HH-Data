@@ -9,6 +9,7 @@ use Modules\Admin\Http\Controllers\ResumeController;
 use Modules\Admin\Http\Controllers\ApplicationController;
 use Modules\Admin\Http\Controllers\TelegramChannelController;
 use Modules\Admin\Http\Controllers\ProfileController;
+use Modules\Admin\Http\Controllers\LocaleController;
 use Modules\Admin\Http\Controllers\PlanController;
 use Modules\Admin\Http\Controllers\SubscriptionController;
 use Modules\Admin\Http\Controllers\TransactionController;
@@ -23,6 +24,9 @@ Route::prefix('admin')->name('admin.')->group(function () {
     // Protected admin pages
     // TrackVisits middleware here to record authenticated admin user page hits
     Route::middleware(['auth.admin'])->group(function () {
+        // Localization
+        Route::get('locale/{locale}', [LocaleController::class, 'switch'])->name('locale.switch');
+
         // Dashboard
         Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
         Route::get('/dashboard/billing', [BillingDashboardController::class, 'index'])->name('dashboard.billing');
