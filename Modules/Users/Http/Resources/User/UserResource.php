@@ -29,10 +29,7 @@ class UserResource extends JsonResource
             'resumes' => ResumeResource::collection($this->whenLoaded('resumes')),
             'settings'   => new UserSettingResource($this->whenLoaded('settings')),
             'credit'     => new UserCreditResource($this->whenLoaded('credit')),
-            'subscription' => $this->when(
-                $subscription,
-                fn ($subscription) => new UserSubscriptionResource($subscription)
-            ),
+            'subscription' => $this->when($subscription, fn () => new UserSubscriptionResource($subscription)),
 //            'preferences'=> UserPreferenceResource::collection($this->whenLoaded('preferences')),
 //            'locations'  => UserLocationResource::collection($this->whenLoaded('locations')),
 //            'job_types'  => UserJobTypeResource::collection($this->whenLoaded('jobTypes')),
