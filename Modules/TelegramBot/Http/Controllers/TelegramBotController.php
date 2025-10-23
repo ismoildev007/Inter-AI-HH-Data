@@ -22,11 +22,17 @@ class TelegramBotController extends Controller
         $update = Telegram::getWebhookUpdate();
         Log::info("Webhook received", $update->toArray());
 
+        if (isset($update['callback_query'])) {
+            app(TelegramBotService::class)->handleCallbackQuery($update);
+            return response('OK', 200);
+        }
+
         if (isset($update['message'])) {
             $message = $update['message'];
             $chatId  = $message['chat']['id'];
             $text    = $message['text'] ?? null;
             Log::info("Message received => chatId: {$chatId}, text: {$text}");
+
             if ($text === '/start') {
                 $this->botService->sendWelcomeMessage($chatId);
                 $this->botService->sendLanguageSelection($chatId);
@@ -36,16 +42,11 @@ class TelegramBotController extends Controller
                 $this->botService->sendLanguageSelection($chatId);
                 return;
             }
-
-            if (in_array($text, ['🇺🇿 O\'zbek', '🇷🇺 Русский', '🇬🇧 English'])) {
-                $this->botService->handleLanguageSelection($chatId, $text);
-            }
-
-            
         }
 
         return response('OK', 200);
     }
+
 
     public function handleUpdate()
     {
