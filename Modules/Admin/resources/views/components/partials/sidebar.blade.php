@@ -1,16 +1,26 @@
 @php
-    $primaryLinks = [
-        [
-            'label' => 'Dashboard',
-            'icon' => 'airplay',
-            'route' => 'admin.dashboard',
-            'match' => ['admin.dashboard'],
-            'hint' => 'Overview metrics',
-        ],
-    ];
+    $primaryLinks = [];
 
     $navigationGroups = [
-        
+        [
+            'label' => 'Dashboards',
+            'items' => [
+                [
+                    'label' => 'Overview',
+                    'icon' => 'airplay',
+                    'route' => 'admin.dashboard',
+                    'match' => ['admin.dashboard'],
+                    'hint' => 'Overview metrics',
+                ],
+                [
+                    'label' => 'Billing Dashboard',
+                    'icon' => 'pie-chart',
+                    'route' => 'admin.dashboard.billing',
+                    'match' => ['admin.dashboard.billing'],
+                    'hint' => 'Revenue insights',
+                ],
+            ],
+        ],
         [
             'label' => 'Users',
             'items' => [

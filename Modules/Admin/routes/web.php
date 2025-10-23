@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use Modules\Admin\Http\Controllers\AdminController;
+use Modules\Admin\Http\Controllers\BillingDashboardController;
 use Modules\Admin\Http\Controllers\DashboardController;
 use Modules\Admin\Http\Controllers\UserController;
 use Modules\Admin\Http\Controllers\ResumeController;
@@ -24,6 +25,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::middleware(['auth.admin'])->group(function () {
         // Dashboard
         Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+        Route::get('/dashboard/billing', [BillingDashboardController::class, 'index'])->name('dashboard.billing');
         Route::get('/visits/top-users', [DashboardController::class, 'topVisitors'])->name('visits.top_users');
         Route::get('/vacancies/categories', [DashboardController::class, 'vacancyCategories'])->name('vacancies.categories');
 
