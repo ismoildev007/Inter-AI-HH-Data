@@ -10,6 +10,13 @@ use Telegram\Bot\Laravel\Facades\Telegram;
 
 class TelegramBotController extends Controller
 {
+    protected $botService;
+
+    public function __construct(TelegramBotService $botService)
+    {
+        $this->botService = $botService;
+    }
+
     public function handleWebhook(Request $request)
     {
         $update = Telegram::getWebhookUpdate();
@@ -45,7 +52,6 @@ class TelegramBotController extends Controller
 
         return response('OK', 200);
     }
-
 
     public function handleUpdate()
     {
