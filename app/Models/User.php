@@ -15,7 +15,7 @@ class User extends Authenticatable
     use HasFactory, Notifiable, HasApiTokens;
 
     public const STATUS_WORKING = 'working';
-    public const STATUS_NOT_WORKING = 'not working';
+    public const STATUS_NOT_WORKING = 'not_working';
 
     public const STATUSES = [
         self::STATUS_WORKING,

@@ -5,6 +5,7 @@ namespace Modules\Users\Http\Controllers;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 
 class UsersController extends Controller
 {
@@ -50,12 +51,28 @@ class UsersController extends Controller
      */
     public function update(Request $request, $id) {}
 
+    use Illuminate\Support\Facades\Auth;
+    use Illuminate\Support\Facades\Cache;
+
     public function workedStatusUpdate(Request $request)
     {
         $user = Auth::user();
 
+        $cacheKey = 'worked_status_count_' . $user->id . '_' . now()->format('Y-m-d');
+
+        $requestCount = Cache::get($cacheKey, 0);
+
+        if ($requestCount >= 4) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You have reached the daily limit (4 requests per day). Please try again tomorrow.'
+            ], 429);
+        }
+
+        Cache::put($cacheKey, $requestCount + 1, now()->addDay());
+
         $validated = $request->validate([
-            'status' => 'required|string',
+            'status' => 'required|string|in:active,inactive,busy,offline'
         ]);
 
         $user->update([
@@ -68,7 +85,9 @@ class UsersController extends Controller
             'data' => [
                 'user_id' => $user->id,
                 'status' => $user->status,
+                'requests_today' => $requestCount + 1
             ]
         ]);
     }
+
 }
