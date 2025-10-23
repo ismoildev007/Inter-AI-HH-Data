@@ -36,7 +36,7 @@
 
     <style>
         .resume-show-hero {
-            margin: 0 1.5rem 1.5rem;
+            margin: 1.5rem 1.5rem 1.5rem;
             padding: 42px 46px;
             border-radius: 26px;
             background: linear-gradient(135deg, #1f4af9, #44a1ff);
@@ -161,7 +161,7 @@
         }
 
         .resume-show-sections {
-            margin: 0 1.5rem 2rem;
+            margin: 1.5rem 1.5rem 2rem;
         }
 
         .resume-show-card {
@@ -239,8 +239,8 @@
         .resume-action-btn:hover { color: #1c36c9; text-decoration: none; }
 
         @media (max-width: 991px) {
-            .resume-show-hero { margin-inline: 1rem; padding: 32px; border-radius: 24px; }
-            .resume-show-sections { margin-inline: 1rem; }
+            .resume-show-hero { margin: 1.5rem 1rem; padding: 32px; border-radius: 24px; }
+            .resume-show-sections { margin: 1.5rem 1rem; }
         }
     </style>
 

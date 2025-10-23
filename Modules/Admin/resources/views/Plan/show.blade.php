@@ -124,14 +124,14 @@
 
 <style>
 .plan-detail-wrap {
-    margin: 0 1.5rem 1.5rem;
+    margin: 1.5rem 1.5rem 1.5rem;
 }
 .plan-notice {
     border-radius: 16px;
     border: 1px solid rgba(34, 197, 94, 0.35);
     background: rgba(220, 252, 231, 0.6);
     padding: 14px 18px;
-        margin: 0 1.5rem 16px;
+        margin: 1.5rem 1.5rem 16px;
     }
 
     .plan-overview {

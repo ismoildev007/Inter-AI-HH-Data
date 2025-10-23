@@ -163,7 +163,7 @@
 
 <style>
     .subscriptions-hero {
-        margin: 0 1.5rem 1.5rem;
+        margin: 1.5rem 1.5rem 1.5rem;
         border-radius: 28px;
         padding: 40px 44px;
         background: linear-gradient(135deg, rgba(59, 130, 246, 0.08), rgba(20, 184, 166, 0.14));
@@ -239,7 +239,7 @@
         color: #64748b;
     }
     .subscriptions-filter {
-        margin: 0 1.5rem 1.5rem;
+        margin: 1.5rem 1.5rem 1.5rem;
         border-radius: 22px;
         border: 1px solid rgba(226, 232, 240, 0.9);
         box-shadow: 0 22px 52px rgba(15, 46, 122, 0.12);
@@ -289,7 +289,7 @@
         align-items: center;
     }
     .subscriptions-table {
-        margin: 0 1.5rem 1.5rem;
+        margin: 1.5rem 1.5rem 1.5rem;
         border-radius: 22px;
         border: 1px solid rgba(226, 232, 240, 0.85);
         box-shadow: 0 24px 60px rgba(15, 23, 42, 0.08);
@@ -407,6 +407,13 @@
         color: #0f172a;
     }
     @media (max-width: 991px) {
+        .subscriptions-hero {
+            margin: 1.5rem 1rem;
+        }
+        .subscriptions-filter,
+        .subscriptions-table {
+            margin: 1.5rem 1rem;
+        }
         .subscriptions-table__head {
             display: none;
         }

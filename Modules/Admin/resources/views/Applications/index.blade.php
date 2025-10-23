@@ -3,7 +3,7 @@
 @section('content')
     <style>
         .applications-hero {
-            margin: 0 1.5rem 1.5rem;
+            margin: 1.5rem 1.5rem 1.5rem;
             padding: 42px 46px;
             border-radius: 26px;
             background: #ffffff;
@@ -121,7 +121,7 @@
         }
 
         .applications-filter-card {
-            margin: 0 1.5rem 1.5rem;
+            margin: 1.5rem 1.5rem 1.5rem;
             border: none;
             border-radius: 22px;
             box-shadow: 0 18px 45px rgba(31, 68, 148, 0.12);
@@ -193,7 +193,7 @@
         }
 
         .applications-table-card {
-            margin: 0 1.5rem 2rem;
+            margin: 1.5rem 1.5rem 2rem;
             border: none;
             border-radius: 26px;
             box-shadow: 0 28px 58px rgba(24, 57, 141, 0.16);
@@ -456,14 +456,14 @@
 
         @media (max-width: 991px) {
             .applications-hero {
-                margin-inline: 1rem;
+                margin: 1.5rem 1rem;
                 border-radius: 22px;
                 padding: 30px;
             }
 
             .applications-filter-card,
             .applications-table-card {
-                margin-inline: 1rem;
+                margin: 1.5rem 1rem;
                 padding: 24px 20px 26px;
             }
 

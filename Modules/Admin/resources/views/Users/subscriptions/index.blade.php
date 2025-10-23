@@ -136,7 +136,7 @@
 
 <style>
 .user-subscriptions-hero {
-    margin: 0 1.5rem 1.5rem;
+    margin: 1.5rem 1.5rem 1.5rem;
         border-radius: 26px;
         padding: 38px 44px;
         background: linear-gradient(135deg, rgba(99, 102, 241, 0.12), rgba(59, 130, 246, 0.12));
@@ -144,7 +144,7 @@
         box-shadow: 0 24px 60px rgba(15, 23, 42, 0.08);
     }
     .subscriptions-filter {
-        margin: 0 1.5rem 1.5rem;
+        margin: 1.5rem 1.5rem 1.5rem;
         border-radius: 22px;
         border: 1px solid rgba(226, 232, 240, 0.9);
         box-shadow: 0 22px 52px rgba(15, 46, 122, 0.12);
@@ -204,7 +204,7 @@
     }
 
     .subscriptions-table {
-        margin: 0 1.5rem 1.5rem;
+        margin: 1.5rem 1.5rem 1.5rem;
         border-radius: 22px;
         border: 1px solid rgba(226, 232, 240, 0.85);
         box-shadow: 0 24px 60px rgba(15, 23, 42, 0.08);
@@ -310,6 +310,13 @@
         border-bottom: 1px solid rgba(226, 232, 240, 0.6);
     }
     @media (max-width: 991px) {
+        .user-subscriptions-hero {
+            margin: 1.5rem 1rem;
+        }
+        .subscriptions-filter,
+        .subscriptions-table {
+            margin: 1.5rem 1rem;
+        }
         .subscriptions-table__head {
             display: none;
         }

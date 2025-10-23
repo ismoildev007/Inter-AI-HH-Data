@@ -151,7 +151,7 @@
 
 <style>
     .subscription-layout {
-        margin: 0 1.5rem 1.5rem;
+        margin: 1.5rem 1.5rem 1.5rem;
     }
     .subscription-summary {
         border-radius: 26px;
@@ -350,6 +350,9 @@
         color: #0f172a;
     }
     @media (max-width: 991px) {
+        .subscription-layout {
+            margin: 1.5rem 1rem;
+        }
         .subscription-summary__header {
             flex-direction: column;
         }

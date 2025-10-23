@@ -3,7 +3,7 @@
 @section('content')
     <style>
         .users-hero {
-            margin: 0 1.5rem 1.5rem;
+            margin: 1.5rem 1.5rem 1.5rem;
             padding: 40px 44px;
             border-radius: 26px;
             background: #ffffff;
@@ -128,7 +128,7 @@
         }
 
         .users-filter-card {
-            margin: 0 1.5rem 1.5rem;
+            margin: 1.5rem 1.5rem 1.5rem;
             border: none;
             border-radius: 22px;
             box-shadow: 0 18px 45px rgba(31, 51, 126, 0.12);
@@ -212,7 +212,7 @@
         }
 
         .users-table-card {
-            margin: 0 1.5rem 2rem;
+            margin: 1.5rem 1.5rem 2rem;
             border: none;
             border-radius: 26px;
             box-shadow: 0 28px 58px rgba(21, 37, 97, 0.16);
@@ -357,14 +357,14 @@
 
         @media (max-width: 991px) {
             .users-hero {
-                margin-inline: 1rem;
+                margin: 1.5rem 1rem;
                 border-radius: 22px;
                 padding: 30px;
             }
 
             .users-filter-card,
             .users-table-card {
-                margin-inline: 1rem;
+                margin: 1.5rem 1rem 2rem;
                 padding: 24px 20px 26px;
             }
 

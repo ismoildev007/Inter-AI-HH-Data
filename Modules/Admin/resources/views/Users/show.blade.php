@@ -3,7 +3,7 @@
 @section('content')
     <style>
         .user-profile-hero {
-            margin: 0 1.5rem 1.5rem;
+            margin: 1.5rem 1.5rem 1.5rem;
             padding: 44px 48px;
             border-radius: 28px;
             background: linear-gradient(135deg, #1f3cfd, #5f82ff);
@@ -144,7 +144,7 @@
         }
 
         .user-profile-sections {
-            margin: 0 1.5rem 2rem;
+            margin: 1.5rem 1.5rem 2rem;
         }
 
         .user-profile-card {
@@ -333,13 +333,13 @@
 
         @media (max-width: 991px) {
             .user-profile-hero {
-                margin-inline: 1rem;
+                margin: 1.5rem 1rem;
                 padding: 32px;
                 border-radius: 24px;
             }
 
             .user-profile-sections {
-                margin-inline: 1rem;
+                margin: 1.5rem 1rem 2rem;
             }
 
             .user-summary-item {

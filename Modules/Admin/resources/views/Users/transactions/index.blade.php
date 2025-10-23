@@ -152,7 +152,7 @@
 
 <style>
 .user-transactions-hero {
-    margin: 0 1.5rem 1.5rem;
+    margin: 1.5rem 1.5rem 1.5rem;
         border-radius: 26px;
         padding: 38px 44px;
         background: linear-gradient(140deg, rgba(59, 130, 246, 0.09), rgba(96, 165, 250, 0.12));
@@ -160,7 +160,7 @@
         box-shadow: 0 24px 60px rgba(15, 23, 42, 0.08);
     }
     .transactions-filter {
-        margin: 0 1.5rem 1.5rem;
+        margin: 1.5rem 1.5rem 1.5rem;
         border-radius: 22px;
         border: 1px solid rgba(226, 232, 240, 0.9);
         box-shadow: 0 22px 52px rgba(15, 46, 122, 0.12);
@@ -215,7 +215,7 @@
     }
 
 .transactions-table {
-    margin: 0 1.5rem 1.5rem;
+    margin: 1.5rem 1.5rem 1.5rem;
     border-radius: 22px;
     border: 1px solid rgba(226, 232, 240, 0.85);
     box-shadow: 0 24px 60px rgba(15, 23, 42, 0.08);
@@ -316,6 +316,13 @@
     }
 
     @media (max-width: 991px) {
+        .user-transactions-hero {
+            margin: 1.5rem 1rem;
+        }
+        .transactions-filter,
+        .transactions-table {
+            margin: 1.5rem 1rem;
+        }
         .transactions-table__head {
             display: none;
         }

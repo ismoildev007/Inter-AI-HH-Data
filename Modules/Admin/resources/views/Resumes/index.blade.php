@@ -3,7 +3,7 @@
 @section('content')
     <style>
         .resumes-hero {
-            margin: 0 1.5rem 1.5rem;
+            margin: 1.5rem 1.5rem 1.5rem;
             padding: 40px 44px;
             border-radius: 26px;
             background: #ffffff;
@@ -121,7 +121,7 @@
         }
 
         .resumes-filter-card {
-            margin: 0 1.5rem 1.5rem;
+            margin: 1.5rem 1.5rem 1.5rem;
             border: none;
             border-radius: 22px;
             box-shadow: 0 18px 45px rgba(25, 58, 142, 0.12);
@@ -189,7 +189,7 @@
         }
 
         .resumes-table-card {
-            margin: 0 1.5rem 2rem;
+            margin: 1.5rem 1.5rem 2rem;
             border: none;
             border-radius: 26px;
             box-shadow: 0 28px 58px rgba(19, 48, 132, 0.16);
@@ -405,14 +405,14 @@
 
         @media (max-width: 991px) {
             .resumes-hero {
-                margin-inline: 1rem;
+                margin: 1.5rem 1rem;
                 border-radius: 22px;
                 padding: 30px;
             }
 
             .resumes-filter-card,
             .resumes-table-card {
-                margin-inline: 1rem;
+                margin: 1.5rem 1rem;
                 padding: 24px 20px 26px;
             }
 

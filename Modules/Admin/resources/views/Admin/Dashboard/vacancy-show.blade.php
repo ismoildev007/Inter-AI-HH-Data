@@ -28,7 +28,7 @@
 
     <style>
         .vacancy-show-hero {
-            margin: 0 1.5rem 1.5rem;
+            margin: 1.5rem 1.5rem 1.5rem;
             padding: 42px 46px;
             border-radius: 26px;
             background: #ffffff;
@@ -165,7 +165,7 @@
         }
 
         .vacancy-show-sections {
-            margin: 0 1.5rem 2rem;
+            margin: 1.5rem 1.5rem 2rem;
         }
 
         .vacancy-show-card {
@@ -240,14 +240,14 @@
 
         @media (max-width: 991px) {
             .vacancy-show-hero {
-                margin-inline: 1rem;
+                margin: 1.5rem 1rem;
                 padding: 32px;
                 border-radius: 24px;
             }
 
-        .vacancy-show-sections {
-            margin-inline: 1rem;
-        }
+            .vacancy-show-sections {
+                margin: 1.5rem 1rem;
+            }
         }
     </style>
 

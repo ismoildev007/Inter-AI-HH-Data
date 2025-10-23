@@ -176,10 +176,10 @@
     border: 1px solid rgba(34, 197, 94, 0.35);
     background: rgba(220, 252, 231, 0.6);
     padding: 14px 18px;
-    margin: 1rem 1.5rem;
+    margin: 1.5rem 1.5rem;
 }
 .plan-hero {
-    margin: 0 1.5rem 1.5rem;
+    margin: 1.5rem 1.5rem 1.5rem;
     border-radius: 28px;
     padding: 42px 48px;
         background: linear-gradient(135deg, rgba(37, 99, 235, 0.08), rgba(14, 165, 233, 0.12));
@@ -261,7 +261,7 @@
         font-size: 0.85rem;
     }
 .plan-filter-card {
-    margin: 0 1.5rem 1.5rem;
+    margin: 1.5rem 1.5rem 1.5rem;
     border-radius: 22px;
         margin-bottom: 1.5rem;
         box-shadow: 0 20px 46px rgba(15, 46, 122, 0.12);
@@ -311,7 +311,7 @@
         align-items: center;
     }
 .plan-table {
-    margin: 0 1.5rem 1.5rem;
+    margin: 1.5rem 1.5rem 1.5rem;
     border-radius: 22px;
         overflow: hidden;
         box-shadow: 0 24px 56px rgba(15, 23, 42, 0.08);
@@ -451,6 +451,12 @@
         border-bottom: 1px solid rgba(226, 232, 240, 0.6);
     }
     @media (max-width: 991px) {
+        .plan-alert,
+        .plan-hero,
+        .plan-filter-card,
+        .plan-table {
+            margin: 1.5rem 1rem;
+        }
         .plan-table__head {
             display: none;
         }

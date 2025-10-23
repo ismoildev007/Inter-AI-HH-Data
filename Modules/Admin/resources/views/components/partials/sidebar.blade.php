@@ -12,7 +12,7 @@
     $navigationGroups = [
         
         [
-            'label' => 'People',
+            'label' => 'Users',
             'items' => [
                 [
                     'label' => 'Users',
@@ -38,7 +38,7 @@
             ],
         ],
         [
-            'label' => 'Automation',
+            'label' => 'Vacancies & Channels',
             'items' => [
                 [
                     'label' => 'Telegram Channels',

@@ -25,7 +25,7 @@
 
     <style>
         .categories-hero {
-            margin: 0 1.5rem 1.5rem;
+            margin: 1.5rem 1.5rem 1.5rem;
             padding: 42px 46px;
             border-radius: 26px;
             background: #ffffff;
@@ -149,7 +149,7 @@
         }
 
         .categories-filter-card {
-            margin: 0 1.5rem 2rem;
+            margin: 1.5rem 1.5rem 2rem;
             border: none;
             border-radius: 24px;
             box-shadow: 0 24px 50px rgba(21, 37, 97, 0.12);
@@ -157,7 +157,7 @@
         }
 
         .categories-card {
-            margin: 0 1.5rem 2rem;
+            margin: 1.5rem 1.5rem 2rem;
             border: none;
             border-radius: 26px;
             box-shadow: 0 28px 58px rgba(21, 37, 97, 0.14);
@@ -541,16 +541,16 @@
         }
 
         @media (max-width: 991px) {
-            .categories-hero {
-                margin-inline: 1rem;
-                padding: 32px;
-                border-radius: 24px;
-            }
+        .categories-hero {
+            margin: 1.5rem 1rem 0;
+            padding: 32px;
+            border-radius: 24px;
+        }
 
-            .categories-filter-card,
-            .categories-card {
-                margin-inline: 1rem;
-            }
+        .categories-filter-card,
+        .categories-card {
+            margin: 1.5rem 1rem;
+        }
 
             .categories-card {
                 padding-bottom: 26px;

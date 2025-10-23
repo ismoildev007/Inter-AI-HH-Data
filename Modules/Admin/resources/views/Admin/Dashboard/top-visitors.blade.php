@@ -12,7 +12,7 @@
 
     <style>
         .visitors-hero {
-            margin: 0 1.5rem 1.5rem;
+            margin: 1.5rem 1.5rem 1.5rem;
             padding: 42px 46px;
             border-radius: 26px;
             background: linear-gradient(135deg, #0048ff, #53a0ff);
@@ -131,7 +131,7 @@
         }
 
         .visitors-card {
-            margin: 0 1.5rem 2rem;
+            margin: 1.5rem 1.5rem 2rem;
             border: none;
             border-radius: 26px;
             box-shadow: 0 28px 58px rgba(21, 37, 97, 0.14);
@@ -299,13 +299,13 @@
 
         @media (max-width: 991px) {
             .visitors-hero {
-                margin-inline: 1rem;
+                margin: 1.5rem 1rem;
                 border-radius: 24px;
                 padding: 32px;
             }
 
             .visitors-card {
-                margin-inline: 1rem;
+                margin: 1.5rem 1rem 2rem;
                 padding: 24px 20px 26px;
             }
 

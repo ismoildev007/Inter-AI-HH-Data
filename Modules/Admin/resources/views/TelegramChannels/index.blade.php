@@ -3,7 +3,7 @@
 @section('content')
     <style>
         .telegram-hero {
-            margin: 0 1.5rem 1.5rem;
+            margin: 1.5rem 1.5rem 1.5rem;
             padding: 40px 44px;
             border-radius: 26px;
             background: #ffffff;
@@ -121,7 +121,7 @@
         }
 
         .telegram-alert {
-            margin: 0 1.5rem 1rem;
+            margin: 1.5rem 1.5rem 1rem;
             border-radius: 18px;
             padding: 14px 20px;
             background: rgba(46, 204, 113, 0.12);
@@ -131,7 +131,7 @@
         }
 
         .telegram-filter-card {
-            margin: 0 1.5rem 1.5rem;
+            margin: 1.5rem 1.5rem 1.5rem;
             border: none;
             border-radius: 22px;
             box-shadow: 0 18px 45px rgba(15, 46, 122, 0.12);
@@ -212,7 +212,7 @@
         }
 
         .telegram-table-card {
-            margin: 0 1.5rem 2rem;
+            margin: 1.5rem 1.5rem 2rem;
             border: none;
             border-radius: 26px;
             box-shadow: 0 28px 58px rgba(14, 46, 128, 0.16);
@@ -349,14 +349,14 @@
 
         @media (max-width: 991px) {
             .telegram-hero {
-                margin-inline: 1rem;
+                margin: 1.5rem 1rem;
                 border-radius: 22px;
                 padding: 30px;
             }
 
             .telegram-filter-card,
             .telegram-table-card {
-                margin-inline: 1rem;
+                margin: 1.5rem 1rem 2rem;
                 padding: 24px 20px 26px;
             }
 
