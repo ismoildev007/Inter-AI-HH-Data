@@ -63,10 +63,6 @@ class PaymeController extends Controller
 
     public function booking(Request $request)
     {
-        if (!Auth::check()) {
-            return redirect()->route('login')->with('error', 'Avval tizimga kiring!');
-        }
-
         $user = Auth::user();
 
         $subscription = Subscription::create([
@@ -98,7 +94,10 @@ class PaymeController extends Controller
         $encoded = base64_encode($payload);
         $redirectUrl = "https://checkout.paycom.uz/{$encoded}";
 
-        return redirect($redirectUrl);
+        return response()->json([
+            'success' => true,
+            'payment_url' => $redirectUrl,
+        ]);
     }
 
 }
