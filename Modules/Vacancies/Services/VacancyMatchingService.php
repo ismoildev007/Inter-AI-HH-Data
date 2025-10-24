@@ -76,6 +76,7 @@ class VacancyMatchingService
             ),
             fn() => DB::table('vacancies')
                 ->where('status', 'publish')
+                ->where('source', 'telegram')
                 ->whereNotIn('id', function ($q) use ($resume) {
                     $q->select('vacancy_id')
                         ->from('match_results')
