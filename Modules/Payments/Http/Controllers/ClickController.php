@@ -117,39 +117,39 @@ class ClickController extends Controller
 
     private function checkSignature(Request $request)
     {
-        $clickTransId = $request->click_trans_id;
-        $serviceId = $request->service_id;
         $secretKey = env('CLICK_SECRET_KEY');
-        $merchantTransId = $request->merchant_trans_id;
-        $amount = $request->amount;
-        $action = $request->action;
-        $signTime = $request->sign_time;
 
-        $expectedSign = md5(
-            $clickTransId .
-            $serviceId .
-            $secretKey .
-            $merchantTransId .
-            $amount .
-            $action .
-            $signTime
-        );
+        // Agar prepare (action == 0)
+        if ($request->action == 0) {
+            $string = $request->click_trans_id .
+                $request->service_id .
+                $secretKey .
+                $request->merchant_trans_id .
+                $request->amount .
+                $request->action .
+                $request->sign_time;
+        }
+        // Agar complete (action == 1)
+        else {
+            $string = $request->click_trans_id .
+                $request->service_id .
+                $secretKey .
+                $request->merchant_trans_id .
+                $request->merchant_prepare_id .
+                $request->amount .
+                $request->action .
+                $request->sign_time;
+        }
 
+        $expectedSign = md5($string);
         $isValid = $expectedSign === $request->sign_string;
 
         if (!$isValid) {
             Log::error('❌ Signature mismatch', [
                 'expected' => $expectedSign,
                 'received' => $request->sign_string,
-                'data' => [
-                    'click_trans_id' => $clickTransId,
-                    'service_id' => $serviceId,
-                    'merchant_trans_id' => $merchantTransId,
-                    'amount' => $amount,
-                    'action' => $action,
-                    'sign_time' => $signTime,
-                    'secret' => $secretKey
-                ]
+                'data' => $request->all(),
+                'string' => $string,
             ]);
         } else {
             Log::info('✅ Signature verified successfully', [
