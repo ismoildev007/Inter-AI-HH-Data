@@ -758,7 +758,7 @@
             </div>
         </div>
 
-        <div class="user-profile-card card">
+        <!-- <div class="user-profile-card card">
             <div class="card-header d-flex align-items-center justify-content-between">
                 <h6 class="mb-0">Recent transactions</h6>
                 <a href="{{ route('admin.users.transactions.index', $user->id) }}" class="btn btn-sm btn-outline-primary">
@@ -823,6 +823,6 @@
                     </div>
                 @endif
             </div>
-        </div>
+        </div> -->
     </div>
 @endsection

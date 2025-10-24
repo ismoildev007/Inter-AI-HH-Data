@@ -42,7 +42,7 @@
             <div class="metric-card__icon metric-card__icon--primary">
                 <i class="feather-layers"></i>
             </div>
-            <div>
+            <div class="metric-card__content">
                 <span class="metric-card__label">Umumiy tariflar</span>
                 <span class="metric-card__value">{{ $formatNumber($metrics['total_plans'] ?? 0) }}</span>
             </div>
@@ -51,8 +51,8 @@
             <div class="metric-card__icon metric-card__icon--success">
                 <i class="feather-users"></i>
             </div>
-            <div>
-                <span class="metric-card__label">Umumiy sotib olishlar</span>
+            <div class="metric-card__content">
+                <span class="metric-card__label">Umumiy foydalanuvchilar soni</span>
                 <span class="metric-card__value">{{ $formatNumber($metrics['total_subscriptions'] ?? 0) }}</span>
             </div>
         </article>
@@ -60,7 +60,7 @@
             <div class="metric-card__icon metric-card__icon--warning">
                 <i class="feather-credit-card"></i>
             </div>
-            <div>
+            <div class="metric-card__content">
                 <span class="metric-card__label">To‘lov qilgan foydalanuvchilar</span>
                 <span class="metric-card__value">{{ $formatNumber($metrics['total_paying_users'] ?? 0) }}</span>
             </div>
@@ -69,7 +69,7 @@
             <div class="metric-card__icon metric-card__icon--info">
                 <i class="feather-activity"></i>
             </div>
-            <div>
+            <div class="metric-card__content">
                 <span class="metric-card__label">Tarif bo‘yicha o‘rtacha tushum</span>
                 <span class="metric-card__value">UZS {{ $formatMoney($planOverview->avg('revenue') ?? 0) }}</span>
             </div>
@@ -329,6 +329,12 @@
         border: 1px solid rgba(226, 232, 240, 0.9);
         box-shadow: 0 12px 28px rgba(15, 23, 42, 0.06);
     }
+    .metric-card__content {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 6px;
+    }
     .metric-card__icon {
         width: 52px;
         height: 52px;
@@ -343,15 +349,18 @@
     .metric-card__icon--warning { background: linear-gradient(135deg, #ca8a04, #a16207); }
     .metric-card__icon--info { background: linear-gradient(135deg, #0ea5e9, #0284c7); }
     .metric-card__label {
-        font-size: 13px;
+        font-size: 12px;
         text-transform: uppercase;
         font-weight: 600;
         color: #64748b;
+        letter-spacing: 0.4px;
+        white-space: nowrap;
     }
     .metric-card__value {
         font-size: 22px;
         font-weight: 700;
         color: #0f172a;
+        display: block;
     }
 
     .billing-dashboard__grid {
