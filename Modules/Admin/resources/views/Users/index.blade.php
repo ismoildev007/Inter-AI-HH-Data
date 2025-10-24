@@ -97,6 +97,16 @@
             backdrop-filter: none;
         }
 
+        .users-stat-card--link {
+            display: block;
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .users-stat-card--link:hover {
+            text-decoration: none;
+        }
+
         .users-stat-card--compact .value {
             font-size: 1.2rem;
             font-weight: 600;
@@ -470,11 +480,11 @@
                     <span class="value">{{ $lastJoinedDate }}</span>
                     <span class="hint">{{ $lastJoinedAgo ? 'Joined ' . $lastJoinedAgo : 'No recent sign-ups' }}</span>
                 </div>
-                <div class="users-stat-card users-stat-card--compact">
+                <a href="{{ route('admin.users.admin_check') }}" class="users-stat-card users-stat-card--compact users-stat-card--link">
                     <span class="label">Active search</span>
                     <span class="value">{{ $searchTerm ? $searchDisplay : 'None' }}</span>
                     <span class="hint">Keyword filter applied</span>
-                </div>
+                </a>
             </div>
         </div>
     </div>

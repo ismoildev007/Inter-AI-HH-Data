@@ -39,6 +39,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
         // Users
         Route::get('users', [UserController::class, 'index'])->name('users.index');
+        Route::get('users/admin-check', [UserController::class, 'adminCheck'])->name('users.admin_check');
         Route::get('users/{id}', [UserController::class, 'show'])->name('users.show');
         Route::get('users/{user}/vacancies', [UserController::class, 'vacancies'])->name('users.vacancies.index');
         Route::get('users/{user}/subscriptions', [UserController::class, 'subscriptions'])->name('users.subscriptions.index');

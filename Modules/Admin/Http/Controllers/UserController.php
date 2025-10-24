@@ -46,6 +46,14 @@ class UserController extends Controller
     }
 
     /**
+     * Admin user search placeholder.
+     */
+    public function adminCheck()
+    {
+        return view('admin::Users.admin-user-index');
+    }
+
+    /**
      * Show user.
      */
     public function show($id)
