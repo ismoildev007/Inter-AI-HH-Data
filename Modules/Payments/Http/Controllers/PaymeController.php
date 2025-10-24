@@ -95,8 +95,8 @@ class PaymeController extends Controller
 
         $merchantId = env('PAYME_MERCHANT_ID');
         $tiyinAmount = intval($amount * 100);
-
-        $payload = "m={$merchantId};ac.transaction_id={$transaction->id};a={$tiyinAmount}";
+        $backUrl = 'https://t.me/inter_ai_vacancies_bot';
+        $payload = "m={$merchantId};ac.transaction_id={$transaction->id};a={$tiyinAmount};c={$backUrl}";
         $encoded = base64_encode($payload);
         $redirectUrl = "https://checkout.paycom.uz/{$encoded}";
 
