@@ -64,7 +64,6 @@ class PaymeController extends Controller
     public function booking(Request $request)
     {
         $user = Auth::user();
-        dd($request->all());
 
         $subscription = Subscription::create([
             'user_id' => $user->id,
@@ -79,7 +78,7 @@ class PaymeController extends Controller
 
         $transaction = Transaction::create([
             'user_id' => $user->id,
-            'plan_id' => $subscription->plan_id,
+            'plan_id' => $request->plan_id,
             'subscription_id' => $subscription->id,
             'transaction_id' => null,
             'amount' => $amount,
