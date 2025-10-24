@@ -16,42 +16,40 @@ class ClickController extends Controller
     {
         Log::info('Click prepare', $request->all());
 
-        // sign tekshirish
         if (!$this->checkSignature($request)) {
             return response()->json(['error' => -1, 'error_note' => 'Invalid signature']);
         }
 
-        $plan = Plan::find($request->merchant_trans_id);
+        $transaction = Transaction::find($request->merchant_trans_id);
+        if (!$transaction) {
+            return response()->json(['error' => -5, 'error_note' => 'Transaction not found']);
+        }
 
+        $plan = Plan::find($transaction->plan_id);
         if (!$plan) {
             return response()->json(['error' => -5, 'error_note' => 'Plan not found']);
         }
 
-        $transaction = Transaction::create([
-            'user_id' => Auth::id() ?? null,
-            'plan_id' => $plan->id,
-            'payment_method' => 'click',
+        $transaction->update([
             'payment_status' => 'prepared',
             'transaction_id' => $request->click_trans_id,
             'state' => 1,
-            'amount' => $request->amount,
-            'create_time' => now(),
         ]);
 
         return response()->json([
             'click_trans_id' => $request->click_trans_id,
-            'merchant_trans_id' => $plan->id,
+            'merchant_trans_id' => $transaction->id,
             'merchant_prepare_id' => $transaction->id,
             'error' => 0,
             'error_note' => 'Success',
         ]);
     }
 
+
     public function complete(Request $request)
     {
         Log::info('Click complete', $request->all());
 
-        // imzo tekshirish
         if (!$this->checkSignature($request)) {
             return response()->json(['error' => -1, 'error_note' => 'Invalid signature']);
         }
@@ -85,7 +83,7 @@ class ClickController extends Controller
 
         return response()->json([
             'click_trans_id' => $request->click_trans_id,
-            'merchant_trans_id' => $transaction->plan_id,
+            'merchant_trans_id' => $transaction->id,
             'merchant_confirm_id' => $transaction->id,
             'error' => 0,
             'error_note' => 'Payment completed successfully',
@@ -96,8 +94,8 @@ class ClickController extends Controller
     {
         $signString = md5(
             $request->click_trans_id .
-            $request->service_id ?? 85151 .
-            env('CLICK_SECRET_KEY', 'EKjh0n6uAM3') .
+            $request->service_id .
+            env('CLICK_SECRET_KEY') .
             $request->merchant_trans_id .
             $request->amount .
             $request->action .
@@ -106,6 +104,7 @@ class ClickController extends Controller
 
         return $signString === $request->sign_string;
     }
+
     public function booking(Request $request)
     {
         $user = Auth::user();
