@@ -14,19 +14,22 @@ class ClickController extends Controller
 {
     public function prepare(Request $request)
     {
-        Log::info('Click prepare', $request->all());
+        Log::info('🟡 CLICK PREPARE: started', $request->all());
 
         if (!$this->checkSignature($request)) {
+            Log::warning('Invalid signature in prepare', $request->all());
             return response()->json(['error' => -1, 'error_note' => 'Invalid signature']);
         }
 
         $transaction = Transaction::find($request->merchant_trans_id);
         if (!$transaction) {
+            Log::error('Transaction not found', ['merchant_trans_id' => $request->merchant_trans_id]);
             return response()->json(['error' => -5, 'error_note' => 'Transaction not found']);
         }
 
         $plan = Plan::find($transaction->plan_id);
         if (!$plan) {
+            Log::error('Plan not found', ['plan_id' => $transaction->plan_id]);
             return response()->json(['error' => -5, 'error_note' => 'Plan not found']);
         }
 
@@ -35,6 +38,7 @@ class ClickController extends Controller
             'transaction_id' => $request->click_trans_id,
             'state' => 1,
         ]);
+        Log::info('Transaction updated to prepared', ['transaction_id' => $transaction->id]);
 
         return response()->json([
             'click_trans_id' => $request->click_trans_id,
@@ -48,19 +52,22 @@ class ClickController extends Controller
 
     public function complete(Request $request)
     {
-        Log::info('Click complete', $request->all());
+        Log::info('CLICK COMPLETE: started', $request->all());
 
         if (!$this->checkSignature($request)) {
+            Log::warning('Invalid signature in complete', $request->all());
             return response()->json(['error' => -1, 'error_note' => 'Invalid signature']);
         }
 
         $transaction = Transaction::find($request->merchant_prepare_id);
         if (!$transaction) {
+            Log::error('Transaction not found', ['merchant_prepare_id' => $request->merchant_prepare_id]);
             return response()->json(['error' => -5, 'error_note' => 'Transaction not found']);
         }
 
         $plan = Plan::find($transaction->plan_id);
         if (!$plan) {
+            Log::error('Plan not found', ['plan_id' => $transaction->plan_id]);
             return response()->json(['error' => -5, 'error_note' => 'Plan not found']);
         }
 
@@ -69,17 +76,34 @@ class ClickController extends Controller
             'state' => 2,
             'perform_time' => now(),
         ]);
+        Log::info('Transaction completed', ['transaction_id' => $transaction->id]);
 
-        $subscription = Subscription::create([
-            'user_id' => $transaction->user_id,
-            'plan_id' => $plan->id,
-            'starts_at' => now(),
-            'ends_at' => now()->addMonth(),
-            'remaining_auto_responses' => $plan->auto_response_limit,
-            'status' => 'active',
+        $subscription = Subscription::find($transaction->subscription_id);
+
+        if ($subscription) {
+            $subscription->update([
+                'starts_at' => now(),
+                'ends_at' => now()->addDays(30),
+                'status' => 'active',
+            ]);
+            Log::info('Subscription updated to active', ['subscription_id' => $subscription->id]);
+        } else {
+            $subscription = Subscription::create([
+                'user_id' => $transaction->user_id,
+                'plan_id' => $plan->id,
+                'starts_at' => now(),
+                'ends_at' => now()->addDays(30),
+                'remaining_auto_responses' => $plan->auto_response_limit,
+                'status' => 'active',
+            ]);
+            $transaction->update(['subscription_id' => $subscription->id]);
+            Log::warning('New subscription created because none found', ['subscription_id' => $subscription->id]);
+        }
+
+        Log::info('CLICK COMPLETE: finished successfully', [
+            'transaction_id' => $transaction->id,
+            'subscription_id' => $subscription->id
         ]);
-
-        $transaction->update(['subscription_id' => $subscription->id]);
 
         return response()->json([
             'click_trans_id' => $request->click_trans_id,
@@ -90,9 +114,10 @@ class ClickController extends Controller
         ]);
     }
 
+
     private function checkSignature(Request $request)
     {
-        $signString = md5(
+        $expectedSign = md5(
             $request->click_trans_id .
             $request->service_id .
             env('CLICK_SECRET_KEY') .
@@ -102,40 +127,70 @@ class ClickController extends Controller
             $request->sign_time
         );
 
-        return $signString === $request->sign_string;
+        $isValid = $expectedSign === $request->sign_string;
+
+        if (!$isValid) {
+            Log::error('Signature mismatch', [
+                'expected' => $expectedSign,
+                'received' => $request->sign_string,
+                'click_trans_id' => $request->click_trans_id,
+            ]);
+        } else {
+            Log::info('Signature verified successfully');
+        }
+
+        return $isValid;
     }
 
     public function booking(Request $request)
     {
         $user = Auth::user();
+        Log::info('💳 CLICK BOOKING STARTED', ['user_id' => $user->id, 'plan_id' => $request->plan_id]);
 
         $plan = Plan::find($request->plan_id);
         if (!$plan) {
+            Log::error('Plan not found', ['plan_id' => $request->plan_id]);
             return response()->json(['error' => 'Plan not found'], 404);
         }
+
+        $subscription = Subscription::create([
+            'user_id' => $user->id,
+            'plan_id' => $plan->id,
+            'starts_at' => null,
+            'ends_at' => null,
+            'remaining_auto_responses' => $request->remaining_auto_responses ?? 0,
+            'status' => 'pending'
+        ]);
+        Log::info('Subscription created', ['subscription_id' => $subscription->id]);
 
         $transaction = Transaction::create([
             'user_id' => $user->id,
             'plan_id' => $plan->id,
+            'subscription_id' => $subscription->id,
             'payment_method' => 'click',
             'payment_status' => 'pending',
             'state' => 0,
             'amount' => $plan->price,
             'create_time' => now()->timestamp,
         ]);
+        Log::info('Transaction created', [
+            'transaction_id' => $transaction->id,
+            'subscription_id' => $subscription->id
+        ]);
 
-        // Click checkout URL yaratamiz
         $merchantId = env('CLICK_MERCHANT_ID');
         $serviceId = env('CLICK_SERVICE_ID');
         $amount = $plan->price;
         $transactionId = $transaction->id;
 
         $clickUrl = "https://my.click.uz/services/pay?service_id={$serviceId}&merchant_id={$merchantId}&amount={$amount}&transaction_param={$transactionId}";
+        Log::info('CLICK payment URL generated', ['url' => $clickUrl]);
 
         return response()->json([
             'success' => true,
             'payment_url' => $clickUrl,
             'transaction_id' => $transactionId,
+            'subscription_id' => $subscription->id,
         ]);
     }
 
