@@ -33,11 +33,17 @@ class ClickController extends Controller
             return response()->json(['error' => -5, 'error_note' => 'Plan not found']);
         }
 
+        if ((float)$plan->price != (float)$request->amount) {
+            Log::error('❌ Amount mismatch', ['plan_price' => $plan->price, 'req_amount' => $request->amount]);
+            return response()->json(['error' => -2, 'error_note' => 'Incorrect amount']);
+        }
+
         $transaction->update([
             'payment_status' => 'prepared',
             'transaction_id' => $request->click_trans_id,
             'state' => 1,
         ]);
+
         Log::info('Transaction updated to prepared', ['transaction_id' => $transaction->id]);
 
         return response()->json([
@@ -48,6 +54,7 @@ class ClickController extends Controller
             'error_note' => 'Success',
         ]);
     }
+
 
 
     public function complete(Request $request)
@@ -119,45 +126,30 @@ class ClickController extends Controller
     {
         $secretKey = env('CLICK_SECRET_KEY');
 
-        // Agar prepare (action == 0)
-        if ($request->action == 0) {
-            $string = $request->click_trans_id .
-                $request->service_id .
-                $secretKey .
-                $request->merchant_trans_id .
-                $request->amount .
-                $request->action .
-                $request->sign_time;
-        }
-        // Agar complete (action == 1)
-        else {
-            $string = $request->click_trans_id .
-                $request->service_id .
-                $secretKey .
-                $request->merchant_trans_id .
-                $request->merchant_prepare_id .
-                $request->amount .
-                $request->action .
-                $request->sign_time;
-        }
+        $string = ($request->action == 0)
+            ? $request->click_trans_id .
+            $request->service_id .
+            $secretKey .
+            $request->merchant_trans_id .
+            $request->amount .
+            $request->action .
+            $request->sign_time
+            : $request->click_trans_id .
+            $request->service_id .
+            $secretKey .
+            $request->merchant_trans_id .
+            $request->merchant_prepare_id .
+            $request->amount .
+            $request->action .
+            $request->sign_time;
 
-        $expectedSign = md5($string);
-        $isValid = $expectedSign === $request->sign_string;
-
-        if (!$isValid) {
-            Log::error('❌ Signature mismatch', [
-                'expected' => $expectedSign,
-                'received' => $request->sign_string,
-                'data' => $request->all(),
-                'string' => $string,
-            ]);
-        } else {
-            Log::info('✅ Signature verified successfully', [
-                'sign_string' => $expectedSign
-            ]);
+        $expected = md5($string);
+        if ($expected !== $request->sign_string) {
+            Log::error('Signature mismatch', ['expected' => $expected, 'received' => $request->sign_string]);
+            return false;
         }
 
-        return $isValid;
+        return true;
     }
 
     public function booking(Request $request)
