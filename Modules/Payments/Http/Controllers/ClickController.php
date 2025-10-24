@@ -33,17 +33,23 @@ class ClickController extends Controller
             return response()->json(['error' => -5, 'error_note' => 'Plan not found']);
         }
 
+        if ((float)$plan->price != (float)$request->amount) {
+            Log::error('❌ Amount mismatch', ['plan_price' => $plan->price, 'req_amount' => $request->amount]);
+            return response()->json(['error' => -2, 'error_note' => 'Incorrect amount']);
+        }
+
         $transaction->update([
             'payment_status' => 'prepared',
             'transaction_id' => $request->click_trans_id,
             'state' => 1,
         ]);
+
         Log::info('Transaction updated to prepared', ['transaction_id' => $transaction->id]);
 
         return response()->json([
             'click_trans_id' => $request->click_trans_id,
-            'merchant_trans_id' => $transaction->id,
-            'merchant_prepare_id' => $transaction->id,
+            'merchant_trans_id' => (string)$transaction->id,
+            'merchant_prepare_id' => (string)$transaction->id,
             'error' => 0,
             'error_note' => 'Success',
         ]);
