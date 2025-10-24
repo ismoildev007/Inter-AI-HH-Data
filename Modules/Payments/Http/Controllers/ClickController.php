@@ -96,8 +96,8 @@ class ClickController extends Controller
     {
         $signString = md5(
             $request->click_trans_id .
-            $request->service_id .
-            env('CLICK_SECRET_KEY') .
+            $request->service_id ?? 85151 .
+            env('CLICK_SECRET_KEY', 'EKjh0n6uAM3') .
             $request->merchant_trans_id .
             $request->amount .
             $request->action .
