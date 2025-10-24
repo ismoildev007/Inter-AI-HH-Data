@@ -3,6 +3,7 @@
 namespace Modules\Payments\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Models\Plan;
 use App\Models\Subscription;
 use App\Models\Transaction;
 use Illuminate\Http\Request;
@@ -64,24 +65,27 @@ class PaymeController extends Controller
     public function booking(Request $request)
     {
         $user = Auth::user();
+        $plan = Plan::find($request->plan_id);
+
+        if (!$plan) {
+            return response()->json(['error' => 'Plan topilmadi'], 404);
+        }
 
         $subscription = Subscription::create([
             'user_id' => $user->id,
-            'plan_id' => $request->plan_id,
+            'plan_id' => $plan->id,
             'starts_at' => null,
             'ends_at' => null,
             'remaining_auto_responses' => $request->remaining_auto_responses ?? 0,
             'status' => 'pending'
         ]);
 
-        $amount = $subscription->plan->price;
-
         $transaction = Transaction::create([
             'user_id' => $user->id,
-            'plan_id' => $request->plan_id,
+            'plan_id' => $plan->id,
             'subscription_id' => $subscription->id,
             'transaction_id' => null,
-            'amount' => $amount,
+            'amount' => $plan->price,
             'state' => 0,
             'payment_status' => 'pending',
             'create_time' => null
