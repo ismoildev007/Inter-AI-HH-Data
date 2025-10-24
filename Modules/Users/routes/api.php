@@ -51,6 +51,8 @@ Route::prefix('auth')->group(function () {
         // User Worked status Update
 
         Route::post('worked-status-update', [UsersController::class, 'workedStatusUpdate']);
+        Route::get('notifications', [UsersController::class, 'notificationCounts']);
+        Route::post('notifications/read', [UsersController::class, 'markNotificationsAsRead']);
 
     });
 });

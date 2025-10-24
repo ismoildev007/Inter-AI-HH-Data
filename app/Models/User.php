@@ -44,6 +44,8 @@ class User extends Authenticatable
         'trial_end_date',
         'status',
         'admin_check_status',
+        'responce_notification',
+        'application_notification',
     ];
 
     /**
@@ -70,6 +72,8 @@ class User extends Authenticatable
             'trial_start_date' => 'datetime',
             'trial_end_date' => 'datetime',
             'admin_check_status' => 'boolean',
+            'responce_notification' => 'integer',
+            'application_notification' => 'integer',
         ];
     }
 
@@ -110,6 +114,11 @@ class User extends Authenticatable
     public function resumes(): HasMany
     {
         return $this->hasMany(Resume::class);
+    }
+
+    public function applications(): HasMany
+    {
+        return $this->hasMany(Application::class);
     }
 
     public function hhAccount()

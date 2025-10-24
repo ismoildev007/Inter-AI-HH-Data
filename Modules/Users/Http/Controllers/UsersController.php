@@ -3,6 +3,8 @@
 namespace Modules\Users\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Models\Application;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
@@ -10,6 +12,18 @@ use Illuminate\Support\Facades\DB;
 
 class UsersController extends Controller
 {
+    private const RESPONSE_STATUSES = [
+        'interview',
+        'interview_scheduled',
+        'invitation',
+        'offer',
+        'hired',
+        'invited',
+        'assessments',
+        'assessment',
+        'test',
+    ];
+
     /**
      * Display a listing of the resource.
      */
@@ -91,4 +105,65 @@ class UsersController extends Controller
         return response()->json(['message' => 'User deleted (no resumes found).'], 200);
     }
 
+    public function notificationCounts(Request $request)
+    {
+        $user = $request->user();
+
+        [$responseTotal, $applicationTotal] = $this->notificationTotals($user);
+
+        $responseUnread = max($responseTotal - (int) $user->responce_notification, 0);
+        $applicationUnread = max($applicationTotal - (int) $user->application_notification, 0);
+
+        return response()->json([
+            'responce_notification' => $responseUnread,
+            'application_notification' => $applicationUnread,
+        ]);
+    }
+
+    public function markNotificationsAsRead(Request $request)
+    {
+        $user = $request->user();
+
+        $validated = $request->validate([
+            'type' => 'nullable|string|in:responce,response,application,all',
+        ]);
+
+        $type = $validated['type'] ?? 'all';
+
+        [$responseTotal, $applicationTotal] = $this->notificationTotals($user);
+
+        $updates = [];
+
+        if (in_array($type, ['responce', 'response', 'all'], true)) {
+            $updates['responce_notification'] = $responseTotal;
+        }
+
+        if (in_array($type, ['application', 'all'], true)) {
+            $updates['application_notification'] = $applicationTotal;
+        }
+
+        if ($updates !== []) {
+            $user->forceFill($updates)->save();
+        }
+
+        return response()->json([
+            'message' => 'Notifications marked as read.',
+            'responce_notification' => max($responseTotal - (int) $user->responce_notification, 0),
+            'application_notification' => max($applicationTotal - (int) $user->application_notification, 0),
+        ]);
+    }
+
+    private function notificationTotals(User $user): array
+    {
+        $responseTotal = Application::query()
+            ->where('user_id', $user->id)
+            ->whereIn('hh_status', self::RESPONSE_STATUSES)
+            ->count();
+
+        $applicationTotal = Application::query()
+            ->where('user_id', $user->id)
+            ->count();
+
+        return [$responseTotal, $applicationTotal];
+    }
 }
