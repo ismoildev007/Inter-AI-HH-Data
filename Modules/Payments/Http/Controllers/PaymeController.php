@@ -64,6 +64,7 @@ class PaymeController extends Controller
     public function booking(Request $request)
     {
         $user = Auth::user();
+        dd($request->all());
 
         $subscription = Subscription::create([
             'user_id' => $user->id,
