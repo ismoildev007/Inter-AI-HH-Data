@@ -17,8 +17,6 @@ class Plan extends Model
 
     protected $casts = [
         'duration' => 'date',
-        'fake_price' => 'decimal:2',
-        'price' => 'decimal:2',
         'auto_response_limit' => 'integer',
     ];
 
