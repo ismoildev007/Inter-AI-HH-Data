@@ -74,7 +74,6 @@ class VacancyMatchingService
                 now()->addMinutes(30),
                 fn() => $this->hhRepository->search($query, 0, 200, ['area' => 97])
             ),
-            // ✅ Telegram vacancylar qidiruvi
             fn() => DB::table('vacancies')
                 ->where('status', 'publish')
                 ->where('source', 'telegram')
@@ -83,27 +82,25 @@ class VacancyMatchingService
                         ->from('match_results')
                         ->where('resume_id', $resume->id);
                 })
-                ->where(function ($q) use ($multiWords, $latinQuery, $cyrilQuery) {
-                    $filteredWords = array_filter($multiWords, fn($w) => !empty(trim($w)) && strlen($w) > 1);
-
-                    foreach ($filteredWords as $word) {
-                        $q->orWhere('title', 'ILIKE', "%{$word}%")
-                            ->orWhere('description', 'ILIKE', "%{$word}%");
-                    }
-
-                    $q->orWhere('title', 'ILIKE', "%{$latinQuery}%")
-                        ->orWhere('description', 'ILIKE', "%{$latinQuery}%")
-                        ->orWhere('title', 'ILIKE', "%{$cyrilQuery}%")
-                        ->orWhere('description', 'ILIKE', "%{$cyrilQuery}%");
-                })
+                ->whereRaw("
+                        (
+                            title ILIKE ANY (ARRAY['%" . implode("%','%", $multiWords) . "%']) OR
+                            description ILIKE ANY (ARRAY['%" . implode("%','%", $multiWords) . "%'])
+                        )
+                        OR title ILIKE '%{$latinQuery}%'
+                        OR description ILIKE '%{$latinQuery}%'
+                        OR title ILIKE '%{$cyrilQuery}%'
+                        OR description ILIKE '%{$cyrilQuery}%'
+                    ")
                 ->select('id', 'title', 'description', 'source', 'external_id')
-                ->orderByDesc('id')
                 ->limit(200)
+                ->orderByDesc('id')
                 ->get()
-                ->keyBy(fn($v) => (string) $v->id)
+                ->keyBy(fn($v) => $v->source === 'hh' && $v->external_id
+                    ? $v->external_id
+                    : "local_{$v->id}")
 
         ]);
-        dd($hhVacancies);
 
         Log::info('Data fetch took:' . (microtime(true) - $start) . 's');
         Log::info('Local vacancies: ' . $localVacancies->count());
