@@ -11,6 +11,8 @@ Route::prefix('payme')->group(function () {
     Route::post('callback', [PaymeController::class, 'handleCallback']);
 });
 
+Route::post('click/booking', [ClickController::class, 'booking']);
+
 Route::prefix('payment/click')->group(function () {
     Route::post('/prepare', [ClickController::class, 'prepare']);
     Route::post('/complete', [ClickController::class, 'complete']);

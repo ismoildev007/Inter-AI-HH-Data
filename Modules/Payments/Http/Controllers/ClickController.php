@@ -106,4 +106,38 @@ class ClickController extends Controller
 
         return $signString === $request->sign_string;
     }
+    public function booking(Request $request)
+    {
+        $user = Auth::user();
+
+        $plan = Plan::find($request->plan_id);
+        if (!$plan) {
+            return response()->json(['error' => 'Plan not found'], 404);
+        }
+
+        $transaction = Transaction::create([
+            'user_id' => $user->id,
+            'plan_id' => $plan->id,
+            'payment_method' => 'click',
+            'payment_status' => 'pending',
+            'state' => 0,
+            'amount' => $plan->price,
+            'create_time' => now(),
+        ]);
+
+        // Click checkout URL yaratamiz
+        $merchantId = env('CLICK_MERCHANT_ID');
+        $serviceId = env('CLICK_SERVICE_ID');
+        $amount = $plan->price;
+        $transactionId = $transaction->id;
+
+        $clickUrl = "https://my.click.uz/services/pay?service_id={$serviceId}&merchant_id={$merchantId}&amount={$amount}&transaction_param={$transactionId}";
+
+        return response()->json([
+            'success' => true,
+            'payment_url' => $clickUrl,
+            'transaction_id' => $transactionId,
+        ]);
+    }
+
 }
