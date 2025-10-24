@@ -19,7 +19,7 @@ class PaymeController extends Controller
     {
         $this->service = $service;
     }
-    public $KEY = 'Paycom:EWGVue0E%gi1Y6v42pAF7FY2wfWoaTx8rHMs';
+    public $KEY = 'Paycom:fepzYE6e9BSjir3Qaov6CcrrvMh#8E7aNUWZ';
 
     public function checkAuth($request)
     {
