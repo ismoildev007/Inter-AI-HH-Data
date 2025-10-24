@@ -122,7 +122,7 @@ class ClickController extends Controller
             'payment_status' => 'pending',
             'state' => 0,
             'amount' => $plan->price,
-            'create_time' => now(),
+            'create_time' => now()->timestamp,
         ]);
 
         // Click checkout URL yaratamiz
