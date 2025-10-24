@@ -80,9 +80,10 @@ class PaymeController extends Controller
             'status' => 'pending'
         ]);
 
+        $amount = $plan->price;
+
         $transaction = Transaction::create([
             'user_id' => $user->id,
-            'plan_id' => $plan->id,
             'subscription_id' => $subscription->id,
             'transaction_id' => null,
             'amount' => $plan->price,
