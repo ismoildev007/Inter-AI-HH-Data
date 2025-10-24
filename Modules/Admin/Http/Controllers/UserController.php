@@ -50,7 +50,110 @@ class UserController extends Controller
      */
     public function adminCheck()
     {
-        return view('admin::Users.admin-user-index');
+        $allUsers = User::query()
+            ->select([
+                'id',
+                'first_name',
+                'last_name',
+                'email',
+                'status',
+                'admin_check_status',
+                'created_at',
+                'updated_at',
+            ])
+            ->orderByRaw("CASE WHEN status = 'working' THEN 0 ELSE 1 END")
+            ->orderByDesc('created_at')
+            ->get();
+
+        $verifiedWorkingUsers = User::query()
+            ->select([
+                'id',
+                'first_name',
+                'last_name',
+                'email',
+                'status',
+                'admin_check_status',
+                'created_at',
+                'updated_at',
+            ])
+            ->where('status', 'working')
+            ->where('admin_check_status', true)
+            ->orderByDesc('updated_at')
+            ->orderByDesc('created_at')
+            ->get();
+
+        $stats = [
+            'total' => User::count(),
+            'working' => User::where('status', 'working')->count(),
+            'notWorking' => User::where('status', 'not working')->count(),
+            'adminChecked' => User::where('admin_check_status', true)->count(),
+        ];
+
+        return view('admin::Users.admin-user-index', [
+            'allUsers' => $allUsers,
+            'verifiedWorkingUsers' => $verifiedWorkingUsers,
+            'stats' => $stats,
+        ]);
+    }
+
+    /**
+     * Admin check detail placeholder.
+     */
+    public function adminCheckShow(User $user)
+    {
+        $data = $this->buildUserDetailContext($user->id);
+
+        return view('admin::Users.admin-user-show', $data);
+    }
+
+    /**
+     * Mark a working user as not working.
+     */
+    public function adminCheckMarkNotWorking(User $user)
+    {
+        $status = mb_strtolower((string) ($user->status ?? ''), 'UTF-8');
+
+        if ($status !== 'working') {
+            return redirect()
+                ->back()
+                ->with('error', 'Foydalanuvchi allaqachon working holatida emas.');
+        }
+
+        $user->forceFill([
+            'status' => 'not working',
+        ])->save();
+
+        return redirect()
+            ->route('admin.users.admin_check.show', $user)
+            ->with('status', 'Foydalanuvchi “not working” holatiga o‘tkazildi.');
+    }
+
+    /**
+     * Approve a working user via admin check.
+     */
+    public function adminCheckVerify(User $user)
+    {
+        $status = mb_strtolower((string) ($user->status ?? ''), 'UTF-8');
+
+        if ($status !== 'working') {
+            return redirect()
+                ->back()
+                ->with('error', 'Faqat working holatidagi foydalanuvchilarni tasdiqlash mumkin.');
+        }
+
+        if ($user->admin_check_status) {
+            return redirect()
+                ->back()
+                ->with('status', 'Bu foydalanuvchi allaqachon admin tomonidan tasdiqlangan.');
+        }
+
+        $user->forceFill([
+            'admin_check_status' => true,
+        ])->save();
+
+        return redirect()
+            ->route('admin.users.admin_check.show', $user)
+            ->with('status', 'Foydalanuvchi admin tomonidan tasdiqlandi.');
     }
 
     /**
@@ -58,11 +161,23 @@ class UserController extends Controller
      */
     public function show($id)
     {
+        $data = $this->buildUserDetailContext((int) $id);
+
+        return view('admin::Users.show', $data);
+    }
+
+    /**
+     * Build shared context for user detail pages.
+     *
+     * @return array<string, mixed>
+     */
+    private function buildUserDetailContext(int $userId): array
+    {
         $user = User::with([
             'role',
             'resumes',
             'subscriptions.plan',
-        ])->findOrFail($id);
+        ])->findOrFail($userId);
 
         $matchResultsQuery = MatchResult::query()
             ->whereNotNull('vacancy_id')
@@ -114,7 +229,7 @@ class UserController extends Controller
             'successVolume' => (clone $transactionBase)->where('payment_status', 'success')->sum('amount'),
         ];
 
-        return view('admin::Users.show', [
+        return [
             'user' => $user,
             'matchedVacancyCount' => $matchedVacancyCount,
             'recentVacancyMatches' => $recentVacancyMatches,
@@ -122,7 +237,7 @@ class UserController extends Controller
             'subscriptionStats' => $subscriptionStats,
             'recentTransactions' => $recentTransactions,
             'transactionStats' => $transactionStats,
-        ]);
+        ];
     }
 
     /**
