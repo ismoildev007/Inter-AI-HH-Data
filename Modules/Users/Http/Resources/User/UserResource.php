@@ -12,30 +12,28 @@ class UserResource extends JsonResource
     public function toArray($request): array
     {
         $hhAccount = HhAccount::where('user_id', $this->id)->first();
-        $subscription = $this->whenLoaded('subscriptions', function () {
-            return $this->subscriptions->first();
+
+        $activeSubscription = $this->whenLoaded('subscriptions', function () {
+            return $this->subscriptions
+                ->where('status', 'active')
+                ->sortByDesc('starts_at')
+                ->first();
         });
 
         return [
             'id'         => $this->id,
             'first_name' => $this->first_name,
             'last_name'  => $this->last_name,
-//            'email'      => $this->email,
             'phone'      => $this->phone,
             'is_trial_active' => (bool) $this->is_trial_active,
             'status' => $this->status,
-//            'avatar'     => $this->avatar_path,
-//            'role'       => new RoleResource($this->whenLoaded('role')),
             'resumes' => ResumeResource::collection($this->whenLoaded('resumes')),
             'settings'   => new UserSettingResource($this->whenLoaded('settings')),
             'credit'     => new UserCreditResource($this->whenLoaded('credit')),
-            'subscription' => $this->when($subscription, fn () => new UserSubscriptionResource($subscription)),
-//            'preferences'=> UserPreferenceResource::collection($this->whenLoaded('preferences')),
-//            'locations'  => UserLocationResource::collection($this->whenLoaded('locations')),
-//            'job_types'  => UserJobTypeResource::collection($this->whenLoaded('jobTypes')),
-//            'profile_views' => UserProfileViewResource::collection($this->whenLoaded('profileViews')),
+            'subscription' => $this->when($activeSubscription, fn () => new UserSubscriptionResource($activeSubscription)),
             'created_at' => $this->created_at,
             'hh_account_status' => $hhAccount ? true : false,
         ];
     }
 }
+

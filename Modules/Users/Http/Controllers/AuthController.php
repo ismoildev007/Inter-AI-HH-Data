@@ -124,13 +124,8 @@ class AuthController extends Controller
 
         $user->load([
             'resumes',
-            //            'role',
             'settings',
             'credit',
-            'preferences.industry',
-            'locations.area',
-            'jobTypes',
-            'profileViews.employer',
             'subscriptions' => function ($query) {
                 $query->orderByDesc('starts_at')
                     ->orderByDesc('created_at');
