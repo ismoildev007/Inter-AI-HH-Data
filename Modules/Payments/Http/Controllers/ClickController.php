@@ -117,26 +117,44 @@ class ClickController extends Controller
 
     private function checkSignature(Request $request)
     {
+        $clickTransId = $request->click_trans_id;
+        $serviceId = $request->service_id;
+        $secretKey = env('CLICK_SECRET_KEY');
+        $merchantTransId = $request->merchant_trans_id;
+        $amount = $request->amount;
+        $action = $request->action;
+        $signTime = $request->sign_time;
+
         $expectedSign = md5(
-            $request->click_trans_id .
-            $request->service_id .
-            env('CLICK_SECRET_KEY') .
-            $request->merchant_trans_id .
-            $request->amount .
-            $request->action .
-            $request->sign_time
+            $clickTransId .
+            $serviceId .
+            $secretKey .
+            $merchantTransId .
+            $amount .
+            $action .
+            $signTime
         );
 
         $isValid = $expectedSign === $request->sign_string;
 
         if (!$isValid) {
-            Log::error('Signature mismatch', [
+            Log::error('❌ Signature mismatch', [
                 'expected' => $expectedSign,
                 'received' => $request->sign_string,
-                'click_trans_id' => $request->click_trans_id,
+                'data' => [
+                    'click_trans_id' => $clickTransId,
+                    'service_id' => $serviceId,
+                    'merchant_trans_id' => $merchantTransId,
+                    'amount' => $amount,
+                    'action' => $action,
+                    'sign_time' => $signTime,
+                    'secret' => $secretKey
+                ]
             ]);
         } else {
-            Log::info('Signature verified successfully');
+            Log::info('✅ Signature verified successfully', [
+                'sign_string' => $expectedSign
+            ]);
         }
 
         return $isValid;
