@@ -3,8 +3,9 @@
 namespace Modules\Interviews\Http\Controllers;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use App\Models\Interview;
+use App\Models\Vacancy;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class InterviewsController extends Controller
@@ -27,15 +28,16 @@ class InterviewsController extends Controller
         $data = $interviews->getCollection()->map(function (Interview $i) {
             $preview = $i->preparations()->limit(4)->pluck('question')->all();
             $total = $i->preparations()->count();
-            $vacancy = optional($i->application->vacancy);
+            $vacancy = $i->application->vacancy;
+
             return [
                 'id' => $i->id,
                 'status' => $i->status,
                 'created_at' => $i->created_at,
                 'vacancy' => [
-                    'id' => $i->application->vacancy_id ?? null,
-                    'title' => $vacancy->title ?? null,
-                    'company' => $vacancy->company ?? null,
+                    'id' => $vacancy?->id ?? $i->application->vacancy_id ?? null,
+                    'title' => $vacancy?->title,
+                    'company' => $this->resolveVacancyCompany($vacancy),
                 ],
                 'questions_preview' => $preview,
                 'total_questions' => $total,
@@ -74,7 +76,7 @@ class InterviewsController extends Controller
             ->with(['application.vacancy', 'preparations'])
             ->firstOrFail();
 
-        $vacancy = optional($i->application->vacancy);
+        $vacancy = $i->application->vacancy;
         $questions = $i->preparations->pluck('question')->values()->all();
 
         return response()->json([
@@ -84,9 +86,9 @@ class InterviewsController extends Controller
                 'status' => $i->status,
                 'created_at' => $i->created_at,
                 'vacancy' => [
-                    'id' => $i->application->vacancy_id ?? null,
-                    'title' => $vacancy->title ?? null,
-                    'company' => $vacancy->company ?? null,
+                    'id' => $vacancy?->id ?? $i->application->vacancy_id ?? null,
+                    'title' => $vacancy?->title,
+                    'company' => $this->resolveVacancyCompany($vacancy),
                 ],
                 'questions' => $questions,
             ],
@@ -107,4 +109,26 @@ class InterviewsController extends Controller
      * Remove the specified resource from storage.
      */
     public function destroy($id) { abort(404); }
+
+    /**
+     * Extract company name from vacancy using stored data.
+     */
+    protected function resolveVacancyCompany(?Vacancy $vacancy): ?string
+    {
+        if (!$vacancy) {
+            return null;
+        }
+
+        if (!empty($vacancy->company)) {
+            return $vacancy->company;
+        }
+
+        if (empty($vacancy->raw_data)) {
+            return null;
+        }
+
+        $raw = json_decode($vacancy->raw_data, true);
+
+        return is_array($raw) ? data_get($raw, 'employer.name') : null;
+    }
 }
