@@ -111,7 +111,7 @@ class ResumeService
 
               5. Additional strict rules for skills and title:
                 - When extracting "skills", include only concrete, tool-based or technique-based abilities (e.g., “Google Ads”, “Figma”, “Laravel”, “Copywriting”, “Data Analysis”, “CRM Systems”, "Marketing", "Sales", "HR", ...).
-                - Do NOT treat general roles or high-level terms like “Backend Developer”, “Frontend Developer”, “Fullstack Developer”, "MySQL", “CI/CD”, “API”, “Management”, "PR", “Recruitment” as skills.
+                - Do NOT treat general roles or high-level terms like “Backend Developer”, “Frontend Developer”, “Fullstack Developer”, “Management”, "PR", “Recruitment”, "MySQL”, “CI/CD”, “API”, ... as skills.
                 - In the "title" field, always include at least **two distinct, relevant skills or tools** together with the professional role (for example: “Digital Marketing Specialist Google Ads SEO”, “UI/UX Designer Figma Adobe XD”, “Python Django Backend Developer”).
 
               6. Each title should be clear, 5–8 words long, and separated by semicolons (;).
