@@ -108,20 +108,20 @@ class ResumeService
                    ✅ “Project Manager, Agile, Jira”
                    ✅ “UI/UX Designer, Figma, Adobe XD”
 
-              5. Each title should be clear, 5–8 words long, and separated by semicolons (;).
 
-              6. Do NOT include parentheses, slashes, or explanations.
-                 Use plain text only.
-
-              7. Prioritize:
-                 - The most recent and most emphasized roles;
-                 - The most specific and professional technology-related combinations.
-
-
-              8. ⚙️ Additional strict rules for skills and title:
+              5. Additional strict rules for skills and title:
                 - When extracting "skills", include only concrete, tool-based or technique-based abilities (e.g., “Google Ads”, “Figma”, “Laravel”, “Copywriting”, “Data Analysis”, “CRM Systems”, "Marketing", "Sales", "HR", ...).
                 - Do NOT treat general roles or high-level terms like “Backend Developer”, “Frontend Developer”, “Fullstack Developer”, “CI/CD”, “API”, “MySQL”, “Management”, “Recruitment” as skills.
                 - In the "title" field, always include at least **two distinct, relevant skills or tools** together with the professional role (for example: “Digital Marketing Specialist Google Ads SEO”, “UI/UX Designer Figma Adobe XD”, “Python Django Backend Developer”).
+
+              6. Each title should be clear, 5–8 words long, and separated by semicolons (;).
+
+              7. Do NOT include parentheses, slashes, or explanations.
+                 Use plain text only.
+
+              8. Prioritize:
+                 - The most recent and most emphasized roles;
+                 - The most specific and professional technology-related combinations.
 
             ---
 
