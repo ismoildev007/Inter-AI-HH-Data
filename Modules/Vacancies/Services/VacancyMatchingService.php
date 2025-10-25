@@ -93,14 +93,6 @@ class VacancyMatchingService
                         OR description ILIKE '%{$cyrilQuery}%'
                     ")
                 ->select('id', 'title', 'description', 'source', 'external_id')
-//                ->whereRaw("
-//                        (
-//                            title ILIKE ANY (ARRAY['%" . implode("%','%", $multiWords) . "%'])
-//                        )
-//                        OR title ILIKE '%{$latinQuery}%'
-//                        OR title ILIKE '%{$cyrilQuery}%'
-//                    ")
-                ->select('id', 'title', 'source', 'external_id')
                 ->limit(100)
                 ->orderByDesc('id')
                 ->get()
