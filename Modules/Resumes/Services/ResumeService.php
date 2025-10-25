@@ -77,39 +77,36 @@ class ResumeService
     {
         $prompt = <<<PROMPT
             You are an expert HR assistant AI specialized in resume analysis and role classification.
+
             Analyze the following resume text and return a strictly valid JSON object with the following fields only:
 
-            - "skills": A list of unique, relevant hard and soft skills (no duplicates, no generic or irrelevant ones like "API", "Git", "HTML", "CSS", "Communication", "CI/CD", "MySQL", "Front-end Development", "Back-end Development", "Marketing", "Sales", "Management", "HR", "Recruiting").
-              ❗Skills must represent **concrete abilities or tools** (e.g., “Google Ads”, “Figma”, “Laravel”, “Copywriting”, “Data Analysis”, “CRM Systems”), not just general roles or domains.
-
+            - "skills": A list of unique, relevant hard and soft skills (no duplicates, no generic or irrelevant ones like "API", "Git", "HTML", "CSS", "Communication").
             - "strengths": 3–5 short bullet points describing the candidate’s main professional strengths.
-
             - "weaknesses": 2–4 short bullet points describing areas that might need improvement.
-
             - "keywords": A list of important technologies, tools, or domain-specific terms mentioned in the resume (for matching/search).
-
             - "domains": 3–5 broad professional spheres that best summarize the candidate’s main experience areas.
-              Each domain must represent a meaningful career direction or functional field (e.g., “Web Development”, “Backend Engineering”, “Digital Marketing”, “UI/UX Design”, “Product Management”, “HR & Recruiting”, “Sales & Business Development”).
-
-              ❌ Do not include individual tools, libraries, or frameworks (e.g., “API”, “Git”, “CI/CD”, “Laravel”, “Photoshop”, “CRM” are NOT domains).
+              Each domain must represent a meaningful career direction or functional field (e.g., “Web Development”, “Backend Engineering”, “DevOps”, “Digital Marketing”, “UI/UX Design”, “HR & Recruiting”, “Product Management”).
+              ❌ Do not include individual tools, libraries, or frameworks (e.g., “API”, “Git”, “CI/CD”, “Laravel” are NOT domains).
               ✅ Think conceptually — group related skills logically into professional spheres.
-
             - "language": Detect the main language of the resume text (e.g., "en", "ru", "uz").
 
             - "title": Identify up to three (maximum 3) of the most specific and relevant professional titles that accurately reflect the candidate’s main roles and technologies.
 
               ### Strict rules for title generation:
-              1. Every title must include at least **two** of the candidate’s main technologies, tools, or focus areas next to the role.
-                 ✅ Correct: “PHP Laravel Backend Developer”, “React TypeScript Frontend Engineer”, “Digital Marketing Specialist Google Ads SEO”, “Project Manager Agile Jira”.
-                 ❌ Forbidden: “Backend Developer”, “Frontend Developer”, “Marketing Specialist”.
+              1. Every title must include at least one core technology, programming language, or framework next to the role.
+                 ✅ Correct: “PHP Backend Developer”, “React Frontend Developer”, “Python Fullstack Developer”, “Java Spring Engineer”, “Django Backend Developer”
+                 ❌ Forbidden: “Backend Developer”, “Frontend Developer”, “Fullstack Developer”
 
-              2. If multiple related roles exist (e.g., Backend + Frontend), choose the most comprehensive (e.g., “Fullstack”).
+              2. If multiple related roles exist (e.g., Backend + Frontend), choose only the most comprehensive (e.g., “Fullstack”).
 
               3. Avoid repetition — no duplicate technologies or overlapping roles.
 
-              4. For non-programming roles (e.g., marketing, design, HR, management):
+              4. For non-programming roles (e.g., management, marketing, design, HR):
                  - Keep the title focused and professional.
-                 - Always include at least two concrete focus tools or skills (e.g., “SEO”, “Google Ads”, “Brand Strategy”, “UI Design”, “Figma”, “Recruitment Strategy”, “CRM Systems”).
+                 - Add 2–3 unique focus areas or tools if relevant.
+                   ✅ “Digital Marketing Specialist, SEO, Google Ads”
+                   ✅ “Project Manager, Agile, Jira”
+                   ✅ “UI/UX Designer, Figma, Adobe XD”
 
               5. Each title should be clear, 5–8 words long, and separated by semicolons (;).
 
@@ -128,9 +125,7 @@ class ResumeService
             "teamwork", "communication", "responsibility", "adaptability",
             "time management", "problem solving", "english", "russian", "uzbek",
             "creative thinking", "presentation", "leadership", "self-motivation",
-            "computer literacy", "networking", "api integration",
-            "back-end developer", "front-end developer", "fullstack developer",
-            "marketing", "sales", "management", "human resources", "recruitment", "ci/cd", "mysql"
+            "computer literacy", "networking", "api integration"
 
             ---
 
@@ -138,7 +133,7 @@ class ResumeService
             - PHP, Laravel, MySQL → “Web Development”, “Backend Engineering”
             - React, Vue.js, TypeScript → “Frontend Development”, “Web Development”
             - Node.js, Express, MongoDB → “Backend Engineering”, “Fullstack Development”
-            - Docker, AWS → “DevOps”, “Cloud Infrastructure”
+            - Docker, AWS, CI/CD → “DevOps”, “Cloud Infrastructure”
             - Flutter, Kotlin, Swift → “Mobile App Development”
             - Figma, UX Research → “UI/UX Design”
             - SEO, Google Ads, SMM → “Digital Marketing”
@@ -148,12 +143,11 @@ class ResumeService
             ---
 
             ### 🧩 Example Output:
-            Input:
-            "PHP, Laravel, Vue.js, MySQL, Docker, AWS, Git, REST API"
 
-            Output:
+            Input:
+            "PHP, Laravel, Vue.js, MySQL, Docker, AWS, Git, REST API"Output:
             {
-              "skills": ["PHP", "Laravel", "Vue.js", "Docker", "AWS"],
+              "skills": ["PHP", "Laravel", "Vue.js", "MySQL", "Docker", "AWS"],
               "strengths": [
                 "Strong experience in fullstack web development",
                 "Deep knowledge of PHP and Laravel frameworks",
@@ -163,10 +157,10 @@ class ResumeService
                 "Needs more experience with automated testing",
                 "Limited exposure to TypeScript frameworks"
               ],
-              "keywords": ["PHP", "Laravel", "Vue.js", "Docker", "AWS"],
+              "keywords": ["PHP", "Laravel", "Vue.js", "MySQL", "Docker", "AWS"],
               "domains": ["Fullstack Web Development", "Backend Engineering", "DevOps & Cloud Infrastructure"],
               "language": "en",
-              "title": "Fullstack Laravel Developer PHP Vue.js",
+              "title": "Fullstack Laravel Developer, PHP, Laravel, Vue.js",
               "cover_letter": "Уважаемый рекрутер, я являюсь опытным разработчиком с глубокими знаниями в PHP и Laravel, а также уверенными навыками работы с Vue.js. ..."
             }
 
@@ -180,8 +174,8 @@ class ResumeService
             Do not include any extra explanations, comments, or markdown formatting.
 
             Resume text:
-            " . ($resume->parsed_text ?? $resume->description) . "
 
+            " . ($resume->parsed_text ?? $resume->description) . "
             PROMPT;
 
         $response = Http::withToken(env('OPENAI_API_KEY'))
