@@ -87,35 +87,94 @@ class ResumeService
             - "title": Identify up to **three (maximum 3)** of the most specific and relevant professional titles that accurately represent the candidate’s main expertise and experience.
 
             ### Title generation rules:
-            • If the resume includes technologies or frameworks (e.g., PHP, Laravel, Vue.js, Node.js, React), the title **must** include at least one of them directly next to the main role.
-              Example: “Fullstack Laravel Developer, PHP, Laravel, Vue.js”
+            • You are the system that generates one or more professional candidate titles based on the resume text.
+                Follow these strict rules:
 
-            • If “Fullstack”, “Backend”, or “Frontend” appears alone, always attach the **most relevant technology** from the candidate’s listed skills (e.g., “Fullstack Laravel Developer”, not “Fullstack Developer”).
-              Then, optionally add additional skills separated by commas.
+                1. 🎯 The main goal is to create a specific, clear, and standardized title that reflects the candidate's key role and technologies.
 
-            • Do **not** repeat the same technologies or frameworks across multiple titles.
-              If a technology is already represented in a previous title, skip it in subsequent titles.
-
-            • If the candidate’s profile fits a “Fullstack” description, do **not** output additional “Backend” or “Frontend” titles — “Fullstack” already represents both.
-              Example: “Fullstack Laravel Developer, PHP, Laravel, Vue.js”
-              ❌ Do not output: “Backend Developer” or “Frontend Developer” again.
-
-            • Titles like “Backend Developer”, “Frontend Developer”, or “Fullstack Developer” **must never appear alone**.
-
-            • For managerial or marketing roles (e.g., “Project Manager”, “Marketing Specialist”, “Product Manager”):
-              - Treat them as **a single domain title**.
-              - You may extend them by adding related focus areas or skills separated by commas.
+                2. 🧩 If your resume mentions technologies or frameworks (e.g., PHP, Laravel, Vue.js, React, Node.js, Django, .NET, Flutter, Spring Boot, Angular, etc.),
+                include at least one of them next to the primary role.
                 Example:
-                  - “IT Project Manager, Agile, Jira”
-                  - “Digital Marketing Specialist, SEO, Analytics, Google Ads”
+                ✅ "Fullstack Laravel Developer, PHP, Laravel, Vue.js"
+                ❌ "Fullstack Developer"
 
-            • Titles should be **5–7 words long**, concise, and formatted in a consistent way.
-            • Titles must be distinct, normalized, and non-repetitive.
-            • ⚠️ If there are multiple titles, **separate each complete title with a semicolon (;)** — not a comma — because commas are used inside each title for listing skills.
-              Example of correct output:
-              - "Fullstack Laravel Developer, PHP, Laravel, Vue.js; UI/UX Designer, Figma, Adobe XD"
+                3. ⚙️ Never include generic, non-unique technologies such as:
+                HTML, CSS, JavaScript (unless a framework is specified), API, Git, REST, JSON, OOP, Agile, SCRUM, Office, Windows, Linux, MS Excel, Communication skills, Teamwork, etc.
 
-            • Always prioritize the most recent and emphasized experience.
+                They are considered basic and don't add value.
+
+                4. 💡 If "Fullstack," "Backend," or "Frontend" are specified:
+                - Add the most relevant technology from the key skills;
+                - Don't duplicate "Backend Developer" and "Frontend Developer" if there is already a "Fullstack Developer."
+
+                Example:
+                ✅ "Fullstack Laravel Developer, PHP, Vue.js"
+                ❌ "Backend Developer, Laravel; Frontend Developer, Vue.js"
+
+                5. 📊 For executives, managers, marketers, and analysts:
+                - Keep the role as the main part of the title;
+                - Add specific areas or tools.
+                Examples:
+
+                "IT Project Manager, Agile, Jira"
+
+                "Digital Marketing Specialist, SEO, Google Ads"
+
+                "Product Manager, B2B SaaS, Customer Research"
+
+                "HR Manager, Recruiting, Onboarding"
+
+                6. 🔁 Don't repeat technologies in multiple titles.
+                If "Laravel" already appears in one, don't add it again in the candidate's other titles.
+
+                7. 📚 If your profile covers several different areas (e.g., "development" and "design"),
+                create multiple headings separated by semicolons.
+
+                Example:
+                ✅ "Fullstack Laravel Developer, PHP, Laravel, Vue.js; UI/UX Designer, Figma, Adobe XD"
+
+                8. 🚫 Avoid overly general headings:
+                ❌ "Software Developer," "Engineer," "Specialist" — these words are acceptable only when combined with specifics.
+                ✅ "Software Engineer, Python, Django"
+
+                9. 🧠 Priority is always given to the most recent, most specialized experience on your resume (e.g., your last 1-2 jobs).
+
+                10. 📏 Output format:
+                - One or more headings separated by semicolons;
+                - Each heading must be without a period at the end or extra spaces;
+
+                ---
+
+                🔹 Examples of correct answers:
+
+                Input:
+                The resume contains "Laravel, PHP, Vue.js, MySQL, Git, REST API."
+
+                Output:
+                ✅ "Fullstack Laravel Developer, PHP, Laravel, Vue.js"
+
+                Input:
+
+                "Python, Django, FastAPI, PostgreSQL, Docker."
+
+                Output:
+                ✅ "Backend Django Developer, Python, Django, FastAPI"
+
+                Input:
+                "React, TypeScript, Redux, Node.js."
+                Output:
+                ✅ "Fullstack React Developer, React, Node.js"
+
+                Input:
+                "Marketing, SEO, Google Analytics, contextual advertising."
+                Conclusion:
+                ✅ "Digital Marketing Specialist, SEO, Google Ads, Analytics"
+
+                ---
+
+                If a technology or framework is mentioned but is insignificant (e.g., 1 month of experience), ignore it.
+
+                Only display the best and most unique titles.
 
             - "cover_letter": Write a short, professional cover letter (5–7 sentences) focusing on three key strengths that best suit the candidate above.
               Be polite, confident, concise, and literate.
