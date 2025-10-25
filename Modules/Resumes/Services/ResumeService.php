@@ -76,112 +76,107 @@ class ResumeService
     public function analyze(Resume $resume): void
     {
         $prompt = <<<PROMPT
-            You are an expert HR assistant AI.
+            You are an expert HR assistant AI specialized in resume analysis and role classification.
 
-            Analyze the following resume text and return a structured JSON with the following fields only:
+            Analyze the following resume text and return a strictly valid JSON object with the following fields only:
 
-            - "skills": A list of unique, relevant hard and soft skills, excluding generic or redundant ones.
-            - "strengths": 3–5 short bullet points describing the candidate’s main strengths.
+            - "skills": A list of unique, relevant hard and soft skills (no duplicates, no generic or irrelevant ones like "API", "Git", "HTML", "CSS", "Communication").
+            - "strengths": 3–5 short bullet points describing the candidate’s main professional strengths.
             - "weaknesses": 2–4 short bullet points describing areas that might need improvement.
-            - "keywords": A list of important and specific keywords or technologies mentioned in the resume (useful for search/matching).
-            - "domains": A list of 3–5 main professional spheres that summarize the candidate’s expertise and focus.
-              Each domain must represent a meaningful professional field, not a single tool or skill.
+            - "keywords": A list of important technologies, tools, or domain-specific terms mentioned in the resume (for matching/search).
+            - "domains": 3–5 broad professional spheres that best summarize the candidate’s main experience areas.
+              Each domain must represent a meaningful career direction or functional field (e.g., “Web Development”, “Backend Engineering”, “DevOps”, “Digital Marketing”, “UI/UX Design”, “HR & Recruiting”, “Product Management”).
+              ❌ Do not include individual tools, libraries, or frameworks (e.g., “API”, “Git”, “CI/CD”, “Laravel” are NOT domains).
+              ✅ Think conceptually — group related skills logically into professional spheres.
             - "language": Detect the main language of the resume text (e.g., "en", "ru", "uz").
-            - "title": Identify up to three (maximum 3) of the most specific and relevant professional titles that accurately represent the candidate’s main expertise and experience.
-            - "cover_letter": Write a short, professional cover letter (5–7 sentences) focusing on three key strengths that best suit the candidate above.
-              Be polite, confident, concise, and literate.
-              Always include the candidate's real name at the end, in a new paragraph, with the caption "Sincerely" and their name.
-              The letter must be written in Russian.
+
+            - "title": Identify up to three (maximum 3) of the most specific and relevant professional titles that accurately reflect the candidate’s main roles and technologies.
+
+              ### Strict rules for title generation:
+              1. Every title must include at least one core technology, programming language, or framework next to the role.
+                 ✅ Correct: “PHP Backend Developer”, “React Frontend Developer”, “Python Fullstack Developer”, “Java Spring Engineer”, “Django Backend Developer”
+                 ❌ Forbidden: “Backend Developer”, “Frontend Developer”, “Fullstack Developer”
+
+              2. If multiple related roles exist (e.g., Backend + Frontend), choose only the most comprehensive (e.g., “Fullstack”).
+
+              3. Avoid repetition — no duplicate technologies or overlapping roles.
+
+              4. For non-programming roles (e.g., management, marketing, design, HR):
+                 - Keep the title focused and professional.
+                 - Add 2–3 unique focus areas or tools if relevant.
+                   ✅ “Digital Marketing Specialist, SEO, Google Ads”
+                   ✅ “Project Manager, Agile, Jira”
+                   ✅ “UI/UX Designer, Figma, Adobe XD”
+
+              5. Each title should be clear, 5–8 words long, and separated by semicolons (;).
+
+              6. Do NOT include parentheses, slashes, or explanations.
+                 Use plain text only.
+
+              7. Prioritize:
+                 - The most recent and most emphasized roles;
+                 - The most specific and professional technology-related combinations.
 
             ---
 
-            ### ⚠️ Exclude these generic or irrelevant skills from ALL lists ("skills", "keywords", "titles", "domains"):
-            "api", "rest api", "graphql", "git", "json", "xml", "html", "css", "javascript" (if no framework),
-            "scrum", "agile", "kanban", "office", "microsoft office", "excel", "word", "powerpoint",
-            "teamwork", "communication", "leadership", "responsibility", "adaptability", "fast learner",
-            "time management", "presentation skills", "english", "russian", "uzbek",
-            "problem solving", "analytical thinking", "self-motivation", "creativity", "stress resistance",
-            "computer literacy", "api integration", "networking", "office management"
+            ### 🚫 Always ignore and exclude the following when generating "skills", "titles", "domains" or "keywords":
+            "api", "rest api", "graphql", "git", "json", "xml", "html", "css",
+            "scrum", "agile", "kanban", "office", "microsoft office", "excel", "word",
+            "teamwork", "communication", "responsibility", "adaptability",
+            "time management", "problem solving", "english", "russian", "uzbek",
+            "creative thinking", "presentation", "leadership", "self-motivation",
+            "computer literacy", "networking", "api integration"
 
             ---
 
-            ### 🧩 Title generation rules (STRICT):
-
-            1. Titles must be clean, specific, and technology-based, not generic.
-               - Always include at least one key technology or framework next to the role.
-               - Never output “Backend Developer”, “Frontend Developer”, or “Fullstack Developer” alone.
-
-            2. If multiple related roles exist (e.g., Backend + Frontend), choose only the most comprehensive one (Fullstack).
-
-            3. Do not repeat technologies or role concepts across titles.
-
-            4. For non-technical roles (e.g., Project Manager, Marketing Specialist, HR Manager):
-               - Use one focused title and add 2–3 unique tools or focus areas.
-               - Examples:
-                 ✅ “Project Manager, Agile, Jira”
-                 ✅ “Digital Marketing Specialist, SEO, Google Ads”
-                 ✅ “Product Manager, B2B SaaS, Customer Research”
-
-            5. Each title should be unique, 5–7 words long, formatted clearly.
-               - If multiple titles exist, separate them with semicolons (;).
-               - Inside each title, separate technologies or tools with commas.
-
-            6. Prioritize:
-               - The most recent and relevant experience;
-               - The most specific and professional title;
-               - No duplicates, no overlapping meanings.
+            ### 🧠 Domain generation examples:
+            - PHP, Laravel, MySQL → “Web Development”, “Backend Engineering”
+            - React, Vue.js, TypeScript → “Frontend Development”, “Web Development”
+            - Node.js, Express, MongoDB → “Backend Engineering”, “Fullstack Development”
+            - Docker, AWS, CI/CD → “DevOps”, “Cloud Infrastructure”
+            - Flutter, Kotlin, Swift → “Mobile App Development”
+            - Figma, UX Research → “UI/UX Design”
+            - SEO, Google Ads, SMM → “Digital Marketing”
+            - Recruiting, HR Strategy → “HR & Talent Management”
+            - Excel, Power BI, SQL → “Data Analytics”, “Business Intelligence”
 
             ---
 
-            ### 🧠 Domain generation logic:
-            When generating "domains":
-            - Group the candidate’s skills and experience into broad, meaningful categories.
-            - Always output 3–5 key domains (not less than 3 unless the resume is very short).
-            - Avoid naming tools or languages — focus on professional areas.
-            - Examples of correct mapping:
-              - PHP, Laravel, MySQL → “Web Development”, “Backend Engineering”
-              - React, Vue.js → “Frontend Development”, “Web Development”
-              - Docker, CI/CD, AWS → “DevOps”, “Cloud Infrastructure”
-              - Figma, UX Research → “UI/UX Design”
-              - SEO, Google Ads, Analytics → “Digital Marketing”
-              - Recruiting, Onboarding, HR Strategy → “HR & Talent Management”
-              - Flutter, Swift, Kotlin → “Mobile App Development”
-              - Excel, Power BI → “Data Analytics”, “Business Intelligence”
-
-            ---
-
-            ### 🧠 Correct Output Example
+            ### 🧩 Example Output:
 
             Input:
-            “PHP, Laravel, Vue.js, MySQL, REST API, Git, Docker, AWS”
-            Output:
+            "PHP, Laravel, Vue.js, MySQL, Docker, AWS, Git, REST API"Output:
             {
               "skills": ["PHP", "Laravel", "Vue.js", "MySQL", "Docker", "AWS"],
               "strengths": [
-                "Strong expertise in fullstack web development",
-                "Experienced with Laravel and Vue.js integration",
-                "Proficient in server-side architecture and deployment"
+                "Strong experience in fullstack web development",
+                "Deep knowledge of PHP and Laravel frameworks",
+                "Proficient in frontend integration with Vue.js"
               ],
               "weaknesses": [
-                "Limited exposure to frontend testing frameworks",
-                "Needs deeper experience with microservices"
+                "Needs more experience with automated testing",
+                "Limited exposure to TypeScript frameworks"
               ],
               "keywords": ["PHP", "Laravel", "Vue.js", "MySQL", "Docker", "AWS"],
               "domains": ["Fullstack Web Development", "Backend Engineering", "DevOps & Cloud Infrastructure"],
               "language": "en",
               "title": "Fullstack Laravel Developer, PHP, Laravel, Vue.js",
-              "cover_letter": "Уважаемый рекрутер, я являюсь опытным разработчиком, специализирующимся на Laravel и Vue.js. ... \n\nSincerely,\nИмя Кандидата"
+              "cover_letter": "Уважаемый рекрутер, я являюсь опытным разработчиком с глубокими знаниями в PHP и Laravel, а также уверенными навыками работы с Vue.js. ..."
             }
 
             ---
 
-            Return only valid JSON — no extra comments, explanations, or markdown.
+            ### 📨 Cover Letter:
+            Write a short, professional cover letter (5–7 sentences) in Russian, highlighting three key strengths that best match the candidate above.
+            End with “Sincerely,” and the candidate’s name in a new paragraph.
+
+            Return only valid JSON.
+            Do not include any extra explanations, comments, or markdown formatting.
 
             Resume text:
 
             " . ($resume->parsed_text ?? $resume->description) . "
             PROMPT;
-
 
         $response = Http::withToken(env('OPENAI_API_KEY'))
             ->post('https://api.openai.com/v1/chat/completions', [
