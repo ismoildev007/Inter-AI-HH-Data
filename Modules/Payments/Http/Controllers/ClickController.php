@@ -57,70 +57,79 @@ class ClickController extends Controller
         ]);
     }
 
-
-
     public function complete(Request $request)
     {
         Log::info('CLICK COMPLETE: started', $request->all());
 
-        if (!$this->checkSignature($request)) {
-            Log::warning('Invalid signature in complete', $request->all());
-            return response()->json(['error' => -1, 'error_note' => 'Invalid signature']);
-        }
+        try {
+            if (!$this->checkSignature($request)) {
+                Log::warning('Invalid signature in complete', $request->all());
+                return response()->json(['error' => -1, 'error_note' => 'Invalid signature']);
+            }
 
-        $transaction = Transaction::find($request->merchant_prepare_id);
-        if (!$transaction) {
-            Log::error('Transaction not found', ['merchant_prepare_id' => $request->merchant_prepare_id]);
-            return response()->json(['error' => -5, 'error_note' => 'Transaction not found']);
-        }
+            $transaction = Transaction::find($request->merchant_prepare_id);
+            if (!$transaction) {
+                Log::error('Transaction not found', ['merchant_prepare_id' => $request->merchant_prepare_id]);
+                return response()->json(['error' => -5, 'error_note' => 'Transaction not found']);
+            }
 
-        $plan = Plan::find($transaction->plan_id);
-        if (!$plan) {
-            Log::error('Plan not found', ['plan_id' => $transaction->plan_id]);
-            return response()->json(['error' => -5, 'error_note' => 'Plan not found']);
-        }
+            $plan = Plan::find($transaction->plan_id);
+            if (!$plan) {
+                Log::error('Plan not found', ['plan_id' => $transaction->plan_id]);
+                return response()->json(['error' => -5, 'error_note' => 'Plan not found']);
+            }
 
-        $transaction->update([
-            'payment_status' => 'completed',
-            'state' => 2,
-            'perform_time' => now(),
-        ]);
-        Log::info('Transaction completed', ['transaction_id' => $transaction->id]);
-
-        $subscription = Subscription::find($transaction->subscription_id);
-
-        if ($subscription) {
-            $subscription->update([
-                'starts_at' => now(),
-                'ends_at' => now()->addDays(30),
-                'status' => 'active',
+            $transaction->update([
+                'payment_status' => 'completed',
+                'state' => 2,
+                'perform_time' => now(),
             ]);
-            Log::info('Subscription updated to active', ['subscription_id' => $subscription->id]);
-        } else {
-            $subscription = Subscription::create([
-                'user_id' => $transaction->user_id,
-                'plan_id' => $plan->id,
-                'starts_at' => now(),
-                'ends_at' => now()->addDays(30),
-                'remaining_auto_responses' => $plan->auto_response_limit,
-                'status' => 'active',
+            Log::info('Transaction completed', ['transaction_id' => $transaction->id]);
+
+            $subscription = Subscription::find($transaction->subscription_id);
+
+            if ($subscription) {
+                $subscription->update([
+                    'starts_at' => now(),
+                    'ends_at' => now()->addDays(30),
+                    'status' => 'active',
+                ]);
+                Log::info('Subscription updated to active', ['subscription_id' => $subscription->id]);
+            } else {
+                $subscription = Subscription::create([
+                    'user_id' => $transaction->user_id,
+                    'plan_id' => $plan->id,
+                    'starts_at' => now(),
+                    'ends_at' => now()->addDays(30),
+                    'remaining_auto_responses' => $plan->auto_response_limit ?? 0,
+                    'status' => 'active',
+                ]);
+                $transaction->update(['subscription_id' => $subscription->id]);
+                Log::warning('New subscription created because none found', ['subscription_id' => $subscription->id]);
+            }
+
+            Log::info('CLICK COMPLETE: finished successfully', [
+                'transaction_id' => $transaction->id,
+                'subscription_id' => $subscription->id
             ]);
-            $transaction->update(['subscription_id' => $subscription->id]);
-            Log::warning('New subscription created because none found', ['subscription_id' => $subscription->id]);
+
+            return response()->json([
+                'click_trans_id' => $request->click_trans_id,
+                'merchant_trans_id' => $transaction->id,
+                'merchant_confirm_id' => $transaction->id,
+                'error' => 0,
+                'error_note' => 'Success', // <-- faqat shu kerak!
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('💥 CLICK COMPLETE ERROR', ['message' => $e->getMessage()]);
+            return response()->json([
+                'click_trans_id' => $request->click_trans_id,
+                'merchant_trans_id' => $request->merchant_trans_id,
+                'merchant_confirm_id' => $request->merchant_prepare_id,
+                'error' => -9,
+                'error_note' => 'Internal server error',
+            ]);
         }
-
-        Log::info('CLICK COMPLETE: finished successfully', [
-            'transaction_id' => $transaction->id,
-            'subscription_id' => $subscription->id
-        ]);
-
-        return response()->json([
-            'click_trans_id' => $request->click_trans_id,
-            'merchant_trans_id' => $transaction->id,
-            'merchant_confirm_id' => $transaction->id,
-            'error' => 0,
-            'error_note' => 'Payment completed successfully',
-        ]);
     }
 
 
