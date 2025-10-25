@@ -95,7 +95,7 @@ class ResumeService
               ### Strict rules for title generation:
               1. Every title must include at least one core technology, programming language, or framework next to the role.
                  ✅ Correct: “PHP Backend Developer”, “React Frontend Developer”, “Python Fullstack Developer”, “Java Spring Engineer”, “Django Backend Developer”
-                 ❌ Forbidden: “Backend Developer”, “Frontend Developer”, “Fullstack Developer”
+                 ❌ Forbidden: “Backend Developer”, “Frontend Developer”, “Fullstack Developer”, "PR"
 
               2. If multiple related roles exist (e.g., Backend + Frontend), choose only the most comprehensive (e.g., “Fullstack”).
 
@@ -112,7 +112,7 @@ class ResumeService
               5. Additional strict rules for skills and title:
                 - When extracting "skills", include only concrete, tool-based or technique-based abilities (e.g., “Google Ads”, “Figma”, “Laravel”, “Copywriting”, “Data Analysis”, “CRM Systems”, "Marketing", "Sales", "HR", ...).
                 - Do NOT treat general roles or high-level terms like “Backend Developer”, “Frontend Developer”, “Fullstack Developer”, “Management”, "PR", “Recruitment”, "MySQL”, “CI/CD”, “API”, ... as skills.
-                - In the "title" field, always include at least **two distinct, relevant skills or tools** together with the professional role (for example: “Digital Marketing Specialist Google Ads SEO”, “UI/UX Designer Figma Adobe XD”, “Python Django Backend Developer”).
+                - In the "title" field, always include at least **three distinct, relevant skills or tools** together with the professional role (for example: “Digital Marketing Specialist Google Ads SEO”, “UI/UX Designer Figma Adobe XD”, “Python Django Backend Developer”).
 
               6. Each title should be clear, 5–8 words long, and separated by semicolons (;).
 
