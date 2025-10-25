@@ -176,6 +176,12 @@ class ResumeService
             Resume text:
 
             " . ($resume->parsed_text ?? $resume->description) . "
+            ---
+
+            ### ⚙️ Additional strict rules for skills and title:
+            - When extracting "skills", include only concrete, tool-based or technique-based abilities (e.g., “Google Ads”, “Figma”, “Laravel”, “Copywriting”, “Data Analysis”, “CRM Systems”, "Marketing", "Sales", "HR", ...).
+            - Do NOT treat general roles or high-level terms like “Backend Developer”, “Frontend Developer”, “Fullstack Developer”, “CI/CD”, “API”, “MySQL”, “Management”, “Recruitment” as skills.
+            - In the "title" field, always include at least **two distinct, relevant skills or tools** together with the professional role (for example: “Digital Marketing Specialist Google Ads SEO”, “UI/UX Designer Figma Adobe XD”, “Python Django Backend Developer”).
             PROMPT;
 
         $response = Http::withToken(env('OPENAI_API_KEY'))
