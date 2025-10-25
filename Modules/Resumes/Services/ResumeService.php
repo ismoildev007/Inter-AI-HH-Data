@@ -90,45 +90,41 @@ class ResumeService
               ✅ Think conceptually — group related skills logically into professional spheres.
             - "language": Detect the main language of the resume text (e.g., "en", "ru", "uz").
 
-            - "title" => "Identify up to three (maximum 3) of the most specific and relevant professional titles that accurately reflect the candidate’s main roles and technologies.
+            - "title": Identify up to three (maximum 3) of the most specific and relevant professional titles that accurately reflect the candidate’s main roles and technologies.
 
-                ### Strict rules for title generation:
-                1. Every title must include at least one core technology, programming language, or framework next to the role.
-                   ✅ Correct: “PHP Backend Developer”, “React Frontend Developer”, “Python Fullstack Developer”, “Java Spring Engineer”, “Django Backend Developer”
-                   ❌ Forbidden: “Backend Developer”, “Frontend Developer”, “Fullstack Developer”, "PR"
+              ### Strict rules for title generation:
+              1. Every title must include at least one core technology, programming language, or framework next to the role.
+                 ✅ Correct: “PHP Backend Developer”, “React Frontend Developer”, “Python Fullstack Developer”, “Java Spring Engineer”, “Django Backend Developer”
+                 ❌ Forbidden: “Backend Developer”, “Frontend Developer”, “Fullstack Developer”, "PR"
 
-                2. If multiple related roles exist (e.g., Backend + Frontend), choose only the most comprehensive (e.g., “Fullstack”).
+              2. If multiple related roles exist (e.g., Backend + Frontend), choose only the most comprehensive (e.g., “Fullstack”).
 
-                3. Avoid repetition — no duplicate technologies or overlapping roles.
+              3. Avoid repetition — no duplicate technologies or overlapping roles.
 
-                4. For non-programming roles (e.g., management, marketing, design, HR):
-                   - Keep the title focused and professional.
-                   - Add 2–3 unique focus areas or tools if relevant.
-                     ✅ “Digital Marketing Specialist, SEO, Google Ads”
-                     ✅ “Project Manager, Agile, Jira”
-                     ✅ “UI/UX Designer, Figma, Adobe XD”
+              4. For non-programming roles (e.g., management, marketing, design, HR):
+                 - Keep the title focused and professional.
+                 - Add 2–3 unique focus areas or tools if relevant.
+                   ✅ “Digital Marketing Specialist, SEO, Google Ads”
+                   ✅ “Project Manager, Agile, Jira”
+                   ✅ “UI/UX Designer, Figma, Adobe XD”
 
-                5. Each title should be clear, 5–8 words long, and separated by semicolons (;).
 
-                6. Do NOT include parentheses, slashes, or explanations.
-                   Use plain text only.
+              5. Additional strict rules for skills and title:
+                - When extracting "skills", include only concrete, tool-based or technique-based abilities (e.g., “Google Ads”, “Figma”, “Laravel”, “Copywriting”, “Data Analysis”, “CRM Systems”, "Marketing", "Sales", "HR", ...).
+                - Do NOT treat general roles or high-level terms like “Backend Developer”, “Frontend Developer”, “Fullstack Developer”, “Management”, "PR", “Recruitment”, "MySQL”, “CI/CD”, “API”, ... as skills.
+                - In the "title" field, always include at least **three distinct, relevant skills or tools** together with the professional role (for example: “Digital Marketing Specialist Google Ads SEO”, “UI/UX Designer Figma Adobe XD”, “Python Django Backend Developer”).
 
-                7. Prioritize:
-                   - The most recent and most emphasized roles;
-                   - The most specific and professional technology-related combinations.
+              6. Each title should be clear, 5–8 words long, and separated by semicolons (;).
 
-                8. Each title must include three (3) specific skills or technologies after it, written as `Skills: ...` and separated by commas.
-                   - Example:
-                     ✅ “PHP Backend Developer; Skills: PHP, Laravel, Vue.js”
-                     ✅ “UI/UX Designer, Figma, Adobe XD; Skills: Figma, Adobe XD, Webflow”
-                   - Exceptions (must never appear alone):
-                     - Technical fields: `MySQL`, `CI/CD`
-                     - Marketing / analytics: `Marketing`, `Analitika`
-                     - HR / PR: `PR`, `Recruitment`
-                   - If these exception skills appear alone, omit them completely.
-                   - Skills should always complement the title logically and reflect real technologies or tools relevant to the role."
+              7. Do NOT include parentheses, slashes, or explanations.
+                 Use plain text only.
+
+              8. Prioritize:
+                 - The most recent and most emphasized roles;
+                 - The most specific and professional technology-related combinations.
 
             ---
+
 
             ### 🚫 Always ignore and exclude the following when generating "skills", "titles", "domains" or "keywords":
             "api", "rest api", "graphql", "git", "json", "xml", "html", "css",
@@ -188,6 +184,7 @@ class ResumeService
 
             " . ($resume->parsed_text ?? $resume->description) . "
             PROMPT;
+
 
         $response = Http::withToken(env('OPENAI_API_KEY'))
             ->post('https://api.openai.com/v1/chat/completions', [
