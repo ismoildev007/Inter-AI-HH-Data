@@ -42,7 +42,7 @@ class ClickController extends Controller
         $transaction->update([
             'payment_status' => 'prepared',
             'transaction_id' => $request->click_trans_id,
-            'state' => 0,
+            'state' => 1,
             'sign_time' => $request->sign_time,
         ]);
 
@@ -51,7 +51,7 @@ class ClickController extends Controller
         return response()->json([
             'click_trans_id' => $request->click_trans_id,
             'merchant_trans_id' => (string)$transaction->id,
-            'merchant_prepare_id' => (string)$transaction->id,
+            'merchant_prepare_id' => (int)$transaction->id,
             'error' => 0,
             'error_note' => 'Success',
         ]);
@@ -115,17 +115,17 @@ class ClickController extends Controller
 
             return response()->json([
                 'click_trans_id' => $request->click_trans_id,
-                'merchant_trans_id' => $transaction->id,
-                'merchant_confirm_id' => $transaction->id,
+                'merchant_trans_id' => (string)$transaction->id,
+                'merchant_confirm_id' => (int)$transaction->id,
                 'error' => 0,
-                'error_note' => 'Success', // <-- faqat shu kerak!
+                'error_note' => 'Success',
             ]);
         } catch (\Throwable $e) {
             Log::error('💥 CLICK COMPLETE ERROR', ['message' => $e->getMessage()]);
             return response()->json([
                 'click_trans_id' => $request->click_trans_id,
-                'merchant_trans_id' => $request->merchant_trans_id,
-                'merchant_confirm_id' => $request->merchant_prepare_id,
+                'merchant_trans_id' => (string)$request->merchant_trans_id,
+                'merchant_confirm_id' => (int)$request->merchant_prepare_id,
                 'error' => -9,
                 'error_note' => 'Internal server error',
             ]);
@@ -137,7 +137,6 @@ class ClickController extends Controller
     {
         $secretKey = env('CLICK_SECRET_KEY');
 
-        // Agar prepare (action == 0)
         if ($request->action == 0) {
             $string = (string)$request->click_trans_id .
                 (string)$request->service_id .
@@ -147,7 +146,6 @@ class ClickController extends Controller
                 (string)$request->action .
                 (string)$request->sign_time;
         }
-        // Agar complete (action == 1)
         else {
             $string = (string)$request->click_trans_id .
                 (string)$request->service_id .
