@@ -84,7 +84,7 @@ class ResumeService
             - "weaknesses": 2–4 short bullet points describing areas that might need improvement.
             - "keywords": A list of important keywords or technologies mentioned in the resume (useful for search/matching).
             - "language": Detect the main language of the resume text (e.g., "en", "ru", "uz").
-            - "title": From the resume, identify up to **three (maximum 3)** of the most specific and relevant professional titles that accurately represent the candidate’s main expertise and experience.
+            - "title": Identify up to **three (maximum 3)** of the most specific and relevant professional titles that accurately represent the candidate’s main expertise and experience.
 
             ### Title generation rules:
             • If the resume includes technologies or frameworks (e.g., PHP, Laravel, Vue.js, Node.js, React), the title **must** include at least one of them directly next to the main role.
@@ -106,12 +106,11 @@ class ResumeService
                   - “Digital Marketing Specialist, SEO, Analytics, Google Ads”
 
             • Titles should be **5–7 words long**, concise, and formatted in a consistent way.
-            • Titles must be distinct, comma-separated, and without duplicates.
+            • Titles must be distinct and normalized.
+            • ⚠️ If there are multiple titles, **separate each full title with a semicolon (;)** — not a comma — because commas may be used inside each title for listing skills.
+              Example of correct output:
+              - "Fullstack Laravel Developer, PHP, Laravel, Vue.js; Backend Developer, PHP, Laravel, SQL; Frontend Developer, Vue.js, JavaScript"
             • Always prioritize the most recent and emphasized experience.
-            • Valid examples:
-              - “Fullstack Laravel Developer, PHP, Laravel, Vue.js”
-              - “Frontend React Developer, React, TypeScript, Next.js”
-              - “Digital Marketing Project Manager, SEO, Google Ads”
 
             - "cover_letter": Write a short, professional cover letter (5–7 sentences) focusing on three key strengths that best suit the candidate above.
               Be polite, confident, concise, and literate.
