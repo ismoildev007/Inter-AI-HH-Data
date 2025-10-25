@@ -21,7 +21,7 @@ class ClickController extends Controller
             return response()->json(['error' => -1, 'error_note' => 'Invalid signature']);
         }
 
-        $transaction = Transaction::find($request->input('Request.merchant_trans_id'));
+        $transaction = Transaction::find($request->merchant_trans_id);
         if (!$transaction) {
             Log::error('Transaction not found', ['merchant_trans_id' => $request->merchant_trans_id]);
             return response()->json(['error' => -5, 'error_note' => 'Transaction not found']);
