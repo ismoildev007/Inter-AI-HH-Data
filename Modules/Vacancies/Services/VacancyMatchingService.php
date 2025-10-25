@@ -82,24 +82,24 @@ class VacancyMatchingService
                         ->from('match_results')
                         ->where('resume_id', $resume->id);
                 })
-//                ->whereRaw("
-//                        (
-//                            title ILIKE ANY (ARRAY['%" . implode("%','%", $multiWords) . "%']) OR
-//                            description ILIKE ANY (ARRAY['%" . implode("%','%", $multiWords) . "%'])
-//                        )
-//                        OR title ILIKE '%{$latinQuery}%'
-//                        OR description ILIKE '%{$latinQuery}%'
-//                        OR title ILIKE '%{$cyrilQuery}%'
-//                        OR description ILIKE '%{$cyrilQuery}%'
-//                    ")
-//                ->select('id', 'title', 'description', 'source', 'external_id')
                 ->whereRaw("
                         (
-                            title ILIKE ANY (ARRAY['%" . implode("%','%", $multiWords) . "%'])
+                            title ILIKE ANY (ARRAY['%" . implode("%','%", $multiWords) . "%']) OR
+                            description ILIKE ANY (ARRAY['%" . implode("%','%", $multiWords) . "%'])
                         )
                         OR title ILIKE '%{$latinQuery}%'
+                        OR description ILIKE '%{$latinQuery}%'
                         OR title ILIKE '%{$cyrilQuery}%'
+                        OR description ILIKE '%{$cyrilQuery}%'
                     ")
+                ->select('id', 'title', 'description', 'source', 'external_id')
+//                ->whereRaw("
+//                        (
+//                            title ILIKE ANY (ARRAY['%" . implode("%','%", $multiWords) . "%'])
+//                        )
+//                        OR title ILIKE '%{$latinQuery}%'
+//                        OR title ILIKE '%{$cyrilQuery}%'
+//                    ")
                 ->select('id', 'title', 'source', 'external_id')
                 ->limit(100)
                 ->orderByDesc('id')
