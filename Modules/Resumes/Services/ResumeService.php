@@ -86,95 +86,71 @@ class ResumeService
             - "language": Detect the main language of the resume text (e.g., "en", "ru", "uz").
             - "title": Identify up to **three (maximum 3)** of the most specific and relevant professional titles that accurately represent the candidate’s main expertise and experience.
 
-            ### Title generation rules:
-            • You are the system that generates one or more professional candidate titles based on the resume text.
-                Follow these strict rules:
+            ### Title generation rules (strictly follow):
 
-                1. 🎯 The main goal is to create a specific, clear, and standardized title that reflects the candidate's key role and technologies.
+            1. 🎯 The goal is to create clean, non-repetitive, and specific professional titles that represent the candidate’s true roles and technologies.
 
-                2. 🧩 If your resume mentions technologies or frameworks (e.g., PHP, Laravel, Vue.js, React, Node.js, Django, .NET, Flutter, Spring Boot, Angular, etc.),
-                include at least one of them next to the primary role.
-                Example:
-                ✅ "Fullstack Laravel Developer, PHP, Laravel, Vue.js"
-                ❌ "Fullstack Developer"
+            2. 🧩 If the resume contains technologies or frameworks (e.g., PHP, Laravel, Vue.js, React, Node.js, Django, .NET, Flutter, Spring Boot, Angular):
+               - Always include **one key technology** directly next to the role (e.g., “Laravel Backend Developer”, “React Frontend Developer”).
+               - Never output “Backend Developer”, “Frontend Developer”, or “Fullstack Developer” alone.
+               - Examples:
+                 ✅ “Fullstack Laravel Developer, PHP, Laravel, Vue.js”
+                 ✅ “Backend Node.js Developer, Node.js, Express, MongoDB”
+                 ✅ “Frontend React Developer, React, TypeScript”
+                 ❌ “Backend Developer”, “Fullstack Developer”, “Frontend Developer”
 
-                3. ⚙️ Never include generic, non-unique technologies such as:
-                HTML, CSS, JavaScript (unless a framework is specified), API, Git, REST, JSON, OOP, Agile, SCRUM, Office, Windows, Linux, MS Excel, Communication skills, Teamwork, etc.
+            3. ⚙️ If the resume mentions multiple related areas (Fullstack, Backend, Frontend), choose **only the most comprehensive one**:
+               - Prefer “Fullstack ... Developer” if both Backend and Frontend skills are present.
+               - Do NOT list “Fullstack” together with “Backend” or “Frontend” again.
 
-                They are considered basic and don't add value.
+            4. 🚫 Avoid repetition completely:
+               - Do not repeat the same technologies (e.g., PHP, Laravel) across multiple titles.
+               - Do not repeat the same role concepts (e.g., “Backend Developer” and “Backend PHP Developer” are redundant — keep only the more specific one).
+               - Do not repeat words such as “Marketing”, “PR”, or “Manager” more than once if they already appear in a previous title.
 
-                4. 💡 If "Fullstack," "Backend," or "Frontend" are specified:
-                - Add the most relevant technology from the key skills;
-                - Don't duplicate "Backend Developer" and "Frontend Developer" if there is already a "Fullstack Developer."
+            5. 💼 For non-technical roles (managers, marketers, analysts):
+               - Keep them as a single, focused domain title.
+               - Add 2–3 unique focus areas or tools (avoid duplication).
+               - Examples:
+                 ✅ “Project Manager, Agile, Jira”
+                 ✅ “Digital Marketing Specialist, SEO, Google Ads”
+                 ✅ “Marketing Analyst, Market Research, Strategy”
+                 ❌ “Project Manager, Marketing, PR” + “Marketing Director, Marketing, PR”
 
-                Example:
-                ✅ "Fullstack Laravel Developer, PHP, Vue.js"
-                ❌ "Backend Developer, Laravel; Frontend Developer, Vue.js"
+            6. 📚 Each title should be **unique, 5–7 words long**, and formatted clearly.
+               - If multiple titles exist, separate them with semicolons (;) — not commas.
+               - Inside each title, technologies or tools can be separated by commas.
 
-                5. 📊 For executives, managers, marketers, and analysts:
-                - Keep the role as the main part of the title;
-                - Add specific areas or tools.
-                Examples:
+            7. 🧠 Always prioritize:
+               - The most recent and relevant experience;
+               - The most specific and professional title;
+               - No duplicates, no overlapping meanings.
 
-                "IT Project Manager, Agile, Jira"
+            ---
 
-                "Digital Marketing Specialist, SEO, Google Ads"
+            🔹 Correct examples:
 
-                "Product Manager, B2B SaaS, Customer Research"
+            Input:
+            “PHP, Laravel, Vue.js, MySQL, REST API”
+            Output:
+            ✅ “Fullstack Laravel Developer, PHP, Laravel, Vue.js”
 
-                "HR Manager, Recruiting, Onboarding"
+            Input:
+            “Python, Django, FastAPI, PostgreSQL, Docker”
+            Output:
+            ✅ “Backend Django Developer, Python, Django, FastAPI”
 
-                6. 🔁 Don't repeat technologies in multiple titles.
-                If "Laravel" already appears in one, don't add it again in the candidate's other titles.
+            Input:
+            “Marketing, SEO, Google Ads, PR, Analytics”
+            Output:
+            ✅ “Digital Marketing Specialist, SEO, Google Ads, Analytics”
 
-                7. 📚 If your profile covers several different areas (e.g., "development" and "design"),
-                create multiple headings separated by semicolons.
+            Input:
+            “Fullstack, React, Node.js, TypeScript”
+            Output:
+            ✅ “Fullstack React Developer, React, Node.js, TypeScript”
 
-                Example:
-                ✅ "Fullstack Laravel Developer, PHP, Laravel, Vue.js; UI/UX Designer, Figma, Adobe XD"
-
-                8. 🚫 Avoid overly general headings:
-                ❌ "Software Developer," "Engineer," "Specialist" — these words are acceptable only when combined with specifics.
-                ✅ "Software Engineer, Python, Django"
-
-                9. 🧠 Priority is always given to the most recent, most specialized experience on your resume (e.g., your last 1-2 jobs).
-
-                10. 📏 Output format:
-                - One or more headings separated by semicolons;
-                - Each heading must be without a period at the end or extra spaces;
-
-                ---
-
-                🔹 Examples of correct answers:
-
-                Input:
-                The resume contains "Laravel, PHP, Vue.js, MySQL, Git, REST API."
-
-                Output:
-                ✅ "Fullstack Laravel Developer, PHP, Laravel, Vue.js"
-
-                Input:
-
-                "Python, Django, FastAPI, PostgreSQL, Docker."
-
-                Output:
-                ✅ "Backend Django Developer, Python, Django, FastAPI"
-
-                Input:
-                "React, TypeScript, Redux, Node.js."
-                Output:
-                ✅ "Fullstack React Developer, React, Node.js"
-
-                Input:
-                "Marketing, SEO, Google Analytics, contextual advertising."
-                Conclusion:
-                ✅ "Digital Marketing Specialist, SEO, Google Ads, Analytics"
-
-                ---
-
-                If a technology or framework is mentioned but is insignificant (e.g., 1 month of experience), ignore it.
-
-                Only display the best and most unique titles.
+            ---
 
             - "cover_letter": Write a short, professional cover letter (5–7 sentences) focusing on three key strengths that best suit the candidate above.
               Be polite, confident, concise, and literate.
@@ -187,7 +163,6 @@ class ResumeService
 
             " . ($resume->parsed_text ?? $resume->description) . "
             PROMPT;
-
 
 
         $response = Http::withToken(env('OPENAI_API_KEY'))
