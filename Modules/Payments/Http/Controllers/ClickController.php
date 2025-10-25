@@ -24,6 +24,7 @@ class ClickController extends Controller
         $transaction = Transaction::find($request->merchant_trans_id);
         if (!$transaction) {
             Log::error('Transaction not found', ['merchant_trans_id' => $request->merchant_trans_id]);
+            Log::error('Transaction not found bazadagi', ['merchant_trans_id' => $transaction]);
             return response()->json(['error' => -5, 'error_note' => 'Transaction not found']);
         }
 
