@@ -21,6 +21,7 @@ class Transaction extends Model
         'create_time',
         'perform_time',
         'cancel_time',
+        'sign_time',
         'reason',
     ];
 

@@ -21,7 +21,7 @@ class ClickController extends Controller
             return response()->json(['error' => -1, 'error_note' => 'Invalid signature']);
         }
 
-        $transaction = Transaction::find($request->merchant_trans_id);
+        $transaction = Transaction::where('id', $request->input('Request.merchant_trans_id'))->first();
         if (!$transaction) {
             Log::error('Transaction not found', ['merchant_trans_id' => $request->merchant_trans_id]);
             return response()->json(['error' => -5, 'error_note' => 'Transaction not found']);
@@ -34,7 +34,7 @@ class ClickController extends Controller
         }
 
         if ((float)$plan->price != (float)$request->amount) {
-            Log::error('❌ Amount mismatch', ['plan_price' => $plan->price, 'req_amount' => $request->amount]);
+            Log::error('Amount mismatch', ['plan_price' => $plan->price, 'req_amount' => $request->amount]);
             return response()->json(['error' => -2, 'error_note' => 'Incorrect amount']);
         }
 
@@ -42,6 +42,7 @@ class ClickController extends Controller
             'payment_status' => 'prepared',
             'transaction_id' => $request->click_trans_id,
             'state' => 1,
+            'sign_time' => $request->sign_time,
         ]);
 
         Log::info('Transaction updated to prepared', ['transaction_id' => $transaction->id]);
@@ -126,36 +127,50 @@ class ClickController extends Controller
     {
         $secretKey = env('CLICK_SECRET_KEY');
 
-        $string = ($request->action == 0)
-            ? $request->click_trans_id .
-            $request->service_id .
-            $secretKey .
-            $request->merchant_trans_id .
-            $request->amount .
-            $request->action .
-            $request->sign_time
-            : $request->click_trans_id .
-            $request->service_id .
-            $secretKey .
-            $request->merchant_trans_id .
-            $request->merchant_prepare_id .
-            $request->amount .
-            $request->action .
-            $request->sign_time;
-
-        $expected = md5($string);
-        if ($expected !== $request->sign_string) {
-            Log::error('Signature mismatch', ['expected' => $expected, 'received' => $request->sign_string]);
-            return false;
+        // Agar prepare (action == 0)
+        if ($request->action == 0) {
+            $string = (string)$request->click_trans_id .
+                (string)$request->service_id .
+                (string)$secretKey .
+                (string)$request->merchant_trans_id .
+                (string)$request->amount .
+                (string)$request->action .
+                (string)$request->sign_time;
+        }
+        // Agar complete (action == 1)
+        else {
+            $string = (string)$request->click_trans_id .
+                (string)$request->service_id .
+                (string)$secretKey .
+                (string)$request->merchant_trans_id .
+                (string)$request->amount .
+                (string)$request->action .
+                (string)$request->sign_time;
         }
 
-        return true;
+        $expectedSign = md5($string);
+        $isValid = $expectedSign === $request->sign_string;
+
+        if (!$isValid) {
+            Log::error('Signature mismatch', [
+                'expected' => $expectedSign,
+                'received' => $request->sign_string,
+                'data' => $request->all(),
+                'string' => $string,
+            ]);
+        } else {
+            Log::info('Signature verified successfully', [
+                'sign_string' => $expectedSign
+            ]);
+        }
+
+        return $isValid;
     }
 
     public function booking(Request $request)
     {
         $user = Auth::user();
-        Log::info('💳 CLICK BOOKING STARTED', ['user_id' => $user->id, 'plan_id' => $request->plan_id]);
+        Log::info('CLICK BOOKING STARTED', ['user_id' => $user->id, 'plan_id' => $request->plan_id]);
 
         $plan = Plan::find($request->plan_id);
         if (!$plan) {
@@ -181,7 +196,7 @@ class ClickController extends Controller
             'payment_status' => 'pending',
             'state' => 0,
             'amount' => $plan->price,
-            'create_time' => now()->timestamp,
+            'sign_time' => null,
         ]);
         Log::info('Transaction created', [
             'transaction_id' => $transaction->id,
