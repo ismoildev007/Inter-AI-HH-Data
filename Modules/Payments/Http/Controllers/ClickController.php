@@ -48,6 +48,14 @@ class ClickController extends Controller
 
         Log::info('Transaction updated to prepared', ['transaction_id' => $transaction->id]);
 
+        Log::info('Transaction updated to prepared', response()->json([
+            'click_trans_id' => $request->click_trans_id,
+            'merchant_trans_id' => (string)$transaction->id,
+            'merchant_prepare_id' => (int)$transaction->id,
+            'error' => 0,
+            'error_note' => 'Success',
+        ]));
+
         return response()->json([
             'click_trans_id' => $request->click_trans_id,
             'merchant_trans_id' => (string)$transaction->id,
