@@ -84,15 +84,34 @@ class ResumeService
             - "weaknesses": 2–4 short bullet points describing areas that might need improvement.
             - "keywords": A list of important keywords or technologies mentioned in the resume (useful for search/matching).
             - "language": Detect the main language of the resume text (e.g., "en", "ru", "uz").
-            - "title": Identify up to **three (maximum 3)** of the most specific and relevant professional titles that accurately represent the candidate’s main expertise and experience.
+            - "title": From the resume, identify up to **three (maximum 3)** of the most specific and relevant professional titles that accurately represent the candidate’s main expertise and experience.
 
-              ### Title generation rules:
-              • If the resume includes specific technologies or frameworks (e.g., PHP, Laravel, Vue.js), the title **must** incorporate them appropriately — e.g., “PHP Laravel Vue.js Developer” (not “Fullstack Developer”).
-              • Titles like “Backend Developer”, “Frontend Developer”, or “Fullstack Developer” **cannot appear alone** — they must always include at least one related technology or framework.
-              • If the role is non-technical (e.g., “Project Manager”, “UI/UX Designer”, “Marketing Specialist”), treat it as a **single domain title**, without separating parts by commas (e.g., “Project Manager” is one complete title).
-              • Titles should be **5–7 words long**, where possible, and contain both the role and its area of focus or technologies (for example: “Senior PHP Laravel Backend Engineer”, “Vue.js Frontend Developer”, “Digital Marketing Project Manager”).
-              • Titles must be distinct and separated by commas.
-              • Always normalize them into a consistent format and remove duplicates.
+            ### Title generation rules:
+            • If the resume includes technologies or frameworks (e.g., PHP, Laravel, Vue.js, Node.js, React), the title **must** include at least one of them directly next to the main role.
+              Example:
+                - “Fullstack Laravel Developer, PHP, Laravel, Vue.js”
+                - “Backend Node.js Developer, Node.js, Express, MongoDB”
+                - “Frontend React Developer, React, JavaScript, CSS”
+
+            • If “Fullstack”, “Backend”, or “Frontend” appears alone, always attach the **most relevant technology** from the candidate’s listed skills (e.g., “Fullstack Laravel Developer”, not “Fullstack Developer”).
+              Then, optionally add additional skills separated by commas.
+
+            • Titles like “Backend Developer”, “Frontend Developer”, or “Fullstack Developer” **must never appear alone**.
+
+            • For managerial or marketing roles (e.g., “Project Manager”, “Marketing Specialist”, “Product Manager”):
+              - Treat them as **a single domain title**.
+              - You may extend them by adding related focus areas or skills separated by commas.
+                Example:
+                  - “IT Project Manager, Agile, Jira”
+                  - “Digital Marketing Specialist, SEO, Analytics, Google Ads”
+
+            • Titles should be **5–7 words long**, concise, and formatted in a consistent way.
+            • Titles must be distinct, comma-separated, and without duplicates.
+            • Always prioritize the most recent and emphasized experience.
+            • Valid examples:
+              - “Fullstack Laravel Developer, PHP, Laravel, Vue.js”
+              - “Frontend React Developer, React, TypeScript, Next.js”
+              - “Digital Marketing Project Manager, SEO, Google Ads”
 
             - "cover_letter": Write a short, professional cover letter (5–7 sentences) focusing on three key strengths that best suit the candidate above.
               Be polite, confident, concise, and literate.
