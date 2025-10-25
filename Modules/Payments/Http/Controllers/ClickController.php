@@ -137,42 +137,37 @@ class ClickController extends Controller
     {
         $secretKey = env('CLICK_SECRET_KEY');
 
-        $click_trans_id = strval($request->click_trans_id);
-        $service_id = strval($request->service_id);
-        $merchant_trans_id = strval($request->merchant_trans_id);
-        $merchant_prepare_id = strval($request->merchant_prepare_id ?? '');
-        $amount = strval($request->amount);
-        $action = strval($request->action);
-        $sign_time = strval($request->sign_time);
-
-        if ($action == 0) {
-            $string = $click_trans_id .
-                $service_id .
-                $secretKey .
-                $merchant_trans_id .
-                $amount .
-                $action .
-                $sign_time;
-        } else {
-            $string = $click_trans_id .
-                $service_id .
-                $secretKey .
-                $merchant_trans_id .
-                $merchant_prepare_id .
-                $amount .
-                $action .
-                $sign_time;
+        // Agar prepare (action == 0)
+        if ($request->action == 0) {
+            $string = (string)$request->click_trans_id .
+                (string)$request->service_id .
+                (string)$secretKey .
+                (string)$request->merchant_trans_id .
+                (string)$request->amount .
+                (string)$request->action .
+                (string)$request->sign_time;
+        }
+        // Agar complete (action == 1)
+        else {
+            $string = (string)$request->click_trans_id .
+                (string)$request->service_id .
+                (string)$secretKey .
+                (string)$request->merchant_trans_id .
+                (string)$request->merchant_prepare_id . // <--- SHU JOY YETISHMAYAPTI
+                (string)$request->amount .
+                (string)$request->action .
+                (string)$request->sign_time;
         }
 
         $expectedSign = md5($string);
         $isValid = $expectedSign === $request->sign_string;
 
         if (!$isValid) {
-            Log::error('❌ Signature mismatch', [
+            Log::error('Signature mismatch', [
                 'expected' => $expectedSign,
                 'received' => $request->sign_string,
                 'data' => $request->all(),
-                'string' => $string
+                'string' => $string,
             ]);
         } else {
             Log::info('✅ Signature verified successfully', [
