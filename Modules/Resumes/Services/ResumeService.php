@@ -168,17 +168,11 @@ class ResumeService
               "domains": ["Fullstack Web Development", "Backend Engineering", "DevOps & Cloud Infrastructure"],
               "language": "en",
               "title": "Fullstack Laravel Developer, PHP, Laravel, Vue.js",
-              "cover_letter": "Уважаемый рекрутер, я являюсь опытным разработчиком с глубокими знаниями в PHP и Laravel, а также уверенными навыками работы с Vue.js. ..."
             }
 
-            ---
-
-            ### 📨 Cover Letter:
-            Write a short, professional cover letter (5–7 sentences) in Russian, highlighting three key strengths that best match the candidate above.
-            End with “Sincerely,” and the candidate’s name in a new paragraph.
-
-            Return only valid JSON.
-            Do not include any extra explanations, comments, or markdown formatting.
+            - "cover_letter": Write a short, professional cover letter (5-7 sentences) focusing on three key areas that best suit the candidate you listed above. Be polite, confident, concise, and literate.
+                Always include the candidate's real name at the end, in a new paragraph, with the caption "Sincerely" and their name. The letter must be in Russian.
+            Return only valid JSON. Do not include explanations outside the JSON.
 
             Resume text:
 
