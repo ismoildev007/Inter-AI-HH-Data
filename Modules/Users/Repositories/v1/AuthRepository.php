@@ -16,7 +16,7 @@ class AuthRepository
 
         return \DB::transaction(function () use ($data) {
             $trialStart = now();
-            $trialEnd = $trialStart->copy()->addDays(7);
+            $trialEnd = $trialStart->copy()->addDays(3);
 //            if (User::where('email', $data['email'])->exists()) {
 //                return [
 //                    'status'  => 'error',
