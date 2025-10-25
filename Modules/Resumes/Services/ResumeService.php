@@ -91,11 +91,11 @@ class ResumeService
             - "language": Detect the main language of the resume text (e.g., "en", "ru", "uz").
 
             - "title" => "Identify up to three (maximum 3) of the most specific and relevant professional titles that accurately reflect the candidate’s main roles and technologies.
-            
+
                 ### Strict rules for title generation:
                 1. Every title must include at least one core technology, programming language, or framework next to the role.
                    ✅ Correct: “PHP Backend Developer”, “React Frontend Developer”, “Python Fullstack Developer”, “Java Spring Engineer”, “Django Backend Developer”
-                   ❌ Forbidden: “Backend Developer”, “Frontend Developer”, “Fullstack Developer”
+                   ❌ Forbidden: “Backend Developer”, “Frontend Developer”, “Fullstack Developer”, "PR"
 
                 2. If multiple related roles exist (e.g., Backend + Frontend), choose only the most comprehensive (e.g., “Fullstack”).
 
