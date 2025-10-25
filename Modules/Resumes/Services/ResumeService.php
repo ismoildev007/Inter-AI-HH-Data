@@ -88,13 +88,17 @@ class ResumeService
 
             ### Title generation rules:
             • If the resume includes technologies or frameworks (e.g., PHP, Laravel, Vue.js, Node.js, React), the title **must** include at least one of them directly next to the main role.
-              Example:
-                - “Fullstack Laravel Developer, PHP, Laravel, Vue.js”
-                - “Backend Node.js Developer, Node.js, Express, MongoDB”
-                - “Frontend React Developer, React, JavaScript, CSS”
+              Example: “Fullstack Laravel Developer, PHP, Laravel, Vue.js”
 
             • If “Fullstack”, “Backend”, or “Frontend” appears alone, always attach the **most relevant technology** from the candidate’s listed skills (e.g., “Fullstack Laravel Developer”, not “Fullstack Developer”).
               Then, optionally add additional skills separated by commas.
+
+            • Do **not** repeat the same technologies or frameworks across multiple titles.
+              If a technology is already represented in a previous title, skip it in subsequent titles.
+
+            • If the candidate’s profile fits a “Fullstack” description, do **not** output additional “Backend” or “Frontend” titles — “Fullstack” already represents both.
+              Example: “Fullstack Laravel Developer, PHP, Laravel, Vue.js”
+              ❌ Do not output: “Backend Developer” or “Frontend Developer” again.
 
             • Titles like “Backend Developer”, “Frontend Developer”, or “Fullstack Developer” **must never appear alone**.
 
@@ -106,10 +110,11 @@ class ResumeService
                   - “Digital Marketing Specialist, SEO, Analytics, Google Ads”
 
             • Titles should be **5–7 words long**, concise, and formatted in a consistent way.
-            • Titles must be distinct and normalized.
-            • ⚠️ If there are multiple titles, **separate each full title with a semicolon (;)** — not a comma — because commas may be used inside each title for listing skills.
+            • Titles must be distinct, normalized, and non-repetitive.
+            • ⚠️ If there are multiple titles, **separate each complete title with a semicolon (;)** — not a comma — because commas are used inside each title for listing skills.
               Example of correct output:
-              - "Fullstack Laravel Developer, PHP, Laravel, Vue.js; Backend Developer, PHP, Laravel, SQL; Frontend Developer, Vue.js, JavaScript"
+              - "Fullstack Laravel Developer, PHP, Laravel, Vue.js; UI/UX Designer, Figma, Adobe XD"
+
             • Always prioritize the most recent and emphasized experience.
 
             - "cover_letter": Write a short, professional cover letter (5–7 sentences) focusing on three key strengths that best suit the candidate above.
@@ -123,6 +128,7 @@ class ResumeService
 
             " . ($resume->parsed_text ?? $resume->description) . "
             PROMPT;
+
 
 
         $response = Http::withToken(env('OPENAI_API_KEY'))
