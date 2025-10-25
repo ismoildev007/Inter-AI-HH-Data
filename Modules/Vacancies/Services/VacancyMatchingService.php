@@ -76,7 +76,7 @@ class VacancyMatchingService
             ),
             fn() => DB::table('vacancies')
                 ->where('status', 'publish')
-                ->where('source', 'telegram')
+//                ->where('source', 'telegram')
                 ->whereNotIn('id', function ($q) use ($resume) {
                     $q->select('vacancy_id')
                         ->from('match_results')
@@ -103,9 +103,9 @@ class VacancyMatchingService
         // $multiWords = array_unique(array_filter(
         //     array_map('trim', preg_split('/[\s,«»"“”]+/u', implode(' ', $allVariants)))
         // ));
-        
+
         // Log::info('Searching vacancies for terms', ['terms' => $allVariants, 'multi_words' => $multiWords]);
-        
+
         // [$hhVacancies, $localVacancies] = Concurrency::run([
         //     fn() => cache()->remember(
         //         "hh:search:{$query}:area97",
@@ -126,7 +126,7 @@ class VacancyMatchingService
         //                 $q->orWhere('title', 'ILIKE', $pattern)
         //                   ->orWhere('description', 'ILIKE', $pattern);
         //             }
-        
+
         //             $q->orWhere('title', 'ILIKE', "%{$latinQuery}%")
         //               ->orWhere('description', 'ILIKE', "%{$latinQuery}%")
         //               ->orWhere('title', 'ILIKE', "%{$cyrilQuery}%")
@@ -140,7 +140,7 @@ class VacancyMatchingService
         //             ? $v->external_id
         //             : "local_{$v->id}")
         // ]);
-        
+
 
         Log::info('Data fetch took:' . (microtime(true) - $start) . 's');
         Log::info('Local vacancies: ' . $localVacancies->count());
