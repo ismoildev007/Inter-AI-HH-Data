@@ -98,8 +98,13 @@ class ResumeService
                 • Do not include parentheses, notes, or explanations — only plain text titles separated by commas.
                 • Prioritize titles that reflect the most emphasized or most recent experience.
                 • Return up to three concise and distinct titles, separated by commas.
-                • Additionally, after generating each title, append three diverse professional skills (from any domain) separated by commas.
-                  Example: "PHP Backend Developer, MySql, CI/CD, API" or "Marketing Specialist, PR, Recruitment, Management".
+                • Additionally, after generating each title, append exactly three relevant skills, separated by commas:
+                    - For technical/developer roles: use only programming languages or frameworks (e.g., "PHP", "React", "Laravel", "Node.js", "Java", "Python").
+                    - For non-technical roles: use general professional skills (e.g., "PR", "Recruitment", "Management", "Analytics", "Leadership", "Communication").
+                    - Do not output database, infrastructure, or process terms (e.g., "MySQL", "CI/CD", "API") as these skills in this section.
+                  Example:
+                    - "PHP Backend Developer, PHP, Laravel, Node.js"
+                    - "Marketing Specialist, PR, Recruitment, Management"
             - "cover_letter": Write a short, professional cover letter (5–7 sentences) focusing on three key areas that best suit the candidate you listed above. Be polite, confident, concise, and literate.
               Always include the candidate's real name at the end, in a new paragraph, with the caption "Sincerely" and their name. The letter must be in Russian.
             Return only valid JSON. Do not include explanations outside the JSON.
@@ -109,6 +114,7 @@ class ResumeService
             " . ($resume->parsed_text ?? $resume->description) . "
 
             PROMPT;
+
 
 
 
