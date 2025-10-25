@@ -153,6 +153,7 @@ class ClickController extends Controller
                 (string)$request->service_id .
                 (string)$secretKey .
                 (string)$request->merchant_trans_id .
+                (string)$request->merchant_prepare_id . // <--- SHU JOY YETISHMAYAPTI
                 (string)$request->amount .
                 (string)$request->action .
                 (string)$request->sign_time;
@@ -169,7 +170,7 @@ class ClickController extends Controller
                 'string' => $string,
             ]);
         } else {
-            Log::info('Signature verified successfully', [
+            Log::info('✅ Signature verified successfully', [
                 'sign_string' => $expectedSign
             ]);
         }
