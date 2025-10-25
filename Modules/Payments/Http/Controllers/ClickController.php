@@ -42,7 +42,7 @@ class ClickController extends Controller
         $transaction->update([
             'payment_status' => 'prepared',
             'transaction_id' => $request->click_trans_id,
-            'state' => 1,
+            'state' => 0,
             'sign_time' => $request->sign_time,
         ]);
 

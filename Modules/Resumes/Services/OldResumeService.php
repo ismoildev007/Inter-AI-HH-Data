@@ -4,6 +4,7 @@ namespace Modules\Resumes\Services;
 
 use App\Models\Resume;
 use App\Models\ResumeAnalyze;
+use App\Models\User;
 use App\Models\UserPreference;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -11,9 +12,8 @@ use Illuminate\Support\Facades\Storage;
 use Smalot\PdfParser\Parser as PdfParser;
 use PhpOffice\PhpWord\IOFactory as WordIO;
 use Modules\Resumes\Interfaces\ResumeInterface;
-use Whoops\Run;
 
-class ResumeService
+class OldResumeService
 {
     protected ResumeInterface $repo;
 
@@ -84,28 +84,29 @@ class ResumeService
             - "weaknesses": 2–4 short bullet points describing areas that might need improvement.
             - "keywords": A list of important keywords or technologies mentioned in the resume (useful for search/matching).
             - "language": Detect the main language of the resume text (e.g., "en", "ru", "uz").
-            - "title": Identify up to **three (maximum 3)** of the most specific and relevant professional titles that accurately represent the candidate’s main expertise and experience.
-
-              ### Title generation rules:
-              • If the resume includes specific technologies or frameworks (e.g., PHP, Laravel, Vue.js), the title **must** incorporate them appropriately — e.g., “PHP Laravel Vue.js Developer” (not “Fullstack Developer”).
-              • Titles like “Backend Developer”, “Frontend Developer”, or “Fullstack Developer” **cannot appear alone** — they must always include at least one related technology or framework.
-              • If the role is non-technical (e.g., “Project Manager”, “UI/UX Designer”, “Marketing Specialist”), treat it as a **single domain title**, without separating parts by commas (e.g., “Project Manager” is one complete title).
-              • Titles should be **5–7 words long**, where possible, and contain both the role and its area of focus or technologies (for example: “Senior PHP Laravel Backend Engineer”, “Vue.js Frontend Developer”, “Digital Marketing Project Manager”).
-              • Titles must be distinct and separated by commas.
-              • Always normalize them into a consistent format and remove duplicates.
-
-            - "cover_letter": Write a short, professional cover letter (5–7 sentences) focusing on three key strengths that best suit the candidate above.
-              Be polite, confident, concise, and literate.
-              Always include the candidate's real name at the end, in a new paragraph, with the caption "Sincerely" and their name.
-              The letter must be written in Russian.
-
+            - "title": From the resume, identify up to three (maximum 3) of the most specific and relevant professional titles that accurately represent the candidate’s main expertise and experience.
+                Rules:
+                • Each title must be specific and, if applicable, include both the main role and its associated technology or framework
+                (e.g., "PHP Backend Developer", "React Frontend Developer", "Java Spring Developer", "Python Fullstack Developer").
+                • If a title refers to Backend, Frontend, or Fullstack development, it **must include at least one programming language or framework**
+                (e.g., PHP, Java, .NET, React, Vue, Node.js, etc.).
+                • Titles such as **"Backend Developer"**, **"Frontend Developer"**, or **"Fullstack Developer"** alone are **strictly forbidden** —
+                they cannot appear by themselves **nor as secondary or repeated titles after others.**
+                • Do NOT output any title that ends with or contains only the words “Backend Developer”, “Frontend Developer”, or “Fullstack Developer”
+                without an attached technology name.
+                • Include other relevant non-programming roles (e.g., "Project Manager", "Marketing Specialist", "UI/UX Designer") if they clearly apply.
+                • Do not include parentheses, notes, or explanations — only plain text titles separated by commas.
+                • Prioritize titles that reflect the most emphasized or most recent experience.
+                • Return up to three concise and distinct titles, separated by commas.
+            - "cover_letter": Write a short, professional cover letter (5-7 sentences) focusing on three key areas that best suit the candidate you listed above. Be polite, confident, concise, and literate.
+                Always include the candidate's real name at the end, in a new paragraph, with the caption "Sincerely" and their name. The letter must be in Russian.
             Return only valid JSON. Do not include explanations outside the JSON.
 
             Resume text:
 
             " . ($resume->parsed_text ?? $resume->description) . "
-            PROMPT;
 
+            PROMPT;
 
         $response = Http::withToken(env('OPENAI_API_KEY'))
             ->post('https://api.openai.com/v1/chat/completions', [

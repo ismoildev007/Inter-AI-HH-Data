@@ -5,7 +5,7 @@ namespace Modules\Resumes\Http\Controllers;
 use App\Http\Controllers\Controller;
 use Modules\Resumes\Http\Requests\ResumeUpdateRequest;
 use Modules\Resumes\Http\Resources\ResumeResource;
-use Modules\Resumes\Services\DemoResumeService;
+use Modules\Resumes\Services\OldResumeService;
 use Modules\Resumes\Services\ResumeService;
 use App\Models\Resume;
 use Modules\Resumes\Http\Requests\ResumeStoreRequest;
@@ -13,11 +13,11 @@ use Modules\Resumes\Http\Requests\ResumeStoreRequest;
 class ResumesController extends Controller
 {
     protected ResumeService $service;
-    protected DemoResumeService $demoResumeService;
+    protected OldResumeService $demoResumeService;
 
     public function __construct(
-        ResumeService $service,
-    DemoResumeService $demoResumeService)
+        ResumeService    $service,
+        OldResumeService $demoResumeService)
     {
         $this->service = $service;
         $this->demoResumeService = $demoResumeService;
