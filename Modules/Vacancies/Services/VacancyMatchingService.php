@@ -158,7 +158,7 @@ class VacancyMatchingService
         }
         $toFetch = collect($hhItems)
             ->filter(fn($item) => isset($item['id']) && !$localVacancies->has($item['id']))
-            ->take(1000);
+            ->take(200);
         foreach ($toFetch as $item) {
             $extId = $item['id'] ?? null;
             if (!$extId || $localVacancies->has($extId)) {
