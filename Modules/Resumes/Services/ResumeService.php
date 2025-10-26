@@ -129,7 +129,7 @@ class ResumeService
             • Each title must be highly specific and reflect both the role and its key technology, framework, or domain focus.  
                 - Examples: "PHP Backend Developer", "C# .NET Developer", "ASP.NET Developer", "Java Spring Developer", "Python Fullstack Developer", "React Frontend Developer", "Digital Marketing Specialist", "HR Manager", "Accountant", "Nurse", "Sales Manager", "Teacher".  
             • Titles referring to Backend, Frontend, or Fullstack development **must include at least one programming language or framework** (e.g., PHP, Java, .NET, React, Vue, Node.js, etc.).  
-            • **Strictly forbid** vague or generic titles such as: "Developer", "Software Developer", "Engineer", "Programmer", "IT Specialist", "Consultant" — unless they include a clear technology or domain name (e.g., "C# Software Engineer", "Python Developer").  
+            • **Strictly forbid** vague or generic titles such as: "Developer", "Software Developer", "Engineer", "backend developer", "Frontend Developer", "Programmer", "IT Specialist", "Consultant" — unless they include a clear technology or domain name (e.g., "C# Software Engineer", "Python Developer").  
             • Include **non-technical roles** (e.g., "HR Manager", "Recruitment Specialist", "Project Manager", "Accountant", "Marketing Specialist", "Banking Operations Manager") when relevant.  
             • Do not include parentheses, notes, or explanations — only plain text titles separated by commas.  
             • Prioritize titles that reflect the **most recent or most emphasized** experience.  
@@ -144,7 +144,7 @@ class ResumeService
                 HR Manager,
                 Recruitment Specialist,
                 Banking Operations Manager
-                
+
         - "cover_letter": Write a short, professional cover letter (5–7 sentences) focusing on three key areas that best suit the candidate you listed above. Be polite, confident, concise, and literate.
           Always include the candidate's real name at the end, in a new paragraph, with the caption "Sincerely" and their name. The letter must be in Russian.
         Return only valid JSON. Do not include explanations outside the JSON.
