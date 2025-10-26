@@ -72,7 +72,7 @@ class VacancyMatchingService
             fn() => cache()->remember(
                 "hh:search:{$query}:area97",
                 now()->addMinutes(30),
-                fn() => $this->hhRepository->search($query, 0, 200, ['area' => 97])
+                fn() => $this->hhRepository->search($query, 0, 100, ['area' => 97])
             ),
             fn() => DB::table('vacancies')
                 ->where('status', 'publish')
