@@ -209,7 +209,7 @@ class VacancyMatchingService
             ->post($url, [
                 'resumes' => [[
                     // 'title'       => mb_substr($resume->title ?? '', 0, 200),
-                    'description' => mb_substr($resume->parsed_text ?? '', 0, 3000),
+                    'description' => mb_substr($resume->parsed_text ?? '', 0, 2000),
                 ]],
                 'vacancies'      => array_map(fn($v) => [
                     'id'    => $v['id'] ? (string)$v['id'] : null,
