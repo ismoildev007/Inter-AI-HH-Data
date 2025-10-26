@@ -62,9 +62,17 @@ class VacancyMatchingService
             ->values()
             ->all();
 
-        $multiWords = array_unique(array_merge(
-            ...array_map(fn($q) => array_map('trim', explode(',', $q)), $allVariants)
-        ));
+        // $multiWords = array_unique(array_merge(
+        //     ...array_map(fn($q) => array_map('trim', explode(',', $q)), $allVariants)
+        // ));
+        $multiWords = collect($allVariants)
+            ->flatMap(fn($v) => preg_split('/[,;]+/u', $v)) // <-- bu vergul yoki nuqtali vergul bo‘yicha bo‘ladi
+            ->map(fn($w) => trim(preg_replace('/[\"\'«»“”]/u', '', $w)))
+            ->filter(fn($w) => mb_strlen($w) >= 3)
+            ->unique()
+            ->values()
+            ->all();
+
         Log::info('Searching vacancies for terms', ['terms' => $allVariants, 'multi_words' => $multiWords]);
 
 
@@ -82,16 +90,28 @@ class VacancyMatchingService
                         ->from('match_results')
                         ->where('resume_id', $resume->id);
                 })
-                ->whereRaw("
-                        (
-                            title ILIKE ANY (ARRAY['%" . implode("%','%", $multiWords) . "%']) OR
-                            description ILIKE ANY (ARRAY['%" . implode("%','%", $multiWords) . "%'])
-                        )
-                        OR title ILIKE '%{$latinQuery}%'
-                        OR description ILIKE '%{$latinQuery}%'
-                        OR title ILIKE '%{$cyrilQuery}%'
-                        OR description ILIKE '%{$cyrilQuery}%'
-                    ")
+                ->where(function ($q) use ($multiWords, $latinQuery, $cyrilQuery) {
+                    foreach ($multiWords as $word) {
+                        $pattern = "%{$word}%";
+                        $q->orWhere('title', 'ILIKE', $pattern)
+                          ->orWhere('description', 'ILIKE', $pattern);
+                    }
+            
+                    $q->orWhere('title', 'ILIKE', "%{$latinQuery}%")
+                      ->orWhere('description', 'ILIKE', "%{$latinQuery}%")
+                      ->orWhere('title', 'ILIKE', "%{$cyrilQuery}%")
+                      ->orWhere('description', 'ILIKE', "%{$cyrilQuery}%");
+                })
+                // ->whereRaw("
+                //         (
+                //             title ILIKE ANY (ARRAY['%" . implode("%','%", $multiWords) . "%']) OR
+                //             description ILIKE ANY (ARRAY['%" . implode("%','%", $multiWords) . "%'])
+                //         )
+                //         OR title ILIKE '%{$latinQuery}%'
+                //         OR description ILIKE '%{$latinQuery}%'
+                //         OR title ILIKE '%{$cyrilQuery}%'
+                //         OR description ILIKE '%{$cyrilQuery}%'
+                //     ")
                 ->select('id', 'title', 'description', 'source', 'external_id')
                 ->limit(100)
                 ->orderByDesc('id')
