@@ -86,6 +86,23 @@ class UserController extends Controller
             ->orderByDesc('created_at')
             ->get();
 
+        $checkedButNotWorkingUsers = User::query()
+            ->select([
+                'id',
+                'first_name',
+                'last_name',
+                'email',
+                'status',
+                'admin_check_status',
+                'created_at',
+                'updated_at',
+            ])
+            ->where('status', 'not working')
+            ->where('admin_check_status', true)
+            ->orderByDesc('updated_at')
+            ->orderByDesc('created_at')
+            ->get();
+
         $stats = [
             'total' => User::count(),
             'working' => User::where('status', 'working')->count(),
@@ -96,6 +113,7 @@ class UserController extends Controller
         return view('admin::Users.admin-user-index', [
             'allUsers' => $allUsers,
             'verifiedWorkingUsers' => $verifiedWorkingUsers,
+            'checkedButNotWorkingUsers' => $checkedButNotWorkingUsers,
             'stats' => $stats,
         ]);
     }
@@ -125,11 +143,12 @@ class UserController extends Controller
 
         $user->forceFill([
             'status' => 'not working',
+            'admin_check_status' => true,
         ])->save();
 
         return redirect()
             ->route('admin.users.admin_check')
-            ->with('status', 'Foydalanuvchi “not working” holatiga o‘tkazildi.');
+            ->with('status', 'Foydalanuvchi admin tekshiruvidan o‘tkazilib, “not working” holatiga o‘tkazildi.');
     }
 
     /**

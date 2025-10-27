@@ -50,12 +50,18 @@ class UsersController extends Controller
         Cache::put($cacheKey, $requestCount + 1, now()->addDay());
 
         $validated = $request->validate([
-            'status' => 'required|string'
+            'status' => 'required|string|in:working,not working',
         ]);
 
-        $user->update([
+        $updates = [
             'status' => $validated['status'],
-        ]);
+        ];
+
+        if ($user->admin_check_status && $validated['status'] === 'working') {
+            $updates['admin_check_status'] = false;
+        }
+
+        $user->forceFill($updates)->save();
 
         return response()->json([
             'success' => true,

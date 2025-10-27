@@ -87,6 +87,9 @@
             list-style: none;
             margin: 0;
             padding: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
         }
 
         .admin-check-item {
@@ -95,7 +98,9 @@
             justify-content: space-between;
             align-items: flex-start;
             gap: 16px;
-            border-bottom: 1px solid rgba(226, 232, 240, 0.6);
+            border: 1px solid rgba(226, 232, 240, 0.6);
+            border-radius: 18px;
+            background: #ffffff;
             transition: background 0.2s ease, transform 0.18s ease;
         }
 
@@ -112,6 +117,10 @@
 
         .admin-check-item--working {
             background: linear-gradient(135deg, rgba(236, 253, 245, 0.8), rgba(209, 250, 229, 0.6));
+        }
+
+        .admin-check-item--unsatisfied {
+            background: linear-gradient(135deg, rgba(254, 242, 242, 0.8), rgba(254, 226, 226, 0.6));
         }
 
         .admin-check-item__title {
@@ -168,9 +177,19 @@
             color: #047857;
         }
 
+        .admin-check-chip--status-unsatisfied {
+            background: rgba(248, 113, 113, 0.14);
+            color: #b91c1c;
+        }
+
         .admin-check-chip--verified {
             background: rgba(59, 130, 246, 0.16);
             color: #1d4ed8;
+        }
+
+        .admin-check-chip--unsatisfied {
+            background: rgba(220, 38, 38, 0.18);
+            color: #7f1d1d;
         }
 
         .admin-check-actions {
@@ -330,6 +349,52 @@
                         @empty
                             <li class="admin-check-empty">
                                 No working users have been cleared by admins yet.
+                            </li>
+                        @endforelse
+                    </ul>
+                </div>
+            </div>
+
+            <div class="admin-check-card">
+                <div class="admin-check-card__header">
+                    <h5>Checked but unsatisfied</h5>
+                    <p>Admin review completed, profile marked as “not working”.</p>
+                </div>
+                <div class="admin-check-card__body">
+                    <ul class="admin-check-list">
+                        @forelse($checkedButNotWorkingUsers as $user)
+                            @php
+                                $fullName = trim(collect([$user->first_name, $user->last_name])->filter()->implode(' '));
+                            @endphp
+                            <li class="admin-check-item admin-check-item--unsatisfied">
+                                <div class="admin-check-item__main">
+                                    <span class="admin-check-pill">{{ $loop->iteration }}</span>
+                                    <div>
+                                        <div class="admin-check-item__title">
+                                            {{ $fullName !== '' ? $fullName : ($user->email ?? 'User #' . $user->id) }}
+                                        </div>
+                                        <div class="admin-check-item__meta">
+                                            {{ $user->email ?? '—' }} &bullet; ID: {{ $user->id }}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="admin-check-chips">
+                                        <span class="admin-check-chip admin-check-chip--status admin-check-chip--status-unsatisfied">
+                                            Not working
+                                        </span>
+                                        <span class="admin-check-chip admin-check-chip--verified">
+                                            <i class="feather-check-circle"></i> Checked
+                                        </span>
+                                        <span class="admin-check-chip admin-check-chip--unsatisfied">
+                                            Qoniqarsiz
+                                        </span>
+                                    </div>
+                                </div>
+                            </li>
+                        @empty
+                            <li class="admin-check-empty">
+                                No admin-reviewed users have been marked unsatisfactory yet.
                             </li>
                         @endforelse
                     </ul>
