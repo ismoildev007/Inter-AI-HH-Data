@@ -160,7 +160,7 @@ class ResumeService
 
         $response = Http::withToken(env('OPENAI_API_KEY'))
             ->post('https://api.openai.com/v1/chat/completions', [
-                'model' => env('OPENAI_MODEL', 'gpt-5-mini'),
+                'model' => env('OPENAI_MODEL', 'gpt-4.1-nano'),
                 'messages' => [
                     ['role' => 'system', 'content' => 'You are a helpful AI for analyzing resumes.'],
                     ['role' => 'user', 'content' => $prompt],
