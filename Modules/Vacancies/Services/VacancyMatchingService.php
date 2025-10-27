@@ -83,14 +83,12 @@ class VacancyMatchingService
                 ->where(function ($q) use ($multiWords, $latinQuery, $cyrilQuery) {
                     foreach ($multiWords as $word) {
                         $pattern = "%{$word}%";
-                        $q->orWhere('title', 'ILIKE', $pattern)
-                            ->orWhere('description', 'ILIKE', $pattern);
+                        // 👇 shu yerda title + description birlashtirilyapti
+                        $q->orWhereRaw("(title || ' ' || description) ILIKE ?", [$pattern]);
                     }
 
-                    $q->orWhere('title', 'ILIKE', "%{$latinQuery}%")
-                        ->orWhere('description', 'ILIKE', "%{$latinQuery}%")
-                        ->orWhere('title', 'ILIKE', "%{$cyrilQuery}%")
-                        ->orWhere('description', 'ILIKE', "%{$cyrilQuery}%");
+                    $q->orWhereRaw("(title || ' ' || description) ILIKE ?", ["%{$latinQuery}%"])
+                        ->orWhereRaw("(title || ' ' || description) ILIKE ?", ["%{$cyrilQuery}%"]);
                 })
                 //                ->select('id', 'title', 'description', 'source', 'external_id')
                 ->limit(300)
