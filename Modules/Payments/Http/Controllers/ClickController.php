@@ -24,7 +24,6 @@ class ClickController extends Controller
         $transaction = Transaction::find($request->merchant_trans_id);
         if (!$transaction) {
             Log::error('Transaction not found', ['merchant_trans_id' => $request->merchant_trans_id]);
-            Log::error('Transaction not found bazadagi', ['merchant_trans_id' => $transaction]);
             return response()->json(['error' => -5, 'error_note' => 'Transaction not found']);
         }
 
@@ -48,21 +47,17 @@ class ClickController extends Controller
 
         Log::info('Transaction updated to prepared', ['transaction_id' => $transaction->id]);
 
-        Log::info('Transaction updated to prepared', response()->json([
+        $response = [
             'click_trans_id' => $request->click_trans_id,
             'merchant_trans_id' => (string)$transaction->id,
             'merchant_prepare_id' => (int)$transaction->id,
             'error' => 0,
             'error_note' => 'Success',
-        ]));
+        ];
 
-        return response()->json([
-            'click_trans_id' => $request->click_trans_id,
-            'merchant_trans_id' => (string)$transaction->id,
-            'merchant_prepare_id' => (int)$transaction->id,
-            'error' => 0,
-            'error_note' => 'Success',
-        ]);
+        Log::info('Transaction prepared response', $response);
+
+        return response()->json($response);
     }
 
     public function complete(Request $request)
@@ -75,9 +70,12 @@ class ClickController extends Controller
                 return response()->json(['error' => -1, 'error_note' => 'Invalid signature']);
             }
 
-            $transaction = Transaction::find($request->merchant_prepare_id);
+            $transaction = Transaction::find($request->merchant_prepare_id ?? $request->merchant_trans_id);
             if (!$transaction) {
-                Log::error('Transaction not found', ['merchant_prepare_id' => $request->merchant_prepare_id]);
+                Log::error('Transaction not found', [
+                    'merchant_prepare_id' => $request->merchant_prepare_id,
+                    'merchant_trans_id' => $request->merchant_trans_id
+                ]);
                 return response()->json(['error' => -5, 'error_note' => 'Transaction not found']);
             }
 
@@ -145,25 +143,14 @@ class ClickController extends Controller
     {
         $secretKey = env('CLICK_SECRET_KEY');
 
-        if ($request->action == 0) {
-            $string = (string)$request->click_trans_id .
-                (string)$request->service_id .
-                (string)$secretKey .
-                (string)$request->merchant_trans_id .
-                (string)$request->amount .
-                (string)$request->action .
-                (string)$request->sign_time;
-        }
-        else {
-            $string = (string)$request->click_trans_id .
-                (string)$request->service_id .
-                (string)$secretKey .
-                (string)$request->merchant_trans_id .
-                (string)$request->merchant_prepare_id .
-                (string)$request->amount .
-                (string)$request->action .
-                (string)$request->sign_time;
-        }
+        $string = (string)$request->click_trans_id .
+            (string)$request->service_id .
+            (string)$secretKey .
+            (string)$request->merchant_trans_id .
+            (($request->action == 1) ? (string)$request->merchant_prepare_id : '') .
+            (string)$request->amount .
+            (string)$request->action .
+            (string)$request->sign_time;
 
         $expectedSign = md5($string);
         $isValid = $expectedSign === $request->sign_string;
