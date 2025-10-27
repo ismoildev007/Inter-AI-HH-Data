@@ -177,6 +177,7 @@ class VacancyMatchingService
                 'text' => mb_substr(strip_tags($v->description), 0, 2000),
             ];
         }
+        Log::info(['local vacancies' => $localVacancies]);
         $toFetch = collect($hhItems)
             ->filter(fn($item) => isset($item['id']) && !$localVacancies->has($item['id']))
             ->take(200);
@@ -271,48 +272,107 @@ class VacancyMatchingService
         //             }
         //         }
 
+        // foreach ($vacanciesPayload as $match) {
+        //     // Skip invalid or incomplete matches
+        //     // if (!isset($match['score'])) {
+        //     //     $match['score'] = 0; // default score if not provided
+        //     // }
+
+        //     $vacId = $match['vacancy_id'] ?? null;
+        //     $vac   = $vacId ? Vacancy::find($vacId) : null;
+
+        //     if (!$vac) {
+        //         // Safely get the vacancy_index if it exists
+        //         $vacIndex = $match['vacancy_index'] ?? null;
+        //         $payload = $vacIndex !== null
+        //             ? ($vacancyMap["new_{$vacIndex}"] ?? null)
+        //             : null;
+
+        //         if ($payload && isset($payload['external_id'])) {
+        //             $vac = Vacancy::where('source', 'hh')
+        //                 ->where('external_id', $payload['external_id'])
+        //                 ->first();
+
+        //             if (!$vac) {
+        //                 $vac = $this->vacancyRepository->createFromHH($payload['raw']);
+        //             }
+        //         }
+        //     }
+
+        //     if ($vac) {
+        //         $savedData[] = [
+        //             'resume_id'     => $resume->id,
+        //             'vacancy_id'    => $vac->id,
+        //             'score_percent' => $match['score'] ?? 0,
+        //             'explanations'  => json_encode($match),
+        //             'updated_at'    => now(),
+        //             'created_at'    => now(),
+        //         ];
+        //     } else {
+        //         Log::warning('⚠️ Skipped match with missing vacancy_index or external_id', [
+        //             'match' => $match,
+        //         ]);
+        //     }
+        // }
         foreach ($vacanciesPayload as $match) {
-            // Skip invalid or incomplete matches
-            // if (!isset($match['score'])) {
-            //     $match['score'] = 0; // default score if not provided
-            // }
-
-            $vacId = $match['vacancy_id'] ?? null;
-            $vac   = $vacId ? Vacancy::find($vacId) : null;
-
-            if (!$vac) {
-                // Safely get the vacancy_index if it exists
-                $vacIndex = $match['vacancy_index'] ?? null;
-                $payload = $vacIndex !== null
-                    ? ($vacancyMap["new_{$vacIndex}"] ?? null)
-                    : null;
-
-                if ($payload && isset($payload['external_id'])) {
+            try {
+                $vac = null;
+                $vacId = $match['vacancy_id'] ?? null;
+        
+                if ($vacId) {
+                    // direct Eloquent lookup
+                    $vac = Vacancy::withoutGlobalScopes()->find($vacId);
+                }
+        
+                // If it's from HH, handle external_id
+                if (!$vac && isset($match['external_id'])) {
                     $vac = Vacancy::where('source', 'hh')
-                        ->where('external_id', $payload['external_id'])
+                        ->where('external_id', $match['external_id'])
                         ->first();
-
-                    if (!$vac) {
-                        $vac = $this->vacancyRepository->createFromHH($payload['raw']);
+        
+                    if (!$vac && isset($match['raw'])) {
+                        $vac = $this->vacancyRepository->createFromHH($match['raw']);
                     }
                 }
-            }
-
-            if ($vac) {
-                $savedData[] = [
-                    'resume_id'     => $resume->id,
-                    'vacancy_id'    => $vac->id,
-                    'score_percent' => $match['score'] ?? 0,
-                    'explanations'  => json_encode($match),
-                    'updated_at'    => now(),
-                    'created_at'    => now(),
-                ];
-            } else {
-                Log::warning('⚠️ Skipped match with missing vacancy_index or external_id', [
+        
+                // 🟩 If it’s a local vacancy that exists in DB::table but not found by model,
+                // still record it using the ID from the payload.
+                if (!$vac && !empty($vacId)) {
+                    Log::info('⚙️ Local vacancy not found via model, saving manually', [
+                        'vacancy_id' => $vacId,
+                    ]);
+        
+                    $savedData[] = [
+                        'resume_id'     => $resume->id,
+                        'vacancy_id'    => $vacId,
+                        'score_percent' => $match['score'] ?? 0,
+                        'explanations'  => json_encode($match),
+                        'updated_at'    => now(),
+                        'created_at'    => now(),
+                    ];
+        
+                    continue;
+                }
+        
+                // If everything’s normal
+                if ($vac) {
+                    $savedData[] = [
+                        'resume_id'     => $resume->id,
+                        'vacancy_id'    => $vac->id,
+                        'score_percent' => $match['score'] ?? 0,
+                        'explanations'  => json_encode($match),
+                        'updated_at'    => now(),
+                        'created_at'    => now(),
+                    ];
+                }
+            } catch (\Throwable $e) {
+                Log::error('💥 Error while matching vacancy', [
                     'match' => $match,
+                    'error' => $e->getMessage(),
                 ]);
             }
         }
+        
 
 
         if (!empty($savedData)) {
