@@ -76,7 +76,7 @@ class PaymeController extends Controller
             'plan_id' => $plan->id,
             'starts_at' => null,
             'ends_at' => null,
-            'remaining_auto_responses' => $request->remaining_auto_responses ?? 0,
+            'remaining_auto_responses' => $plan->auto_response_limit ?? 0,
             'status' => 'pending'
         ]);
 
