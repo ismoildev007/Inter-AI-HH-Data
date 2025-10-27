@@ -165,7 +165,7 @@ class ResumeService
                     ['role' => 'system', 'content' => 'You are a helpful AI for analyzing resumes.'],
                     ['role' => 'user', 'content' => $prompt],
                 ],
-                'temperature' => 0.2,
+                // 'temperature' => 0.2,
             ]);
 
         if (! $response->successful()) {
