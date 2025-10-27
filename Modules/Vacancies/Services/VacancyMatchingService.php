@@ -65,6 +65,13 @@ class VacancyMatchingService
 
         Log::info('Searching vacancies for terms', ['terms' => $allVariants, 'multi_words' => $multiWords]);
 
+        $searchQuery = $latinQuery ?: $cyrilQuery;
+
+        if (!empty($multiWords)) {
+            $tsQuery = implode(' & ', array_map('trim', $multiWords));
+        } else {
+            $tsQuery = trim($searchQuery);
+        }
 
         [$hhVacancies, $localVacancies] = Concurrency::run([
             fn() => cache()->remember(
@@ -73,42 +80,59 @@ class VacancyMatchingService
                 fn() => $this->hhRepository->search($query, 0, 100, ['area' => 97])
             ),
             fn() => DB::table('vacancies')
-                ->where('status', 'publish')
-                ->where('source', 'telegram')
-                ->whereNotIn('id', function ($q) use ($resume) {
-                    $q->select('vacancy_id')
-                        ->from('match_results')
-                        ->where('resume_id', $resume->id);
-                })
-                ->where(function ($q) use ($multiWords, $latinQuery, $cyrilQuery) {
-                    foreach ($multiWords as $stack) {
-                        // stack = "Laravel Developer"
-                        $q->orWhere(function ($subQ) use ($stack) {
-                            $words = preg_split('/\s+/u', $stack); // so‘zlarni bo‘lish
-
-                            foreach ($words as $word) {
-                                $pattern = "%{$word}%";
-
-                                // Har bir so‘z kamida title YOKI description da bo‘lishi shart
-                                $subQ->where(function ($inner) use ($pattern) {
-                                    $inner->where('title', 'ILIKE', $pattern)
-                                        ->orWhere('description', 'ILIKE', $pattern);
-                                });
-                            }
-                        });
+            ->where('status', 'publish')
+            ->where('source', 'telegram')
+            ->whereNotIn('id', function ($q) use ($resume) {
+                $q->select('vacancy_id')
+                    ->from('match_results')
+                    ->where('resume_id', $resume->id);
+            })
+            ->where(function ($query) use ($tsQuery, $multiWords, $latinQuery, $cyrilQuery) {
+                $query->whereRaw("
+                    to_tsvector('english', coalesce(title, '') || ' ' || coalesce(description, ''))
+                    @@ websearch_to_tsquery('english', ?)
+                ", [$tsQuery]);
+        
+                // 🔁 fallback agar tsvektor hech narsa topmasa — oddiy LIKE bilan
+                $query->orWhere(function ($q) use ($multiWords, $latinQuery, $cyrilQuery) {
+                    foreach ($multiWords as $word) {
+                        $pattern = "%{$word}%";
+                        $q->orWhere('title', 'ILIKE', $pattern)
+                          ->orWhere('description', 'ILIKE', $pattern);
                     }
-
-                    // translit variantlari uchun ham xuddi shu
-                    $q->orWhereRaw("(title || ' ' || description) ILIKE ?", ["%{$latinQuery}%"])
-                        ->orWhereRaw("(title || ' ' || description) ILIKE ?", ["%{$cyrilQuery}%"]);
-                })
-                //                ->select('id', 'title', 'description', 'source', 'external_id')
-                ->limit(300)
-                ->orderByDesc('id')
-                ->get()
-                ->keyBy(fn($v) => $v->source === 'hh' && $v->external_id
-                    ? $v->external_id
-                    : "local_{$v->id}")
+        
+                    if ($latinQuery) {
+                        $q->orWhere('title', 'ILIKE', "%{$latinQuery}%")
+                          ->orWhere('description', 'ILIKE', "%{$latinQuery}%");
+                    }
+        
+                    if ($cyrilQuery) {
+                        $q->orWhere('title', 'ILIKE', "%{$cyrilQuery}%")
+                          ->orWhere('description', 'ILIKE', "%{$cyrilQuery}%");
+                    }
+                });
+            })
+            ->select(
+                'id',
+                'title',
+                'description',
+                'source',
+                'external_id',
+                DB::raw("
+                    ts_rank_cd(
+                        to_tsvector('english', coalesce(title, '') || ' ' || coalesce(description, '')),
+                        websearch_to_tsquery('english', ?)
+                    ) as rank
+                ")
+            )
+            ->addBinding($tsQuery, 'select') // rank uchun binding
+            ->orderByDesc('rank')
+            ->orderByDesc('id')
+            ->limit(100)
+            ->get()
+            ->keyBy(fn($v) => $v->source === 'hh' && $v->external_id
+                ? $v->external_id
+                : "local_{$v->id}")
         ]);
 
 
