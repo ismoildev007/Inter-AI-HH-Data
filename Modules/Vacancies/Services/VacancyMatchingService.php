@@ -179,7 +179,7 @@ class VacancyMatchingService
         $toFetch = collect($hhItems)
             ->filter(fn($item) => isset($item['id']) && !$localVacancies->has($item['id']))
             ->take(200);
-        foreach ($toFetch as $item) {
+        foreach ($toFetch as $idx =>  $item) {
             $extId = $item['id'] ?? null;
             if (!$extId || $localVacancies->has($extId)) {
                 continue;
@@ -195,6 +195,7 @@ class VacancyMatchingService
                     'text'        => mb_substr(strip_tags($text), 0, 1000),
                     'external_id' => $extId,
                     'raw'         => $item,
+                    'vacancy_index' => $idx,
                 ];
             }
         }
