@@ -94,13 +94,13 @@ class VacancyMatchingService
                     foreach ($multiWords as $word) {
                         $pattern = "%{$word}%";
                         $q->orWhere('title', 'ILIKE', $pattern)
-                          ->orWhere('description', 'ILIKE', $pattern);
+                            ->orWhere('description', 'ILIKE', $pattern);
                     }
 
                     $q->orWhere('title', 'ILIKE', "%{$latinQuery}%")
-                      ->orWhere('description', 'ILIKE', "%{$latinQuery}%")
-                      ->orWhere('title', 'ILIKE', "%{$cyrilQuery}%")
-                      ->orWhere('description', 'ILIKE', "%{$cyrilQuery}%");
+                        ->orWhere('description', 'ILIKE', "%{$latinQuery}%")
+                        ->orWhere('title', 'ILIKE', "%{$cyrilQuery}%")
+                        ->orWhere('description', 'ILIKE', "%{$cyrilQuery}%");
                 })
                 // ->whereRaw("
                 //         (
@@ -172,6 +172,7 @@ class VacancyMatchingService
         foreach ($localVacancies as $v) {
             $vacanciesPayload[] = [
                 'id'   => $v->id,
+                'vacancy_id'   => $v->id,
                 // 'title' => $v->title,
                 'text' => mb_substr(strip_tags($v->description), 0, 2000),
             ];
@@ -204,114 +205,114 @@ class VacancyMatchingService
             return [];
         }
         Log::info('Prepared payload with ' . count($vacanciesPayload) . ' vacancies');
-//        $url = config('services.matcher.url', 'https://6hs64qyu5n547c-8000.proxy.runpod.net/bulk-match-fast');
-//        $response = Http::retry(3, 200)
-//            ->timeout(600)
-//            ->post($url, [
-//                'resumes' => [[
-//                    // 'title'       => mb_substr($resume->title ?? '', 0, 200),
-//                    'description' => mb_substr($resume->parsed_text ?? '', 0, 2000),
-//                ]],
-//                'vacancies'      => array_map(fn($v) => [
-//                    'id'    => $v['id'] ? (string)$v['id'] : null,
-//                    // 'title' => $v['title'] ?? '',
-//                    'text'  => $v['text'] ?? '',
-//                ], $vacanciesPayload),
-//                'top_k'          => count($vacanciesPayload),
-//                'min_score'      => 50,
-//                'weight_embed'   => 0.75,
-//                'weight_jaccard' => 0.15,
-//                'weight_cov'     => 0.1,
-//                // "title_threshold" => 0.5
-//            ]);
-//
-//        Log::info('Fetch HH details took: ' . (microtime(true) - $start) . 's');
-//        Log::info('hh response count:' . count($response->json()));
-//        if ($response->failed()) {
-//            Log::error('Matcher API failed', ['resume_id' => $resume->id, 'body' => $response->body()]);
-//            return [];
-//        }
-//
-//        $results = $response->json();
-//        $matches = $results['results'][0] ?? [];
-//        Log::info('Matches found: ' . count($matches));
-//        Log::info('example match', ['match' => $matches[0] ?? null]);
+        //        $url = config('services.matcher.url', 'https://6hs64qyu5n547c-8000.proxy.runpod.net/bulk-match-fast');
+        //        $response = Http::retry(3, 200)
+        //            ->timeout(600)
+        //            ->post($url, [
+        //                'resumes' => [[
+        //                    // 'title'       => mb_substr($resume->title ?? '', 0, 200),
+        //                    'description' => mb_substr($resume->parsed_text ?? '', 0, 2000),
+        //                ]],
+        //                'vacancies'      => array_map(fn($v) => [
+        //                    'id'    => $v['id'] ? (string)$v['id'] : null,
+        //                    // 'title' => $v['title'] ?? '',
+        //                    'text'  => $v['text'] ?? '',
+        //                ], $vacanciesPayload),
+        //                'top_k'          => count($vacanciesPayload),
+        //                'min_score'      => 50,
+        //                'weight_embed'   => 0.75,
+        //                'weight_jaccard' => 0.15,
+        //                'weight_cov'     => 0.1,
+        //                // "title_threshold" => 0.5
+        //            ]);
+        //
+        //        Log::info('Fetch HH details took: ' . (microtime(true) - $start) . 's');
+        //        Log::info('hh response count:' . count($response->json()));
+        //        if ($response->failed()) {
+        //            Log::error('Matcher API failed', ['resume_id' => $resume->id, 'body' => $response->body()]);
+        //            return [];
+        //        }
+        //
+        //        $results = $response->json();
+        //        $matches = $results['results'][0] ?? [];
+        //        Log::info('Matches found: ' . count($matches));
+        //        Log::info('example match', ['match' => $matches[0] ?? null]);
         $vacancyMap = collect($vacanciesPayload)->keyBy(fn($v, $k) => $v['id'] ?? "new_{$k}");
 
         $savedData = [];
-//         foreach ($vacanciesPayload as $match) {
-// //            if ($match['score'] < 49) continue;
+        //         foreach ($vacanciesPayload as $match) {
+        // //            if ($match['score'] < 49) continue;
 
-//             $vacId = $match['vacancy_id'] ?? null;
-//             $vac   = $vacId ? Vacancy::find($vacId) : null;
+        //             $vacId = $match['vacancy_id'] ?? null;
+        //             $vac   = $vacId ? Vacancy::find($vacId) : null;
 
-//             if (!$vac) {
-//                 $payload = $vacancyMap["new_{$match['vacancy_index']}"] ?? null;
-//                 if ($payload && isset($payload['external_id'])) {
-//                     $vac = Vacancy::where('source', 'hh')
-//                         ->where('external_id', $payload['external_id'])
-//                         ->first();
+        //             if (!$vac) {
+        //                 $payload = $vacancyMap["new_{$match['vacancy_index']}"] ?? null;
+        //                 if ($payload && isset($payload['external_id'])) {
+        //                     $vac = Vacancy::where('source', 'hh')
+        //                         ->where('external_id', $payload['external_id'])
+        //                         ->first();
 
-//                     if (!$vac) {
-//                         $vac = $this->vacancyRepository->createFromHH($payload['raw']);
-//                     }
-//                 }
-//             }
+        //                     if (!$vac) {
+        //                         $vac = $this->vacancyRepository->createFromHH($payload['raw']);
+        //                     }
+        //                 }
+        //             }
 
-//             if ($vac) {
-//                 $savedData[] = [
-//                     'resume_id'     => $resume->id,
-//                     'vacancy_id'    => $vac->id,
-//                     'score_percent' => $match['score'],
-//                     'explanations'  => json_encode($match),
-//                     'updated_at'    => now(),
-//                     'created_at'    => now(),
-//                 ];
-//             }
-//         }
+        //             if ($vac) {
+        //                 $savedData[] = [
+        //                     'resume_id'     => $resume->id,
+        //                     'vacancy_id'    => $vac->id,
+        //                     'score_percent' => $match['score'],
+        //                     'explanations'  => json_encode($match),
+        //                     'updated_at'    => now(),
+        //                     'created_at'    => now(),
+        //                 ];
+        //             }
+        //         }
 
-foreach ($vacanciesPayload as $match) {
-    // Skip invalid or incomplete matches
-    // if (!isset($match['score'])) {
-    //     $match['score'] = 0; // default score if not provided
-    // }
+        foreach ($vacanciesPayload as $match) {
+            // Skip invalid or incomplete matches
+            // if (!isset($match['score'])) {
+            //     $match['score'] = 0; // default score if not provided
+            // }
 
-    $vacId = $match['vacancy_id'] ?? null;
-    $vac   = $vacId ? Vacancy::find($vacId) : null;
-
-    if (!$vac) {
-        // Safely get the vacancy_index if it exists
-        $vacIndex = $match['vacancy_index'] ?? null;
-        $payload = $vacIndex !== null
-            ? ($vacancyMap["new_{$vacIndex}"] ?? null)
-            : null;
-
-        if ($payload && isset($payload['external_id'])) {
-            $vac = Vacancy::where('source', 'hh')
-                ->where('external_id', $payload['external_id'])
-                ->first();
+            $vacId = $match['vacancy_id'] ?? null;
+            $vac   = $vacId ? Vacancy::find($vacId) : null;
 
             if (!$vac) {
-                $vac = $this->vacancyRepository->createFromHH($payload['raw']);
+                // Safely get the vacancy_index if it exists
+                $vacIndex = $match['vacancy_index'] ?? null;
+                $payload = $vacIndex !== null
+                    ? ($vacancyMap["new_{$vacIndex}"] ?? null)
+                    : null;
+
+                if ($payload && isset($payload['external_id'])) {
+                    $vac = Vacancy::where('source', 'hh')
+                        ->where('external_id', $payload['external_id'])
+                        ->first();
+
+                    if (!$vac) {
+                        $vac = $this->vacancyRepository->createFromHH($payload['raw']);
+                    }
+                }
+            }
+
+            if ($vac) {
+                $savedData[] = [
+                    'resume_id'     => $resume->id,
+                    'vacancy_id'    => $vac->id,
+                    'score_percent' => $match['score'] ?? 0,
+                    'explanations'  => json_encode($match),
+                    'updated_at'    => now(),
+                    'created_at'    => now(),
+                ];
+            } else {
+                Log::warning('⚠️ Skipped match with missing vacancy_index or external_id', [
+                    'match' => $match,
+                ]);
             }
         }
-    }
-
-    if ($vac) {
-        $savedData[] = [
-            'resume_id'     => $resume->id,
-            'vacancy_id'    => $vac->id,
-            'score_percent' => $match['score'] ?? 0,
-            'explanations'  => json_encode($match),
-            'updated_at'    => now(),
-            'created_at'    => now(),
-        ];
-    } else {
-        Log::warning('⚠️ Skipped match with missing vacancy_index or external_id', [
-            'match' => $match,
-        ]);
-    }
-}
 
 
         if (!empty($savedData)) {
