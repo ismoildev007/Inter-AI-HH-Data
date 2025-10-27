@@ -186,9 +186,9 @@ class ClickController extends Controller
         $subscription = Subscription::create([
             'user_id' => $user->id,
             'plan_id' => $plan->id,
-            'starts_at' => null,
-            'ends_at' => null,
-            'remaining_auto_responses' => $request->remaining_auto_responses ?? 0,
+            'starts_at' => now(),
+            'ends_at' => now()->addDays(30),
+            'remaining_auto_responses' => $plan->remaining_auto_responses ?? 0,
             'status' => 'pending'
         ]);
         Log::info('Subscription created', ['subscription_id' => $subscription->id]);
