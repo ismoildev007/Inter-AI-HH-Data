@@ -69,6 +69,7 @@ class ChatBotController extends Controller
 
                 $currentCount++;
                 Cache::put($cacheKey, $currentCount, $secondsUntilEndOfDay);
+                Log::error('Count soni: ' . $currentCount);
             } catch (\Exception $e) {
                 Log::error('Cache increment error: ' . $e->getMessage());
             }
