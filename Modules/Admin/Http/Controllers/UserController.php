@@ -61,6 +61,10 @@ class UserController extends Controller
                 'created_at',
                 'updated_at',
             ])
+            ->where(function ($query) {
+                $query->whereNull('admin_check_status')
+                    ->orWhere('admin_check_status', false);
+            })
             ->orderByRaw("CASE WHEN status = 'working' THEN 0 ELSE 1 END")
             ->orderByDesc('created_at')
             ->get();
@@ -124,7 +128,7 @@ class UserController extends Controller
         ])->save();
 
         return redirect()
-            ->route('admin.users.admin_check.show', $user)
+            ->route('admin.users.admin_check')
             ->with('status', 'Foydalanuvchi “not working” holatiga o‘tkazildi.');
     }
 
@@ -152,7 +156,7 @@ class UserController extends Controller
         ])->save();
 
         return redirect()
-            ->route('admin.users.admin_check.show', $user)
+            ->route('admin.users.admin_check')
             ->with('status', 'Foydalanuvchi admin tomonidan tasdiqlandi.');
     }
 
