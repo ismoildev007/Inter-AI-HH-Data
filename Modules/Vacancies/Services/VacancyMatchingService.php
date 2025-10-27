@@ -113,7 +113,7 @@ class VacancyMatchingService
                 //         OR description ILIKE '%{$cyrilQuery}%'
                 //     ")
                 ->select('id', 'title', 'description', 'source', 'external_id')
-                ->limit(100)
+//                ->limit(100)
                 ->orderByDesc('id')
                 ->get()
                 ->keyBy(fn($v) => $v->source === 'hh' && $v->external_id
@@ -318,30 +318,30 @@ class VacancyMatchingService
             try {
                 $vac = null;
                 $vacId = $match['vacancy_id'] ?? null;
-        
+
                 if ($vacId) {
                     // direct Eloquent lookup
                     $vac = Vacancy::withoutGlobalScopes()->find($vacId);
                 }
-        
+
                 // If it's from HH, handle external_id
                 if (!$vac && isset($match['external_id'])) {
                     $vac = Vacancy::where('source', 'hh')
                         ->where('external_id', $match['external_id'])
                         ->first();
-        
+
                     if (!$vac && isset($match['raw'])) {
                         $vac = $this->vacancyRepository->createFromHH($match['raw']);
                     }
                 }
-        
+
                 // 🟩 If it’s a local vacancy that exists in DB::table but not found by model,
                 // still record it using the ID from the payload.
                 if (!$vac && !empty($vacId)) {
                     Log::info('⚙️ Local vacancy not found via model, saving manually', [
                         'vacancy_id' => $vacId,
                     ]);
-        
+
                     $savedData[] = [
                         'resume_id'     => $resume->id,
                         'vacancy_id'    => $vacId,
@@ -350,10 +350,10 @@ class VacancyMatchingService
                         'updated_at'    => now(),
                         'created_at'    => now(),
                     ];
-        
+
                     continue;
                 }
-        
+
                 // If everything’s normal
                 if ($vac) {
                     $savedData[] = [
@@ -372,7 +372,7 @@ class VacancyMatchingService
                 ]);
             }
         }
-        
+
 
 
         if (!empty($savedData)) {
