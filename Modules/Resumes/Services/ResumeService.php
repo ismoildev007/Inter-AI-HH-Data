@@ -125,51 +125,24 @@ class ResumeService
         - "keywords": A list of important keywords or technologies mentioned in the resume (useful for search/matching).
         - "language": Detect the main language of the resume text (e.g., "en", "ru", "uz").
         - "title": From the resume, identify up to three (maximum 3) of the most specific and relevant professional titles that accurately represent the candidate’s main expertise and experience.
-
             **Rules for generating "title":**
             • Each title must be highly specific and reflect both the role and its key technology, framework, or domain focus.
                 - Examples: "PHP Backend Developer", "C# .NET Developer", "ASP.NET Developer", "Java Spring Developer", "Python Fullstack Developer", "React Frontend Developer", "Digital Marketing Specialist", "HR Manager", "Accountant", "Nurse", "Sales Manager", "Teacher".
-
             • Titles referring to Backend, Frontend, or Fullstack development **must include at least one programming language or framework** (e.g., PHP, Java, .NET, React, Vue, Node.js, etc.).
-
             • **Strictly forbid** vague or generic titles such as: "Developer", "Software Engineer", "Software Developer", "Engineer", "backend developer", "Frontend Developer", "Programmer", "IT Specialist", "Consultant" — unless they include a clear technology or domain name (e.g., "C# Software Engineer", "Python Developer").
-
             • Include **non-technical roles** (e.g., "HR Manager", "Recruitment Specialist", "Project Manager", "Accountant", "Marketing Specialist", "Banking Operations Manager") when relevant.
-
             • Do not include parentheses, notes, or explanations — only plain text titles separated by commas.
-
             • Prioritize titles that reflect the **most recent or most emphasized** experience.
-
             • Return up to three concise and distinct titles, separated by commas.
-
             • Each title should include **one main defining technology or domain** — avoid duplication or overlapping meanings.
-
-            • **Additionally**, for each title, append up to **two key skills** taken directly from the resume that are logically consistent and specific to that title or profession.
-                - Example output format (with skills):
-                    PHP Backend Developer – PHP, Laravel
-                    C# .NET Developer – C#, .NET Core
-                    React Frontend Developer – React, TypeScript
-                    HR Manager – Recruitment, Payroll
-                    Marketing Specialist – SEO, Google Ads
-
-                - The skills must:
-                    • Be real skills mentioned in the resume.
-                    • Be directly related to the title or its core technology/domain.
-                    • Exclude general-purpose or cross-domain items such as: "MySQL", "SQL", "CI/CD", "OOP", "REST API", "Git", etc. (these are universal and not defining skills).
-                    • For developers — use specific languages, frameworks, or libraries (e.g., PHP, Laravel, React, Node.js, Java Spring, Python Django, Flutter, etc.).
-                    • For marketing roles — use domain-specific terms (e.g., Marketing, SMM, SEO, Google Ads).
-                    • For HR, accounting, sales, or other domains — use core relevant skills (e.g., Recruitment, Payroll, B2B Sales, Financial Reporting).
-
             • The output format must look exactly like this:
                 - Example for IT:
-                PHP Backend Developer – PHP, Laravel
-                C# .NET Developer – C#, .NET Core
-                React Frontend Developer – React, TypeScript
-
+                PHP Backend Developer,
+                C# .NET Developer,
+                React Frontend Developer
                 - Example for non-IT:
-                HR Manager – Recruitment, Payroll
-                Recruitment Specialist – Talent Acquisition, HR Policies
-                Marketing Specialist – SEO, SMM
+                HR Manager,
+                Recruitment Specialist,
                 Banking Operations Manager
 
         - "cover_letter": Write a short, professional cover letter (5–7 sentences) focusing on three key areas that best suit the candidate you listed above. Be polite, confident, concise, and literate.
