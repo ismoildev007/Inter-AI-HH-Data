@@ -31,60 +31,63 @@ class VacancyMatchingService
 
     public function matchResume(Resume $resume, $query): array
     {
-        Log::info('Job started for resume', ['resume_id' => $resume->id, 'query' => $query]);
         $start = microtime(true);
+        Log::info('🔍 Job started for resume', ['resume_id' => $resume->id, 'query' => $query]);
 
+        // --- 1. Normalize input
+        $query = trim(Str::lower($query));
         $latinQuery = TranslitHelper::toLatin($query);
         $cyrilQuery = TranslitHelper::toCyrillic($query);
 
-        $words = array_map('trim', explode(',', $query));
-
-        $translator = new GoogleTranslate();
-        $translator->setSource('uz');
-        $translator->setTarget('uz');
-        $uzQuery = $translator->translate("\"{$query}\"");
-
-        $translator->setTarget('ru');
-        $ruQuery = $translator->translate("\"{$query}\"");
-
-        $translator->setTarget('en');
-        $enQuery = $translator->translate("\"{$query}\"");
-
-        $translations = [
-            'uz' => $uzQuery,
-            'ru' => $ruQuery,
-            'en' => $enQuery,
-        ];
-
-        $allVariants = collect([$query, $uzQuery, $ruQuery, $enQuery])
-            ->unique()
-            ->filter()
-            ->values()
-            ->all();
-        $multiWords = collect($allVariants)
-            ->flatMap(fn($v) => preg_split('/[,]+/u', $v)) // <-- bu vergul yoki nuqtali vergul bo‘yicha bo‘ladi
-            ->map(fn($w) => trim(preg_replace('/[\"\'«»“”]/u', '', $w)))
+        // --- 2. Split words smartly
+        $words = collect(preg_split('/[\s,;]+/u', $query))
             ->filter(fn($w) => mb_strlen($w) >= 3)
             ->unique()
             ->values()
             ->all();
 
-        Log::info('Searching vacancies for terms', ['terms' => $allVariants, 'multi_words' => $multiWords]);
+        // --- 3. Translation (cached)
+        $translator = new GoogleTranslate('uz');
+        $translations = cache()->remember("translations:" . md5($query), now()->addHours(6), function () use ($translator, $query) {
+            return [
+                'uz' => $translator->setTarget('uz')->translate($query),
+                'ru' => $translator->setTarget('ru')->translate($query),
+                'en' => $translator->setTarget('en')->translate($query),
+            ];
+        });
 
+        $allVariants = collect([$query, ...array_values($translations)])
+            ->map(fn($v) => trim(str_replace(['"', "'", '«', '»'], '', $v)))
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
 
+        // --- 4. Multiword list
+        $multiWords = collect($allVariants)
+            ->flatMap(fn($v) => preg_split('/[\s,;]+/u', $v))
+            ->filter(fn($w) => mb_strlen($w) >= 3)
+            ->unique()
+            ->values()
+            ->all();
+
+        Log::info('🔤 Search terms ready', [
+            'base' => $query,
+            'variants' => $allVariants,
+            'multi_words' => $multiWords
+        ]);
+
+        // --- 5. Run parallel search (remote HH + local DB)
         [$hhVacancies, $localVacancies] = Concurrency::run([
-            fn() => cache()->remember(
-                "hh:search:{$query}:area97",
-                now()->addMinutes(30),
-                fn() => $this->hhRepository->search($query, 0, 100, ['area' => 97])
-            ),
+            fn() => cache()->remember("hh:search:" . md5($query . ':97'), now()->addMinutes(30), function () use ($query) {
+                return $this->hhRepository->search($query, 0, 100, ['area' => 97]);
+            }),
+
             fn() => DB::table('vacancies')
                 ->where('status', 'publish')
                 ->where('source', 'telegram')
                 ->whereNotIn('id', function ($q) use ($resume) {
-                    $q->select('vacancy_id');
-//                        ->from('match_results')
-//                        ->where('resume_id', $resume->id);
+                    $q->select('vacancy_id')->from('match_results')->where('resume_id', $resume->id);
                 })
                 ->where(function ($q) use ($multiWords, $latinQuery, $cyrilQuery) {
                     foreach ($multiWords as $word) {
@@ -98,13 +101,20 @@ class VacancyMatchingService
                         ->orWhere('title', 'ILIKE', "%{$cyrilQuery}%")
                         ->orWhere('description', 'ILIKE', "%{$cyrilQuery}%");
                 })
-//                ->select('id', 'title', 'description', 'source', 'external_id')
-                ->limit(300)
+                ->limit(200)
                 ->orderByDesc('id')
                 ->get()
-                ->keyBy(fn($v) => $v->source === 'hh' && $v->external_id
-                    ? $v->external_id
-                    : "local_{$v->id}")
+                ->keyBy(fn($v) => "local_{$v->id}")
+        ]);
+
+        // --- 6. Performance log
+        $duration = round(microtime(true) - $start, 3);
+        Log::info('✅ Job finished', [
+            'resume_id' => $resume->id,
+            'query' => $query,
+            'time' => "{$duration}s",
+            'hh_count' => count($hhVacancies ?? []),
+            'local_count' => count($localVacancies ?? []),
         ]);
 
 
