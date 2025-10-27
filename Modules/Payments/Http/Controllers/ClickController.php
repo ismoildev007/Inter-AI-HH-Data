@@ -88,7 +88,7 @@ class ClickController extends Controller
             $transaction->update([
                 'payment_status' => 'completed',
                 'state' => 2,
-                'perform_time' => now(),
+                'sign_time' => now(),
             ]);
             Log::info('Transaction completed', ['transaction_id' => $transaction->id]);
 
