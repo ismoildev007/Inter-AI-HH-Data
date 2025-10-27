@@ -78,7 +78,6 @@ class VacancyMatchingService
             'multi_words' => $multiWords
         ]);
 
-        // --- 5. Run parallel search (remote HH + local DB)
         [$hhVacancies, $localVacancies] = Concurrency::run([
             fn() => cache()->remember("hh:search:" . md5($query . ':97'), now()->addMinutes(30), function () use ($query) {
                 return $this->hhRepository->search($query, 0, 100, ['area' => 97]);
@@ -88,7 +87,9 @@ class VacancyMatchingService
                 ->where('status', 'publish')
                 ->where('source', 'telegram')
                 ->whereNotIn('id', function ($q) use ($resume) {
-                    $q->select('vacancy_id')->from('match_results')->where('resume_id', $resume->id);
+                    $q->select('vacancy_id')
+                        ->from('match_results')
+                        ->where('resume_id', $resume->id);
                 })
                 ->where(function ($q) use ($multiWords, $latinQuery, $cyrilQuery) {
                     foreach ($multiWords as $word) {
@@ -102,10 +103,13 @@ class VacancyMatchingService
                         ->orWhere('title', 'ILIKE', "%{$cyrilQuery}%")
                         ->orWhere('description', 'ILIKE', "%{$cyrilQuery}%");
                 })
-                ->limit(200)
+                ->select('id', 'title', 'description', 'source', 'external_id')
+                ->limit(100)
                 ->orderByDesc('id')
                 ->get()
-                ->keyBy(fn($v) => "local_{$v->id}")
+                ->keyBy(fn($v) => $v->source === 'hh' && $v->external_id
+                    ? $v->external_id
+                    : "local_{$v->id}")
         ]);
 
         // --- 6. Performance log
