@@ -239,7 +239,7 @@ class VacancyMatchingService
 
         $savedData = [];
         foreach ($vacanciesPayload as $match) {
-            if ($match['score'] < 49) continue;
+//            if ($match['score'] < 49) continue;
 
             $vacId = $match['vacancy_id'] ?? null;
             $vac   = $vacId ? Vacancy::find($vacId) : null;
