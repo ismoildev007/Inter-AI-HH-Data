@@ -15,6 +15,7 @@ use App\Helpers\TranslitHelper;
 use Illuminate\Support\Facades\Cache;
 use Stichoza\GoogleTranslate\GoogleTranslate;
 use Throwable;
+use Illuminate\Support\Str;
 
 class VacancyMatchingService
 {
