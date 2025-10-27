@@ -81,12 +81,24 @@ class VacancyMatchingService
                         ->where('resume_id', $resume->id);
                 })
                 ->where(function ($q) use ($multiWords, $latinQuery, $cyrilQuery) {
-                    foreach ($multiWords as $word) {
-                        $pattern = "%{$word}%";
-                        // 👇 shu yerda title + description birlashtirilyapti
-                        $q->orWhereRaw("(title || ' ' || description) ILIKE ?", [$pattern]);
+                    foreach ($multiWords as $stack) {
+                        // stack = "Laravel Developer"
+                        $q->orWhere(function ($subQ) use ($stack) {
+                            $words = preg_split('/\s+/u', $stack); // so‘zlarni bo‘lish
+
+                            foreach ($words as $word) {
+                                $pattern = "%{$word}%";
+
+                                // Har bir so‘z kamida title YOKI description da bo‘lishi shart
+                                $subQ->where(function ($inner) use ($pattern) {
+                                    $inner->where('title', 'ILIKE', $pattern)
+                                        ->orWhere('description', 'ILIKE', $pattern);
+                                });
+                            }
+                        });
                     }
 
+                    // translit variantlari uchun ham xuddi shu
                     $q->orWhereRaw("(title || ' ' || description) ILIKE ?", ["%{$latinQuery}%"])
                         ->orWhereRaw("(title || ' ' || description) ILIKE ?", ["%{$cyrilQuery}%"]);
                 })
