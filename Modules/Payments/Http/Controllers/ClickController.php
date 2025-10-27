@@ -145,25 +145,14 @@ class ClickController extends Controller
     {
         $secretKey = env('CLICK_SECRET_KEY');
 
-        if ($request->action == 0) {
-            $string = (string)$request->click_trans_id .
-                (string)$request->service_id .
-                (string)$secretKey .
-                (string)$request->merchant_trans_id .
-                (string)$request->amount .
-                (string)$request->action .
-                (string)$request->sign_time;
-        }
-        else {
-            $string = (string)$request->click_trans_id .
-                (string)$request->service_id .
-                (string)$secretKey .
-                (string)$request->merchant_trans_id .
-                (string)$request->merchant_prepare_id . // <--- SHU JOY YETISHMAYAPTI
-                (string)$request->amount .
-                (string)$request->action .
-                (string)$request->sign_time;
-        }
+        $string = (string)$request->click_trans_id .
+            (string)$request->service_id .
+            (string)$secretKey .
+            (string)$request->merchant_trans_id .
+            ($request->action == 1 ? (string)$request->merchant_prepare_id : '') .
+            (string)$request->amount .
+            (string)$request->action .
+            (string)$request->sign_time;
 
         $expectedSign = md5($string);
         $isValid = $expectedSign === $request->sign_string;
