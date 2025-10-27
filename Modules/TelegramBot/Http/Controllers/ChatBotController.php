@@ -16,7 +16,7 @@ class ChatBotController extends Controller
 
     public function __construct()
     {
-        $this->dailyLimit = env('TELEGRAM_DAILY_LIMIT', 10);
+        $this->dailyLimit = env('TELEGRAM_DAILY_LIMIT', 5); // default 5 ta xabar
     }
 
     public function handle(Request $request)
@@ -24,33 +24,23 @@ class ChatBotController extends Controller
         $telegram = new Api(env('TELEGRAM_CHAT_BOT_TOKEN'));
         $update = $telegram->getWebhookUpdate();
 
+        // === FOYDALANUVCHI XABARLARI (PRIVATE CHAT) ===
         if ($update->isType('message') && $update->message->chat->type === 'private') {
             $chatId = $update->message->chat->id;
             $text   = $update->message->text ?? '';
-
-            $user = $update->message->from ?? null;
+            $user   = $update->message->from ?? null;
             $firstName = $user->first_name ?? '';
-            $lastName = $user->last_name ?? '';
-            $username = $user->username ?? '';
-            $fullName = trim("$firstName $lastName");
+            $lastName  = $user->last_name ?? '';
+            $username  = $user->username ?? '';
+            $fullName  = trim("$firstName $lastName");
 
             $date = Carbon::now()->format('Y-m-d');
             $cacheKey = "support_daily_count:{$chatId}:{$date}";
 
+            // Joriy kun uchun foydalanuvchi yuborgan xabarlar soni
             $currentCount = (int) Cache::get($cacheKey, 0);
 
-            if ($currentCount >= $this->dailyLimit) {
-                try {
-                    $telegram->sendMessage([
-                        'chat_id' => $chatId,
-                        'text'    => "⚠️ Kechirasiz, siz bugunlik limitingizni tugatdingiz. {$this->dailyLimit} ta xabar yubordingiz. Ertaga qayta urinib ko‘ring.",
-                    ]);
-                } catch (\Exception $e) {
-                    Log::error('Telegram send limit exceeded message failed: ' . $e->getMessage());
-                }
-                return response('ok');
-            }
-
+            // /start buyrug‘i
             if (trim($text) === '/start') {
                 try {
                     $telegram->sendMessage([
@@ -63,40 +53,34 @@ class ChatBotController extends Controller
                 return response('ok');
             }
 
+            // Kunlik limit tekshiruvi
+            if ($currentCount >= $this->dailyLimit) {
+                try {
+                    $telegram->sendMessage([
+                        'chat_id' => $chatId,
+                        'text'    => "⚠️ Siz bugunlik limitdan foydalandingiz.\nIltimos, ertaga qayta yozing. 🙂",
+                    ]);
+                } catch (\Exception $e) {
+                    Log::error('Telegram send limit message failed: ' . $e->getMessage());
+                }
+                // Admin guruhga yuborilmaydi
+                return response('ok');
+            }
 
+            // Limit oshmagan bo‘lsa, hisobni oshiramiz
             try {
                 $now = Carbon::now();
                 $endOfDay = $now->copy()->endOfDay();
                 $secondsUntilEndOfDay = $endOfDay->diffInSeconds($now);
 
-                $currentCount = (int) Cache::get($cacheKey, 0);
                 $currentCount++;
                 Cache::put($cacheKey, $currentCount, $secondsUntilEndOfDay);
-
-                Log::info("User {$chatId} sent message #{$currentCount} of {$this->dailyLimit}");
-
-                if ($currentCount > $this->dailyLimit) {
-                    $telegram->sendMessage([
-                        'chat_id' => $chatId,
-                        'text'    => "⚠️ Kechirasiz, siz bugun {$this->dailyLimit} ta xabar yuborishingiz mumkin edi. Iltimos, ertaga qayta urinib ko‘ring.",
-                    ]);
-                    return response('ok');
-                }
             } catch (\Exception $e) {
                 Log::error('Cache increment error: ' . $e->getMessage());
             }
 
+            // Xabarni bazaga saqlash va admin guruhga yuborish
             try {
-                $now = Carbon::now();
-                $endOfDay = $now->copy()->endOfDay();
-                $secondsUntilEndOfDay = $endOfDay->diffInSeconds($now);
-
-                $currentCount = (int) Cache::get($cacheKey, 0);
-                $currentCount++;
-                Cache::put($cacheKey, $currentCount, $secondsUntilEndOfDay);
-
-                Log::info("User {$chatId} sent message #{$currentCount} of {$this->dailyLimit}");
-
                 $support = SupportMessage::create([
                     'user_chat_id' => $chatId,
                     'message_text' => $text,
@@ -112,22 +96,20 @@ class ChatBotController extends Controller
                 ]);
 
                 $telegramMessageId = $response->getMessageId();
-
-                $support->update([
-                    'telegram_message_id' => $telegramMessageId
-                ]);
+                $support->update(['telegram_message_id' => $telegramMessageId]);
 
                 $telegram->sendMessage([
                     'chat_id' => $chatId,
-                    'text'    => "{$firstName}!\nSavol va taklifingiz uchun rahmat \ntez orada sizga javob beramiz. 🙂",
+                    'text'    => "{$firstName}!\nSavol va taklifingiz uchun rahmat, tez orada sizga javob beramiz. 🙂",
                 ]);
             } catch (\Exception $e) {
                 Log::error('Telegram send or save message failed: ' . $e->getMessage());
-                return response('ok', 500);
             }
 
+            return response('ok');
         }
 
+        // === ADMIN GURUHI JAVOBLARI ===
         if ($update->isType('message') && $update->message->chat->id == env('TELEGRAM_ADMIN_GROUP_ID')) {
             if (isset($update->message->reply_to_message)) {
                 $origMsg = $update->message->reply_to_message;
@@ -136,7 +118,7 @@ class ChatBotController extends Controller
                 $origMessageId = $origMsg->message_id;
 
                 $support = SupportMessage::where('telegram_message_id', $origMessageId)
-                    ->where('status','pending')
+                    ->where('status', 'pending')
                     ->first();
 
                 if ($support) {
@@ -146,15 +128,12 @@ class ChatBotController extends Controller
                             'text'    => "👨‍💼 Inter-AI Support:\n\n" . $replyText
                         ]);
 
-                        $support->update([
-                            'status' => 'answered'
-                        ]);
+                        $support->update(['status' => 'answered']);
                     } catch (\Exception $e) {
                         Log::error('Telegram send reply to user failed: ' . $e->getMessage());
                     }
                 }
             }
-
             return response('ok');
         }
 
