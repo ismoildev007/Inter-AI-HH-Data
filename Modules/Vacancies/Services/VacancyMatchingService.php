@@ -239,36 +239,80 @@ class VacancyMatchingService
         $vacancyMap = collect($vacanciesPayload)->keyBy(fn($v, $k) => $v['id'] ?? "new_{$k}");
 
         $savedData = [];
-        foreach ($vacanciesPayload as $match) {
-//            if ($match['score'] < 49) continue;
+//         foreach ($vacanciesPayload as $match) {
+// //            if ($match['score'] < 49) continue;
 
-            $vacId = $match['vacancy_id'] ?? null;
-            $vac   = $vacId ? Vacancy::find($vacId) : null;
+//             $vacId = $match['vacancy_id'] ?? null;
+//             $vac   = $vacId ? Vacancy::find($vacId) : null;
+
+//             if (!$vac) {
+//                 $payload = $vacancyMap["new_{$match['vacancy_index']}"] ?? null;
+//                 if ($payload && isset($payload['external_id'])) {
+//                     $vac = Vacancy::where('source', 'hh')
+//                         ->where('external_id', $payload['external_id'])
+//                         ->first();
+
+//                     if (!$vac) {
+//                         $vac = $this->vacancyRepository->createFromHH($payload['raw']);
+//                     }
+//                 }
+//             }
+
+//             if ($vac) {
+//                 $savedData[] = [
+//                     'resume_id'     => $resume->id,
+//                     'vacancy_id'    => $vac->id,
+//                     'score_percent' => $match['score'],
+//                     'explanations'  => json_encode($match),
+//                     'updated_at'    => now(),
+//                     'created_at'    => now(),
+//                 ];
+//             }
+//         }
+
+foreach ($vacanciesPayload as $match) {
+    // Skip invalid or incomplete matches
+    // if (!isset($match['score'])) {
+    //     $match['score'] = 0; // default score if not provided
+    // }
+
+    $vacId = $match['vacancy_id'] ?? null;
+    $vac   = $vacId ? Vacancy::find($vacId) : null;
+
+    if (!$vac) {
+        // Safely get the vacancy_index if it exists
+        $vacIndex = $match['vacancy_index'] ?? null;
+        $payload = $vacIndex !== null
+            ? ($vacancyMap["new_{$vacIndex}"] ?? null)
+            : null;
+
+        if ($payload && isset($payload['external_id'])) {
+            $vac = Vacancy::where('source', 'hh')
+                ->where('external_id', $payload['external_id'])
+                ->first();
 
             if (!$vac) {
-                $payload = $vacancyMap["new_{$match['vacancy_index']}"] ?? null;
-                if ($payload && isset($payload['external_id'])) {
-                    $vac = Vacancy::where('source', 'hh')
-                        ->where('external_id', $payload['external_id'])
-                        ->first();
-
-                    if (!$vac) {
-                        $vac = $this->vacancyRepository->createFromHH($payload['raw']);
-                    }
-                }
-            }
-
-            if ($vac) {
-                $savedData[] = [
-                    'resume_id'     => $resume->id,
-                    'vacancy_id'    => $vac->id,
-                    'score_percent' => $match['score'],
-                    'explanations'  => json_encode($match),
-                    'updated_at'    => now(),
-                    'created_at'    => now(),
-                ];
+                $vac = $this->vacancyRepository->createFromHH($payload['raw']);
             }
         }
+    }
+
+    if ($vac) {
+        $savedData[] = [
+            'resume_id'     => $resume->id,
+            'vacancy_id'    => $vac->id,
+            'score_percent' => $match['score'] ?? 0,
+            'explanations'  => json_encode($match),
+            'updated_at'    => now(),
+            'created_at'    => now(),
+        ];
+    } else {
+        Log::warning('⚠️ Skipped match with missing vacancy_index or external_id', [
+            'match' => $match,
+        ]);
+    }
+}
+
 
         if (!empty($savedData)) {
             DB::table('match_results')->upsert(
