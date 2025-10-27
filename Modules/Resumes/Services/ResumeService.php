@@ -165,8 +165,11 @@ class ResumeService
                     ['role' => 'system', 'content' => 'You are a helpful AI for analyzing resumes.'],
                     ['role' => 'user', 'content' => $prompt],
                 ],
-                // 'temperature' => 0.2,
+                'temperature' => 0.2,
+                'max_tokens' => 300,
             ]);
+
+
 
         if (! $response->successful()) {
             Log::error("GPT API failed: " . $response->body());
@@ -189,7 +192,7 @@ class ResumeService
 
 
         $normalizedTitle = $this->extractTitle($analysis['title'] ?? null);
-Log::info(['normilize title' => $normalizedTitle]);
+        Log::info(['normilize title' => $normalizedTitle]);
         $resumeAnalyze = ResumeAnalyze::updateOrCreate(
             ['resume_id' => $resume->id],
             [
