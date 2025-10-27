@@ -177,7 +177,7 @@ class VacancyMatchingService
                 'text' => mb_substr(strip_tags($v->description), 0, 2000),
             ];
         }
-        Log::info(['local vacancies' => $localVacancies]);
+        Log::info(['local vacancies' => $vacanciesPayload]);
         $toFetch = collect($hhItems)
             ->filter(fn($item) => isset($item['id']) && !$localVacancies->has($item['id']))
             ->take(200);
