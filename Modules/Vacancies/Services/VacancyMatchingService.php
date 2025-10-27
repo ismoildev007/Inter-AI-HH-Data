@@ -76,14 +76,14 @@ class VacancyMatchingService
             now()->addMinutes(30),
             fn() => $this->hhRepository->search($query, 0, 100, ['area' => 97])
         );
-        
+
         // 🔹 Qidiruv so‘rovini tayyorlash
         if (!empty($multiWords)) {
             $tsQuery = implode(' & ', array_map('trim', $multiWords));
         } else {
             $tsQuery = trim($latinQuery ?: $cyrilQuery);
         }
-        
+
         // 🔹 Agar qidiruv bo‘sh bo‘lsa, natija bo‘sh bo‘lsin
         if (empty($tsQuery)) {
             $localVacancies = collect();
@@ -97,9 +97,9 @@ class VacancyMatchingService
                         ->where('resume_id', $resume->id);
                 })
                 ->whereRaw("
-                    to_tsvector('simple', coalesce(title, '') || ' ' || coalesce(description, ''))
-                    @@ to_tsquery('simple', ?)
-                ", [$tsQuery])
+        to_tsvector('simple', coalesce(title, '') || ' ' || coalesce(description, ''))
+        @@ websearch_to_tsquery('simple', ?)
+    ", [$tsQuery])
                 ->select(
                     'id',
                     'title',
@@ -107,13 +107,13 @@ class VacancyMatchingService
                     'source',
                     'external_id',
                     DB::raw("
-                        ts_rank_cd(
-                            to_tsvector('simple', coalesce(title, '') || ' ' || coalesce(description, '')),
-                            to_tsquery('simple', ?)
-                        ) as rank
-                    ")
+            ts_rank_cd(
+                to_tsvector('simple', coalesce(title, '') || ' ' || coalesce(description, '')),
+                websearch_to_tsquery('simple', ?)
+            ) as rank
+        ")
                 )
-                ->addBinding($tsQuery, 'select') // rank uchun binding
+                ->addBinding($tsQuery, 'select')
                 ->orderByDesc('rank')
                 ->orderByDesc('id')
                 ->limit(100)
