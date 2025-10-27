@@ -125,25 +125,53 @@ class ResumeService
         - "keywords": A list of important keywords or technologies mentioned in the resume (useful for search/matching).
         - "language": Detect the main language of the resume text (e.g., "en", "ru", "uz").
         - "title": From the resume, identify up to three (maximum 3) of the most specific and relevant professional titles that accurately represent the candidate’s main expertise and experience.
+
+            Additionally, for each selected title, append up to two key skills that are most directly relevant and representative of that specific title (e.g., "PHP Backend Developer – PHP, Laravel").
+
+            ---
             **Rules for generating "title":**
-            • Each title must be highly specific and reflect both the role and its key technology, framework, or domain focus.  
-                - Examples: "PHP Backend Developer", "C# .NET Developer", "ASP.NET Developer", "Java Spring Developer", "Python Fullstack Developer", "React Frontend Developer", "Digital Marketing Specialist", "HR Manager", "Accountant", "Nurse", "Sales Manager", "Teacher".  
-            • Titles referring to Backend, Frontend, or Fullstack development **must include at least one programming language or framework** (e.g., PHP, Java, .NET, React, Vue, Node.js, etc.).  
-            • **Strictly forbid** vague or generic titles such as: "Developer", "Software Engineer", "Software Developer", "Engineer", "backend developer", "Frontend Developer", "Programmer", "IT Specialist", "Consultant" — unless they include a clear technology or domain name (e.g., "C# Software Engineer", "Python Developer").  
-            • Include **non-technical roles** (e.g., "HR Manager", "Recruitment Specialist", "Project Manager", "Accountant", "Marketing Specialist", "Banking Operations Manager") when relevant.  
-            • Do not include parentheses, notes, or explanations — only plain text titles separated by commas.  
-            • Prioritize titles that reflect the **most recent or most emphasized** experience.  
-            • Return up to three concise and distinct titles, separated by commas.  
-            • Each title should include **one main defining technology or domain** — avoid duplication or overlapping meanings.  
-            • The output format must look exactly like this:
-                - Example for IT:
-                PHP Backend Developer,
-                C# .NET Developer,
-                React Frontend Developer
-                - Example for non-IT:
-                HR Manager,
-                Recruitment Specialist,
-                Banking Operations Manager
+
+            • Each title must be highly specific and reflect both the role and its key technology, framework, or domain focus.
+              - Examples: "PHP Backend Developer", "C# .NET Developer", "React Frontend Developer", "Java Spring Developer", "Digital Marketing Specialist", "HR Manager", "Accountant", "Sales Manager".
+
+            • Each title must include one or two key skills from the resume that are directly relevant to that role and logically consistent.
+              - Example:
+                - "PHP Backend Developer – PHP, Laravel"
+                - "React Frontend Developer – React, TypeScript"
+                - "HR Manager – Talent Acquisition, Payroll"
+
+            • When selecting the 2 skills:
+              - Choose skills that strengthen or specify the title (e.g., framework, tool, or domain expertise).
+              - Skills must come from the resume, not invented.
+              - Do not include generic, cross-domain, or irrelevant skills such as:
+                - Generic tech stack elements: "MySQL", "Git", "CI/CD", "REST API", "OOP"
+                - Generic soft skills: "Communication", "Teamwork", "Leadership"
+              - Only include skills that define or specialize the role, for example:
+                - Developers → frameworks, languages, or tools unique to that stack (Laravel, React, Node.js, Django, Flutter, etc.)
+                - Marketing → domain or platform (SEO, Google Ads, Content Strategy)
+                - HR → HR-specific skills (Recruitment, Employee Relations, Compensation)
+
+            • Strictly forbid vague or generic titles such as:
+              "Developer", "Software Engineer", "Programmer", "IT Specialist", "Consultant", etc.,
+              unless they include a clear technology or domain (e.g., "Python Developer", "C# Software Engineer").
+
+            • Include non-technical roles when relevant (e.g., "HR Manager", "Project Manager", "Marketing Specialist").
+
+            • Prioritize titles and their matching skills that reflect the most recent or most emphasized experience.
+
+            • Return up to three concise and distinct titles, each on a new line.
+
+            **Output format must look exactly like this:**
+
+            For IT roles:
+            PHP Backend Developer – PHP, Laravel
+            C# .NET Developer – C#, .NET Core
+            React Frontend Developer – React, TypeScript
+
+            For non-IT roles:
+            HR Manager – Recruitment, Payroll
+            Marketing Specialist – SEO, Google Ads
+            Sales Manager – B2B Sales, CRM
 
         - "cover_letter": Write a short, professional cover letter (5–7 sentences) focusing on three key areas that best suit the candidate you listed above. Be polite, confident, concise, and literate.
           Always include the candidate's real name at the end, in a new paragraph, with the caption "Sincerely" and their name. The letter must be in Russian.
