@@ -98,6 +98,7 @@ class ClickController extends Controller
                 $subscription->update([
                     'starts_at' => now(),
                     'ends_at' => now()->addDays(30),
+                    'remaining_auto_responses' => $plan->remaining_auto_responses,
                     'status' => 'active',
                 ]);
                 Log::info('Subscription updated to active', ['subscription_id' => $subscription->id]);

@@ -175,6 +175,7 @@ class PaymeService
             $subscription->update([
                 'starts_at' => now(),
                 'ends_at' => now()->addDays(30),
+                'remaining_auto_responses' => $prepare->plan->remaining_auto_responses,
                 'status' => 'active'
             ]);
             return response()->json([
