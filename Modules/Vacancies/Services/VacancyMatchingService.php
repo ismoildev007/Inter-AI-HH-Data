@@ -82,9 +82,9 @@ class VacancyMatchingService
                 ->where('status', 'publish')
                 ->where('source', 'telegram')
                 ->whereNotIn('id', function ($q) use ($resume) {
-                    $q->select('vacancy_id')
-                        ->from('match_results')
-                        ->where('resume_id', $resume->id);
+                    $q->select('vacancy_id');
+//                        ->from('match_results')
+//                        ->where('resume_id', $resume->id);
                 })
                 ->where(function ($q) use ($multiWords, $latinQuery, $cyrilQuery) {
                     foreach ($multiWords as $word) {
@@ -93,13 +93,13 @@ class VacancyMatchingService
                             ->orWhere('description', 'ILIKE', $pattern);
                     }
 
-//                    $q->orWhere('title', 'ILIKE', "%{$latinQuery}%")
-//                        ->orWhere('description', 'ILIKE', "%{$latinQuery}%")
-//                        ->orWhere('title', 'ILIKE', "%{$cyrilQuery}%")
-//                        ->orWhere('description', 'ILIKE', "%{$cyrilQuery}%");
+                    $q->orWhere('title', 'ILIKE', "%{$latinQuery}%")
+                        ->orWhere('description', 'ILIKE', "%{$latinQuery}%")
+                        ->orWhere('title', 'ILIKE', "%{$cyrilQuery}%")
+                        ->orWhere('description', 'ILIKE', "%{$cyrilQuery}%");
                 })
-                ->select('id', 'title', 'description', 'source', 'external_id')
-                ->limit(100)
+//                ->select('id', 'title', 'description', 'source', 'external_id')
+                ->limit(300)
                 ->orderByDesc('id')
                 ->get()
                 ->keyBy(fn($v) => $v->source === 'hh' && $v->external_id
