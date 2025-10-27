@@ -71,18 +71,24 @@ class VacancyMatchingService
         }
 
         Log::info('Searching vacancies for terms', ['terms' => $allVariants, 'multi_words' => $multiWords]);
-
-
-        [$hhVacancies, $localVacancies] = Concurrency::run([
-            // 1️⃣ HH API dan natijalar olish (cache bilan)
-            fn() => cache()->remember(
-                "hh:search:{$query}:area97",
-                now()->addMinutes(30),
-                fn() => $this->hhRepository->search($query, 0, 100, ['area' => 97])
-            ),
+        $hhVacancies = cache()->remember(
+            "hh:search:{$query}:area97",
+            now()->addMinutes(30),
+            fn() => $this->hhRepository->search($query, 0, 100, ['area' => 97])
+        );
         
-            // 2️⃣ Mahalliy bazadan (telegram) vacancy qidirish
-            fn() => DB::table('vacancies')
+        // 🔹 Qidiruv so‘rovini tayyorlash
+        if (!empty($multiWords)) {
+            $tsQuery = implode(' & ', array_map('trim', $multiWords));
+        } else {
+            $tsQuery = trim($latinQuery ?: $cyrilQuery);
+        }
+        
+        // 🔹 Agar qidiruv bo‘sh bo‘lsa, natija bo‘sh bo‘lsin
+        if (empty($tsQuery)) {
+            $localVacancies = collect();
+        } else {
+            $localVacancies = DB::table('vacancies')
                 ->where('status', 'publish')
                 ->where('source', 'telegram')
                 ->whereNotIn('id', function ($q) use ($resume) {
@@ -107,16 +113,51 @@ class VacancyMatchingService
                         ) as rank
                     ")
                 )
-                ->addBinding($tsQuery, 'select') // ts_rank uchun qo‘shimcha binding
+                ->addBinding($tsQuery, 'select') // rank uchun binding
                 ->orderByDesc('rank')
                 ->orderByDesc('id')
                 ->limit(100)
                 ->get()
                 ->keyBy(fn($v) => ($v->source === 'hh' && $v->external_id)
                     ? $v->external_id
-                    : "local_{$v->id}")
-        ]);
-        
+                    : "local_{$v->id}");
+        }
+
+        // [$hhVacancies, $localVacancies] = Concurrency::run([
+        //     fn() => cache()->remember(
+        //         "hh:search:{$query}:area97",
+        //         now()->addMinutes(30),
+        //         fn() => $this->hhRepository->search($query, 0, 100, ['area' => 97])
+        //     ),
+        //     fn() => DB::table('vacancies')
+        //         ->where('status', 'publish')
+        //         ->where('source', 'telegram')
+        //         ->whereNotIn('id', function ($q) use ($resume) {
+        //             $q->select('vacancy_id')
+        //                 ->from('match_results')
+        //                 ->where('resume_id', $resume->id);
+        //         })
+        //         ->where(function ($q) use ($multiWords, $latinQuery, $cyrilQuery) {
+        //             foreach ($multiWords as $word) {
+        //                 $pattern = "%{$word}%";
+        //                 $q->orWhere('title', 'ILIKE', $pattern)
+        //                     ->orWhere('description', 'ILIKE', $pattern);
+        //             }
+
+        //             $q->orWhere('title', 'ILIKE', "%{$latinQuery}%")
+        //                 ->orWhere('description', 'ILIKE', "%{$latinQuery}%")
+        //                 ->orWhere('title', 'ILIKE', "%{$cyrilQuery}%")
+        //                 ->orWhere('description', 'ILIKE', "%{$cyrilQuery}%");
+        //         })
+        //         //                ->select('id', 'title', 'description', 'source', 'external_id')
+        //         ->limit(300)
+        //         ->orderByDesc('id')
+        //         ->get()
+        //         ->keyBy(fn($v) => $v->source === 'hh' && $v->external_id
+        //             ? $v->external_id
+        //             : "local_{$v->id}")
+        // ]);
+
 
         Log::info('Data fetch took:' . (microtime(true) - $start) . 's');
         Log::info('Local vacancies: ' . $localVacancies->count());
