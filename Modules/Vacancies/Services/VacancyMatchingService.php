@@ -177,7 +177,7 @@ class VacancyMatchingService
         };
 
         $localVacancies = $buildLocal(true)
-            ->limit(100)
+            ->limit(1000)
             ->get();
 
         $localVacancies = collect($localVacancies)
