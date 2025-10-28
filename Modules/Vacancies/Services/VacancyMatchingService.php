@@ -41,7 +41,6 @@ class VacancyMatchingService
         $words = array_map('trim', explode(',', $query));
 
         $translator = new GoogleTranslate();
-        // Avtomatik til aniqlash — noto'g'ri tarjimalarni kamaytiradi
         $translator->setSource('auto');
         $translator->setTarget('uz');
         $uzQuery = $translator->translate("\"{$query}\"");
@@ -57,7 +56,6 @@ class VacancyMatchingService
             ->filter()
             ->values();
 
-        // Kengaytirilgan tokenizatsiya: bo'sh joy, vergul, nuqtali vergul, chiziqcha va h.k.
         $tokens = $allVariants
             ->flatMap(fn($v) => preg_split('/[\s,;\/\|]+/u', (string) $v))
             ->map(fn($w) => trim(preg_replace('/[\"\'«»“”]/u', '', $w)))
@@ -68,7 +66,6 @@ class VacancyMatchingService
             ->values();
         $tokenArr = $tokens->all();
 
-        // Ko'p so'zli iboralar (vergul bo'yicha segmentlar) — aniqroq moslik uchun phrase matching
         $phrases = $allVariants
             ->flatMap(fn($v) => preg_split('/\s*,\s*/u', (string) $v))
             ->map(fn($s) => trim($s))
@@ -79,7 +76,6 @@ class VacancyMatchingService
             ->values();
         $phraseArr = $phrases->all();
 
-        // AND-gating uchun eng uzun 2 tokenni tanlaymiz (umumiy, domen-agnostik)
         $tokensByLen = $tokens->sortByDesc(fn($t) => mb_strlen($t, 'UTF-8'))->values();
         $mustAnd = array_slice($tokensByLen->all(), 0, 2);
 
@@ -87,13 +83,10 @@ class VacancyMatchingService
 
         $searchQuery = $latinQuery ?: $cyrilQuery;
 
-        // websearch_to_tsquery uchun OR mantiqi: websearch sintaksisida 'OR' so'zi ishlatiladi
-        // Ko'p so'zli frazalar "..." bilan o'raladi
         $tsTerms = array_merge(
             array_map('trim', array_map('strval', $phraseArr)),
             array_map('trim', array_map('strval', $tokenArr))
         );
-        // Majburiy kuchli juftlik (top 2 token) — precisionni oshirish uchun
         $mustPair = [];
         if (count($tokenArr) >= 2) {
             $mustPair = ['(' . $tokenArr[0] . ' ' . $tokenArr[1] . ')']; // websearch: space = AND
@@ -106,7 +99,6 @@ class VacancyMatchingService
             }, $webParts))
             : trim((string) $searchQuery);
 
-        // Rezume bo'yicha taxminiy kategoriya — mos natijalarni ustun qo'yish uchun
         $guessedCategory = null;
         try {
             /** @var VacancyCategoryService $categorizer */
@@ -119,15 +111,11 @@ class VacancyMatchingService
             $guessedCategory = null;
         }
 
-        // HH qidiruvini cache bilan olamiz
         $hhVacancies = cache()->remember(
             "hh:search:{$query}:area97",
             now()->addMinutes(30),
             fn() => $this->hhRepository->search($query, 0, 100, ['area' => 97])
         );
-
-        // Lokal (telegram) qidiruvini ikki fazada: (1) strict kategoriya, (2) umumiy fallback
-        // Domen yoki soha-gating YO'Q: qidiruv umumiy, har qanday soha uchun ishlaydi
 
         $buildLocal = function (bool $withCategory) use ($resume, $tsQuery, $tokenArr, $guessedCategory) {
             $qb = DB::table('vacancies')
@@ -139,19 +127,16 @@ class VacancyMatchingService
                         ->where('resume_id', $resume->id);
                 })
                 ->where(function ($query) use ($tsQuery, $tokenArr) {
-                    // Rezume title/keywords -> faqat description bo'yicha FT qidiruv (titlega emas)
                     $query->whereRaw("
-                        to_tsvector('simple', coalesce(description, ''))
-                        @@ websearch_to_tsquery('simple', ?)
-                    ", [$tsQuery]);
+                to_tsvector('simple', coalesce(description, ''))
+                @@ websearch_to_tsquery('simple', ?)
+            ", [$tsQuery]);
 
-                    // Fallback: OR-ILIKE (recallni oshirish uchun)
                     if (!empty($tokenArr)) {
                         $top = array_slice($tokenArr, 0, min(5, count($tokenArr)));
                         $query->orWhere(function ($q) use ($top) {
                             foreach ($top as $idx => $t) {
                                 $pattern = "%{$t}%";
-                                // Faqat description ILIKE — titlega mos kelgan dev lavozimlar aralashmasin
                                 if ($idx === 0) {
                                     $q->where('description', 'ILIKE', $pattern);
                                 } else {
@@ -161,7 +146,6 @@ class VacancyMatchingService
                         });
                     }
                 })
-                // Domen/spetsifik noise filtrlari yo'q — umumiy qidiruv saqlanadi
                 ->select(
                     'id',
                     'title',
@@ -170,23 +154,40 @@ class VacancyMatchingService
                     'external_id',
                     'category',
                     DB::raw("
-                        ts_rank_cd(
-                            to_tsvector('simple', coalesce(description, '')),
-                            websearch_to_tsquery('simple', ?)
-                        ) as rank
-                    ")
+                ts_rank_cd(
+                    to_tsvector('simple', coalesce(description, '')),
+                    websearch_to_tsquery('simple', ?)
+                ) as rank
+            ")
                 )
                 ->addBinding($tsQuery, 'select');
 
-            if ($withCategory && $guessedCategory) {
-                $qb->where('category', $guessedCategory);
+            if ($withCategory) {
+                $resumeCategory = $resume->category ?? null;
+
+                if ($resumeCategory) {
+                    $existsInSameCategory = DB::table('vacancies')
+                        ->where('status', 'publish')
+                        ->where('source', 'telegram')
+                        ->where('category', $resumeCategory)
+                        ->exists();
+
+                    if ($existsInSameCategory) {
+                        $qb->where('category', $resumeCategory);
+                    } else {
+                        $qb->whereIn('category', ['Other']);
+                    }
+                } elseif ($guessedCategory) {
+                    // Agar resumeda kategoriya bo‘lmasa, taxminiy kategoriya bo‘yicha qidir
+                    $qb->where('category', $guessedCategory);
+                }
             }
 
             return $qb->orderByDesc('rank')->orderByDesc('id');
         };
 
         $catLimit = 100;
-        $fallbackThreshold = 40; // kategoriya bo'yicha natijalar kam bo'lsa — umumiy qidiruv bilan to'ldiramiz
+        $fallbackThreshold = 40;
         $localCat = $buildLocal(true)->limit($catLimit)->get();
 
         if ($guessedCategory && $localCat->count() < $fallbackThreshold) {
@@ -197,7 +198,6 @@ class VacancyMatchingService
             $localVacancies = $localCat;
         }
 
-        // Key by external key to avoid duplicates vs HH payload join further
         $localVacancies = collect($localVacancies)
             ->keyBy(fn($v) => $v->source === 'hh' && $v->external_id ? $v->external_id : "local_{$v->id}");
 
@@ -255,11 +255,9 @@ class VacancyMatchingService
                 $vacId = $match['vacancy_id'] ?? null;
 
                 if ($vacId) {
-                    // direct Eloquent lookup
                     $vac = Vacancy::withoutGlobalScopes()->find($vacId);
                 }
 
-                // If it's from HH, handle external_id
                 if (!$vac && isset($match['external_id'])) {
                     $vac = Vacancy::where('source', 'hh')
                         ->where('external_id', $match['external_id'])
@@ -270,8 +268,6 @@ class VacancyMatchingService
                     }
                 }
 
-                // 🟩 If it’s a local vacancy that exists in DB::table but not found by model,
-                // still record it using the ID from the payload.
                 if (!$vac && !empty($vacId)) {
                     Log::info('⚙️ Local vacancy not found via model, saving manually', [
                         'vacancy_id' => $vacId,
@@ -289,7 +285,6 @@ class VacancyMatchingService
                     continue;
                 }
 
-                // If everything’s normal
                 if ($vac) {
                     $savedData[] = [
                         'resume_id'     => $resume->id,
