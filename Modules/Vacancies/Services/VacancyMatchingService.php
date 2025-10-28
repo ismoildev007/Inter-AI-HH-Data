@@ -102,7 +102,7 @@ class VacancyMatchingService
 
         $tsQuery = !empty($webParts)
             ? implode(' OR ', array_map(function ($t) {
-                return str_contains($t, ' ') ? '"'.str_replace('"','', $t).'"' : $t;
+                return str_contains($t, ' ') ? '"' . str_replace('"', '', $t) . '"' : $t;
             }, $webParts))
             : trim((string) $searchQuery);
 
@@ -129,8 +129,7 @@ class VacancyMatchingService
         // Lokal (telegram) qidiruvini ikki fazada: (1) strict kategoriya, (2) umumiy fallback
         // Domen yoki soha-gating YO'Q: qidiruv umumiy, har qanday soha uchun ishlaydi
 
-        $buildLocal = function (bool $withCategory) use ($resume, $tsQuery, $tokenArr, $guessedCategory, $isLogistics, $domainTokens, $itNoise) {
-        $buildLocal = function (bool $withCategory) use ($resume, $tsQuery, $tokenArr, $guessedCategory, $phraseArr, $mustAnd) {
+        $buildLocal = function (bool $withCategory) use ($resume, $tsQuery, $tokenArr, $guessedCategory) {
             $qb = DB::table('vacancies')
                 ->where('status', 'publish')
                 ->where('source', 'telegram')
@@ -161,33 +160,6 @@ class VacancyMatchingService
                             }
                         });
                     }
-                })
-                // Precision gating: kamida bitta phrase yoki 2 ta eng uzun token AND bo'lsin
-                ->when(!empty($phraseArr) || count($mustAnd) >= 2, function ($q) use ($phraseArr, $mustAnd) {
-                    $q->where(function ($g) use ($phraseArr, $mustAnd) {
-                        $hasClause = false;
-                        if (!empty($phraseArr)) {
-                            $g->where(function ($p) use ($phraseArr) {
-                                foreach ($phraseArr as $idx => $ph) {
-                                    $pat = '%'.$ph.'%';
-                                    if ($idx === 0) {
-                                        $p->where('description', 'ILIKE', $pat);
-                                    } else {
-                                        $p->orWhere('description', 'ILIKE', $pat);
-                                    }
-                                }
-                            });
-                            $hasClause = true;
-                        }
-                        if (count($mustAnd) >= 2) {
-                            $g->orWhere(function ($w) use ($mustAnd) {
-                                $w->where('description', 'ILIKE', '%'.$mustAnd[0].'%')
-                                  ->where('description', 'ILIKE', '%'.$mustAnd[1].'%');
-                            });
-                            $hasClause = true;
-                        }
-                        return $hasClause;
-                    });
                 })
                 // Domen/spetsifik noise filtrlari yo'q — umumiy qidiruv saqlanadi
                 ->select(
