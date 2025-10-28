@@ -79,6 +79,10 @@ class VacancyMatchingService
             ->values();
         $phraseArr = $phrases->all();
 
+        // AND-gating uchun eng uzun 2 tokenni tanlaymiz (umumiy, domen-agnostik)
+        $tokensByLen = $tokens->sortByDesc(fn($t) => mb_strlen($t, 'UTF-8'))->values();
+        $mustAnd = array_slice($tokensByLen->all(), 0, 2);
+
         Log::info('Searching vacancies for terms', ['terms' => $allVariants->all(), 'tokens' => $tokenArr]);
 
         $searchQuery = $latinQuery ?: $cyrilQuery;
@@ -89,10 +93,17 @@ class VacancyMatchingService
             array_map('trim', array_map('strval', $phraseArr)),
             array_map('trim', array_map('strval', $tokenArr))
         );
-        $tsQuery = !empty($tsTerms)
+        // Majburiy kuchli juftlik (top 2 token) — precisionni oshirish uchun
+        $mustPair = [];
+        if (count($tokenArr) >= 2) {
+            $mustPair = ['(' . $tokenArr[0] . ' ' . $tokenArr[1] . ')']; // websearch: space = AND
+        }
+        $webParts = array_merge($mustPair, $tsTerms);
+
+        $tsQuery = !empty($webParts)
             ? implode(' OR ', array_map(function ($t) {
                 return str_contains($t, ' ') ? '"'.str_replace('"','', $t).'"' : $t;
-            }, $tsTerms))
+            }, $webParts))
             : trim((string) $searchQuery);
 
         // Rezume bo'yicha taxminiy kategoriya — mos natijalarni ustun qo'yish uchun
@@ -116,28 +127,7 @@ class VacancyMatchingService
         );
 
         // Lokal (telegram) qidiruvini ikki fazada: (1) strict kategoriya, (2) umumiy fallback
-        // Kategoriya uchun domen tokenlari (faqat ayrim fanlar uchun qo'llaymiz)
-        $neighborCats = [
-            'logistics_and_supply_chain',
-            'warehouse_and_procurement',
-            'transportation_and_driving',
-        ];
-        $isLogistics = $guessedCategory && in_array($guessedCategory, $neighborCats, true);
-        $domainTokens = $isLogistics ? [
-            'logistic', 'logistics', 'supply', 'supply chain', 'warehouse', 'fulfillment', 'procurement',
-            'transport', 'transportation', 'dispatch', 'dispatcher', 'driver', 'fleet', 'freight', '3pl',
-            'customs', 'import', 'export', 'shipping', 'delivery', 'ltl', 'ftl', 'waybill', 'hos', 'eld',
-            // ru
-            'логист', 'логистика', 'склад', 'фулфилмент', 'закуп', 'закупки', 'транспорт', 'перевоз', 'водител',
-            'диспетчер', 'груз', 'тамож', 'импорт', 'экспорт', 'доставка',
-            // uz
-            'logistika', 'ombor', 'omborxona', 'tashish', 'yuk', 'haydovchi', 'yetkazib', 'jo\'nat',
-        ] : [];
-        $itNoise = $isLogistics ? [
-            'developer','frontend','backend','fullstack','flutter','react','python','java','golang',
-            'javascript','typescript','nodejs','nestjs','php','laravel','django','.net','c#','devops',
-            'kubernetes','docker','aws','azure','html','css','ui','ux'
-        ] : [];
+        // Domen yoki soha-gating YO'Q: qidiruv umumiy, har qanday soha uchun ishlaydi
 
         $buildLocal = function (bool $withCategory) use ($resume, $tsQuery, $tokenArr, $guessedCategory, $isLogistics, $domainTokens, $itNoise) {
             $qb = DB::table('vacancies')
@@ -171,27 +161,34 @@ class VacancyMatchingService
                         });
                     }
                 })
-                ->when($isLogistics && !empty($domainTokens), function ($q) use ($domainTokens) {
-                    // Kamida bitta logistika domen tokeni bo'lsin
-                    $q->where(function ($w) use ($domainTokens) {
-                        foreach ($domainTokens as $idx => $t) {
-                            $pattern = "%".$t."%";
-                            if ($idx === 0) {
-                                $w->where('description', 'ILIKE', $pattern);
-                            } else {
-                                $w->orWhere('description', 'ILIKE', $pattern);
-                            }
+                // Precision gating: kamida bitta phrase yoki 2 ta eng uzun token AND bo'lsin
+                ->when(!empty($phraseArr) || count($mustAnd) >= 2, function ($q) use ($phraseArr, $mustAnd) {
+                    $q->where(function ($g) use ($phraseArr, $mustAnd) {
+                        $hasClause = false;
+                        if (!empty($phraseArr)) {
+                            $g->where(function ($p) use ($phraseArr) {
+                                foreach ($phraseArr as $idx => $ph) {
+                                    $pat = '%'.$ph.'%';
+                                    if ($idx === 0) {
+                                        $p->where('description', 'ILIKE', $pat);
+                                    } else {
+                                        $p->orWhere('description', 'ILIKE', $pat);
+                                    }
+                                }
+                            });
+                            $hasClause = true;
                         }
+                        if (count($mustAnd) >= 2) {
+                            $g->orWhere(function ($w) use ($mustAnd) {
+                                $w->where('description', 'ILIKE', '%'.$mustAnd[0].'%')
+                                  ->where('description', 'ILIKE', '%'.$mustAnd[1].'%');
+                            });
+                            $hasClause = true;
+                        }
+                        return $hasClause;
                     });
                 })
-                ->when($isLogistics && !empty($itNoise), function ($q) use ($itNoise) {
-                    // IT rollariga xos terminlar bo'lsa — chiqarib tashlaymiz
-                    $q->where(function ($w) use ($itNoise) {
-                        foreach ($itNoise as $t) {
-                            $w->where('description', 'NOT ILIKE', "%".$t."%");
-                        }
-                    });
-                })
+                // Domen/spetsifik noise filtrlari yo'q — umumiy qidiruv saqlanadi
                 ->select(
                     'id',
                     'title',
