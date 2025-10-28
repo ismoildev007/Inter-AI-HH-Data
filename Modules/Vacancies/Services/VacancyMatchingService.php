@@ -127,19 +127,25 @@ class VacancyMatchingService
                         ->where('resume_id', $resume->id);
                 })
                 ->where(function ($query) use ($tsQuery, $tokenArr) {
+                    // 🔹 PostgreSQL to_tsvector qidiruvi
                     $query->whereRaw("
-                to_tsvector('simple', coalesce(description, ''))
-                @@ websearch_to_tsquery('simple', ?)
-            ", [$tsQuery]);
+        to_tsvector('simple', coalesce(description, ''))
+        @@ websearch_to_tsquery('simple', ?)
+    ", [$tsQuery]);
 
-                    // 🔍 Tokenlar bo‘yicha kengroq qidiruv
+                    // 🔹 Tokenlarga asoslangan kengroq qidiruv
                     if (!empty($tokenArr)) {
                         $top = array_slice($tokenArr, 0, min(10, count($tokenArr)));
+
+                        // Har bir token bo‘yicha AND qidiruv (barchasi chiqishda ishtirok etsin)
                         $query->orWhere(function ($q) use ($top) {
                             foreach ($top as $t) {
                                 $pattern = "%{$t}%";
-                                $q->orWhere('description', 'ILIKE', $pattern)
-                                    ->orWhere('title', 'ILIKE', $pattern);
+                                // Har bir token uchun alohida "where" (AND mantiq)
+                                $q->where(function ($sub) use ($pattern) {
+                                    $sub->where('description', 'ILIKE', $pattern)
+                                        ->orWhere('title', 'ILIKE', $pattern);
+                                });
                             }
                         });
                     }
