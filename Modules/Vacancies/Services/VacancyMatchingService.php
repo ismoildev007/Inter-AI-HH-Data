@@ -187,20 +187,20 @@ class VacancyMatchingService
         };
 
         $localVacancies = $buildLocal(true)->limit(1000)->get();
-
-        // Agar juda kam chiqsa (masalan < 100) → fallback: shu categorydagi hamma vacancy
-        if ($localVacancies->count() < 100 && !empty($resume->category)) {
-            $fallback = DB::table('vacancies')
-                ->where('status', 'publish')
-                ->where('source', 'telegram')
-                ->where('category', $resume->category)
-                ->limit(200)
-                ->get();
-
-            Log::info("⚠️ Low match ({$localVacancies->count()} found). Added fallback {$fallback->count()} from category '{$resume->category}'.");
-
-            $localVacancies = $localVacancies->concat($fallback)->unique('id');
-        }
+//
+//        // Agar juda kam chiqsa (masalan < 100) → fallback: shu categorydagi hamma vacancy
+//        if ($localVacancies->count() < 100 && !empty($resume->category)) {
+//            $fallback = DB::table('vacancies')
+//                ->where('status', 'publish')
+//                ->where('source', 'telegram')
+//                ->where('category', $resume->category)
+//                ->limit(200)
+//                ->get();
+//
+//            Log::info("⚠️ Low match ({$localVacancies->count()} found). Added fallback {$fallback->count()} from category '{$resume->category}'.");
+//
+//            $localVacancies = $localVacancies->concat($fallback)->unique('id');
+//        }
 
         $localVacancies = collect($localVacancies)
             ->keyBy(fn($v) => $v->source === 'hh' && $v->external_id ? $v->external_id : "local_{$v->id}");
