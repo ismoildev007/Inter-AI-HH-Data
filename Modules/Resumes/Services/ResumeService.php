@@ -146,8 +146,8 @@ class ResumeService
                 Banking Operations Manager
             • For each of the top two titles, also automatically add **two meaningful core skills** that logically match the title and profession.
                 - If the role is technical (e.g., developer, engineer, data scientist), choose their main programming languages or frameworks (e.g., Python, JavaScript, Java, C#, React, Node.js, etc.).
-                - If the role is in marketing, management, HR, design, finance, or other non-technical domains, choose two clear, domain-relevant core skills (e.g., Marketing, SMM, SEO, HR, Recruitment, Accounting, Graphic Design, Financial Analysis, Teaching, Patient Care, Project Management, etc.).
-                - Do NOT include general tools or infrastructure items such as SQL, Git, CI/CD, Docker, or similar.
+                - If the role is in marketing, management, HR, design, finance, or other non-technical domains, choose two clear, domain-relevant core skills (e.g., Marketing, SMM, SEO, HR, Accounting, Graphic Design, Financial Analysis, Teaching, Patient Care, Project Management, etc.).
+                - Do NOT include general tools or infrastructure items such as SQL, Git, CI/CD, Docker, Recruitment, PR, ... or similar.
                 - The rest of the prompt and structure must remain unchanged.
 
 
