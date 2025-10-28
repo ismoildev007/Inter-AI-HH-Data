@@ -41,7 +41,8 @@ class VacancyMatchingService
         $words = array_map('trim', explode(',', $query));
 
         $translator = new GoogleTranslate();
-        $translator->setSource('uz');
+        // Avtomatik til aniqlash — noto'g'ri tarjimalarni kamaytiradi
+        $translator->setSource('auto');
         $translator->setTarget('uz');
         $uzQuery = $translator->translate("\"{$query}\"");
 
@@ -115,7 +116,30 @@ class VacancyMatchingService
         );
 
         // Lokal (telegram) qidiruvini ikki fazada: (1) strict kategoriya, (2) umumiy fallback
-        $buildLocal = function (bool $withCategory) use ($resume, $tsQuery, $tokenArr, $guessedCategory) {
+        // Kategoriya uchun domen tokenlari (faqat ayrim fanlar uchun qo'llaymiz)
+        $neighborCats = [
+            'logistics_and_supply_chain',
+            'warehouse_and_procurement',
+            'transportation_and_driving',
+        ];
+        $isLogistics = $guessedCategory && in_array($guessedCategory, $neighborCats, true);
+        $domainTokens = $isLogistics ? [
+            'logistic', 'logistics', 'supply', 'supply chain', 'warehouse', 'fulfillment', 'procurement',
+            'transport', 'transportation', 'dispatch', 'dispatcher', 'driver', 'fleet', 'freight', '3pl',
+            'customs', 'import', 'export', 'shipping', 'delivery', 'ltl', 'ftl', 'waybill', 'hos', 'eld',
+            // ru
+            'логист', 'логистика', 'склад', 'фулфилмент', 'закуп', 'закупки', 'транспорт', 'перевоз', 'водител',
+            'диспетчер', 'груз', 'тамож', 'импорт', 'экспорт', 'доставка',
+            // uz
+            'logistika', 'ombor', 'omborxona', 'tashish', 'yuk', 'haydovchi', 'yetkazib', 'jo\'nat',
+        ] : [];
+        $itNoise = $isLogistics ? [
+            'developer','frontend','backend','fullstack','flutter','react','python','java','golang',
+            'javascript','typescript','nodejs','nestjs','php','laravel','django','.net','c#','devops',
+            'kubernetes','docker','aws','azure','html','css','ui','ux'
+        ] : [];
+
+        $buildLocal = function (bool $withCategory) use ($resume, $tsQuery, $tokenArr, $guessedCategory, $isLogistics, $domainTokens, $itNoise) {
             $qb = DB::table('vacancies')
                 ->where('status', 'publish')
                 ->where('source', 'telegram')
@@ -146,6 +170,27 @@ class VacancyMatchingService
                             }
                         });
                     }
+                })
+                ->when($isLogistics && !empty($domainTokens), function ($q) use ($domainTokens) {
+                    // Kamida bitta logistika domen tokeni bo'lsin
+                    $q->where(function ($w) use ($domainTokens) {
+                        foreach ($domainTokens as $idx => $t) {
+                            $pattern = "%".$t."%";
+                            if ($idx === 0) {
+                                $w->where('description', 'ILIKE', $pattern);
+                            } else {
+                                $w->orWhere('description', 'ILIKE', $pattern);
+                            }
+                        }
+                    });
+                })
+                ->when($isLogistics && !empty($itNoise), function ($q) use ($itNoise) {
+                    // IT rollariga xos terminlar bo'lsa — chiqarib tashlaymiz
+                    $q->where(function ($w) use ($itNoise) {
+                        foreach ($itNoise as $t) {
+                            $w->where('description', 'NOT ILIKE', "%".$t."%");
+                        }
+                    });
                 })
                 ->select(
                     'id',
