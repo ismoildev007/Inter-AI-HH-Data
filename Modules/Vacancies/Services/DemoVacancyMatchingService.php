@@ -2,6 +2,7 @@
 
 namespace Modules\Vacancies\Services;
 
+use App\Helpers\TranslitHelper;
 use App\Models\DemoResume;
 use App\Models\Resume;
 use App\Models\Vacancy;
@@ -12,6 +13,7 @@ use Illuminate\Support\Facades\Concurrency;
 use Modules\Vacancies\Interfaces\HHVacancyInterface;
 use Modules\Vacancies\Interfaces\VacancyInterface;
 use Spatie\Async\Pool;
+use Stichoza\GoogleTranslate\GoogleTranslate;
 
 class DemoVacancyMatchingService
 {
@@ -26,145 +28,196 @@ class DemoVacancyMatchingService
         $this->hhRepository = $hhRepository;
     }
 
-    public function matchResume(Resume $resume, string $query): array
+    public function matchResume(Resume $resume, $query): array
     {
         Log::info('Job started for resume', ['resume_id' => $resume->id, 'query' => $query]);
         $start = microtime(true);
 
-        $keywords = collect(
-            array_filter(
-                array_map(fn($q) => trim($q), preg_split('/[,;]+/', $query))
-            )
-        );
+        $latinQuery = TranslitHelper::toLatin($query);
+        $cyrilQuery = TranslitHelper::toCyrillic($query);
 
-        Log::info('Parsed keywords', ['keywords' => $keywords]);
+        $words = array_map('trim', explode(',', $query));
 
-        $allHhVacancies = collect();
-        $localVacancies = collect();
+        $translator = new GoogleTranslate();
+        $translator->setSource('uz');
+        $translator->setTarget('uz');
+        $uzQuery = $translator->translate("\"{$query}\"");
 
-        foreach ($keywords as $keyword) {
-            [$hhVacancies, $locals] = Concurrency::run([
-                fn() => cache()->remember(
-                    "hh:search:{$keyword}:area97",
-                    now()->addMinutes(30),
-                    fn() => $this->hhRepository->search($keyword, 0, 100, ['area' => 97])
-                ),
-                fn() => Vacancy::query()
-                    ->where('title', 'like', "%{$keyword}%")
-                    ->orWhere('description', 'like', "%{$keyword}%")
-                    ->get()
-                    ->keyBy(
-                        fn($v) => $v->source === 'hh' && $v->external_id
-                            ? $v->external_id
-                            : "local_{$v->id}"
-                    ),
-            ]);
+        $translator->setTarget('ru');
+        $ruQuery = $translator->translate("\"{$query}\"");
 
-            $hhItems = $hhVacancies['items'] ?? [];
-            $allHhVacancies = $allHhVacancies->merge($hhItems);
-            $localVacancies = $localVacancies->merge($locals);
-        }
+        $translator->setTarget('en');
+        $enQuery = $translator->translate("\"{$query}\"");
 
-        $allHhVacancies = $allHhVacancies->unique('id')->values();
-        $localVacancies = $localVacancies->unique('id')->values();
+        $allVariants = collect([$query, $uzQuery, $ruQuery, $enQuery])
+            ->unique()
+            ->filter()
+            ->values()
+            ->all();
+        $multiWords = collect($allVariants)
+            ->flatMap(fn($v) => preg_split('/\s*,\s*/u', $v)) // faqat vergul bo‘yicha bo‘linadi
+            ->map(fn($w) => trim(preg_replace('/[\"\'«»“”]/u', '', $w)))
+            ->filter(fn($w) => mb_strlen($w) > 0) // har bir butun stack qoladi
+            ->unique()
+            ->values()
+            ->all();
 
-        Log::info('Total HH vacancies collected', ['count' => $allHhVacancies->count()]);
-        Log::info('Total local vacancies collected', ['count' => $localVacancies->count()]);
+        Log::info('Searching vacancies for terms', ['terms' => $allVariants, 'multi_words' => $multiWords]);
 
+
+        [$hhVacancies, $localVacancies] = Concurrency::run([
+            fn() => cache()->remember(
+                "hh:search:{$query}:area97",
+                now()->addMinutes(30),
+                fn() => $this->hhRepository->search($query, 0, 100, ['area' => 97])
+            ),
+            fn() => DB::table('vacancies')
+                ->where('status', 'publish')
+                ->where('source', 'telegram')
+                ->whereNotIn('id', function ($q) use ($resume) {
+                    $q->select('vacancy_id')
+                        ->from('match_results')
+                        ->where('resume_id', $resume->id);
+                })
+                ->where(function ($q) use ($multiWords, $latinQuery, $cyrilQuery) {
+                    foreach ($multiWords as $stack) {
+                        // stack = "Laravel Developer"
+                        $q->orWhere(function ($subQ) use ($stack) {
+                            $words = preg_split('/\s+/u', $stack); // so‘zlarni bo‘lish
+
+                            foreach ($words as $word) {
+                                $pattern = "%{$word}%";
+
+                                // Har bir so‘z kamida title YOKI description da bo‘lishi shart
+                                $subQ->where(function ($inner) use ($pattern) {
+                                    $inner->where('title', 'ILIKE', $pattern)
+                                        ->orWhere('description', 'ILIKE', $pattern);
+                                });
+                            }
+                        });
+                    }
+
+                    // translit variantlari uchun ham xuddi shu
+                    $q->orWhereRaw("(title || ' ' || description) ILIKE ?", ["%{$latinQuery}%"])
+                        ->orWhereRaw("(title || ' ' || description) ILIKE ?", ["%{$cyrilQuery}%"]);
+                })
+                //                ->select('id', 'title', 'description', 'source', 'external_id')
+                ->limit(300)
+                ->orderByDesc('id')
+                ->get()
+                ->keyBy(fn($v) => $v->source === 'hh' && $v->external_id
+                    ? $v->external_id
+                    : "local_{$v->id}")
+        ]);
+
+
+        Log::info('Data fetch took:' . (microtime(true) - $start) . 's');
+        Log::info('Local vacancies: ' . $localVacancies->count());
+        Log::info('hh vacancies count: ' . count($hhVacancies['items'] ?? []));
+
+        $hhItems = $hhVacancies['items'] ?? [];
         $vacanciesPayload = [];
 
         foreach ($localVacancies as $v) {
             $vacanciesPayload[] = [
                 'id'   => $v->id,
-                'text' => mb_substr(strip_tags($v->description ?? ''), 0, 2000),
+                'vacancy_id'   => $v->id,
+                // 'title' => $v->title,
+                'text' => mb_substr(strip_tags($v->description), 0, 2000),
             ];
         }
-
-        $toFetch = collect($allHhVacancies)
+        Log::info(['local vacancies' => $vacanciesPayload]);
+        $toFetch = collect($hhItems)
             ->filter(fn($item) => isset($item['id']) && !$localVacancies->has($item['id']))
-            ->take(70);
-
-        foreach ($toFetch as $item) {
+            ->take(200);
+        foreach ($toFetch as $idx =>  $item) {
             $extId = $item['id'] ?? null;
-            if (!$extId) continue;
-
+            if (!$extId || $localVacancies->has($extId)) {
+                continue;
+            }
+            // $title = $item['name'] ?? 'No title';
             $text = ($item['snippet']['requirement'] ?? '') . "\n" .
                 ($item['snippet']['responsibility'] ?? '');
 
             if (!empty(trim($text))) {
                 $vacanciesPayload[] = [
                     'id'          => null,
+                    // 'title'       => mb_substr(strip_tags($title), 0, 200),
                     'text'        => mb_substr(strip_tags($text), 0, 1000),
                     'external_id' => $extId,
                     'raw'         => $item,
+                    'vacancy_index' => $idx,
                 ];
             }
         }
-
         if (empty($vacanciesPayload)) {
             Log::info('No vacancies to match for resume', ['resume_id' => $resume->id]);
             return [];
         }
-
-        // 5️⃣ — Matcher servisiga yuboramiz
-        $url = config('services.matcher.url', 'https://python.inter-ai.uz/bulk-match-fast');
-        $response = Http::retry(3, 200)->timeout(30)->post($url, [
-            'resumes'   => [mb_substr($resume->parsed_text, 0, 3000)],
-            'vacancies' => array_map(fn($v) => [
-                'id'   => $v['id'] ? (string) $v['id'] : null,
-                'text' => $v['text'],
-            ], $vacanciesPayload),
-            'top_k'     => 100,
-            'min_score' => 0,
-        ]);
-
-        Log::info('Matcher request finished', [
-            'resume_id' => $resume->id,
-            'time' => round(microtime(true) - $start, 2) . 's'
-        ]);
-
-        if ($response->failed()) {
-            Log::error('Matcher API failed', ['resume_id' => $resume->id, 'body' => $response->body()]);
-            return [];
-        }
-
-        $results = $response->json();
-        $matches = $results['results'][0] ?? [];
-
+        Log::info('Prepared payload with ' . count($vacanciesPayload) . ' vacancies');
         $vacancyMap = collect($vacanciesPayload)->keyBy(fn($v, $k) => $v['id'] ?? "new_{$k}");
 
-        // 6️⃣ — Moslik natijalarini saqlaymiz
         $savedData = [];
-        foreach ($matches as $match) {
-            if (($match['score'] ?? 0) < 50) continue;
+        foreach ($vacanciesPayload as $match) {
+            try {
+                $vac = null;
+                $vacId = $match['vacancy_id'] ?? null;
 
-            $vacId = $match['vacancy_id'] ?? null;
-            $vac   = $vacId ? Vacancy::find($vacId) : null;
+                if ($vacId) {
+                    // direct Eloquent lookup
+                    $vac = Vacancy::withoutGlobalScopes()->find($vacId);
+                }
 
-            if (!$vac) {
-                $payload = $vacancyMap["new_{$match['vacancy_index']}"] ?? null;
-                if ($payload && isset($payload['external_id'])) {
+                // If it's from HH, handle external_id
+                if (!$vac && isset($match['external_id'])) {
                     $vac = Vacancy::where('source', 'hh')
-                        ->where('external_id', $payload['external_id'])
+                        ->where('external_id', $match['external_id'])
                         ->first();
 
-                    if (!$vac) {
-                        $vac = $this->vacancyRepository->createFromHH($payload['raw']);
+                    if (!$vac && isset($match['raw'])) {
+                        $vac = $this->vacancyRepository->createFromHH($match['raw']);
                     }
                 }
-            }
 
-            if ($vac) {
-                $savedData[] = [
-                    'resume_id'     => $resume->id,
-                    'vacancy_id'    => $vac->id,
-                    'score_percent' => $match['score'],
-                    'explanations'  => json_encode($match),
-                    'updated_at'    => now(),
-                    'created_at'    => now(),
-                ];
+                // 🟩 If it’s a local vacancy that exists in DB::table but not found by model,
+                // still record it using the ID from the payload.
+                if (!$vac && !empty($vacId)) {
+                    Log::info('⚙️ Local vacancy not found via model, saving manually', [
+                        'vacancy_id' => $vacId,
+                    ]);
+
+                    $savedData[] = [
+                        'resume_id'     => $resume->id,
+                        'vacancy_id'    => $vacId,
+                        'score_percent' => $match['score'] ?? 0,
+                        'explanations'  => json_encode($match),
+                        'updated_at'    => now(),
+                        'created_at'    => now(),
+                    ];
+
+                    continue;
+                }
+
+                // If everything’s normal
+                if ($vac) {
+                    $savedData[] = [
+                        'resume_id'     => $resume->id,
+                        'vacancy_id'    => $vac->id,
+                        'score_percent' => $match['score'] ?? 0,
+                        'explanations'  => json_encode($match),
+                        'updated_at'    => now(),
+                        'created_at'    => now(),
+                    ];
+                }
+            } catch (\Throwable $e) {
+                Log::error('💥 Error while matching vacancy', [
+                    'match' => $match,
+                    'error' => $e->getMessage(),
+                ]);
             }
         }
+
+
 
         if (!empty($savedData)) {
             DB::table('match_results')->upsert(
@@ -173,12 +226,9 @@ class DemoVacancyMatchingService
                 ['score_percent', 'explanations', 'updated_at']
             );
         }
+        Log::info('All details took finished: ' . (microtime(true) - $start) . 's');
 
-        Log::info('Matching finished', [
-            'resume_id' => $resume->id,
-            'matched' => count($savedData),
-            'duration' => round(microtime(true) - $start, 2) . 's'
-        ]);
+        Log::info('Matching finished', ['resume_id' => $resume->id]);
 
         return $savedData;
     }
