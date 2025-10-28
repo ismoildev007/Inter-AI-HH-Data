@@ -177,8 +177,7 @@ class VacancyMatchingService
 
                     // So‘ng queryni shu kategoriya bilan cheklaymiz
                     $qb->where(function ($q) use ($resumeCategory) {
-                        $q->where('category', $resumeCategory)
-                            ->orWhereIn('category', ['Other']);
+                        $q->where('category', $resumeCategory);
                     });
                 } elseif ($guessedCategory) {
                     $qb->where('category', $guessedCategory);
