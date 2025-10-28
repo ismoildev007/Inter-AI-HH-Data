@@ -132,16 +132,14 @@ class VacancyMatchingService
                 @@ websearch_to_tsquery('simple', ?)
             ", [$tsQuery]);
 
+                    // Token orqali kengroq qidiruv
                     if (!empty($tokenArr)) {
-                        $top = array_slice($tokenArr, 0, min(5, count($tokenArr)));
+                        $top = array_slice($tokenArr, 0, min(10, count($tokenArr)));
                         $query->orWhere(function ($q) use ($top) {
-                            foreach ($top as $idx => $t) {
+                            foreach ($top as $t) {
                                 $pattern = "%{$t}%";
-                                if ($idx === 0) {
-                                    $q->where('description', 'ILIKE', $pattern);
-                                } else {
-                                    $q->orWhere('description', 'ILIKE', $pattern);
-                                }
+                                $q->orWhere('description', 'ILIKE', $pattern)
+                                    ->orWhere('title', 'ILIKE', $pattern);
                             }
                         });
                     }
@@ -162,23 +160,16 @@ class VacancyMatchingService
                 )
                 ->addBinding($tsQuery, 'select');
 
+            // ✅ faqat category bo‘yicha moslarini tanlash
             if ($withCategory) {
                 $resumeCategory = $resume->category ?? null;
 
                 if ($resumeCategory) {
-                    $existsInSameCategory = DB::table('vacancies')
-                        ->where('status', 'publish')
-                        ->where('source', 'telegram')
-                        ->where('category', $resumeCategory)
-                        ->exists();
-
-                    if ($existsInSameCategory) {
-                        $qb->where('category', $resumeCategory);
-                    } else {
-                        $qb->whereIn('category', ['Other']);
-                    }
+                    $qb->where(function ($q) use ($resumeCategory) {
+                        $q->where('category', $resumeCategory)
+                            ->orWhereIn('category', ['Other', 'others']); // fallback category
+                    });
                 } elseif ($guessedCategory) {
-                    // Agar resumeda kategoriya bo‘lmasa, taxminiy kategoriya bo‘yicha qidir
                     $qb->where('category', $guessedCategory);
                 }
             }
@@ -186,20 +177,13 @@ class VacancyMatchingService
             return $qb->orderByDesc('rank')->orderByDesc('id');
         };
 
-        $catLimit = 1000;
-        $fallbackThreshold = 40;
-        $localCat = $buildLocal(true)->limit($catLimit)->get();
-
-        if ($guessedCategory && $localCat->count() < $fallbackThreshold) {
-            $need = max(0, $catLimit - $localCat->count());
-            $localGen = $buildLocal(false)->limit($need)->get();
-            $localVacancies = collect($localCat)->concat($localGen)->values();
-        } else {
-            $localVacancies = $localCat;
-        }
+        $localVacancies = $buildLocal(true)
+            ->limit(300) // kamida 200+ natija olish uchun
+            ->get();
 
         $localVacancies = collect($localVacancies)
             ->keyBy(fn($v) => $v->source === 'hh' && $v->external_id ? $v->external_id : "local_{$v->id}");
+
 
 
         Log::info('Data fetch took:' . (microtime(true) - $start) . 's');
