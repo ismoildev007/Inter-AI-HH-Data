@@ -157,7 +157,7 @@ class VacancyMatchingService
                     websearch_to_tsquery('simple', ?)
                 ) as rank
             ")
-                )
+                )->limit(1000)
                 ->addBinding($tsQuery, 'select');
 
             if ($withCategory) {
@@ -177,7 +177,6 @@ class VacancyMatchingService
         };
 
         $localVacancies = $buildLocal(true)
-            ->limit(1000)
             ->get();
 
         $localVacancies = collect($localVacancies)
