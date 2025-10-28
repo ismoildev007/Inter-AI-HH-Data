@@ -93,18 +93,20 @@ class VacancyMatchingService
             array_map('trim', array_map('strval', $phraseArr)),
             array_map('trim', array_map('strval', $tokenArr))
         );
-        // Majburiy kuchli juftlik (top 2 token) — precisionni oshirish uchun
-        $mustPair = [];
-        if (count($tokenArr) >= 2) {
-            $mustPair = ['(' . $tokenArr[0] . ' ' . $tokenArr[1] . ')']; // websearch: space = AND
+        // Majburiy kuchli juftlik (top 2 token) — precisionni oshirish uchun (websearch AND)
+        $webParts = [];
+        if (count($mustAnd) >= 2) {
+            // Eslatma: bu yerda AND ifodasi, shuning uchun QUOTE qilmaymiz
+            $webParts[] = '(' . $mustAnd[0] . ' ' . $mustAnd[1] . ')';
         }
-        $webParts = array_merge($mustPair, $tsTerms);
+        foreach ($phraseArr as $ph) {
+            $webParts[] = '"' . str_replace('"','', $ph) . '"';
+        }
+        foreach ($tokenArr as $t) {
+            $webParts[] = $t;
+        }
 
-        $tsQuery = !empty($webParts)
-            ? implode(' OR ', array_map(function ($t) {
-                return str_contains($t, ' ') ? '"'.str_replace('"','', $t).'"' : $t;
-            }, $webParts))
-            : trim((string) $searchQuery);
+        $tsQuery = !empty($webParts) ? implode(' OR ', $webParts) : trim((string) $searchQuery);
 
         // Rezume bo'yicha taxminiy kategoriya — mos natijalarni ustun qo'yish uchun
         $guessedCategory = null;
@@ -129,7 +131,7 @@ class VacancyMatchingService
         // Lokal (telegram) qidiruvini ikki fazada: (1) strict kategoriya, (2) umumiy fallback
         // Domen yoki soha-gating YO'Q: qidiruv umumiy, har qanday soha uchun ishlaydi
 
-        $buildLocal = function (bool $withCategory) use ($resume, $tsQuery, $tokenArr, $guessedCategory, $phraseArr, $mustAnd) {
+        $buildLocal = function (bool $withCategory) use ($resume, $tsQuery, $tokenArr, $guessedCategory) {
             $qb = DB::table('vacancies')
                 ->where('status', 'publish')
                 ->where('source', 'telegram')
@@ -139,10 +141,12 @@ class VacancyMatchingService
                         ->where('resume_id', $resume->id);
                 })
                 ->where(function ($query) use ($tsQuery, $tokenArr) {
-                    // Rezume title/keywords -> faqat description bo'yicha FT qidiruv (titlega emas)
+                    // Title + description (title yuqori vazn), recall yuqori
                     $query->whereRaw("
-                        to_tsvector('simple', coalesce(description, ''))
-                        @@ websearch_to_tsquery('simple', ?)
+                        (
+                            setweight(to_tsvector('simple', coalesce(title, '')), 'A') ||
+                            setweight(to_tsvector('simple', coalesce(description, '')), 'B')
+                        ) @@ websearch_to_tsquery('simple', ?)
                     ", [$tsQuery]);
 
                     // Fallback: OR-ILIKE (recallni oshirish uchun)
@@ -151,42 +155,20 @@ class VacancyMatchingService
                         $query->orWhere(function ($q) use ($top) {
                             foreach ($top as $idx => $t) {
                                 $pattern = "%{$t}%";
-                                // Faqat description ILIKE — titlega mos kelgan dev lavozimlar aralashmasin
                                 if ($idx === 0) {
-                                    $q->where('description', 'ILIKE', $pattern);
+                                    $q->where(function ($w) use ($pattern) {
+                                        $w->where('description', 'ILIKE', $pattern)
+                                          ->orWhere('title', 'ILIKE', $pattern);
+                                    });
                                 } else {
-                                    $q->orWhere('description', 'ILIKE', $pattern);
+                                    $q->orWhere(function ($w) use ($pattern) {
+                                        $w->where('description', 'ILIKE', $pattern)
+                                          ->orWhere('title', 'ILIKE', $pattern);
+                                    });
                                 }
                             }
                         });
                     }
-                })
-                // Precision gating: kamida bitta phrase yoki 2 ta eng uzun token AND bo'lsin
-                ->when(!empty($phraseArr) || count($mustAnd) >= 2, function ($q) use ($phraseArr, $mustAnd) {
-                    $q->where(function ($g) use ($phraseArr, $mustAnd) {
-                        $hasClause = false;
-                        if (!empty($phraseArr)) {
-                            $g->where(function ($p) use ($phraseArr) {
-                                foreach ($phraseArr as $idx => $ph) {
-                                    $pat = '%'.$ph.'%';
-                                    if ($idx === 0) {
-                                        $p->where('description', 'ILIKE', $pat);
-                                    } else {
-                                        $p->orWhere('description', 'ILIKE', $pat);
-                                    }
-                                }
-                            });
-                            $hasClause = true;
-                        }
-                        if (count($mustAnd) >= 2) {
-                            $g->orWhere(function ($w) use ($mustAnd) {
-                                $w->where('description', 'ILIKE', '%'.$mustAnd[0].'%')
-                                  ->where('description', 'ILIKE', '%'.$mustAnd[1].'%');
-                            });
-                            $hasClause = true;
-                        }
-                        return $hasClause;
-                    });
                 })
                 // Domen/spetsifik noise filtrlari yo'q — umumiy qidiruv saqlanadi
                 ->select(
@@ -198,13 +180,15 @@ class VacancyMatchingService
                     'category',
                     DB::raw("
                         ts_rank_cd(
-                            to_tsvector('simple', coalesce(description, '')),
+                            (
+                                setweight(to_tsvector('simple', coalesce(title, '')), 'A') ||
+                                setweight(to_tsvector('simple', coalesce(description, '')), 'B')
+                            ),
                             websearch_to_tsquery('simple', ?)
                         ) as rank
                     ")
                 )
                 ->addBinding($tsQuery, 'select');
-
             if ($withCategory && $guessedCategory) {
                 $qb->where('category', $guessedCategory);
             }
