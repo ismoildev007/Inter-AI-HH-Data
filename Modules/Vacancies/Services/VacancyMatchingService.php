@@ -71,9 +71,9 @@ class VacancyMatchingService
 
         $searchQuery = $latinQuery ?: $cyrilQuery;
 
-        // websearch_to_tsquery uchun OR mantiqi: recallni oshirish uchun tokenlarni "|" bilan bog'laymiz
+        // websearch_to_tsquery uchun OR mantiqi: websearch sintaksisida 'OR' so'zi ishlatiladi
         $tsQuery = !empty($tokenArr)
-            ? implode(' | ', array_map('trim', $tokenArr))
+            ? implode(' OR ', array_map('trim', $tokenArr))
             : trim((string) $searchQuery);
 
         // Rezume bo'yicha taxminiy kategoriya — mos natijalarni ustun qo'yish uchun
@@ -114,15 +114,23 @@ class VacancyMatchingService
                         ) @@ websearch_to_tsquery('simple', ?)
                     ", [$tsQuery]);
 
+                    // Fallback: OR-ILIKE (recallni oshirish uchun)
                     if (!empty($tokenArr)) {
-                        $top = array_slice($tokenArr, 0, min(3, count($tokenArr)));
+                        $top = array_slice($tokenArr, 0, min(5, count($tokenArr)));
                         $query->orWhere(function ($q) use ($top) {
-                            foreach ($top as $t) {
+                            foreach ($top as $idx => $t) {
                                 $pattern = "%{$t}%";
-                                $q->where(function ($w) use ($pattern) {
-                                    $w->where('title', 'ILIKE', $pattern)
-                                      ->orWhere('description', 'ILIKE', $pattern);
-                                });
+                                if ($idx === 0) {
+                                    $q->where(function ($w) use ($pattern) {
+                                        $w->where('title', 'ILIKE', $pattern)
+                                          ->orWhere('description', 'ILIKE', $pattern);
+                                    });
+                                } else {
+                                    $q->orWhere(function ($w) use ($pattern) {
+                                        $w->where('title', 'ILIKE', $pattern)
+                                          ->orWhere('description', 'ILIKE', $pattern);
+                                    });
+                                }
                             }
                         });
                     }
