@@ -15,7 +15,6 @@ use App\Helpers\TranslitHelper;
 use Illuminate\Support\Facades\Cache;
 use Stichoza\GoogleTranslate\GoogleTranslate;
 use Throwable;
-use Modules\TelegramChannel\Services\VacancyCategoryService;
 
 class VacancyMatchingService
 {
@@ -54,120 +53,87 @@ class VacancyMatchingService
         $allVariants = collect([$query, $uzQuery, $ruQuery, $enQuery])
             ->unique()
             ->filter()
-            ->values();
-
-        // Kengaytirilgan tokenizatsiya: bo'sh joy, vergul, nuqtali vergul, chiziqcha va h.k.
-        $tokens = $allVariants
-            ->flatMap(fn($v) => preg_split('/[\s,;\/\|]+/u', (string) $v))
+            ->values()
+            ->all();
+        $multiWords = collect($allVariants)
+            ->flatMap(fn($v) => preg_split('/\s*,\s*/u', $v)) // faqat vergul bo‘yicha bo‘linadi
             ->map(fn($w) => trim(preg_replace('/[\"\'«»“”]/u', '', $w)))
-            ->filter(fn($w) => mb_strlen($w) >= 3)
-            ->map(fn($w) => mb_strtolower($w, 'UTF-8'))
+            ->filter(fn($w) => mb_strlen($w) > 0) // har bir butun stack qoladi
             ->unique()
-            ->take(8)
-            ->values();
-        $tokenArr = $tokens->all();
+            ->values()
+            ->all();
 
-        Log::info('Searching vacancies for terms', ['terms' => $allVariants->all(), 'tokens' => $tokenArr]);
+        Log::info('Searching vacancies for terms', ['terms' => $allVariants, 'multi_words' => $multiWords]);
 
         $searchQuery = $latinQuery ?: $cyrilQuery;
 
-        // websearch_to_tsquery uchun OR mantiqi: recallni oshirish uchun tokenlarni "|" bilan bog'laymiz
-        $tsQuery = !empty($tokenArr)
-            ? implode(' | ', array_map('trim', $tokenArr))
-            : trim((string) $searchQuery);
-
-        // Rezume bo'yicha taxminiy kategoriya — mos natijalarni ustun qo'yish uchun
-        $guessedCategory = null;
-        try {
-            /** @var VacancyCategoryService $categorizer */
-            $categorizer = app(\Modules\TelegramChannel\Services\VacancyCategoryService::class);
-            $guessedCategory = $categorizer->categorize('', (string) ($resume->title ?? ''), (string) ($resume->description ?? ''), '');
-            if (!is_string($guessedCategory) || mb_strtolower($guessedCategory, 'UTF-8') === 'other' || $guessedCategory === '') {
-                $guessedCategory = null;
-            }
-        } catch (\Throwable $e) {
-            $guessedCategory = null;
-        }
-
-        // HH qidiruvini cache bilan olamiz
-        $hhVacancies = cache()->remember(
-            "hh:search:{$query}:area97",
-            now()->addMinutes(30),
-            fn() => $this->hhRepository->search($query, 0, 100, ['area' => 97])
-        );
-
-        // Lokal (telegram) qidiruvini ikki fazada: (1) strict kategoriya, (2) umumiy fallback
-        $buildLocal = function (bool $withCategory) use ($resume, $tsQuery, $tokenArr, $guessedCategory) {
-            $qb = DB::table('vacancies')
-                ->where('status', 'publish')
-                ->where('source', 'telegram')
-                ->whereNotIn('id', function ($q) use ($resume) {
-                    $q->select('vacancy_id')
-                        ->from('match_results')
-                        ->where('resume_id', $resume->id);
-                })
-                ->where(function ($query) use ($tsQuery, $tokenArr) {
-                    $query->whereRaw("
-                        (
-                            setweight(to_tsvector('simple', coalesce(title, '')), 'A') ||
-                            setweight(to_tsvector('simple', coalesce(description, '')), 'B')
-                        ) @@ websearch_to_tsquery('simple', ?)
-                    ", [$tsQuery]);
-
-                    if (!empty($tokenArr)) {
-                        $top = array_slice($tokenArr, 0, min(3, count($tokenArr)));
-                        $query->orWhere(function ($q) use ($top) {
-                            foreach ($top as $t) {
-                                $pattern = "%{$t}%";
-                                $q->where(function ($w) use ($pattern) {
-                                    $w->where('title', 'ILIKE', $pattern)
-                                      ->orWhere('description', 'ILIKE', $pattern);
-                                });
-                            }
-                        });
-                    }
-                })
-                ->select(
-                    'id',
-                    'title',
-                    'description',
-                    'source',
-                    'external_id',
-                    'category',
-                    DB::raw("
-                        ts_rank_cd(
-                            (
-                                setweight(to_tsvector('simple', coalesce(title, '')), 'A') ||
-                                setweight(to_tsvector('simple', coalesce(description, '')), 'B')
-                            ),
-                            websearch_to_tsquery('simple', ?)
-                        ) as rank
-                    ")
-                )
-                ->addBinding($tsQuery, 'select');
-
-            if ($withCategory && $guessedCategory) {
-                $qb->where('category', $guessedCategory);
-            }
-
-            return $qb->orderByDesc('rank')->orderByDesc('id');
-        };
-
-        $catLimit = 100;
-        $fallbackThreshold = 40; // kategoriya bo'yicha natijalar kam bo'lsa — umumiy qidiruv bilan to'ldiramiz
-        $localCat = $buildLocal(true)->limit($catLimit)->get();
-
-        if ($guessedCategory && $localCat->count() < $fallbackThreshold) {
-            $need = max(0, $catLimit - $localCat->count());
-            $localGen = $buildLocal(false)->limit($need)->get();
-            $localVacancies = collect($localCat)->concat($localGen)->values();
+        if (!empty($multiWords)) {
+            $tsQuery = implode(' & ', array_map('trim', $multiWords));
         } else {
-            $localVacancies = $localCat;
+            $tsQuery = trim($searchQuery);
         }
 
-        // Key by external key to avoid duplicates vs HH payload join further
-        $localVacancies = collect($localVacancies)
-            ->keyBy(fn($v) => $v->source === 'hh' && $v->external_id ? $v->external_id : "local_{$v->id}");
+        [$hhVacancies, $localVacancies] = Concurrency::run([
+            fn() => cache()->remember(
+                "hh:search:{$query}:area97",
+                now()->addMinutes(30),
+                fn() => $this->hhRepository->search($query, 0, 100, ['area' => 97])
+            ),
+            fn() => DB::table('vacancies')
+            ->where('status', 'publish')
+            ->where('source', 'telegram')
+            ->whereNotIn('id', function ($q) use ($resume) {
+                $q->select('vacancy_id')
+                    ->from('match_results')
+                    ->where('resume_id', $resume->id);
+            })
+            ->where(function ($query) use ($tsQuery, $multiWords, $latinQuery, $cyrilQuery) {
+                $query->whereRaw("
+                    to_tsvector('english', coalesce(title, '') || ' ' || coalesce(description, ''))
+                    @@ websearch_to_tsquery('english', ?)
+                ", [$tsQuery]);
+        
+                // 🔁 fallback agar tsvektor hech narsa topmasa — oddiy LIKE bilan
+                $query->orWhere(function ($q) use ($multiWords, $latinQuery, $cyrilQuery) {
+                    foreach ($multiWords as $word) {
+                        $pattern = "%{$word}%";
+                        $q->orWhere('title', 'ILIKE', $pattern)
+                          ->orWhere('description', 'ILIKE', $pattern);
+                    }
+        
+                    if ($latinQuery) {
+                        $q->orWhere('title', 'ILIKE', "%{$latinQuery}%")
+                          ->orWhere('description', 'ILIKE', "%{$latinQuery}%");
+                    }
+        
+                    if ($cyrilQuery) {
+                        $q->orWhere('title', 'ILIKE', "%{$cyrilQuery}%")
+                          ->orWhere('description', 'ILIKE', "%{$cyrilQuery}%");
+                    }
+                });
+            })
+            ->select(
+                'id',
+                'title',
+                'description',
+                'source',
+                'external_id',
+                DB::raw("
+                    ts_rank_cd(
+                        to_tsvector('english', coalesce(title, '') || ' ' || coalesce(description, '')),
+                        websearch_to_tsquery('english', ?)
+                    ) as rank
+                ")
+            )
+            ->addBinding($tsQuery, 'select') // rank uchun binding
+            ->orderByDesc('rank')
+            ->orderByDesc('id')
+            ->limit(100)
+            ->get()
+            ->keyBy(fn($v) => $v->source === 'hh' && $v->external_id
+                ? $v->external_id
+                : "local_{$v->id}")
+        ]);
 
 
         Log::info('Data fetch took:' . (microtime(true) - $start) . 's');
