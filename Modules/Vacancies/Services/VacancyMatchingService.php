@@ -132,7 +132,7 @@ class VacancyMatchingService
                 @@ websearch_to_tsquery('simple', ?)
             ", [$tsQuery]);
 
-                    // Token orqali kengroq qidiruv
+                    // 🔍 Tokenlar bo‘yicha kengroq qidiruv
                     if (!empty($tokenArr)) {
                         $top = array_slice($tokenArr, 0, min(10, count($tokenArr)));
                         $query->orWhere(function ($q) use ($top) {
@@ -157,13 +157,25 @@ class VacancyMatchingService
                     websearch_to_tsquery('simple', ?)
                 ) as rank
             ")
-                )->limit(1000)
+                )
+                ->limit(1000)
                 ->addBinding($tsQuery, 'select');
 
             if ($withCategory) {
                 $resumeCategory = $resume->category ?? null;
 
                 if ($resumeCategory) {
+                    // 📊 Shu yerda category bo‘yicha nechta vacancy borligini hisoblaymiz
+                    $countSameCategory = DB::table('vacancies')
+                        ->where('status', 'publish')
+                        ->where('source', 'telegram')
+                        ->where('category', $resumeCategory)
+                        ->count();
+
+                    // 🔵 Logga yozamiz
+                    Log::info("Resume [ID: {$resume->id}] category '{$resumeCategory}' → {$countSameCategory} matching vacancies found.");
+
+                    // So‘ng queryni shu kategoriya bilan cheklaymiz
                     $qb->where(function ($q) use ($resumeCategory) {
                         $q->where('category', $resumeCategory)
                             ->orWhereIn('category', ['Other']);
@@ -176,12 +188,10 @@ class VacancyMatchingService
             return $qb->orderByDesc('rank')->orderByDesc('id');
         };
 
-        $localVacancies = $buildLocal(true)
-            ->get();
+        $localVacancies = $buildLocal(true)->get();
 
         $localVacancies = collect($localVacancies)
             ->keyBy(fn($v) => $v->source === 'hh' && $v->external_id ? $v->external_id : "local_{$v->id}");
-
 
 
         Log::info('Data fetch took:' . (microtime(true) - $start) . 's');
