@@ -1640,6 +1640,23 @@ class VacancyCategoryService
     }
 
     /**
+     * Return only human-readable category labels, excluding the generic "Other".
+     *
+     * @return array<int, string>
+     */
+    public function getLabelsExceptOther(): array
+    {
+        $labels = [];
+        foreach ($this->categories as $slug => $label) {
+            if ($slug === 'other') {
+                continue;
+            }
+            $labels[] = $label;
+        }
+        return $labels;
+    }
+
+    /**
      * Keyword buckets for inference (slug => list of phrases).
      */
     private array $keywordBuckets = [
