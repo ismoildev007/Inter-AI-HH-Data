@@ -124,7 +124,7 @@ class ResumeService
         - "weaknesses": 2–4 short bullet points describing areas that might need improvement.
         - "keywords": A list of important keywords or technologies mentioned in the resume (useful for search/matching).
         - "language": Detect the main language of the resume text (e.g., "en", "ru", "uz").
-        - "title": From the resume, identify up to three (maximum 3) of the most specific and relevant professional titles that accurately represent the candidate’s main expertise and experience.
+         - "title": From the resume, identify up to three (maximum 3) of the most specific and relevant professional titles that accurately represent the candidate’s main expertise and experience.
             **Rules for generating "title":**
             • Each title must be highly specific and reflect both the role and its key technology, framework, or domain focus.
                 - Examples: "PHP Backend Developer", "C# .NET Developer", "ASP.NET Developer", "Java Spring Developer", "Python Fullstack Developer", "React Frontend Developer", "Digital Marketing Specialist", "HR Manager", "Accountant", "Nurse", "Sales Manager", "Teacher".
@@ -144,6 +144,12 @@ class ResumeService
                 HR Manager,
                 Recruitment Specialist,
                 Banking Operations Manager
+            • For each of the top two titles, also automatically add **two meaningful core skills** that logically match the title and profession.
+                - If the role is technical (e.g., developer, engineer, data scientist), choose their main programming languages or frameworks (e.g., Python, JavaScript, Java, C#, React, Node.js, etc.).
+                - If the role is in marketing, management, HR, design, finance, or other non-technical domains, choose two clear, domain-relevant core skills (e.g., Marketing, SMM, SEO, HR, Recruitment, Accounting, Graphic Design, Financial Analysis, Teaching, Patient Care, Project Management, etc.).
+                - Do NOT include general tools or infrastructure items such as SQL, Git, CI/CD, Docker, or similar.
+                - The rest of the prompt and structure must remain unchanged.
+
 
         - "cover_letter": Write a short, professional cover letter (5–7 sentences) focusing on three key areas that best suit the candidate you listed above. Be polite, confident, concise, and literate.
           Always include the candidate's real name at the end, in a new paragraph, with the caption "Sincerely" and their name. The letter must be in Russian.
