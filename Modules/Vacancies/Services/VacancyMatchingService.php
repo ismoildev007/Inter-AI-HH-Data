@@ -166,7 +166,7 @@ class VacancyMatchingService
                 if ($resumeCategory) {
                     $qb->where(function ($q) use ($resumeCategory) {
                         $q->where('category', $resumeCategory)
-                            ->orWhereIn('category', 'Other');
+                            ->orWhereIn('category', ['Other']);
                     });
                 } elseif ($guessedCategory) {
                     $qb->where('category', $guessedCategory);
