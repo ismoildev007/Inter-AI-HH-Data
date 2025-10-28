@@ -186,7 +186,7 @@ class VacancyMatchingService
             return $qb->orderByDesc('rank')->orderByDesc('id');
         };
 
-        $catLimit = 100;
+        $catLimit = 1000;
         $fallbackThreshold = 40;
         $localCat = $buildLocal(true)->limit($catLimit)->get();
 
