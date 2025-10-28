@@ -15,6 +15,7 @@ use App\Helpers\TranslitHelper;
 use Illuminate\Support\Facades\Cache;
 use Stichoza\GoogleTranslate\GoogleTranslate;
 use Throwable;
+use Modules\TelegramChannel\Services\VacancyCategoryService;
 
 class VacancyMatchingService
 {
@@ -40,7 +41,8 @@ class VacancyMatchingService
         $words = array_map('trim', explode(',', $query));
 
         $translator = new GoogleTranslate();
-        $translator->setSource('uz');
+        // Avtomatik til aniqlash — noto'g'ri tarjimalarni kamaytiradi
+        $translator->setSource('auto');
         $translator->setTarget('uz');
         $uzQuery = $translator->translate("\"{$query}\"");
 
@@ -53,87 +55,179 @@ class VacancyMatchingService
         $allVariants = collect([$query, $uzQuery, $ruQuery, $enQuery])
             ->unique()
             ->filter()
-            ->values()
-            ->all();
-        $multiWords = collect($allVariants)
-            ->flatMap(fn($v) => preg_split('/\s*,\s*/u', $v)) // faqat vergul bo‘yicha bo‘linadi
-            ->map(fn($w) => trim(preg_replace('/[\"\'«»“”]/u', '', $w)))
-            ->filter(fn($w) => mb_strlen($w) > 0) // har bir butun stack qoladi
-            ->unique()
-            ->values()
-            ->all();
+            ->values();
 
-        Log::info('Searching vacancies for terms', ['terms' => $allVariants, 'multi_words' => $multiWords]);
+        // Kengaytirilgan tokenizatsiya: bo'sh joy, vergul, nuqtali vergul, chiziqcha va h.k.
+        $tokens = $allVariants
+            ->flatMap(fn($v) => preg_split('/[\s,;\/\|]+/u', (string) $v))
+            ->map(fn($w) => trim(preg_replace('/[\"\'«»“”]/u', '', $w)))
+            ->filter(fn($w) => mb_strlen($w) >= 3)
+            ->map(fn($w) => mb_strtolower($w, 'UTF-8'))
+            ->unique()
+            ->take(8)
+            ->values();
+        $tokenArr = $tokens->all();
+
+        // Ko'p so'zli iboralar (vergul bo'yicha segmentlar) — aniqroq moslik uchun phrase matching
+        $phrases = $allVariants
+            ->flatMap(fn($v) => preg_split('/\s*,\s*/u', (string) $v))
+            ->map(fn($s) => trim($s))
+            ->filter(fn($s) => mb_strlen($s) >= 3 && preg_match('/\s/u', $s))
+            ->map(fn($s) => mb_strtolower($s, 'UTF-8'))
+            ->unique()
+            ->take(4)
+            ->values();
+        $phraseArr = $phrases->all();
+
+        // AND-gating uchun eng uzun 2 tokenni tanlaymiz (umumiy, domen-agnostik)
+        $tokensByLen = $tokens->sortByDesc(fn($t) => mb_strlen($t, 'UTF-8'))->values();
+        $mustAnd = array_slice($tokensByLen->all(), 0, 2);
+
+        Log::info('Searching vacancies for terms', ['terms' => $allVariants->all(), 'tokens' => $tokenArr]);
 
         $searchQuery = $latinQuery ?: $cyrilQuery;
 
-        if (!empty($multiWords)) {
-            $tsQuery = implode(' & ', array_map('trim', $multiWords));
-        } else {
-            $tsQuery = trim($searchQuery);
+        // websearch_to_tsquery uchun OR mantiqi: websearch sintaksisida 'OR' so'zi ishlatiladi
+        // Ko'p so'zli frazalar "..." bilan o'raladi
+        $tsTerms = array_merge(
+            array_map('trim', array_map('strval', $phraseArr)),
+            array_map('trim', array_map('strval', $tokenArr))
+        );
+        // Majburiy kuchli juftlik (top 2 token) — precisionni oshirish uchun
+        $mustPair = [];
+        if (count($tokenArr) >= 2) {
+            $mustPair = ['(' . $tokenArr[0] . ' ' . $tokenArr[1] . ')']; // websearch: space = AND
+        }
+        $webParts = array_merge($mustPair, $tsTerms);
+
+        $tsQuery = !empty($webParts)
+            ? implode(' OR ', array_map(function ($t) {
+                return str_contains($t, ' ') ? '"'.str_replace('"','', $t).'"' : $t;
+            }, $webParts))
+            : trim((string) $searchQuery);
+
+        // Rezume bo'yicha taxminiy kategoriya — mos natijalarni ustun qo'yish uchun
+        $guessedCategory = null;
+        try {
+            /** @var VacancyCategoryService $categorizer */
+            $categorizer = app(\Modules\TelegramChannel\Services\VacancyCategoryService::class);
+            $guessedCategory = $categorizer->categorize('', (string) ($resume->title ?? ''), (string) ($resume->description ?? ''), '');
+            if (!is_string($guessedCategory) || mb_strtolower($guessedCategory, 'UTF-8') === 'other' || $guessedCategory === '') {
+                $guessedCategory = null;
+            }
+        } catch (\Throwable $e) {
+            $guessedCategory = null;
         }
 
-        [$hhVacancies, $localVacancies] = Concurrency::run([
-            fn() => cache()->remember(
-                "hh:search:{$query}:area97",
-                now()->addMinutes(30),
-                fn() => $this->hhRepository->search($query, 0, 100, ['area' => 97])
-            ),
-            fn() => DB::table('vacancies')
-            ->where('status', 'publish')
-            ->where('source', 'telegram')
-            ->whereNotIn('id', function ($q) use ($resume) {
-                $q->select('vacancy_id')
-                    ->from('match_results')
-                    ->where('resume_id', $resume->id);
-            })
-            ->where(function ($query) use ($tsQuery, $multiWords, $latinQuery, $cyrilQuery) {
-                $query->whereRaw("
-                    to_tsvector('english', coalesce(title, '') || ' ' || coalesce(description, ''))
-                    @@ websearch_to_tsquery('english', ?)
-                ", [$tsQuery]);
-        
-                // 🔁 fallback agar tsvektor hech narsa topmasa — oddiy LIKE bilan
-                $query->orWhere(function ($q) use ($multiWords, $latinQuery, $cyrilQuery) {
-                    foreach ($multiWords as $word) {
-                        $pattern = "%{$word}%";
-                        $q->orWhere('title', 'ILIKE', $pattern)
-                          ->orWhere('description', 'ILIKE', $pattern);
+        // HH qidiruvini cache bilan olamiz
+        $hhVacancies = cache()->remember(
+            "hh:search:{$query}:area97",
+            now()->addMinutes(30),
+            fn() => $this->hhRepository->search($query, 0, 100, ['area' => 97])
+        );
+
+        // Lokal (telegram) qidiruvini ikki fazada: (1) strict kategoriya, (2) umumiy fallback
+        // Domen yoki soha-gating YO'Q: qidiruv umumiy, har qanday soha uchun ishlaydi
+
+        $buildLocal = function (bool $withCategory) use ($resume, $tsQuery, $tokenArr, $guessedCategory, $isLogistics, $domainTokens, $itNoise) {
+        $buildLocal = function (bool $withCategory) use ($resume, $tsQuery, $tokenArr, $guessedCategory, $phraseArr, $mustAnd) {
+            $qb = DB::table('vacancies')
+                ->where('status', 'publish')
+                ->where('source', 'telegram')
+                ->whereNotIn('id', function ($q) use ($resume) {
+                    $q->select('vacancy_id')
+                        ->from('match_results')
+                        ->where('resume_id', $resume->id);
+                })
+                ->where(function ($query) use ($tsQuery, $tokenArr) {
+                    // Rezume title/keywords -> faqat description bo'yicha FT qidiruv (titlega emas)
+                    $query->whereRaw("
+                        to_tsvector('simple', coalesce(description, ''))
+                        @@ websearch_to_tsquery('simple', ?)
+                    ", [$tsQuery]);
+
+                    // Fallback: OR-ILIKE (recallni oshirish uchun)
+                    if (!empty($tokenArr)) {
+                        $top = array_slice($tokenArr, 0, min(5, count($tokenArr)));
+                        $query->orWhere(function ($q) use ($top) {
+                            foreach ($top as $idx => $t) {
+                                $pattern = "%{$t}%";
+                                // Faqat description ILIKE — titlega mos kelgan dev lavozimlar aralashmasin
+                                if ($idx === 0) {
+                                    $q->where('description', 'ILIKE', $pattern);
+                                } else {
+                                    $q->orWhere('description', 'ILIKE', $pattern);
+                                }
+                            }
+                        });
                     }
-        
-                    if ($latinQuery) {
-                        $q->orWhere('title', 'ILIKE', "%{$latinQuery}%")
-                          ->orWhere('description', 'ILIKE', "%{$latinQuery}%");
-                    }
-        
-                    if ($cyrilQuery) {
-                        $q->orWhere('title', 'ILIKE', "%{$cyrilQuery}%")
-                          ->orWhere('description', 'ILIKE', "%{$cyrilQuery}%");
-                    }
-                });
-            })
-            ->select(
-                'id',
-                'title',
-                'description',
-                'source',
-                'external_id',
-                DB::raw("
-                    ts_rank_cd(
-                        to_tsvector('english', coalesce(title, '') || ' ' || coalesce(description, '')),
-                        websearch_to_tsquery('english', ?)
-                    ) as rank
-                ")
-            )
-            ->addBinding($tsQuery, 'select') // rank uchun binding
-            ->orderByDesc('rank')
-            ->orderByDesc('id')
-            ->limit(100)
-            ->get()
-            ->keyBy(fn($v) => $v->source === 'hh' && $v->external_id
-                ? $v->external_id
-                : "local_{$v->id}")
-        ]);
+                })
+                // Precision gating: kamida bitta phrase yoki 2 ta eng uzun token AND bo'lsin
+                ->when(!empty($phraseArr) || count($mustAnd) >= 2, function ($q) use ($phraseArr, $mustAnd) {
+                    $q->where(function ($g) use ($phraseArr, $mustAnd) {
+                        $hasClause = false;
+                        if (!empty($phraseArr)) {
+                            $g->where(function ($p) use ($phraseArr) {
+                                foreach ($phraseArr as $idx => $ph) {
+                                    $pat = '%'.$ph.'%';
+                                    if ($idx === 0) {
+                                        $p->where('description', 'ILIKE', $pat);
+                                    } else {
+                                        $p->orWhere('description', 'ILIKE', $pat);
+                                    }
+                                }
+                            });
+                            $hasClause = true;
+                        }
+                        if (count($mustAnd) >= 2) {
+                            $g->orWhere(function ($w) use ($mustAnd) {
+                                $w->where('description', 'ILIKE', '%'.$mustAnd[0].'%')
+                                  ->where('description', 'ILIKE', '%'.$mustAnd[1].'%');
+                            });
+                            $hasClause = true;
+                        }
+                        return $hasClause;
+                    });
+                })
+                // Domen/spetsifik noise filtrlari yo'q — umumiy qidiruv saqlanadi
+                ->select(
+                    'id',
+                    'title',
+                    'description',
+                    'source',
+                    'external_id',
+                    'category',
+                    DB::raw("
+                        ts_rank_cd(
+                            to_tsvector('simple', coalesce(description, '')),
+                            websearch_to_tsquery('simple', ?)
+                        ) as rank
+                    ")
+                )
+                ->addBinding($tsQuery, 'select');
+
+            if ($withCategory && $guessedCategory) {
+                $qb->where('category', $guessedCategory);
+            }
+
+            return $qb->orderByDesc('rank')->orderByDesc('id');
+        };
+
+        $catLimit = 100;
+        $fallbackThreshold = 40; // kategoriya bo'yicha natijalar kam bo'lsa — umumiy qidiruv bilan to'ldiramiz
+        $localCat = $buildLocal(true)->limit($catLimit)->get();
+
+        if ($guessedCategory && $localCat->count() < $fallbackThreshold) {
+            $need = max(0, $catLimit - $localCat->count());
+            $localGen = $buildLocal(false)->limit($need)->get();
+            $localVacancies = collect($localCat)->concat($localGen)->values();
+        } else {
+            $localVacancies = $localCat;
+        }
+
+        // Key by external key to avoid duplicates vs HH payload join further
+        $localVacancies = collect($localVacancies)
+            ->keyBy(fn($v) => $v->source === 'hh' && $v->external_id ? $v->external_id : "local_{$v->id}");
 
 
         Log::info('Data fetch took:' . (microtime(true) - $start) . 's');
