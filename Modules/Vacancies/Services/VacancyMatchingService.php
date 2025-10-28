@@ -139,7 +139,9 @@ class VacancyMatchingService
                             foreach ($top as $t) {
                                 $pattern = "%{$t}%";
                                 $q->orWhere('description', 'ILIKE', $pattern)
-                                    ->orWhere('title', 'ILIKE', $pattern)->orWhere('category', 'ILIKE', $pattern);
+                                    ->orWhere('title', 'ILIKE', $pattern)
+//                                    ->orWhere('category', 'ILIKE', $pattern)
+                                ;
                             }
                         });
                     }
