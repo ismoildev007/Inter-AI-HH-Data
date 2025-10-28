@@ -13,7 +13,7 @@ use Modules\Vacancies\Interfaces\VacancyInterface;
 use Spatie\Async\Pool;
 use App\Helpers\TranslitHelper;
 use Illuminate\Support\Facades\Cache;
-use Stichoza\GoogleTranslate\GoogleTranslate;
+// use Stichoza\GoogleTranslate\GoogleTranslate;
 use Throwable;
 use Modules\TelegramChannel\Services\VacancyCategoryService;
 
@@ -40,19 +40,8 @@ class VacancyMatchingService
 
         $words = array_map('trim', explode(',', $query));
 
-        $translator = new GoogleTranslate();
-        // Avtomatik til aniqlash — noto'g'ri tarjimalarni kamaytiradi
-        $translator->setSource('auto');
-        $translator->setTarget('uz');
-        $uzQuery = $translator->translate("\"{$query}\"");
-
-        $translator->setTarget('ru');
-        $ruQuery = $translator->translate("\"{$query}\"");
-
-        $translator->setTarget('en');
-        $enQuery = $translator->translate("\"{$query}\"");
-
-        $allVariants = collect([$query, $uzQuery, $ruQuery, $enQuery])
+        // Tarjima kengayishlarini olib tashlaymiz: faqat asl so'rov + translit variantlari
+        $allVariants = collect([$query, $latinQuery, $cyrilQuery])
             ->unique()
             ->filter()
             ->values();
@@ -82,6 +71,13 @@ class VacancyMatchingService
         // AND-gating uchun eng uzun 2 tokenni tanlaymiz (umumiy, domen-agnostik)
         $tokensByLen = $tokens->sortByDesc(fn($t) => mb_strlen($t, 'UTF-8'))->values();
         $mustAnd = array_slice($tokensByLen->all(), 0, 2);
+
+        // Rezume matnidan kuchli ANCHOR belgilar: katta harfli qisqartmalar (ELD, HOS, PM, QA ...)
+        $anchorAcronyms = [];
+        $sourceForAnchors = (string) ($resume->title ?? '') . ' ' . (string) ($resume->description ?? '');
+        if (preg_match_all('/\b[A-Z]{2,}\b/u', $sourceForAnchors, $m)) {
+            $anchorAcronyms = array_values(array_unique($m[0] ?? []));
+        }
 
         Log::info('Searching vacancies for terms', ['terms' => $allVariants->all(), 'tokens' => $tokenArr]);
 
@@ -131,7 +127,7 @@ class VacancyMatchingService
         // Lokal (telegram) qidiruvini ikki fazada: (1) strict kategoriya, (2) umumiy fallback
         // Domen yoki soha-gating YO'Q: qidiruv umumiy, har qanday soha uchun ishlaydi
 
-        $buildLocal = function (bool $withCategory) use ($resume, $tsQuery, $tokenArr, $guessedCategory) {
+        $buildLocal = function (bool $withCategory) use ($resume, $tsQuery, $tokenArr, $guessedCategory, $anchorAcronyms) {
             $qb = DB::table('vacancies')
                 ->where('status', 'publish')
                 ->where('source', 'telegram')
@@ -169,6 +165,21 @@ class VacancyMatchingService
                             }
                         });
                     }
+                })
+                // Agar rezumeda kuchli acronimlar bo'lsa (ELD, HOS kabi) — kamida bittasi title/description ichida uchrashi shart
+                ->when(!empty($anchorAcronyms), function ($q) use ($anchorAcronyms) {
+                    $q->where(function ($w) use ($anchorAcronyms) {
+                        foreach ($anchorAcronyms as $i => $ac) {
+                            $pattern = '%' . $ac . '%';
+                            if ($i === 0) {
+                                $w->where('title', 'ILIKE', $pattern)
+                                  ->orWhere('description', 'ILIKE', $pattern);
+                            } else {
+                                $w->orWhere('title', 'ILIKE', $pattern)
+                                  ->orWhere('description', 'ILIKE', $pattern);
+                            }
+                        }
+                    });
                 })
                 // Domen/spetsifik noise filtrlari yo'q — umumiy qidiruv saqlanadi
                 ->select(
@@ -240,6 +251,17 @@ class VacancyMatchingService
             // $title = $item['name'] ?? 'No title';
             $text = ($item['snippet']['requirement'] ?? '') . "\n" .
                 ($item['snippet']['responsibility'] ?? '');
+
+            // Agar acronyms bor bo'lsa — HH snippet matnida kamida bittasi bo'lsin
+            if (!empty($anchorAcronyms)) {
+                $low = mb_strtolower($text ?? '', 'UTF-8');
+                $ok = false;
+                foreach ($anchorAcronyms as $ac) {
+                    if ($ac === '') continue;
+                    if (str_contains($low, mb_strtolower($ac, 'UTF-8'))) { $ok = true; break; }
+                }
+                if (!$ok) { continue; }
+            }
 
             if (!empty(trim($text))) {
                 $vacanciesPayload[] = [
