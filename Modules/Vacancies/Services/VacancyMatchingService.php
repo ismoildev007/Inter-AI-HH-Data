@@ -50,57 +50,91 @@ class VacancyMatchingService
         $translator->setTarget('en');
         $enQuery = $translator->translate("\"{$query}\"");
 
-        $translations = [
-            'uz' => $uzQuery,
-            'ru' => $ruQuery,
-            'en' => $enQuery,
-        ];
-
         $allVariants = collect([$query, $uzQuery, $ruQuery, $enQuery])
             ->unique()
             ->filter()
             ->values()
             ->all();
+        $multiWords = collect($allVariants)
+            ->flatMap(fn($v) => preg_split('/\s*,\s*/u', $v)) // faqat vergul bo‘yicha bo‘linadi
+            ->map(fn($w) => trim(preg_replace('/[\"\'«»“”]/u', '', $w)))
+            ->filter(fn($w) => mb_strlen($w) > 0) // har bir butun stack qoladi
+            ->unique()
+            ->values()
+            ->all();
 
-        $multiWords = array_unique(array_merge(
-            ...array_map(fn($q) => array_map('trim', explode(',', $q)), $allVariants)
-        ));
         Log::info('Searching vacancies for terms', ['terms' => $allVariants, 'multi_words' => $multiWords]);
 
+        $searchQuery = $latinQuery ?: $cyrilQuery;
+
+        if (!empty($multiWords)) {
+            $tsQuery = implode(' & ', array_map('trim', $multiWords));
+        } else {
+            $tsQuery = trim($searchQuery);
+        }
 
         [$hhVacancies, $localVacancies] = Concurrency::run([
             fn() => cache()->remember(
                 "hh:search:{$query}:area97",
                 now()->addMinutes(30),
-                fn() => $this->hhRepository->search($query, 0, 200, ['area' => 97])
+                fn() => $this->hhRepository->search($query, 0, 100, ['area' => 97])
             ),
             fn() => DB::table('vacancies')
-                ->where('status', 'publish')
-                ->where('source', 'telegram')
-                ->whereNotIn('id', function ($q) use ($resume) {
-                    $q->select('vacancy_id')
-                        ->from('match_results')
-                        ->where('resume_id', $resume->id);
-                })
-                ->whereRaw("
-                        (
-                            title ILIKE ANY (ARRAY['%" . implode("%','%", $multiWords) . "%']) OR
-                            description ILIKE ANY (ARRAY['%" . implode("%','%", $multiWords) . "%'])
-                        )
-                        OR title ILIKE '%{$latinQuery}%'
-                        OR description ILIKE '%{$latinQuery}%'
-                        OR title ILIKE '%{$cyrilQuery}%'
-                        OR description ILIKE '%{$cyrilQuery}%'
-                    ")
-                ->select('id', 'title', 'description', 'source', 'external_id')
-                ->limit(200)
-                ->orderByDesc('id')
-                ->get()
-                ->keyBy(fn($v) => $v->source === 'hh' && $v->external_id
-                    ? $v->external_id
-                    : "local_{$v->id}")
-
+            ->where('status', 'publish')
+            ->where('source', 'telegram')
+            ->whereNotIn('id', function ($q) use ($resume) {
+                $q->select('vacancy_id')
+                    ->from('match_results')
+                    ->where('resume_id', $resume->id);
+            })
+            ->where(function ($query) use ($tsQuery, $multiWords, $latinQuery, $cyrilQuery) {
+                $query->whereRaw("
+                    to_tsvector('english', coalesce(title, '') || ' ' || coalesce(description, ''))
+                    @@ websearch_to_tsquery('english', ?)
+                ", [$tsQuery]);
+        
+                // 🔁 fallback agar tsvektor hech narsa topmasa — oddiy LIKE bilan
+                $query->orWhere(function ($q) use ($multiWords, $latinQuery, $cyrilQuery) {
+                    foreach ($multiWords as $word) {
+                        $pattern = "%{$word}%";
+                        $q->orWhere('title', 'ILIKE', $pattern)
+                          ->orWhere('description', 'ILIKE', $pattern);
+                    }
+        
+                    if ($latinQuery) {
+                        $q->orWhere('title', 'ILIKE', "%{$latinQuery}%")
+                          ->orWhere('description', 'ILIKE', "%{$latinQuery}%");
+                    }
+        
+                    if ($cyrilQuery) {
+                        $q->orWhere('title', 'ILIKE', "%{$cyrilQuery}%")
+                          ->orWhere('description', 'ILIKE', "%{$cyrilQuery}%");
+                    }
+                });
+            })
+            ->select(
+                'id',
+                'title',
+                'description',
+                'source',
+                'external_id',
+                DB::raw("
+                    ts_rank_cd(
+                        to_tsvector('english', coalesce(title, '') || ' ' || coalesce(description, '')),
+                        websearch_to_tsquery('english', ?)
+                    ) as rank
+                ")
+            )
+            ->addBinding($tsQuery, 'select') // rank uchun binding
+            ->orderByDesc('rank')
+            ->orderByDesc('id')
+            ->limit(100)
+            ->get()
+            ->keyBy(fn($v) => $v->source === 'hh' && $v->external_id
+                ? $v->external_id
+                : "local_{$v->id}")
         ]);
+
 
         Log::info('Data fetch took:' . (microtime(true) - $start) . 's');
         Log::info('Local vacancies: ' . $localVacancies->count());
@@ -112,14 +146,16 @@ class VacancyMatchingService
         foreach ($localVacancies as $v) {
             $vacanciesPayload[] = [
                 'id'   => $v->id,
+                'vacancy_id'   => $v->id,
                 // 'title' => $v->title,
                 'text' => mb_substr(strip_tags($v->description), 0, 2000),
             ];
         }
+        Log::info(['local vacancies' => $vacanciesPayload]);
         $toFetch = collect($hhItems)
             ->filter(fn($item) => isset($item['id']) && !$localVacancies->has($item['id']))
-            ->take(1000);
-        foreach ($toFetch as $item) {
+            ->take(200);
+        foreach ($toFetch as $idx =>  $item) {
             $extId = $item['id'] ?? null;
             if (!$extId || $localVacancies->has($extId)) {
                 continue;
@@ -135,6 +171,7 @@ class VacancyMatchingService
                     'text'        => mb_substr(strip_tags($text), 0, 1000),
                     'external_id' => $extId,
                     'raw'         => $item,
+                    'vacancy_index' => $idx,
                 ];
             }
         }
@@ -143,51 +180,69 @@ class VacancyMatchingService
             return [];
         }
         Log::info('Prepared payload with ' . count($vacanciesPayload) . ' vacancies');
-        // Python matcher disabled: save zero-score matches directly
         $vacancyMap = collect($vacanciesPayload)->keyBy(fn($v, $k) => $v['id'] ?? "new_{$k}");
 
         $savedData = [];
-        foreach ($vacanciesPayload as $idx => $payload) {
-            $vac = null;
+        foreach ($vacanciesPayload as $match) {
+            try {
+                $vac = null;
+                $vacId = $match['vacancy_id'] ?? null;
 
-            if (!empty($payload['id'])) {
-                $vac = Vacancy::find($payload['id']);
-            }
+                if ($vacId) {
+                    // direct Eloquent lookup
+                    $vac = Vacancy::withoutGlobalScopes()->find($vacId);
+                }
 
-            if (!$vac && isset($payload['external_id'])) {
-                $vac = Vacancy::where('source', 'hh')
-                    ->where('external_id', $payload['external_id'])
-                    ->first();
+                // If it's from HH, handle external_id
+                if (!$vac && isset($match['external_id'])) {
+                    $vac = Vacancy::where('source', 'hh')
+                        ->where('external_id', $match['external_id'])
+                        ->first();
 
-                if (!$vac && isset($payload['raw'])) {
-                    try {
-                        $vac = $this->vacancyRepository->createFromHH($payload['raw']);
-                    } catch (\Throwable $e) {
-                        Log::warning('CreateFromHH failed', [
-                            'external_id' => $payload['external_id'] ?? null,
-                            'error' => $e->getMessage(),
-                        ]);
+                    if (!$vac && isset($match['raw'])) {
+                        $vac = $this->vacancyRepository->createFromHH($match['raw']);
                     }
                 }
-            }
 
-            if (!$vac) {
-                continue;
-            }
+                // 🟩 If it’s a local vacancy that exists in DB::table but not found by model,
+                // still record it using the ID from the payload.
+                if (!$vac && !empty($vacId)) {
+                    Log::info('⚙️ Local vacancy not found via model, saving manually', [
+                        'vacancy_id' => $vacId,
+                    ]);
 
-            $savedData[] = [
-                'resume_id'     => $resume->id,
-                'vacancy_id'    => $vac->id,
-                'score_percent' => 0,
-                'explanations'  => json_encode([
-                    'source' => $vac->source,
-                    'via' => 'zero-score-direct',
-                    'vacancy_index' => $idx,
-                ]),
-                'updated_at'    => now(),
-                'created_at'    => now(),
-            ];
+                    $savedData[] = [
+                        'resume_id'     => $resume->id,
+                        'vacancy_id'    => $vacId,
+                        'score_percent' => $match['score'] ?? 0,
+                        'explanations'  => json_encode($match),
+                        'updated_at'    => now(),
+                        'created_at'    => now(),
+                    ];
+
+                    continue;
+                }
+
+                // If everything’s normal
+                if ($vac) {
+                    $savedData[] = [
+                        'resume_id'     => $resume->id,
+                        'vacancy_id'    => $vac->id,
+                        'score_percent' => $match['score'] ?? 0,
+                        'explanations'  => json_encode($match),
+                        'updated_at'    => now(),
+                        'created_at'    => now(),
+                    ];
+                }
+            } catch (\Throwable $e) {
+                Log::error('💥 Error while matching vacancy', [
+                    'match' => $match,
+                    'error' => $e->getMessage(),
+                ]);
+            }
         }
+
+
 
         if (!empty($savedData)) {
             DB::table('match_results')->upsert(
