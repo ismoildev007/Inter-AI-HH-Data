@@ -67,13 +67,31 @@ class VacancyMatchingService
             ->values();
         $tokenArr = $tokens->all();
 
+        // Ko'p so'zli iboralar (vergul bo'yicha segmentlar) — aniqroq moslik uchun phrase matching
+        $phrases = $allVariants
+            ->flatMap(fn($v) => preg_split('/\s*,\s*/u', (string) $v))
+            ->map(fn($s) => trim($s))
+            ->filter(fn($s) => mb_strlen($s) >= 3 && preg_match('/\s/u', $s))
+            ->map(fn($s) => mb_strtolower($s, 'UTF-8'))
+            ->unique()
+            ->take(4)
+            ->values();
+        $phraseArr = $phrases->all();
+
         Log::info('Searching vacancies for terms', ['terms' => $allVariants->all(), 'tokens' => $tokenArr]);
 
         $searchQuery = $latinQuery ?: $cyrilQuery;
 
         // websearch_to_tsquery uchun OR mantiqi: websearch sintaksisida 'OR' so'zi ishlatiladi
-        $tsQuery = !empty($tokenArr)
-            ? implode(' OR ', array_map('trim', $tokenArr))
+        // Ko'p so'zli frazalar "..." bilan o'raladi
+        $tsTerms = array_merge(
+            array_map('trim', array_map('strval', $phraseArr)),
+            array_map('trim', array_map('strval', $tokenArr))
+        );
+        $tsQuery = !empty($tsTerms)
+            ? implode(' OR ', array_map(function ($t) {
+                return str_contains($t, ' ') ? '"'.str_replace('"','', $t).'"' : $t;
+            }, $tsTerms))
             : trim((string) $searchQuery);
 
         // Rezume bo'yicha taxminiy kategoriya — mos natijalarni ustun qo'yish uchun
@@ -107,11 +125,10 @@ class VacancyMatchingService
                         ->where('resume_id', $resume->id);
                 })
                 ->where(function ($query) use ($tsQuery, $tokenArr) {
+                    // Rezume title/keywords -> faqat description bo'yicha FT qidiruv (titlega emas)
                     $query->whereRaw("
-                        (
-                            setweight(to_tsvector('simple', coalesce(title, '')), 'A') ||
-                            setweight(to_tsvector('simple', coalesce(description, '')), 'B')
-                        ) @@ websearch_to_tsquery('simple', ?)
+                        to_tsvector('simple', coalesce(description, ''))
+                        @@ websearch_to_tsquery('simple', ?)
                     ", [$tsQuery]);
 
                     // Fallback: OR-ILIKE (recallni oshirish uchun)
@@ -120,16 +137,11 @@ class VacancyMatchingService
                         $query->orWhere(function ($q) use ($top) {
                             foreach ($top as $idx => $t) {
                                 $pattern = "%{$t}%";
+                                // Faqat description ILIKE — titlega mos kelgan dev lavozimlar aralashmasin
                                 if ($idx === 0) {
-                                    $q->where(function ($w) use ($pattern) {
-                                        $w->where('title', 'ILIKE', $pattern)
-                                          ->orWhere('description', 'ILIKE', $pattern);
-                                    });
+                                    $q->where('description', 'ILIKE', $pattern);
                                 } else {
-                                    $q->orWhere(function ($w) use ($pattern) {
-                                        $w->where('title', 'ILIKE', $pattern)
-                                          ->orWhere('description', 'ILIKE', $pattern);
-                                    });
+                                    $q->orWhere('description', 'ILIKE', $pattern);
                                 }
                             }
                         });
@@ -144,10 +156,7 @@ class VacancyMatchingService
                     'category',
                     DB::raw("
                         ts_rank_cd(
-                            (
-                                setweight(to_tsvector('simple', coalesce(title, '')), 'A') ||
-                                setweight(to_tsvector('simple', coalesce(description, '')), 'B')
-                            ),
+                            to_tsvector('simple', coalesce(description, '')),
                             websearch_to_tsquery('simple', ?)
                         ) as rank
                     ")
