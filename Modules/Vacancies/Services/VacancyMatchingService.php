@@ -127,25 +127,19 @@ class VacancyMatchingService
                         ->where('resume_id', $resume->id);
                 })
                 ->where(function ($query) use ($tsQuery, $tokenArr) {
-                    // 🔹 PostgreSQL to_tsvector qidiruvi
                     $query->whereRaw("
-        to_tsvector('simple', coalesce(description, ''))
-        @@ websearch_to_tsquery('simple', ?)
-    ", [$tsQuery]);
+                to_tsvector('simple', coalesce(description, ''))
+                @@ websearch_to_tsquery('simple', ?)
+            ", [$tsQuery]);
 
-                    // 🔹 Tokenlarga asoslangan kengroq qidiruv
+                    // 🔍 Tokenlar bo‘yicha kengroq qidiruv
                     if (!empty($tokenArr)) {
                         $top = array_slice($tokenArr, 0, min(10, count($tokenArr)));
-
-                        // Har bir token bo‘yicha AND qidiruv (barchasi chiqishda ishtirok etsin)
                         $query->orWhere(function ($q) use ($top) {
                             foreach ($top as $t) {
                                 $pattern = "%{$t}%";
-                                // Har bir token uchun alohida "where" (AND mantiq)
-                                $q->where(function ($sub) use ($pattern) {
-                                    $sub->where('description', 'ILIKE', $pattern)
-                                        ->orWhere('title', 'ILIKE', $pattern);
-                                });
+                                $q->orWhere('description', 'ILIKE', $pattern)
+                                    ->orWhere('title', 'ILIKE', $pattern)->orWhere('category', 'ILIKE', $pattern);
                             }
                         });
                     }
@@ -164,7 +158,6 @@ class VacancyMatchingService
                 ) as rank
             ")
                 )
-                ->limit(1000)
                 ->addBinding($tsQuery, 'select');
 
             if ($withCategory) {
@@ -193,7 +186,21 @@ class VacancyMatchingService
             return $qb->orderByDesc('rank')->orderByDesc('id');
         };
 
-        $localVacancies = $buildLocal(true)->get();
+        $localVacancies = $buildLocal(true)->limit(1000)->get();
+
+        // Agar juda kam chiqsa (masalan < 100) → fallback: shu categorydagi hamma vacancy
+        if ($localVacancies->count() < 100 && !empty($resume->category)) {
+            $fallback = DB::table('vacancies')
+                ->where('status', 'publish')
+                ->where('source', 'telegram')
+                ->where('category', $resume->category)
+                ->limit(200)
+                ->get();
+
+            Log::info("⚠️ Low match ({$localVacancies->count()} found). Added fallback {$fallback->count()} from category '{$resume->category}'.");
+
+            $localVacancies = $localVacancies->concat($fallback)->unique('id');
+        }
 
         $localVacancies = collect($localVacancies)
             ->keyBy(fn($v) => $v->source === 'hh' && $v->external_id ? $v->external_id : "local_{$v->id}");
