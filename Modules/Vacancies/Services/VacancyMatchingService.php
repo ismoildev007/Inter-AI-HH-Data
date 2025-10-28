@@ -160,14 +160,13 @@ class VacancyMatchingService
                 )
                 ->addBinding($tsQuery, 'select');
 
-            // ✅ faqat category bo‘yicha moslarini tanlash
             if ($withCategory) {
                 $resumeCategory = $resume->category ?? null;
 
                 if ($resumeCategory) {
                     $qb->where(function ($q) use ($resumeCategory) {
                         $q->where('category', $resumeCategory)
-                            ->orWhereIn('category', ['Other', 'others']); // fallback category
+                            ->orWhereIn('category', 'Other');
                     });
                 } elseif ($guessedCategory) {
                     $qb->where('category', $guessedCategory);
@@ -178,7 +177,7 @@ class VacancyMatchingService
         };
 
         $localVacancies = $buildLocal(true)
-            ->limit(300) // kamida 200+ natija olish uchun
+            ->limit(100)
             ->get();
 
         $localVacancies = collect($localVacancies)
@@ -204,7 +203,7 @@ class VacancyMatchingService
         Log::info(['local vacancies' => $vacanciesPayload]);
         $toFetch = collect($hhItems)
             ->filter(fn($item) => isset($item['id']) && !$localVacancies->has($item['id']))
-            ->take(200);
+            ->take(100);
         foreach ($toFetch as $idx =>  $item) {
             $extId = $item['id'] ?? null;
             if (!$extId || $localVacancies->has($extId)) {
