@@ -27,7 +27,7 @@ class AutoApplyCommand extends Command
                 return $setting->auto_apply_count < $setting->auto_apply_limit;
             });
         $this->line('Found ' . $settings->count() . ' users with auto-apply enabled.');
-        Log::info(['Settings count: ' => $settings]);
+        //Log::info(['Settings count: ' => $settings]);
         $hhService = new HhApiService();
 
         foreach ($settings as $setting) {
