@@ -8,45 +8,40 @@ use Spatie\Async\Pool;
 class TestCommand extends Command
 {
     protected $signature = 'test:pool';
-    protected $description = 'Test Spatie Async Pool in CLI mode with DB connection';
+    protected $description = 'Parallel DB queries using Spatie Async + PDO';
 
     public function handle()
     {
+        $this->info('🚀 Parallel PDO test started');
         $start = microtime(true);
-        $this->info('🧵 Starting Spatie Pool test...');
 
-        $pool = Pool::create();
+        $pool = Pool::create()->concurrency(5);
 
-        // Task 1
-        $pool[] = async(function () {
-            sleep(3);
-            return 'Task 1 done';
-        })->then(fn($r) => print("✅ {$r}\n"));
+        $dsn = 'pgsql:host=134.209.240.131;port=5432;dbname=jobapp;';
+        $user = 'jobuser';
+        $pass = 'JobAppPass123!';
 
-        // Task 2
-        $pool[] = async(function () {
-            sleep(3);
-            return 'Task 2 done';
-        })->then(fn($r) => print("✅ {$r}\n"));
+        // 5 parallel so‘rov
+        foreach (range(1, 5) as $i) {
+            $pool[] = async(function () use ($dsn, $user, $pass, $i) {
+                $pdo = new \PDO($dsn, $user, $pass, [
+                    \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
+                    \PDO::ATTR_DEFAULT_FETCH_MODE => \PDO::FETCH_ASSOC,
+                ]);
 
-        // Task 3: direct PostgreSQL query via PDO (no Laravel facades)
-        $pool[] = async(function () {
-            $dsn = 'pgsql:host=134.209.240.131;port=5432;dbname=jobapp;';
-            $user = 'jobuser';
-            $pass = 'JobAppPass123!';
+                $stmt = $pdo->query('SELECT COUNT(*) AS count FROM vacancies');
+                $row = $stmt->fetch();
 
-            $pdo = new \PDO($dsn, $user, $pass, [
-                \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
-                \PDO::ATTR_DEFAULT_FETCH_MODE => \PDO::FETCH_ASSOC,
-            ]);
+                return "Task {$i} → Vacancy count: {$row['count']}";
+            });
+        }
 
-            $stmt = $pdo->query('SELECT COUNT(*) AS count FROM vacancies');
-            $row = $stmt->fetch();
-            return 'Vacancies in DB: ' . $row['count'];
-        })->then(fn($r) => print("✅ {$r}\n"));
+        $results = await($pool);
 
-        await($pool);
+        foreach ($results as $r) {
+            $this->line("✅ {$r}");
+        }
 
-        $this->info('🏁 Finished in ' . round(microtime(true) - $start, 2) . 's');
+        $this->info('🏁 Done in ' . round(microtime(true) - $start, 2) . 's');
     }
 }
