@@ -81,12 +81,13 @@ class VacancyMatchingController extends Controller
                     ->where('applications.user_id', $user->id);
             })
             ->whereIn('match_results.resume_id', $resumeIds)
-            ->orderByRaw('CASE WHEN vacancies.source = "hh" THEN 1 WHEN vacancies.source = "telegram" THEN 0 ELSE -1 END DESC')
+            ->orderByRaw("CASE WHEN vacancies.source = 'hh' THEN 1 WHEN vacancies.source = 'telegram' THEN 0 ELSE -1 END DESC")
             ->orderByRaw('CASE WHEN applications.id IS NULL THEN 0 ELSE 1 END ASC')
             ->orderByDesc('match_results.score_percent')
             ->select('match_results.*')
             ->with('vacancy.employer')
             ->get();
+
 
 
         return response()->json([
