@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Spatie\Async\Pool;
 use Modules\Vacancies\Interfaces\HHVacancyInterface;
 use Throwable;
@@ -16,11 +17,17 @@ class RunMatchingPool extends Command
 
     public function handle()
     {
+        
         $resumeId = $this->argument('resumeId');
         $query = $this->argument('query');
         $tsQuery = $this->argument('tsQuery');
         $guessedCategory = $this->argument('guessedCategory');
-
+        Log::info([
+            'resume' => $resumeId,
+            'query'  => $query,
+            'tsQuesry' => $tsQuery,
+            'guest category' => $guessedCategory
+        ]);
         /** @var HHVacancyInterface $hhRepo */
         $hhRepo = app(HHVacancyInterface::class);
 

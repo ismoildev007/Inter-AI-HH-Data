@@ -108,7 +108,7 @@ class VacancyMatchingService
 
         // 🧠 Endi poolni CLI’da ishga tushiramiz
         $cmd = sprintf(
-            'php %s match:pool %d %s %s %s',
+            '/usr/bin/php %s match:pool %d %s %s %s',
             base_path('artisan'),
             $resume->id,
             escapeshellarg($query),
@@ -116,10 +116,15 @@ class VacancyMatchingService
             escapeshellarg($guessedCategory ?? '')
         );
 
-        exec($cmd, $output, $exitCode);
+        Log::info('⚙️ Running async pool command', ['cmd' => $cmd]);
+
+        exec($cmd . ' 2>&1', $output, $exitCode);
 
         if ($exitCode !== 0) {
-            Log::error('❌ Pool command failed', ['cmd' => $cmd, 'code' => $exitCode]);
+            Log::error('❌ Pool command failed', [
+                'code' => $exitCode,
+                'output' => implode("\n", $output),
+            ]);
             return [];
         }
 
