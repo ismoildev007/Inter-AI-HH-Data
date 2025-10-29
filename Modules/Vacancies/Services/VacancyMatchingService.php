@@ -118,6 +118,16 @@ class VacancyMatchingService
         );
 
         $buildLocal = function (bool $withCategory) use ($resume, $tsQuery, $tokenArr, $guessedCategory) {
+            $techCategories = [
+                "IT and Software Development",
+                "Data Science and Analytics",
+                "QA and Testing",
+                "DevOps and Cloud Engineering",
+                "UI/UX and Product Design"
+            ];
+
+            $resumeCategory = $resume->category ?? null;
+
             $qb = DB::table('vacancies')
                 ->where('status', 'publish')
                 ->where('source', 'telegram')
@@ -125,61 +135,60 @@ class VacancyMatchingService
                     $q->select('vacancy_id')
                         ->from('match_results')
                         ->where('resume_id', $resume->id);
-                })
-                ->where(function ($query) use ($tsQuery, $tokenArr) {
-                    $query->whereRaw("
-                to_tsvector('simple', coalesce(description, ''))
-                @@ websearch_to_tsquery('simple', ?)
-            ", [$tsQuery]);
+                });
 
-                    // 🔍 Tokenlar bo‘yicha kengroq qidiruv
+                    if ($resumeCategory && in_array($resumeCategory, $techCategories, true)) {
+                        $qb->where(function ($query) use ($tsQuery, $tokenArr) {
+                            $query->whereRaw("
+                        to_tsvector('simple', coalesce(description, ''))
+                        @@ websearch_to_tsquery('simple', ?)
+                    ", [$tsQuery]);
+
                     if (!empty($tokenArr)) {
                         $top = array_slice($tokenArr, 0, min(10, count($tokenArr)));
                         $query->orWhere(function ($q) use ($top) {
                             foreach ($top as $t) {
                                 $pattern = "%{$t}%";
                                 $q->orWhere('description', 'ILIKE', $pattern)
-                                    ->orWhere('title', 'ILIKE', $pattern)
-//                                    ->orWhere('category', 'ILIKE', $pattern)
-                                ;
+                                    ->orWhere('title', 'ILIKE', $pattern);
                             }
                         });
                     }
-                })
-                ->select(
-                    'id',
-                    'title',
-                    'description',
-                    'source',
-                    'external_id',
-                    'category',
-                    DB::raw("
-                ts_rank_cd(
-                    to_tsvector('simple', coalesce(description, '')),
-                    websearch_to_tsquery('simple', ?)
-                ) as rank
-            ")
-                )
+                });
+
+                Log::info("Resume [ID: {$resume->id}] is in TECH category '{$resumeCategory}' → using full text + title search.");
+            }
+            else {
+                Log::info("Resume [ID: {$resume->id}] is in NON-TECH category '{$resumeCategory}' → returning all vacancies from this category.");
+            }
+
+            $qb->select(
+                'id',
+                'title',
+                'description',
+                'source',
+                'external_id',
+                'category',
+                DB::raw("
+            ts_rank_cd(
+                to_tsvector('simple', coalesce(description, '')),
+                websearch_to_tsquery('simple', ?)
+            ) as rank
+        ")
+            )
                 ->addBinding($tsQuery, 'select');
 
             if ($withCategory) {
-                $resumeCategory = $resume->category ?? null;
-
                 if ($resumeCategory) {
-                    // 📊 Shu yerda category bo‘yicha nechta vacancy borligini hisoblaymiz
                     $countSameCategory = DB::table('vacancies')
                         ->where('status', 'publish')
                         ->where('source', 'telegram')
                         ->where('category', $resumeCategory)
                         ->count();
 
-                    // 🔵 Logga yozamiz
                     Log::info("Resume [ID: {$resume->id}] category '{$resumeCategory}' → {$countSameCategory} matching vacancies found.");
 
-                    // So‘ng queryni shu kategoriya bilan cheklaymiz
-                    $qb->where(function ($q) use ($resumeCategory) {
-                        $q->where('category', $resumeCategory);
-                    });
+                    $qb->where('category', $resumeCategory);
                 } elseif ($guessedCategory) {
                     $qb->where('category', $guessedCategory);
                 }
@@ -189,20 +198,6 @@ class VacancyMatchingService
         };
 
         $localVacancies = $buildLocal(true)->limit(1000)->get();
-//
-//        // Agar juda kam chiqsa (masalan < 100) → fallback: shu categorydagi hamma vacancy
-//        if ($localVacancies->count() < 100 && !empty($resume->category)) {
-//            $fallback = DB::table('vacancies')
-//                ->where('status', 'publish')
-//                ->where('source', 'telegram')
-//                ->where('category', $resume->category)
-//                ->limit(200)
-//                ->get();
-//
-//            Log::info("⚠️ Low match ({$localVacancies->count()} found). Added fallback {$fallback->count()} from category '{$resume->category}'.");
-//
-//            $localVacancies = $localVacancies->concat($fallback)->unique('id');
-//        }
 
         $localVacancies = collect($localVacancies)
             ->keyBy(fn($v) => $v->source === 'hh' && $v->external_id ? $v->external_id : "local_{$v->id}");
