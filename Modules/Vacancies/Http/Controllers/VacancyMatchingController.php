@@ -37,6 +37,7 @@ class VacancyMatchingController extends Controller
 
         $results = MatchResult::query()
             ->leftJoin('vacancies', 'vacancies.id', '=', 'match_results.vacancy_id')
+            ->orderBy('vacancies.source', 'desc')
             ->leftJoin('employers', 'employers.id', '=', 'vacancies.employer_id')
             ->leftJoin('applications', function ($join) use ($user) {
                 $join->on('applications.vacancy_id', '=', 'match_results.vacancy_id')
