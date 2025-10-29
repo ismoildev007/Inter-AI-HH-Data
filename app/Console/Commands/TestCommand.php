@@ -5,7 +5,7 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use Spatie\Async\Pool;
 
-class TestPoolCommand extends Command
+class TestCommand extends Command
 {
     protected $signature = 'test:pool';
     protected $description = 'Test Spatie Async Pool in CLI mode';
