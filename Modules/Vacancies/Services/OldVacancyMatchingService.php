@@ -16,7 +16,7 @@ use Illuminate\Support\Facades\Cache;
 use Stichoza\GoogleTranslate\GoogleTranslate;
 use Throwable;
 
-class VacancyMatchingService
+class OldVacancyMatchingService
 {
     protected VacancyInterface $vacancyRepository;
     protected HHVacancyInterface $hhRepository;

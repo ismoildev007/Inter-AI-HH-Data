@@ -13,7 +13,7 @@ use App\Helpers\TranslitHelper;
 use Stichoza\GoogleTranslate\GoogleTranslate;
 use Throwable;
 
-class VacancyMatchingService
+class OVMS1
 {
     protected VacancyInterface $vacancyRepository;
     protected HHVacancyInterface $hhRepository;
