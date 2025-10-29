@@ -139,17 +139,17 @@ class VacancyMatchingService
                 });
 
             /**
-             * 🔍 1. Agar kategoriya IT/Tech sohalardan biri bo‘lsa → to‘liq search ishlaydi (title, description)
+             * 🔹 TECH CATEGORY — to‘liq qidiruv
              */
             if ($resumeCategory && in_array($resumeCategory, $techCategories, true)) {
                 $qb->where(function ($query) use ($tsQuery, $tokenArr) {
-                    // PostgreSQL to_tsvector orqali qidiruv
+                    // PostgreSQL full text qidiruv
                     $query->whereRaw("
                 to_tsvector('simple', coalesce(description, ''))
                 @@ websearch_to_tsquery('simple', ?)
             ", [$tsQuery]);
 
-                    // Tokenlar bo‘yicha kengroq qidiruv (title + description)
+                    // Tokenlar bo‘yicha kengroq qidiruv
                     if (!empty($tokenArr)) {
                         $top = array_slice($tokenArr, 0, min(10, count($tokenArr)));
                         $query->orWhere(function ($q) use ($top) {
@@ -162,32 +162,43 @@ class VacancyMatchingService
                     }
                 });
 
-                Log::info("Resume [ID: {$resume->id}] is in TECH category '{$resumeCategory}' → using full text + title search.");
+                Log::info("Resume [ID: {$resume->id}] is in TECH category '{$resumeCategory}' → using full text + token search.");
+
+                // Rank select faqat TECH uchun
+                $qb->select(
+                    'id',
+                    'title',
+                    'description',
+                    'source',
+                    'external_id',
+                    'category',
+                    DB::raw("
+                ts_rank_cd(
+                    to_tsvector('simple', coalesce(description, '')),
+                    websearch_to_tsquery('simple', ?)
+                ) as rank
+            ")
+                )->addBinding($tsQuery, 'select');
             }
+
             /**
-             * ⚙️ 2. Agar boshqa kategoriya bo‘lsa → title orqali qidiruv yo‘q, faqat category bo‘yicha chiqsin
+             * 🔸 NON-TECH CATEGORY — faqat category bo‘yicha listing
              */
             else {
-                Log::info("Resume [ID: {$resume->id}] is in NON-TECH category '{$resumeCategory}' → returning all vacancies from this category.");
+                Log::info("Resume [ID: {$resume->id}] is in NON-TECH category '{$resumeCategory}' → skipping search, showing all category vacancies.");
+
+                $qb->select(
+                    'id',
+                    'title',
+                    'description',
+                    'source',
+                    'external_id',
+                    'category',
+                    DB::raw("0 as rank") // rank dummy qiymat
+                );
             }
 
-            // Umumiy select
-            $qb->select(
-                'id',
-                'title',
-                'description',
-                'source',
-                'external_id',
-                'category',
-                DB::raw("
-            ts_rank_cd(
-                to_tsvector('simple', coalesce(description, '')),
-                websearch_to_tsquery('simple', ?)
-            ) as rank
-        ")
-            )
-                ->addBinding($tsQuery, 'select');
-
+            // Category filter (ikkala holatda ham)
             if ($withCategory) {
                 if ($resumeCategory) {
                     $countSameCategory = DB::table('vacancies')
@@ -196,7 +207,7 @@ class VacancyMatchingService
                         ->where('category', $resumeCategory)
                         ->count();
 
-                    Log::info("Resume [ID: {$resume->id}] category '{$resumeCategory}' → {$countSameCategory} matching vacancies found.");
+                    Log::info("Resume [ID: {$resume->id}] category '{$resumeCategory}' → {$countSameCategory} total vacancies found in DB.");
 
                     $qb->where('category', $resumeCategory);
                 } elseif ($guessedCategory) {
@@ -206,6 +217,7 @@ class VacancyMatchingService
 
             return $qb->orderByDesc('rank')->orderByDesc('id');
         };
+
 
         $techCategories = [
             "IT and Software Development",
