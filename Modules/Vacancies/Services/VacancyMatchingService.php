@@ -329,9 +329,9 @@ class VacancyMatchingService
 
                 $qb->where(function ($query) use ($tsQuery, $tokenArr) {
                     $query->whereRaw("
-                to_tsvector('simple', coalesce(description, ''))
-                @@ websearch_to_tsquery('simple', ?)
-            ", [$tsQuery]);
+                        to_tsvector('simple', coalesce(description, ''))
+                        @@ websearch_to_tsquery('simple', ?)
+                    ", [$tsQuery]);
 
                     if (!empty($tokenArr)) {
                         $top = array_slice($tokenArr, 0, min(10, count($tokenArr)));

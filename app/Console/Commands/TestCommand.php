@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\DB;
 use Spatie\Async\Pool;
 
 class TestCommand extends Command
@@ -26,6 +27,12 @@ class TestCommand extends Command
             sleep(3);
             return 'Task 2 done';
         })->then(fn($r) => $this->info('✅ '.$r));
+
+        $pool[] = async(function () {
+            $result = DB::table('vacancies')->count();
+            return 'result' . $result;
+        });
+
 
         await($pool);
 
