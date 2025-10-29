@@ -36,15 +36,17 @@ class VacancyMatchingController extends Controller
         $savedData = $service->matchResume($resume, $resume->title ?? $resume->description);
 
         $results = MatchResult::with('vacancy.employer')
+            ->leftJoin('vacancies', 'vacancies.id', '=', 'match_results.vacancy_id')
             ->leftJoin('applications', function ($join) use ($user) {
                 $join->on('applications.vacancy_id', '=', 'match_results.vacancy_id')
                     ->where('applications.user_id', $user->id);
             })
             ->whereIn('match_results.resume_id', $resumeIds)
             ->orderByRaw('CASE WHEN applications.id IS NULL THEN 0 ELSE 1 END ASC')
-            ->orderByDesc('match_results.score_percent')
+            ->orderByRaw("CASE WHEN vacancies.source = 'hh' THEN 1 ELSE 0 END DESC")
             ->select('match_results.*')
             ->get();
+
 
         return response()->json([
             'status'  => 'success',
