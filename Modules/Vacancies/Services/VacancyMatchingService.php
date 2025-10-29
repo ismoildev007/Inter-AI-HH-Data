@@ -219,26 +219,35 @@ class VacancyMatchingService
 
         $resumeCategory = $resume->category ?? null;
 
-        if (
-            $resumeCategory &&
-            !in_array($resumeCategory, $techCategories, true)
-        ) {
-            $fallback = DB::table('vacancies')
-                ->where('status', 'publish')
-                ->where('source', 'telegram')
-                ->where('category', $resumeCategory)
-                ->limit(100)
-                ->get();
+        if ($resumeCategory && !in_array($resumeCategory, $techCategories, true)) {
 
-            Log::info("⚠️ Low match ({$localVacancies->count()} found). Added fallback {$fallback->count()} from category '{$resumeCategory}'.");
+            $currentCount = $localVacancies->count();
+            $limit = 100; // umumiy kerakli son
+            $need = max(0, $limit - $currentCount); // nechta yetmayapti
 
-            $localVacancies = $localVacancies->concat($fallback)->unique('id');
+            if ($need > 0) {
+                $fallback = DB::table('vacancies')
+                    ->where('status', 'publish')
+                    ->where('source', 'telegram')
+                    ->where('category', $resumeCategory)
+                    ->whereNotIn('id', $localVacancies->pluck('id')->toArray()) // dublikatni oldini oladi
+                    ->limit($need)
+                    ->get();
+
+                Log::info("⚠️ Low match ($currentCount found). Added {$fallback->count()} fallback vacancies (total target = {$limit}) from category '{$resumeCategory}'.");
+
+                $localVacancies = $localVacancies->concat($fallback)->unique('id');
+            } else {
+                Log::info("✅ Enough results ($currentCount) found for '{$resumeCategory}', fallback not needed.");
+            }
         } else {
             Log::info("✅ Resume category '{$resumeCategory}' is TECH → fallback disabled.");
         }
 
         $localVacancies = collect($localVacancies)
+            ->take(100)
             ->keyBy(fn($v) => $v->source === 'hh' && $v->external_id ? $v->external_id : "local_{$v->id}");
+
 
 
         Log::info('Data fetch took:' . (microtime(true) - $start) . 's');
