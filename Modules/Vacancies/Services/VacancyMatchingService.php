@@ -57,14 +57,18 @@ class VacancyMatchingService
             ->values();
 
         $tokens = $allVariants
-            ->flatMap(fn($v) => preg_split('/[\s,;\/\|]+/u', (string) $v))
+            // faqat vergul orqali bo‘lamiz
+            ->flatMap(fn($v) => preg_split('/\s*,\s*/u', (string) $v))
             ->map(fn($w) => trim(preg_replace('/[\"\'«»“”]/u', '', $w)))
-            ->filter(fn($w) => mb_strlen($w) >= 3)
+            ->filter(fn($w) => mb_strlen($w) >= 2)
             ->map(fn($w) => mb_strtolower($w, 'UTF-8'))
             ->unique()
             ->take(8)
             ->values();
+
         $tokenArr = $tokens->all();
+
+        Log::info('🧩 Tokens parsed by comma only', ['tokens' => $tokenArr]);
 
         $phrases = $allVariants
             ->flatMap(fn($v) => preg_split('/\s*,\s*/u', (string) $v))
