@@ -41,16 +41,18 @@ class RunMatchingPool extends Command
 
         $pool = Pool::create();
 
-        $pool[] = async(
-            fn() =>
-            Cache::remember(
-                "hh:search:{$query}:area97",
-                now()->addHour(),
-                fn() => $hhRepo->search($query, 0, 100, ['area' => 97])
-            )
-        )->catch(fn(Throwable $e) => ['error' => $e->getMessage()]);
+        $pool[] = async(function () use ($query, $hhRepo) {
+            Log::info('[Pool] Running HH search...');
+            $result = $hhRepo->search($query, 0, 100, ['area' => 97]);
+            Log::info('[Pool] HH search done', ['count' => count($result['items'] ?? [])]);
+            Cache::put("hh:search:{$query}:area97", $result, now()->addHour());
+            return $result;
+        })->catch(fn(Throwable $e) => ['error' => $e->getMessage()]);
+        
 
         $pool[] = async(function () use ($resumeId, $tsQuery, $guessedCategory, $techCategories) {
+            Log::info('[Pool] Running local vacancy query...');
+
             $resume = DB::table('resumes')->where('id', $resumeId)->first();
             if (!$resume) return [];
 
@@ -72,8 +74,9 @@ class RunMatchingPool extends Command
             } elseif ($guessedCategory) {
                 $qb->where('category', $guessedCategory);
             }
-
-            return $qb->orderByDesc('id')->limit(50)->get();
+            $result = $qb->orderByDesc('id')->limit(50)->get();
+            Log::info('[Pool] Local query done', ['count' => count($result)]);
+            return $result;
         })->catch(fn(Throwable $e) => ['error' => $e->getMessage()]);
 
         $results = await($pool);
