@@ -129,6 +129,13 @@ class VacancyMatchingService
 
             $resumeCategory = $resume->category ?? null;
 
+            Log::info("🔍 [BUILD_LOCAL] Started building query for resume {$resume->id}", [
+                'resume_category' => $resumeCategory,
+                'guessed_category' => $guessedCategory,
+                'tsQuery' => $tsQuery,
+                'tokens' => $tokenArr,
+            ]);
+
             $qb = DB::table('vacancies')
                 ->where('status', 'publish')
                 ->where('source', 'telegram')
@@ -138,18 +145,16 @@ class VacancyMatchingService
                         ->where('resume_id', $resume->id);
                 });
 
-            /**
-             * 🔹 TECH CATEGORY — to‘liq qidiruv
-             */
+            // 🔸 Log da aniqlaymiz: resumeCategory TECH ro‘yxatida bormi?
             if ($resumeCategory && in_array($resumeCategory, $techCategories, true)) {
+                Log::info("🧠 [TECH BRANCH ENTERED] Resume [{$resume->id}] category '{$resumeCategory}' is TECH. Running full text + token search.");
+
                 $qb->where(function ($query) use ($tsQuery, $tokenArr) {
-                    // PostgreSQL full text qidiruv
                     $query->whereRaw("
                 to_tsvector('simple', coalesce(description, ''))
                 @@ websearch_to_tsquery('simple', ?)
             ", [$tsQuery]);
 
-                    // Tokenlar bo‘yicha kengroq qidiruv
                     if (!empty($tokenArr)) {
                         $top = array_slice($tokenArr, 0, min(10, count($tokenArr)));
                         $query->orWhere(function ($q) use ($top) {
@@ -162,16 +167,8 @@ class VacancyMatchingService
                     }
                 });
 
-                Log::info("Resume [ID: {$resume->id}] is in TECH category '{$resumeCategory}' → using full text + token search.");
-
-                // Rank select faqat TECH uchun
                 $qb->select(
-                    'id',
-                    'title',
-                    'description',
-                    'source',
-                    'external_id',
-                    'category',
+                    'id', 'title', 'description', 'source', 'external_id', 'category',
                     DB::raw("
                 ts_rank_cd(
                     to_tsvector('simple', coalesce(description, '')),
@@ -179,26 +176,16 @@ class VacancyMatchingService
                 ) as rank
             ")
                 )->addBinding($tsQuery, 'select');
-            }
-
-            /**
-             * 🔸 NON-TECH CATEGORY — faqat category bo‘yicha listing
-             */
-            else {
-                Log::info("Resume [ID: {$resume->id}] is in NON-TECH category '{$resumeCategory}' → skipping search, showing all category vacancies.");
+            } else {
+                Log::warning("🚫 [NON-TECH BRANCH ENTERED] Resume [{$resume->id}] category '{$resumeCategory}' is NON-TECH or unknown → no search applied.");
 
                 $qb->select(
-                    'id',
-                    'title',
-                    'description',
-                    'source',
-                    'external_id',
-                    'category',
-                    DB::raw("0 as rank") // rank dummy qiymat
+                    'id', 'title', 'description', 'source', 'external_id', 'category',
+                    DB::raw("0 as rank")
                 );
             }
 
-            // Category filter (ikkala holatda ham)
+            // 🔸 Category filter log
             if ($withCategory) {
                 if ($resumeCategory) {
                     $countSameCategory = DB::table('vacancies')
@@ -207,16 +194,21 @@ class VacancyMatchingService
                         ->where('category', $resumeCategory)
                         ->count();
 
-                    Log::info("Resume [ID: {$resume->id}] category '{$resumeCategory}' → {$countSameCategory} total vacancies found in DB.");
-
+                    Log::info("📊 [CATEGORY FILTER] Resume [{$resume->id}] '{$resumeCategory}' → {$countSameCategory} total vacancies in DB.");
                     $qb->where('category', $resumeCategory);
                 } elseif ($guessedCategory) {
+                    Log::info("📊 [GUESSED CATEGORY USED] '{$guessedCategory}' used for filtering.");
                     $qb->where('category', $guessedCategory);
+                } else {
+                    Log::warning("⚠️ [NO CATEGORY FOUND] No category filter applied!");
                 }
             }
 
+            Log::info("✅ [BUILD_LOCAL] Finished building query for resume {$resume->id} (TECH=" . (in_array($resumeCategory, $techCategories, true) ? 'YES' : 'NO') . ")");
+
             return $qb->orderByDesc('rank')->orderByDesc('id');
         };
+
 
 
         $techCategories = [
