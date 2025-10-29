@@ -536,12 +536,19 @@ class VacancyMatchingService
 
 
         if (!empty($savedData)) {
-            DB::table('match_results')->upsert(
-                $savedData,
-                ['resume_id', 'vacancy_id'],
-                ['score_percent', 'explanations', 'updated_at']
-            );
+            $chunks = array_chunk($savedData, 200);
+        
+            DB::transaction(function () use ($chunks) {
+                foreach ($chunks as $chunk) {
+                    DB::table('match_results')->upsert(
+                        $chunk,
+                        ['resume_id', 'vacancy_id'],
+                        ['score_percent', 'explanations', 'updated_at']
+                    );
+                }
+            });
         }
+        
         Log::info('All details took finished: ' . (microtime(true) - $start) . 's');
 
         Log::info('Matching finished', ['resume_id' => $resume->id]);
