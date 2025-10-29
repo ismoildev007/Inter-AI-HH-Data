@@ -227,14 +227,14 @@ class VacancyMatchingService
             "UI/UX and Product Design"
         ];
 
-        $localVacancies = $buildLocal(true)->limit(100)->get();
+        $localVacancies = $buildLocal(true)->limit(50)->get();
 
         $resumeCategory = $resume->category ?? null;
 
         if ($resumeCategory && !in_array($resumeCategory, $techCategories, true)) {
 
             $currentCount = $localVacancies->count();
-            $limit = 100; // umumiy kerakli son
+            $limit = 50; // umumiy kerakli son
             $need = max(0, $limit - $currentCount); // nechta yetmayapti
 
             if ($need > 0) {
@@ -257,7 +257,7 @@ class VacancyMatchingService
         }
 
         $localVacancies = collect($localVacancies)
-            ->take(100)
+            ->take(50)
             ->keyBy(fn($v) => $v->source === 'hh' && $v->external_id ? $v->external_id : "local_{$v->id}");
 
 
@@ -280,7 +280,7 @@ class VacancyMatchingService
         Log::info(['local vacancies' => $vacanciesPayload]);
         $toFetch = collect($hhItems)
             ->filter(fn($item) => isset($item['id']) && !$localVacancies->has($item['id']))
-            ->take(100);
+            ->take(50);
         foreach ($toFetch as $idx =>  $item) {
             $extId = $item['id'] ?? null;
             if (!$extId || $localVacancies->has($extId)) {
