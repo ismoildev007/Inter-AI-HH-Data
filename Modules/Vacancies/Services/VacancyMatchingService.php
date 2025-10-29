@@ -209,7 +209,7 @@ class VacancyMatchingService
         };
 
 // 🔹 Asosiy qidiruv
-        $localVacancies = $buildLocal(true)->limit(1000)->get();
+        $localVacancies = $buildLocal(true)->limit(100)->get();
 
         $localVacancies = collect($localVacancies)
             ->keyBy(fn($v) => $v->source === 'hh' && $v->external_id ? $v->external_id : "local_{$v->id}");
