@@ -57,8 +57,7 @@ class AutoApplyCommand extends Command
             $matches = $user->resumes
                 ->flatMap->matchResults
                 ->filter(function ($match) {
-                    return $match->score_percent >= 50
-                        && optional($match->vacancy)->source === 'hh';
+                    return optional($match->vacancy)->source === 'hh';
                 });
             Log::info(['User ' . $user->id]);
             foreach ($matches as $match) {
