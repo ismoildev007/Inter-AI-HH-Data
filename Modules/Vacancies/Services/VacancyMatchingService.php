@@ -188,7 +188,6 @@ class VacancyMatchingService
             )
                 ->addBinding($tsQuery, 'select');
 
-            // Category cheklovi
             if ($withCategory) {
                 if ($resumeCategory) {
                     $countSameCategory = DB::table('vacancies')
@@ -208,11 +207,6 @@ class VacancyMatchingService
             return $qb->orderByDesc('rank')->orderByDesc('id');
         };
 
-// 🔹 Asosiy qidiruv
-        $localVacancies = $buildLocal(true)->limit(100)->get();
-
-        $localVacancies = collect($localVacancies)
-            ->keyBy(fn($v) => $v->source === 'hh' && $v->external_id ? $v->external_id : "local_{$v->id}");
         $techCategories = [
             "IT and Software Development",
             "Data Science and Analytics",
@@ -220,20 +214,31 @@ class VacancyMatchingService
             "DevOps and Cloud Engineering",
             "UI/UX and Product Design"
         ];
-//
-//        // Agar juda kam chiqsa (masalan < 100) → fallback: shu categorydagi hamma vacancy
-//        if ($localVacancies->count() < 100 && !empty($resume->category)) {
-//            $fallback = DB::table('vacancies')
-//                ->where('status', 'publish')
-//                ->where('source', 'telegram')
-//                ->where('category', $resume->category)
-//                ->limit(200)
-//                ->get();
-//
-//            Log::info("⚠️ Low match ({$localVacancies->count()} found). Added fallback {$fallback->count()} from category '{$resume->category}'.");
-//
-//            $localVacancies = $localVacancies->concat($fallback)->unique('id');
-//        }
+
+        $localVacancies = $buildLocal(true)->limit(100)->get();
+
+        $resumeCategory = $resume->category ?? null;
+
+        if (
+            $resumeCategory &&
+            !in_array($resumeCategory, $techCategories, true)
+        ) {
+            $fallback = DB::table('vacancies')
+                ->where('status', 'publish')
+                ->where('source', 'telegram')
+                ->where('category', $resumeCategory)
+                ->limit(100)
+                ->get();
+
+            Log::info("⚠️ Low match ({$localVacancies->count()} found). Added fallback {$fallback->count()} from category '{$resumeCategory}'.");
+
+            $localVacancies = $localVacancies->concat($fallback)->unique('id');
+        } else {
+            Log::info("✅ Resume category '{$resumeCategory}' is TECH → fallback disabled.");
+        }
+
+        $localVacancies = collect($localVacancies)
+            ->keyBy(fn($v) => $v->source === 'hh' && $v->external_id ? $v->external_id : "local_{$v->id}");
 
 
         Log::info('Data fetch took:' . (microtime(true) - $start) . 's');
