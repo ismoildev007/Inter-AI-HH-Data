@@ -86,53 +86,77 @@ class VacancyMatchingService
             $guessedCategory = null;
         }
 
-        $techCategories = [
-            "IT and Software Development",
-            "Data Science and Analytics",
-            "QA and Testing",
-            "DevOps and Cloud Engineering",
-            "UI/UX and Product Design"
-        ];
+        // $techCategories = [
+        //     "IT and Software Development",
+        //     "Data Science and Analytics",
+        //     "QA and Testing",
+        //     "DevOps and Cloud Engineering",
+        //     "UI/UX and Product Design"
+        // ];
 
-        $pool = \Spatie\Async\Pool::create();
+        // $pool = \Spatie\Async\Pool::create();
 
-        $pool[] = async(
-            fn() =>
-            Cache::remember(
-                "hh:search:{$query}:area97",
-                now()->addHour(),
-                fn() =>
-                $this->hhRepository->search($query, 0, 100, ['area' => 97])
-            )
+        // $pool[] = async(
+        //     fn() =>
+        //     Cache::remember(
+        //         "hh:search:{$query}:area97",
+        //         now()->addHour(),
+        //         fn() =>
+        //         $this->hhRepository->search($query, 0, 100, ['area' => 97])
+        //     )
+        // );
+
+        // 🧠 Endi poolni CLI’da ishga tushiramiz
+        $cmd = sprintf(
+            'php %s match:pool %d %s %s %s',
+            base_path('artisan'),
+            $resume->id,
+            escapeshellarg($query),
+            escapeshellarg($tsQuery),
+            escapeshellarg($guessedCategory ?? '')
         );
 
-        $pool[] = async(
-            fn() =>
-            Cache::remember("local:vacancies:{$resume->category}:" . md5($tsQuery), now()->addMinutes(15), function () use ($resume, $tsQuery, $tokenArr, $guessedCategory, $techCategories) {
-                $qb = DB::table('vacancies')
-                    ->where('status', 'publish')
-                    ->where('source', 'telegram')
-                    ->whereNotIn('id', function ($q) use ($resume) {
-                        $q->select('vacancy_id')->from('match_results')->where('resume_id', $resume->id);
-                    });
+        exec($cmd, $output, $exitCode);
 
-                $resumeCategory = $resume->category ?? null;
+        if ($exitCode !== 0) {
+            Log::error('❌ Pool command failed', ['cmd' => $cmd, 'code' => $exitCode]);
+            return [];
+        }
 
-                if ($resumeCategory && in_array($resumeCategory, $techCategories, true)) {
-                    $qb->whereRaw("to_tsvector('simple', coalesce(description, '')) @@ websearch_to_tsquery('simple', ?)", [$tsQuery]);
-                }
+        $json = implode("\n", $output);
+        $data = json_decode($json, true);
 
-                if ($resumeCategory) {
-                    $qb->where('category', $resumeCategory);
-                } elseif ($guessedCategory) {
-                    $qb->where('category', $guessedCategory);
-                }
+        $hhVacancies = $data['hh'] ?? [];
+        $localVacancies = $data['local'] ?? [];
 
-                return $qb->orderByDesc('id')->limit(50)->get();
-            })
-        );
 
-        [$hhVacancies, $localVacancies] = await($pool);
+        // $pool[] = async(
+        //     fn() =>
+        //     Cache::remember("local:vacancies:{$resume->category}:" . md5($tsQuery), now()->addMinutes(15), function () use ($resume, $tsQuery, $tokenArr, $guessedCategory, $techCategories) {
+        //         $qb = DB::table('vacancies')
+        //             ->where('status', 'publish')
+        //             ->where('source', 'telegram')
+        //             ->whereNotIn('id', function ($q) use ($resume) {
+        //                 $q->select('vacancy_id')->from('match_results')->where('resume_id', $resume->id);
+        //             });
+
+        //         $resumeCategory = $resume->category ?? null;
+
+        //         if ($resumeCategory && in_array($resumeCategory, $techCategories, true)) {
+        //             $qb->whereRaw("to_tsvector('simple', coalesce(description, '')) @@ websearch_to_tsquery('simple', ?)", [$tsQuery]);
+        //         }
+
+        //         if ($resumeCategory) {
+        //             $qb->where('category', $resumeCategory);
+        //         } elseif ($guessedCategory) {
+        //             $qb->where('category', $guessedCategory);
+        //         }
+
+        //         return $qb->orderByDesc('id')->limit(50)->get();
+        //     })
+        // );
+
+        // [$hhVacancies, $localVacancies] = await($pool);
 
         $hhItems = $hhVacancies['items'] ?? [];
         $vacanciesPayload = collect($localVacancies)
