@@ -133,6 +133,7 @@ class VacancyMatchingService
 
         $hhVacancies = $data['hh'] ?? [];
         $localVacancies = $data['local'] ?? [];
+        Log::info(['count hh ' => count($hhVacancies), 'local vacan' => count($localVacancies)]);
 
 
         // $pool[] = async(
@@ -191,6 +192,7 @@ class VacancyMatchingService
             'created_at' => now(),
             'updated_at' => now(),
         ])->chunk(50);
+        Log::info(['count' => count($savedData)]);
 
         foreach ($savedData as $chunk) {
             DB::table('match_results')->upsert($chunk->toArray(), ['resume_id', 'vacancy_id'], ['score_percent', 'explanations', 'updated_at']);

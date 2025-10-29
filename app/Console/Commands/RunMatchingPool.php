@@ -17,7 +17,7 @@ class RunMatchingPool extends Command
 
     public function handle()
     {
-        
+
         $resumeId = $this->argument('resumeId');
         $query = $this->argument('query');
         $tsQuery = $this->argument('tsQuery');
@@ -41,8 +41,11 @@ class RunMatchingPool extends Command
 
         $pool = Pool::create();
 
-        $pool[] = async(fn() =>
-            Cache::remember("hh:search:{$query}:area97", now()->addHour(), 
+        $pool[] = async(
+            fn() =>
+            Cache::remember(
+                "hh:search:{$query}:area97",
+                now()->addHour(),
                 fn() => $hhRepo->search($query, 0, 100, ['area' => 97])
             )
         )->catch(fn(Throwable $e) => ['error' => $e->getMessage()]);
@@ -74,11 +77,31 @@ class RunMatchingPool extends Command
         })->catch(fn(Throwable $e) => ['error' => $e->getMessage()]);
 
         $results = await($pool);
+        $hhResult = $results[0] ?? [];
+        $localResult = $results[1] ?? [];
+
+        $hhCount = is_array($hhResult) && isset($hhResult['items'])
+            ? count($hhResult['items'])
+            : (is_countable($hhResult) ? count($hhResult) : 0);
+
+        $localCount = is_countable($localResult) ? count($localResult) : 0;
+
+        Log::info('✅ [RunMatchingPool] Finished', [
+            'resume_id' => $resumeId,
+            'hh_result_count' => $hhCount,
+            'local_result_count' => $localCount,
+            'hh_error' => $hhResult['error'] ?? null,
+            'local_error' => $localResult['error'] ?? null,
+        ]);
 
         $response = [
-            'hh' => $results[0] ?? [],
-            'local' => $results[1] ?? [],
+            'hh' => $hhResult,
+            'local' => $localResult,
         ];
+        // $response = [
+        //     'hh' => $results[0] ?? [],
+        //     'local' => $results[1] ?? [],
+        // ];
 
         $this->line(json_encode($response));
 
