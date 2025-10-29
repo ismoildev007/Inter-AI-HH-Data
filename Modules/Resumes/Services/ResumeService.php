@@ -172,7 +172,8 @@ PROMPT;
 
 
 
-        $response = Http::withToken(env('OPENAI_API_KEY'))
+        $response = Http::timeout(120)
+            ->withToken(env('OPENAI_API_KEY'))
             ->post('https://api.openai.com/v1/chat/completions', [
                 'model' => env('OPENAI_MODEL', 'gpt-4o-mini'),
                 'messages' => [
@@ -180,8 +181,8 @@ PROMPT;
                     ['role' => 'user', 'content' => $prompt],
                 ],
                 'temperature' => 0.2,
-                // 'max_tokens' => 300,
             ]);
+
 
 
 
