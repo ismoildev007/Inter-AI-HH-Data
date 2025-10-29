@@ -40,7 +40,7 @@ class UsersController extends Controller
 
         $requestCount = Cache::get($cacheKey, 0);
 
-        if ($requestCount >= 40) {
+        if ($requestCount >= 4) {
             return response()->json([
                 'success' => false,
                 'message' => 'You have reached the daily limit (4 requests per day). Please try again tomorrow.'
@@ -50,7 +50,7 @@ class UsersController extends Controller
         Cache::put($cacheKey, $requestCount + 1, now()->addDay());
 
         $validated = $request->validate([
-            'status' => 'required|string|in:working,not working',
+            'status' => 'required|string|in:working,not_working',
         ]);
 
         $updates = [
