@@ -64,7 +64,7 @@ class RelayService
                 switch ($etype) {
                     case 'SIGTERM':
                     case 'SIGINT':
-                        Log::info('Telegram relay: getHistory interrupted by signal', ['peer' => $peer, 'phase' => 'initial', 'signal' => $etype]);
+                        //Log::info('Telegram relay: getHistory interrupted by signal', ['peer' => $peer, 'phase' => 'initial', 'signal' => $etype]);
                         return 0;
                     case 'PEER_DB_MISS':
                         Log::warning('Telegram relay: PEER_DB_MISS on initial getHistory', ['peer' => $peer, 'error' => $e->getMessage()]);
@@ -120,7 +120,7 @@ class RelayService
                 switch ($etype) {
                     case 'SIGTERM':
                     case 'SIGINT':
-                        Log::info('Telegram relay: getHistory interrupted by signal', ['peer' => $peer, 'phase' => 'loop', 'signal' => $etype]);
+                      //  Log::info('Telegram relay: getHistory interrupted by signal', ['peer' => $peer, 'phase' => 'loop', 'signal' => $etype]);
                         break;
                     case 'CANCELLED':
                         Log::warning('Telegram relay: OPERATION_CANCELLED on getHistory', ['peer' => $peer]);
@@ -608,7 +608,7 @@ class RelayService
         if ($cnt >= $threshold) {
             try {
                 $this->tg->softReset();
-                \Log::info('Telegram relay: auto-heal soft reset executed', ['type' => $type, 'count' => $cnt]);
+              //  \Log::info('Telegram relay: auto-heal soft reset executed', ['type' => $type, 'count' => $cnt]);
             } catch (\Throwable $e) {
                 \Log::warning('Telegram relay: auto-heal soft reset failed', ['error' => $e->getMessage()]);
             } finally {

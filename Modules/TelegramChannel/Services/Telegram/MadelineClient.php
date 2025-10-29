@@ -126,7 +126,7 @@ use Modules\TelegramChannel\Exceptions\SessionLockBusyException;
             if ((bool) config('telegramchannel_relay.debug.log_memory', false)) {
                 $usage = round(memory_get_usage(true) / 1048576, 1);
                 $peak  = round(memory_get_peak_usage(true) / 1048576, 1);
-                \Log::info('MadelineClient soft reset completed', [
+               // \Log::info('MadelineClient soft reset completed', [
                     'usage_mb' => $usage,
                     'peak_mb'  => $peak,
                 ]);
