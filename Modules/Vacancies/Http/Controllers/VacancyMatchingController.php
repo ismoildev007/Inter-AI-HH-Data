@@ -35,8 +35,9 @@ class VacancyMatchingController extends Controller
         // Log::info('Dispatched MatchResumeJob', ['user_id' => auth()->id(), 'resume_id' => $resume->id]);
         $savedData = $service->matchResume($resume, $resume->title ?? $resume->description);
 
-        $results = MatchResult::with('vacancy.employer')
+        $results = MatchResult::query()
             ->leftJoin('vacancies', 'vacancies.id', '=', 'match_results.vacancy_id')
+            ->leftJoin('employers', 'employers.id', '=', 'vacancies.employer_id')
             ->leftJoin('applications', function ($join) use ($user) {
                 $join->on('applications.vacancy_id', '=', 'match_results.vacancy_id')
                     ->where('applications.user_id', $user->id);
@@ -44,8 +45,13 @@ class VacancyMatchingController extends Controller
             ->whereIn('match_results.resume_id', $resumeIds)
             ->orderByRaw('CASE WHEN applications.id IS NULL THEN 0 ELSE 1 END ASC')
             ->orderByRaw("CASE WHEN vacancies.source = 'hh' THEN 1 ELSE 0 END DESC")
-            ->select('match_results.*')
+            ->select([
+                'match_results.*',
+                'vacancies.source',
+                'employers.name as employer_name'
+            ])
             ->get();
+
 
 
         return response()->json([
