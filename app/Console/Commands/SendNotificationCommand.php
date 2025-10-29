@@ -6,7 +6,7 @@ use App\Models\MatchResult;
 use App\Models\User;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
-use Modules\Vacancies\Services\VacancyMatchingService;
+use Modules\Vacancies\Services\NotificationMatchingService;
 use Telegram\Bot\Api;
 use Telegram\Bot\Keyboard\Keyboard;
 
@@ -16,9 +16,9 @@ class SendNotificationCommand extends Command
     protected $signature = 'app:send-notification-command';
     protected $description = 'Command description';
 
-    protected VacancyMatchingService $matchingService;
+    protected NotificationMatchingService $matchingService;
 
-    public function __construct(VacancyMatchingService $matchingService)
+    public function __construct(NotificationMatchingService $matchingService)
     {
         parent::__construct();
         $this->matchingService = $matchingService;
