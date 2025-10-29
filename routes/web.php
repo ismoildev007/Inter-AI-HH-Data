@@ -23,3 +23,8 @@ Route::fallback(function () {
 
     return response()->view('errors.404', [], 404);
 });
+
+
+Route::get('info-test', function () {
+    return php_sapi_name();
+});
