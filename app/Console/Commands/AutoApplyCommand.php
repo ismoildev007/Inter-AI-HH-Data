@@ -60,7 +60,7 @@ class AutoApplyCommand extends Command
                     return $match->score_percent >= 50
                         && optional($match->vacancy)->source === 'hh';
                 });
-            Log::info(['User ' . $user->id . ' matches: ' => $matches]);
+            Log::info(['User ' . $user->id]);
             foreach ($matches as $match) {
                 if ($remaining <= 0) {
                     break;
