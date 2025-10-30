@@ -42,12 +42,23 @@
 */
 
 use Illuminate\Foundation\Inspiring;
+use App\Models\Subscription;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
 
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
+
+// Subscriptions: expire past-due ones (active -> expired)
+Artisan::command('subscriptions:expire', function () {
+    $affected = Subscription::query()
+        ->where('status', 'active')
+        ->whereDate('ends_at', '<', today())
+        ->update(['status' => 'expired']);
+
+    $this->info("Expired subscriptions updated: {$affected}");
+})->purpose('Mark past-due subscriptions as expired');
 
 // HTTP-trigger qilinadigan ishlar (unscheduled):
 // - queue: default (job: App\Jobs\TrackVisitJob) — app/Http/Middleware/TrackVisits.php dan dispatch qilinadi.
@@ -111,6 +122,11 @@ Schedule::command('app:send-notification-command')
 // Foydalanuvchi trial davrini nazorat qiluvchi cron
 Schedule::command('users:trials:deactivate')
     ->daily()
+    ->withoutOverlapping();
+
+// Subscriptions expiry checker (00:10 daily)
+Schedule::command('subscriptions:expire')
+    ->dailyAt('00:10')
     ->withoutOverlapping();
 
 // HH tokenlarini proaktiv yangilash (Users module)
