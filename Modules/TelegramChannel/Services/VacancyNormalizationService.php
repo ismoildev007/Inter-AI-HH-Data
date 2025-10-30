@@ -10,7 +10,7 @@ class VacancyNormalizationService
   /**
    * Normalize a raw vacancy text into a structured array using OpenAI.
    * - Keeps original language (no translation)
-   * - Extracts title, company, contacts, description, and category
+   * - Extracts title, company, contacts, and description
    */
   public function normalize(string $rawText, string $sourceUsername, int $messageId): array
   {
@@ -22,57 +22,14 @@ class VacancyNormalizationService
     }
 
     $prompt = <<<PROMPT
-You are an assistant that cleans and standardizes job vacancy posts into a fixed JSON schema. Always read the full title and description before you classify the vacancy.
+You are an assistant that cleans and standardizes job vacancy posts into a fixed JSON schema. Always read the full title and description before you format the vacancy.
 
 Rules:
 - Output ONLY valid JSON. No extra text, no markdown, no comments.
 - Do NOT translate. Keep the same language as in the input.
 - Do NOT drop any job-related information.
 - Remove stickers, ads, hashtags, channel signatures, unrelated links.
-- Use the entire vacancy context (role title, responsibilities, requirements, tools, seniority, department) when choosing a category.
-- Never invent new category names. If you are unsure, pick "Other".
-
-Allowed categories (use these exact strings; examples in parentheses are helpers, not additional output):
-- Marketing and Advertising (brand marketing, SMM, digital ads, growth marketing)
-- Sales and Customer Relations (B2B/B2C sales, account executive, client manager, presales)
-- IT and Software Development (backend, frontend, fullstack, mobile, game dev, web dev)
-- Data Science and Analytics (BI analyst, data scientist, ML engineer, analytics engineer)
-- Product and Project Management (product manager, product owner, scrum master, PMO)
-- QA and Testing (manual QA, automation QA, test engineer, QA lead)
-- DevOps and Cloud Engineering (DevOps, SRE, platform engineer, cloud engineer)
-- Cybersecurity (security analyst, SOC, pentester, AppSec engineer)
-- UI/UX and Product Design (UI/UX designer, product designer, design lead, UX researcher)
-- Content and Copywriting (copywriter, content strategist, editor, journalist)
-- Video and Multimedia Production (video editor, motion designer, cinematographer, 3D artist)
-- Photography (photographer, photo editor, retoucher)
-- Human Resources and Recruitment (HRBP, recruiter, talent acquisition, HR manager)
-- Finance and Accounting (financial analyst, accountant, controller, auditor)
-- Banking and Insurance (loan officer, credit analyst, underwriter, insurance agent)
-- Legal and Compliance (lawyer, legal counsel, compliance officer, contract specialist)
-- Administration and Office Support (office manager, administrator, executive assistant)
-- Education and Training (teacher, tutor, lecturer, coach, mentor)
-- Healthcare and Medicine (doctor, nurse, medical specialist, clinic staff)
-- Pharmacy (pharmacist, pharmacy manager, pharmaceutical assistant)
-- Dentistry (dentist, dental technician, orthodontist)
-- Veterinary Care (veterinarian, vet technician, zoo specialist)
-- Manufacturing and Industrial Engineering (industrial engineer, production engineer, process engineer)
-- Mechanical and Maintenance Engineering (mechanic, maintenance engineer, HVAC, MEP)
-- Electrical and Electronics Engineering (electrical engineer, electronics engineer, embedded engineer)
-- Construction and Architecture (civil engineer, architect, site manager, BIM specialist)
-- Logistics and Supply Chain (supply chain manager, planner, operations manager)
-- Warehouse and Procurement (warehouse manager, storekeeper, buyer, procurement specialist)
-- Transportation and Driving (driver, courier, dispatcher, fleet coordinator)
-- Security and Protective Services (security guard, охрана, loss prevention, CCTV operator)
-- Customer Support and Call Center (support specialist, contact center agent, helpdesk)
-- Hospitality and Tourism (hotel staff, travel consultant, tour guide, concierge)
-- Food and Beverage Service (chef, cook, barista, waiter, restaurant manager)
-- Retail and E-commerce (store manager, merchandiser, e-commerce specialist, cashier)
-- Real Estate (realtor, broker, property manager, leasing consultant)
-- Domestic and Personal Services (cleaner, housekeeper, nanny, caregiver)
-- Beauty and Personal Care (cosmetologist, hair stylist, barber, spa specialist)
-- Sports and Fitness (fitness trainer, sports coach, physiotherapist, yoga instructor)
-- Agriculture and Farming (farmer, agronomist, horticulture specialist, livestock expert)
-- Other (if none of the above categories logically fits)
+ - Remove stickers, ads, hashtags, channel signatures, unrelated links.
 
 Schema:
 {
@@ -83,9 +40,7 @@ Schema:
     "phones": ["+998...", "..."],
     "telegram_usernames": ["@user", "@user2"]
   },
-  "description": "string",
-  "category_raw": "string",  // free-text short category inferred from the role (e.g., "Sales Manager", "Backend", "Courier")
-  "category": "string"       // one of the allowed categories listed above (exact casing)
+  "description": "string"
 }
 
 Field rules:
@@ -99,10 +54,6 @@ Field rules:
   - Put ALL remaining vacancy information (responsibilities, requirements, skills, salary, currency, bonuses, schedule, shift, format, contract, trial period, experience, location, deadlines, how to apply, preferred contact method/time, languages, start date, etc.).
   - Preserve numbers and currency exactly as in text.
   - Write neatly with proper punctuation, commas, spaces, and line breaks.
-- category/category_raw:
-  - First, set category_raw to a short human label (e.g., "Backend Node.js", "SMM Specialist", "Courier").
-  - Then map to the closest category from the allowed list and set category (exact casing). If nothing fits confidently, use "Other".
-  - Double-check that the category reflects the key duties/tools from the description, not only the job title.
 
 Input text:
 """
