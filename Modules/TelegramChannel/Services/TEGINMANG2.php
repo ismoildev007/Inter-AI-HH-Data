@@ -281,35 +281,12 @@ class RelayService
                     continue;
                 }
 
-                // Normalize via OpenAI with caching to avoid re-prompting on retries
-                $normalized = null;
-                $category = null;
-                $usedCache = false;
-                $cacheCfg = (array) config('telegramchannel_relay.cache.normalization', []);
-                $cacheEnabled = (bool) ($cacheCfg['enabled'] ?? true);
-                $ttlSec = (int) ($cacheCfg['ttl_sec'] ?? 86400);
-                $normCacheKey = ($cacheEnabled && $rawHash !== '') ? ('tg:norm:v1:' . $rawHash) : null;
-                if ($normCacheKey) {
-                    try {
-                        $cached = Cache::get($normCacheKey);
-                        if (is_array($cached) && isset($cached['normalized']) && is_array($cached['normalized'])) {
-                            $normalized = $cached['normalized'];
-                            if (isset($cached['category']) && is_string($cached['category'])) {
-                                $category = $cached['category'];
-                            }
-                            $usedCache = true;
-                        }
-                    } catch (\Throwable $e) {
-                        // Cache read failure should not break the flow
-                    }
-                }
-                if (!$normalized) {
-                    try {
-                        $normalized = $this->normalizer->normalize($text, '@'.$plainSource, $id);
-                    } catch (\Throwable $e) {
-                        Log::error('Normalization error', ['err' => $e->getMessage()]);
-                        continue; // skip on error
-                    }
+                // Normalize via OpenAI
+                try {
+                    $normalized = $this->normalizer->normalize($text, '@'.$plainSource, $id);
+                } catch (\Throwable $e) {
+                    Log::error('Normalization error', ['err' => $e->getMessage()]);
+                    continue; // skip on error
                 }
 
                 $normalizedHash = ContentFingerprint::normalized($normalized);
@@ -372,27 +349,13 @@ class RelayService
                 }
 
 
-                // Determine category (from cache if present; else categorize now)
-                if (!is_string($category) || $category === '') {
-                    $category = $this->categorizer->categorize(
-                        (string) ($normalized['category'] ?? ''),
-                        (string) ($normalized['title'] ?? ''),
-                        (string) ($normalized['description'] ?? ''),
-                        (string) ($normalized['category_raw'] ?? '')
-                    );
-                }
-
-                // Store normalization+category to cache for retry reuse
-                if (!$usedCache && $normCacheKey) {
-                    try {
-                        Cache::put($normCacheKey, [
-                            'normalized' => $normalized,
-                            'category' => $category,
-                        ], $ttlSec);
-                    } catch (\Throwable $e) {
-                        // Cache write failure is non-fatal
-                    }
-                }
+                // Determine category (AI normalized or heuristic fallback)
+                $category = $this->categorizer->categorize(
+                    (string) ($normalized['category'] ?? ''),
+                    (string) ($normalized['title'] ?? ''),
+                    (string) ($normalized['description'] ?? ''),
+                    (string) ($normalized['category_raw'] ?? '')
+                );
 
                 // Render post in your house style (Blade)
                 // $phones and $users already prepared above
