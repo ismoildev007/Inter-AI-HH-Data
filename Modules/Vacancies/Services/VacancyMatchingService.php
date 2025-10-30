@@ -16,6 +16,8 @@ use Illuminate\Support\Facades\Cache;
 use Stichoza\GoogleTranslate\GoogleTranslate;
 use Throwable;
 use Modules\TelegramChannel\Services\VacancyCategoryService;
+use Illuminate\Support\Facades\Process;
+use Illuminate\Support\Collection;
 
 class VacancyMatchingService
 {
@@ -136,8 +138,6 @@ class VacancyMatchingService
             $baseSql .= " AND v.category = ?";
             $params[] = $guessedCategory;
             Log::info("📊 [GUESSED CATEGORY USED] '{$guessedCategory}'");
-        } else {
-            Log::warning("⚠️ [NO CATEGORY FOUND] No category filter applied!");
         }
 
         $baseSql .= " ORDER BY rank DESC, id DESC LIMIT 50";
@@ -148,7 +148,7 @@ class VacancyMatchingService
                     foreach (array_slice($tokens->all(), 0, 10) as $t) {
                         $pattern = mb_strtolower($t);
                         if (str_contains(mb_strtolower($v->title), $pattern) || str_contains(mb_strtolower($v->description), $pattern)) {
-                            $v->rank += 0.1; // ozgina bonus beramiz
+                            $v->rank += 0.1;
                         }
                     }
                 }
@@ -158,16 +158,7 @@ class VacancyMatchingService
             ->take(50)
             ->keyBy(fn($v) => $v->source === 'hh' && $v->external_id ? $v->external_id : "local_{$v->id}");
 
-        Log::info("✅ [LOCAL SQL] Found {$localVacancies->count()} local vacancies.");
-
         $hhVacancies = $hhPromise ?? [];
-
-        if (is_array($hhVacancies) && count($hhVacancies)) {
-            Log::info("🌍 [HH API] Loaded " . count($hhVacancies) . " results from cache/API.");
-        } else {
-            Log::info("🌍 [HH API] Empty or not yet ready.");
-        }
-
 
 
         Log::info('Data fetch took:' . (microtime(true) - $start) . 's');
@@ -287,8 +278,6 @@ class VacancyMatchingService
         }
 
         Log::info('All details took finished: ' . (microtime(true) - $start) . 's');
-
-        Log::info('Matching finished', ['resume_id' => $resume->id]);
 
         return $savedData;
     }
