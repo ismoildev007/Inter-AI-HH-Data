@@ -10,14 +10,11 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Concurrency;
 use Modules\Vacancies\Interfaces\HHVacancyInterface;
 use Modules\Vacancies\Interfaces\VacancyInterface;
-use Spatie\Async\Pool;
 use App\Helpers\TranslitHelper;
 use Illuminate\Support\Facades\Cache;
 use Stichoza\GoogleTranslate\GoogleTranslate;
-use Throwable;
 use Modules\TelegramChannel\Services\VacancyCategoryService;
-use Illuminate\Support\Facades\Process;
-use Illuminate\Support\Collection;
+use GuzzleHttp\Promise;
 
 class VacancyMatchingService
 {
@@ -34,12 +31,13 @@ class VacancyMatchingService
 
     public function matchResume(Resume $resume, $query): array
     {
+
         Log::info('🚀 Job started', ['resume_id' => $resume->id, 'query' => $query]);
         $start = microtime(true);
 
+        // --- 1. Query normalization
         $latinQuery = TranslitHelper::toLatin($query);
         $cyrilQuery = TranslitHelper::toCyrillic($query);
-
         $translator = new GoogleTranslate();
         $translator->setSource('auto');
 
@@ -80,11 +78,11 @@ class VacancyMatchingService
         $tsTerms = [...$phrases, ...$tokens];
         $mustPair = count($tokens) >= 2 ? ['(' . $tokens[0] . ' ' . $tokens[1] . ')'] : [];
         $webParts = array_merge($mustPair, $tsTerms);
-
         $tsQuery = !empty($webParts)
             ? implode(' OR ', array_map(fn($t) => str_contains($t, ' ') ? '"' . str_replace('"', '', $t) . '"' : $t, $webParts))
             : (string) $searchQuery;
 
+        // --- 2. Guess category
         try {
             $guessedCategory = app(VacancyCategoryService::class)
                 ->categorize('', (string) ($resume->title ?? ''), (string) ($resume->description ?? ''), '');
@@ -95,14 +93,7 @@ class VacancyMatchingService
             $guessedCategory = null;
         }
 
-        $hhJob = fn() => cache()->remember(
-            "hh:search:{$query}:area97",
-            now()->addMinutes(30),
-            fn() => $this->hhRepository->search($query, 0, 100, ['area' => 97])
-        );
-
-        $hhPromise = $hhJob();
-
+        $resumeCategory = $resume->category ?? null;
         $techCategories = [
             "IT and Software Development",
             "Data Science and Analytics",
@@ -110,24 +101,22 @@ class VacancyMatchingService
             "DevOps and Cloud Engineering",
             "UI/UX and Product Design"
         ];
-
-        $resumeCategory = $resume->category ?? null;
         $isTech = in_array($resumeCategory, $techCategories, true);
 
+        // --- 3. SQL tayyorlash
         $baseSql = "
-            SELECT
-                v.id, v.title, v.description, v.source, v.external_id, v.category,
-                CASE
-                    WHEN v.category IN ('IT and Software Development', 'Data Science and Analytics', 'QA and Testing', 'DevOps and Cloud Engineering', 'UI/UX and Product Design')
-                    THEN ts_rank_cd(to_tsvector('simple', coalesce(v.description, '')), websearch_to_tsquery('simple', ?))
-                    ELSE 0
-                END AS rank
-            FROM vacancies v
-            WHERE v.status = 'publish'
-              AND v.source = 'telegram'
-              AND v.id NOT IN (SELECT vacancy_id FROM match_results WHERE resume_id = ?)
-        ";
-
+        SELECT
+            v.id, v.title, v.description, v.source, v.external_id, v.category,
+            CASE
+                WHEN v.category IN ('IT and Software Development', 'Data Science and Analytics', 'QA and Testing', 'DevOps and Cloud Engineering', 'UI/UX and Product Design')
+                THEN ts_rank_cd(to_tsvector('simple', coalesce(v.description, '')), websearch_to_tsquery('simple', ?))
+                ELSE 0
+            END AS rank
+        FROM vacancies v
+        WHERE v.status = 'publish'
+          AND v.source = 'telegram'
+          AND v.id NOT IN (SELECT vacancy_id FROM match_results WHERE resume_id = ?)
+    ";
         $params = [$tsQuery, $resume->id];
 
         if ($resumeCategory) {
@@ -139,11 +128,27 @@ class VacancyMatchingService
             $params[] = $guessedCategory;
             Log::info("📊 [GUESSED CATEGORY USED] '{$guessedCategory}'");
         }
-
         $baseSql .= " ORDER BY rank DESC, id DESC LIMIT 50";
 
-        $localVacancies = collect(DB::select($baseSql, $params))
-            ->map(function ($v) use ($isTech, $tokens, $tsQuery) {
+        // --- 4. ASINXRON so‘rovlar
+        $promises = [
+            'hh' => \GuzzleHttp\Promise\Create::promiseFor(
+                cache()->remember(
+                    "hh:search:{$query}:area97",
+                    now()->addMinutes(30),
+                    fn() => $this->hhRepository->search($query, 0, 100, ['area' => 97])
+                )
+            ),
+            'local' => \GuzzleHttp\Promise\Create::promiseFor(DB::select($baseSql, $params)),
+        ];
+
+        $results = Promise\Utils::unwrap($promises);
+        $hhVacancies = $results['hh'];
+        $localRows = collect($results['local']);
+
+        // --- 5. Local vacancy rank update
+        $localVacancies = $localRows
+            ->map(function ($v) use ($isTech, $tokens) {
                 if ($isTech && !empty($tokens)) {
                     foreach (array_slice($tokens->all(), 0, 10) as $t) {
                         $pattern = mb_strtolower($t);
@@ -158,13 +163,11 @@ class VacancyMatchingService
             ->take(50)
             ->keyBy(fn($v) => $v->source === 'hh' && $v->external_id ? $v->external_id : "local_{$v->id}");
 
-        $hhVacancies = $hhPromise ?? [];
-
-
         Log::info('Data fetch took:' . (microtime(true) - $start) . 's');
         Log::info('Local vacancies: ' . $localVacancies->count());
         Log::info('hh vacancies count: ' . count($hhVacancies['items'] ?? []));
 
+        // --- 6. Vacancies prepare
         $hhItems = $hhVacancies['items'] ?? [];
         $vacanciesPayload = [];
 
@@ -172,26 +175,23 @@ class VacancyMatchingService
             $vacanciesPayload[] = [
                 'id'   => $v->id,
                 'vacancy_id'   => $v->id,
-                // 'title' => $v->title,
                 'text' => mb_substr(strip_tags($v->description), 0, 2000),
             ];
         }
+
         $toFetch = collect($hhItems)
             ->filter(fn($item) => isset($item['id']) && !$localVacancies->has($item['id']))
             ->take(50);
-        foreach ($toFetch as $idx =>  $item) {
+
+        foreach ($toFetch as $idx => $item) {
             $extId = $item['id'] ?? null;
-            if (!$extId || $localVacancies->has($extId)) {
-                continue;
-            }
-            // $title = $item['name'] ?? 'No title';
+            if (!$extId || $localVacancies->has($extId)) continue;
+
             $text = ($item['snippet']['requirement'] ?? '') . "\n" .
                 ($item['snippet']['responsibility'] ?? '');
-
             if (!empty(trim($text))) {
                 $vacanciesPayload[] = [
                     'id'          => null,
-                    // 'title'       => mb_substr(strip_tags($title), 0, 200),
                     'text'        => mb_substr(strip_tags($text), 0, 1000),
                     'external_id' => $extId,
                     'raw'         => $item,
@@ -199,13 +199,15 @@ class VacancyMatchingService
                 ];
             }
         }
+
         if (empty($vacanciesPayload)) {
             Log::info('No vacancies to match for resume', ['resume_id' => $resume->id]);
             return [];
         }
-        Log::info('Prepared payload with ' . count($vacanciesPayload) . ' vacancies');
-        $vacancyMap = collect($vacanciesPayload)->keyBy(fn($v, $k) => $v['id'] ?? "new_{$k}");
 
+        Log::info('Prepared payload with ' . count($vacanciesPayload) . ' vacancies');
+
+        // --- 7. Save results
         $savedData = [];
         foreach ($vacanciesPayload as $match) {
             try {
@@ -215,7 +217,6 @@ class VacancyMatchingService
                 if ($vacId) {
                     $vac = Vacancy::withoutGlobalScopes()->find($vacId);
                 }
-
                 if (!$vac && isset($match['external_id'])) {
                     $vac = Vacancy::where('source', 'hh')
                         ->where('external_id', $match['external_id'])
@@ -227,10 +228,6 @@ class VacancyMatchingService
                 }
 
                 if (!$vac && !empty($vacId)) {
-                    Log::info('⚙️ Local vacancy not found via model, saving manually', [
-                        'vacancy_id' => $vacId,
-                    ]);
-
                     $savedData[] = [
                         'resume_id'     => $resume->id,
                         'vacancy_id'    => $vacId,
@@ -239,7 +236,6 @@ class VacancyMatchingService
                         'updated_at'    => now(),
                         'created_at'    => now(),
                     ];
-
                     continue;
                 }
 
@@ -261,11 +257,8 @@ class VacancyMatchingService
             }
         }
 
-
-
         if (!empty($savedData)) {
             $chunks = array_chunk($savedData, 200);
-
             DB::transaction(function () use ($chunks) {
                 foreach ($chunks as $chunk) {
                     DB::table('match_results')->upsert(
@@ -277,8 +270,7 @@ class VacancyMatchingService
             });
         }
 
-        Log::info('All details took finished: ' . (microtime(true) - $start) . 's');
-
+        Log::info('All details finished: ' . (microtime(true) - $start) . 's');
         return $savedData;
     }
 }
