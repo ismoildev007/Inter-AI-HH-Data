@@ -168,8 +168,8 @@ class NotificationMatchingService
             return $qb->orderByDesc('rank')->orderByDesc('id');
         };
 
-        $localVacancies = collect($buildLocal(true)->limit(50)->get())
-            ->take(50)
+        $localVacancies = collect($buildLocal(true)->limit(10)->get())
+            ->take(10)
             ->keyBy(fn($v) => $v->source === 'hh' && $v->external_id ? $v->external_id : "local_{$v->id}");
 
 
@@ -190,7 +190,7 @@ class NotificationMatchingService
         }
         $toFetch = collect($hhItems)
             ->filter(fn($item) => isset($item['id']) && !$localVacancies->has($item['id']))
-            ->take(50);
+            ->take(10);
         foreach ($toFetch as $idx =>  $item) {
             $extId = $item['id'] ?? null;
             if (!$extId || $localVacancies->has($extId)) {
