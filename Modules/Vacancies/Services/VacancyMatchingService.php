@@ -387,44 +387,44 @@ class VacancyMatchingService
             return $qb->orderByDesc('rank')->orderByDesc('id');
         };
 
-
-
-        $techCategories = [
-            "IT and Software Development",
-            "Data Science and Analytics",
-            "QA and Testing",
-            "DevOps and Cloud Engineering",
-            "UI/UX and Product Design"
-        ];
+//
+//
+//        $techCategories = [
+//            "IT and Software Development",
+//            "Data Science and Analytics",
+//            "QA and Testing",
+//            "DevOps and Cloud Engineering",
+//            "UI/UX and Product Design"
+//        ];
 
         $localVacancies = $buildLocal(true)->limit(50)->get();
 
-        $resumeCategory = $resume->category ?? null;
-
-        if ($resumeCategory && !in_array($resumeCategory, $techCategories, true)) {
-
-            $currentCount = $localVacancies->count();
-            $limit = 50; // umumiy kerakli son
-            $need = max(0, $limit - $currentCount); // nechta yetmayapti
-
-            if ($need > 0) {
-                $fallback = DB::table('vacancies')
-                    ->where('status', 'publish')
-                    ->where('source', 'telegram')
-                    ->where('category', $resumeCategory)
-                    ->whereNotIn('id', $localVacancies->pluck('id')->toArray()) // dublikatni oldini oladi
-                    ->limit($need)
-                    ->get();
-
-                Log::info("⚠️ Low match ($currentCount found). Added {$fallback->count()} fallback vacancies (total target = {$limit}) from category '{$resumeCategory}'.");
-
-                $localVacancies = $localVacancies->concat($fallback)->unique('id');
-            } else {
-                Log::info("✅ Enough results ($currentCount) found for '{$resumeCategory}', fallback not needed.");
-            }
-        } else {
-            Log::info("✅ Resume category '{$resumeCategory}' is TECH → fallback disabled.");
-        }
+//        $resumeCategory = $resume->category ?? null;
+//
+//        if ($resumeCategory && !in_array($resumeCategory, $techCategories, true)) {
+//
+//            $currentCount = $localVacancies->count();
+//            $limit = 50; // umumiy kerakli son
+//            $need = max(0, $limit - $currentCount); // nechta yetmayapti
+//
+//            if ($need > 0) {
+//                $fallback = DB::table('vacancies')
+//                    ->where('status', 'publish')
+//                    ->where('source', 'telegram')
+//                    ->where('category', $resumeCategory)
+//                    ->whereNotIn('id', $localVacancies->pluck('id')->toArray()) // dublikatni oldini oladi
+//                    ->limit($need)
+//                    ->get();
+//
+//                Log::info("⚠️ Low match ($currentCount found). Added {$fallback->count()} fallback vacancies (total target = {$limit}) from category '{$resumeCategory}'.");
+//
+//                $localVacancies = $localVacancies->concat($fallback)->unique('id');
+//            } else {
+//                Log::info("✅ Enough results ($currentCount) found for '{$resumeCategory}', fallback not needed.");
+//            }
+//        } else {
+//            Log::info("✅ Resume category '{$resumeCategory}' is TECH → fallback disabled.");
+//        }
 
         $localVacancies = collect($localVacancies)
             ->take(50)
@@ -447,7 +447,6 @@ class VacancyMatchingService
                 'text' => mb_substr(strip_tags($v->description), 0, 2000),
             ];
         }
-        Log::info(['local vacancies' => $vacanciesPayload]);
         $toFetch = collect($hhItems)
             ->filter(fn($item) => isset($item['id']) && !$localVacancies->has($item['id']))
             ->take(50);
@@ -537,7 +536,7 @@ class VacancyMatchingService
 
         if (!empty($savedData)) {
             $chunks = array_chunk($savedData, 200);
-        
+
             DB::transaction(function () use ($chunks) {
                 foreach ($chunks as $chunk) {
                     DB::table('match_results')->upsert(
@@ -548,7 +547,7 @@ class VacancyMatchingService
                 }
             });
         }
-        
+
         Log::info('All details took finished: ' . (microtime(true) - $start) . 's');
 
         Log::info('Matching finished', ['resume_id' => $resume->id]);

@@ -11,8 +11,8 @@ class UserSubscriptionResource extends JsonResource
         return [
             'id' => $this->id,
             'plan_id' => $this->plan_id,
-            'starts_at' => optional($this->starts_at)?->toIso8601String(),
-            'ends_at' => optional($this->ends_at)?->toIso8601String(),
+            'starts_at' => $this->starts_at,
+            'ends_at' => $this->ends_at,
             'remaining_auto_responses' => (int) $this->remaining_auto_responses,
             'status' => $this->status,
         ];
