@@ -122,6 +122,11 @@ class ResumeService
 
             - "category": Choose exactly one category from the allowed list below that best matches this resume. Output the category label as an exact string match from the list. Do not invent new labels. Do not choose "Other".
               Allowed categories (labels): {$allowedCategoriesJson}
+
+            Return only valid JSON. Do not include explanations outside the JSON.
+
+            Resume text:
+            {$resumeText}
             PROMPT;
 
 
