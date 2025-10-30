@@ -76,7 +76,6 @@ class ResumeService
      */
     public function analyze(Resume $resume): void
     {
-        // Build allowed categories list (labels only, excluding "Other") for classification
         $categoryService = app(VacancyCategoryService::class);
         $allowedCategoryLabels = $categoryService->getLabelsExceptOther();
         $allowedCategoriesJson = json_encode($allowedCategoryLabels, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
@@ -85,7 +84,6 @@ class ResumeService
         $prompt = <<<PROMPT
             You are an expert HR assistant AI.
             Analyze the following resume text and return a structured JSON object with the following fields only:
-
             - "language": Detect the main language of the resume text (e.g., "en", "ru", "uz").
             - "title": From the resume, identify up to three (maximum 3) of the most specific and relevant professional titles that accurately represent the candidate’s main expertise and experience.
                 Rules for generating "title":
@@ -113,14 +111,10 @@ class ResumeService
                     - For non-technical roles: use domain skills (e.g., Marketing, SMM, HR, Accounting, Graphic Design, Financial Analysis, Teaching, Project Management, etc.).
                     - Do NOT include infrastructure/tools such as SQL, Git, CI/CD, Docker, etc.
                     - Ensure skills are appended in the same comma-separated list, no extra text or brackets.
-
             - "cover_letter": Write a short, professional cover letter (5–7 sentences) focusing on three key areas that best suit the candidate listed above. Be polite, confident, concise, and literate. Always include the candidate's real name at the end, in a new paragraph, with the caption "Sincerely" and their name. The letter must be in Russian.
-
             - "category": Choose exactly one category from the allowed list below that best matches this resume. Output the category label as an exact string match from the list. Do not invent new labels. Do not choose "Other".
               Allowed categories (labels): {$allowedCategoriesJson}
-
             Return only valid JSON. Do not include explanations outside the JSON.
-
             Resume text:
             {$resumeText}
             PROMPT;

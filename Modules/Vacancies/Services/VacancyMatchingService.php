@@ -29,180 +29,6 @@ class VacancyMatchingService
         $this->vacancyRepository = $vacancyRepository;
         $this->hhRepository = $hhRepository;
     }
-    // public function matchResume(Resume $resume, $query): array
-    // {
-    //     Log::info('🚀 Optimized matching started', ['resume_id' => $resume->id, 'query' => $query]);
-    //     $start = microtime(true);
-
-    //     $latinQuery = TranslitHelper::toLatin($query);
-    //     $cyrilQuery = TranslitHelper::toCyrillic($query);
-
-    //     $translations = Cache::remember("translations:{$query}", now()->addHours(2), function () use ($query) {
-    //         $t = new GoogleTranslate();
-    //         $t->setSource('auto');
-    //         return [
-    //             'uz' => $t->setTarget('uz')->translate($query),
-    //             'ru' => $t->setTarget('ru')->translate($query),
-    //             'en' => $t->setTarget('en')->translate($query),
-    //         ];
-    //     });
-
-    //     $allVariants = collect([$query, ...array_values($translations)])
-    //         ->unique()
-    //         ->filter()
-    //         ->values();
-
-    //     $tokens = $allVariants
-    //         ->flatMap(fn($v) => preg_split('/\s*,\s*/u', (string) $v))
-    //         ->map(fn($w) => trim(preg_replace('/[\"\'«»“”]/u', '', $w)))
-    //         ->filter(fn($w) => mb_strlen($w) >= 2)
-    //         ->map(fn($w) => mb_strtolower($w, 'UTF-8'))
-    //         ->unique()
-    //         ->take(8)
-    //         ->values();
-
-    //     $tokenArr = $tokens->all();
-
-    //     $phrases = $allVariants
-    //         ->flatMap(fn($v) => preg_split('/\s*,\s*/u', (string) $v))
-    //         ->filter(fn($s) => mb_strlen($s) >= 3 && preg_match('/\s/u', $s))
-    //         ->map(fn($s) => mb_strtolower($s, 'UTF-8'))
-    //         ->unique()
-    //         ->take(4)
-    //         ->values();
-
-    //     $tsTerms = array_merge($phrases->all(), $tokens->all());
-    //     $mustPair = count($tokens) >= 2 ? ['(' . $tokens[0] . ' ' . $tokens[1] . ')'] : [];
-    //     $webParts = array_merge($mustPair, $tsTerms);
-
-    //     $tsQuery = !empty($webParts)
-    //         ? implode(' OR ', array_map(fn($t) => str_contains($t, ' ') ? '"' . $t . '"' : $t, $webParts))
-    //         : trim((string) ($latinQuery ?: $cyrilQuery));
-
-    //     try {
-    //         $categorizer = app(\Modules\TelegramChannel\Services\VacancyCategoryService::class);
-    //         $guessedCategory = $categorizer->categorize('', $resume->title ?? '', $resume->description ?? '', '');
-    //     } catch (Throwable) {
-    //         $guessedCategory = null;
-    //     }
-
-    //     // $techCategories = [
-    //     //     "IT and Software Development",
-    //     //     "Data Science and Analytics",
-    //     //     "QA and Testing",
-    //     //     "DevOps and Cloud Engineering",
-    //     //     "UI/UX and Product Design"
-    //     // ];
-
-    //     // $pool = \Spatie\Async\Pool::create();
-
-    //     // $pool[] = async(
-    //     //     fn() =>
-    //     //     Cache::remember(
-    //     //         "hh:search:{$query}:area97",
-    //     //         now()->addHour(),
-    //     //         fn() =>
-    //     //         $this->hhRepository->search($query, 0, 100, ['area' => 97])
-    //     //     )
-    //     // );
-
-    //     // 🧠 Endi poolni CLI’da ishga tushiramiz
-    //     $cmd = sprintf(
-    //         '/usr/bin/php %s match:sequential %d %s %s %s',
-    //         base_path('artisan'),
-    //         $resume->id,
-    //         escapeshellarg($query),
-    //         escapeshellarg($tsQuery),
-    //         escapeshellarg($guessedCategory ?? '')
-    //     );
-
-    //     Log::info('⚙️ Running async sequential command', ['cmd' => $cmd]);
-
-    //     exec($cmd . ' 2>&1', $output, $exitCode);
-
-    //     if ($exitCode !== 0) {
-    //         Log::error('❌ Pool command failed', [
-    //             'code' => $exitCode,
-    //             'output' => implode("\n", $output),
-    //         ]);
-    //         return [];
-    //     }
-
-    //     $json = implode("\n", $output);
-    //     $data = json_decode($json, true);
-
-    //     $hhVacancies = $data['hh'] ?? [];
-    //     $localVacancies = $data['local'] ?? [];
-    //     Log::info(['count hh ' => count($hhVacancies), 'local vacan' => count($localVacancies)]);
-
-
-    //     // $pool[] = async(
-    //     //     fn() =>
-    //     //     Cache::remember("local:vacancies:{$resume->category}:" . md5($tsQuery), now()->addMinutes(15), function () use ($resume, $tsQuery, $tokenArr, $guessedCategory, $techCategories) {
-    //     //         $qb = DB::table('vacancies')
-    //     //             ->where('status', 'publish')
-    //     //             ->where('source', 'telegram')
-    //     //             ->whereNotIn('id', function ($q) use ($resume) {
-    //     //                 $q->select('vacancy_id')->from('match_results')->where('resume_id', $resume->id);
-    //     //             });
-
-    //     //         $resumeCategory = $resume->category ?? null;
-
-    //     //         if ($resumeCategory && in_array($resumeCategory, $techCategories, true)) {
-    //     //             $qb->whereRaw("to_tsvector('simple', coalesce(description, '')) @@ websearch_to_tsquery('simple', ?)", [$tsQuery]);
-    //     //         }
-
-    //     //         if ($resumeCategory) {
-    //     //             $qb->where('category', $resumeCategory);
-    //     //         } elseif ($guessedCategory) {
-    //     //             $qb->where('category', $guessedCategory);
-    //     //         }
-
-    //     //         return $qb->orderByDesc('id')->limit(50)->get();
-    //     //     })
-    //     // );
-
-    //     // [$hhVacancies, $localVacancies] = await($pool);
-
-    //     $hhItems = $hhVacancies['items'] ?? [];
-    //     $vacanciesPayload = collect($localVacancies)
-    //         ->take(50)
-    //         ->map(fn($v) => [
-    //             'vacancy_id' => $v->id,
-    //             'text' => mb_substr(strip_tags($v->description), 0, 2000),
-    //         ])->values();
-
-    //     foreach ($hhItems as $idx => $item) {
-    //         $extId = $item['id'] ?? null;
-    //         $text = trim(($item['snippet']['requirement'] ?? '') . "\n" . ($item['snippet']['responsibility'] ?? ''));
-    //         if ($extId && $text) {
-    //             $vacanciesPayload->push([
-    //                 'external_id' => $extId,
-    //                 'text' => mb_substr(strip_tags($text), 0, 1000),
-    //                 'vacancy_index' => $idx,
-    //             ]);
-    //         }
-    //     }
-
-    //     $savedData = $vacanciesPayload->map(fn($m) => [
-    //         'resume_id' => $resume->id,
-    //         'vacancy_id' => $m['vacancy_id'] ?? null,
-    //         'score_percent' => $m['score'] ?? 0,
-    //         'explanations' => json_encode($m),
-    //         'created_at' => now(),
-    //         'updated_at' => now(),
-    //     ])->chunk(50);
-    //     Log::info(['count' => count($savedData)]);
-
-    //     foreach ($savedData as $chunk) {
-    //         DB::table('match_results')->upsert($chunk->toArray(), ['resume_id', 'vacancy_id'], ['score_percent', 'explanations', 'updated_at']);
-    //     }
-
-    //     Log::info('✅ Optimized matching finished in ' . round(microtime(true) - $start, 2) . 's');
-
-    //     return $savedData->flatten(1)->toArray();
-    // }
-
 
     public function matchResume(Resume $resume, $query): array
     {
@@ -227,7 +53,6 @@ class VacancyMatchingService
             ->filter()
             ->values();
 
-// 🔹 Tokenlar va frazalarni aniqlash
         $splitByComma = fn($v) => preg_split('/\s*,\s*/u', (string) $v);
         $cleanText = fn($w) => mb_strtolower(trim(preg_replace('/[\"\'«»“”]/u', '', $w)), 'UTF-8');
 
@@ -258,7 +83,6 @@ class VacancyMatchingService
             ? implode(' OR ', array_map(fn($t) => str_contains($t, ' ') ? '"' . str_replace('"', '', $t) . '"' : $t, $webParts))
             : (string) $searchQuery;
 
-// 🔹 Kategoriya taxmin qilish
         try {
             $guessedCategory = app(VacancyCategoryService::class)
                 ->categorize('', (string) ($resume->title ?? ''), (string) ($resume->description ?? ''), '');
@@ -269,14 +93,12 @@ class VacancyMatchingService
             $guessedCategory = null;
         }
 
-// 🔹 HH dan natijalar
         $hhVacancies = cache()->remember(
             "hh:search:{$query}:area97",
             now()->addMinutes(30),
             fn() => $this->hhRepository->search($query, 0, 100, ['area' => 97])
         );
 
-// 🔹 Lokal vacancy builder
         $buildLocal = function (bool $withCategory) use ($resume, $tsQuery, $tokens, $guessedCategory) {
             $techCategories = [
                 "IT and Software Development",

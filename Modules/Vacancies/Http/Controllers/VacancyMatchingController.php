@@ -12,6 +12,7 @@ use Modules\Vacancies\Http\Resources\VacancyMatchResource;
 use Modules\Vacancies\Jobs\MatchResumeJob;
 use Modules\Vacancies\Services\VacancyMatchingService;
 
+use Illuminate\Support\Facades\Http;
 class VacancyMatchingController extends Controller
 {
     protected VacancyMatchingService $service;
@@ -58,11 +59,24 @@ class VacancyMatchingController extends Controller
             }
         }
 
+        if ($results->isEmpty()) {
+            try {
+                Http::withToken($user->currentAccessToken()->plainTextToken ?? '')
+                    ->delete(route('user.self-if-no-resume'));
+            } catch (\Exception $e) {
+                Log::error('Self-delete request failed: ' . $e->getMessage());
+            }
+
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Hech qanday rezyume yoki moslik topilmadi. Foydalanuvchi o‘chirildi.',
+                'data'    => [],
+            ]);
+        }
+
         return response()->json([
             'status'  => 'success',
-            'message' => $results->isEmpty()
-                ? 'Hech qanday moslik topilmadi.'
-                : 'Matching finished successfully.',
+            'message' => 'Matching finished successfully.',
             'data'    => VacancyMatchResource::collection($results),
         ]);
     }
