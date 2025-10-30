@@ -93,83 +93,81 @@ class VacancyMatchingService
             $guessedCategory = null;
         }
 
-        $hhVacancies = cache()->remember(
+        $hhJob = fn() => cache()->remember(
             "hh:search:{$query}:area97",
             now()->addMinutes(30),
             fn() => $this->hhRepository->search($query, 0, 100, ['area' => 97])
         );
 
-        $buildLocal = function (bool $withCategory) use ($resume, $tsQuery, $tokens, $guessedCategory) {
-            $techCategories = [
-                "IT and Software Development",
-                "Data Science and Analytics",
-                "QA and Testing",
-                "DevOps and Cloud Engineering",
-                "UI/UX and Product Design"
-            ];
+        $hhPromise = $hhJob();
 
-            $resumeCategory = $resume->category ?? null;
+        $techCategories = [
+            "IT and Software Development",
+            "Data Science and Analytics",
+            "QA and Testing",
+            "DevOps and Cloud Engineering",
+            "UI/UX and Product Design"
+        ];
 
-            $qb = DB::table('vacancies')
-                ->where('status', 'publish')
-                ->where('source', 'telegram')
-                ->whereNotIn('id', function ($q) use ($resume) {
-                    $q->select('vacancy_id')
-                        ->from('match_results')
-                        ->where('resume_id', $resume->id);
-                });
+        $resumeCategory = $resume->category ?? null;
+        $isTech = in_array($resumeCategory, $techCategories, true);
 
-            $isTech = in_array($resumeCategory, $techCategories, true);
+        $baseSql = "
+            SELECT
+                v.id, v.title, v.description, v.source, v.external_id, v.category,
+                CASE
+                    WHEN v.category IN ('IT and Software Development', 'Data Science and Analytics', 'QA and Testing', 'DevOps and Cloud Engineering', 'UI/UX and Product Design')
+                    THEN ts_rank_cd(to_tsvector('simple', coalesce(v.description, '')), websearch_to_tsquery('simple', ?))
+                    ELSE 0
+                END AS rank
+            FROM vacancies v
+            WHERE v.status = 'publish'
+              AND v.source = 'telegram'
+              AND v.id NOT IN (SELECT vacancy_id FROM match_results WHERE resume_id = ?)
+        ";
 
-            if ($isTech) {
-                $qb->where(function ($q) use ($tsQuery, $tokens) {
-                    $q->whereRaw("
-                to_tsvector('simple', coalesce(description, '')) @@ websearch_to_tsquery('simple', ?)
-            ", [$tsQuery]);
+        $params = [$tsQuery, $resume->id];
 
-                    if ($tokens->isNotEmpty()) {
-                        $likeTokens = $tokens->take(10)->map(fn($t) => "%{$t}%")->all();
-                        $q->orWhere(function ($sub) use ($likeTokens) {
-                            foreach ($likeTokens as $pattern) {
-                                $sub->orWhere('description', 'ILIKE', $pattern)
-                                    ->orWhere('title', 'ILIKE', $pattern);
-                            }
-                        });
+        if ($resumeCategory) {
+            $baseSql .= " AND v.category = ?";
+            $params[] = $resumeCategory;
+            Log::info("📊 [CATEGORY FILTER] Used '{$resumeCategory}'");
+        } elseif ($guessedCategory) {
+            $baseSql .= " AND v.category = ?";
+            $params[] = $guessedCategory;
+            Log::info("📊 [GUESSED CATEGORY USED] '{$guessedCategory}'");
+        } else {
+            Log::warning("⚠️ [NO CATEGORY FOUND] No category filter applied!");
+        }
+
+        $baseSql .= " ORDER BY rank DESC, id DESC LIMIT 50";
+
+        $localVacancies = collect(DB::select($baseSql, $params))
+            ->map(function ($v) use ($isTech, $tokens, $tsQuery) {
+                if ($isTech && !empty($tokens)) {
+                    foreach (array_slice($tokens->all(), 0, 10) as $t) {
+                        $pattern = mb_strtolower($t);
+                        if (str_contains(mb_strtolower($v->title), $pattern) || str_contains(mb_strtolower($v->description), $pattern)) {
+                            $v->rank += 0.1; // ozgina bonus beramiz
+                        }
                     }
-                });
-
-                $qb->select(
-                    'id', 'title', 'description', 'source', 'external_id', 'category',
-                    DB::raw("ts_rank_cd(to_tsvector('simple', coalesce(description, '')), websearch_to_tsquery('simple', ?)) as rank")
-                )->addBinding($tsQuery, 'select');
-            } else {
-                $qb->select('id', 'title', 'description', 'source', 'external_id', 'category', DB::raw('0 as rank'));
-            }
-
-            if ($withCategory) {
-                if ($resumeCategory) {
-                    $count = DB::table('vacancies')
-                        ->where('status', 'publish')
-                        ->where('source', 'telegram')
-                        ->where('category', $resumeCategory)
-                        ->count();
-                    Log::info("📊 [CATEGORY] {$resumeCategory} → {$count} vacancies.");
-                    $qb->where('category', $resumeCategory);
-                } elseif ($guessedCategory) {
-                    Log::info("📊 [GUESSED] {$guessedCategory} used.");
-                    $qb->where('category', $guessedCategory);
-                } else {
-                    Log::warning("⚠️ [NO CATEGORY] No category filter applied!");
                 }
-            }
-
-            Log::info("✅ [BUILD_LOCAL] Resume {$resume->id} (TECH=" . ($isTech ? 'YES' : 'NO') . ")");
-            return $qb->orderByDesc('rank')->orderByDesc('id');
-        };
-
-        $localVacancies = collect($buildLocal(true)->limit(50)->get())
+                return $v;
+            })
+            ->sortByDesc('rank')
             ->take(50)
             ->keyBy(fn($v) => $v->source === 'hh' && $v->external_id ? $v->external_id : "local_{$v->id}");
+
+        Log::info("✅ [LOCAL SQL] Found {$localVacancies->count()} local vacancies.");
+
+        $hhVacancies = $hhPromise ?? [];
+
+        if (is_array($hhVacancies) && count($hhVacancies)) {
+            Log::info("🌍 [HH API] Loaded " . count($hhVacancies) . " results from cache/API.");
+        } else {
+            Log::info("🌍 [HH API] Empty or not yet ready.");
+        }
+
 
 
         Log::info('Data fetch took:' . (microtime(true) - $start) . 's');
