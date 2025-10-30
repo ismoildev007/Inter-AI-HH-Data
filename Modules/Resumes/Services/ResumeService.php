@@ -86,6 +86,10 @@ class ResumeService
             You are an expert HR assistant AI.
             Analyze the following resume text and return a structured JSON object with the following fields only:
 
+            - "skills": A list of the candidate's hard and soft skills (only relevant skills, no duplicates).
+            - "strengths": 3–5 short bullet points describing the candidate's main strengths.
+            - "weaknesses": 2–4 short bullet points describing areas that might need improvement.
+            - "keywords": A list of important keywords or technologies mentioned in the resume (useful for search/matching).
             - "language": Detect the main language of the resume text (e.g., "en", "ru", "uz").
             - "title": From the resume, identify up to three (maximum 3) of the most specific and relevant professional titles that accurately represent the candidate’s main expertise and experience.
                 Rules for generating "title":
@@ -119,7 +123,12 @@ class ResumeService
             - "category": Choose exactly one category from the allowed list below that best matches this resume. Output the category label as an exact string match from the list. Do not invent new labels. Do not choose "Other".
               Allowed categories (labels): {$allowedCategoriesJson}
 
+            Return only valid JSON. Do not include explanations outside the JSON.
+
+            Resume text:
+            {$resumeText}
             PROMPT;
+
 
         $response = Http::timeout(120)
             ->withToken(env('OPENAI_API_KEY'))
@@ -131,6 +140,7 @@ class ResumeService
                 ],
                 'temperature' => 0.2,
             ]);
+
 
         if (! $response->successful()) {
             Log::error("GPT API failed: " . $response->body());
@@ -158,7 +168,6 @@ class ResumeService
             $resume->update(['title' => $normalizedTitle]);
         }
 
-        // Persist category if returned and valid
         $categoryFromAi = isset($analysis['category']) && is_string($analysis['category'])
             ? trim($analysis['category'])
             : null;
