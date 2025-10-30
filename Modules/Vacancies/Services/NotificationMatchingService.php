@@ -178,6 +178,20 @@ class NotificationMatchingService
         Log::info('hh vacancies count: ' . count($hhVacancies['items'] ?? []));
 
         $hhItems = $hhVacancies['items'] ?? [];
+        foreach ($hhItems as $idx => $item) {
+            $extId = $item['id'] ?? null;
+            if (!$extId || $localVacancies->has($extId)) continue;
+            $text = ($item['snippet']['requirement'] ?? '') . "\n" . ($item['snippet']['responsibility'] ?? '');
+            if (!empty(trim($text))) {
+                $vacanciesPayload[] = [
+                    'id'          => null,
+                    'text'        => mb_substr(strip_tags($text), 0, 1000),
+                    'external_id' => $extId,
+                    'raw'         => $item,
+                    'source'      => 'hh',
+                ];
+            }
+        }
         $vacanciesPayload = [];
 
         foreach ($localVacancies as $v) {
