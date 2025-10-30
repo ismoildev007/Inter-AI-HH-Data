@@ -206,89 +206,78 @@ class VacancyMatchingService
 
     public function matchResume(Resume $resume, $query): array
     {
-        Log::info('Job started for resume', ['resume_id' => $resume->id, 'query' => $query]);
+        Log::info('🚀 Job started', ['resume_id' => $resume->id, 'query' => $query]);
         $start = microtime(true);
 
         $latinQuery = TranslitHelper::toLatin($query);
         $cyrilQuery = TranslitHelper::toCyrillic($query);
 
-        $words = array_map('trim', explode(',', $query));
-
         $translator = new GoogleTranslate();
         $translator->setSource('auto');
-        $translator->setTarget('uz');
-        $uzQuery = $translator->translate("\"{$query}\"");
 
-        $translator->setTarget('ru');
-        $ruQuery = $translator->translate("\"{$query}\"");
+        $translations = [
+            'uz' => fn() => $translator->setTarget('uz')->translate("\"{$query}\""),
+            'ru' => fn() => $translator->setTarget('ru')->translate("\"{$query}\""),
+            'en' => fn() => $translator->setTarget('en')->translate("\"{$query}\""),
+        ];
 
-        $translator->setTarget('en');
-        $enQuery = $translator->translate("\"{$query}\"");
-
-        $allVariants = collect([$query, $uzQuery, $ruQuery, $enQuery])
+        $allVariants = collect([$query])
+            ->merge(array_map(fn($f) => $f(), $translations))
             ->unique()
             ->filter()
             ->values();
 
+// 🔹 Tokenlar va frazalarni aniqlash
+        $splitByComma = fn($v) => preg_split('/\s*,\s*/u', (string) $v);
+        $cleanText = fn($w) => mb_strtolower(trim(preg_replace('/[\"\'«»“”]/u', '', $w)), 'UTF-8');
+
         $tokens = $allVariants
-            ->flatMap(fn($v) => preg_split('/\s*,\s*/u', (string) $v))
-            ->map(fn($w) => trim(preg_replace('/[\"\'«»“”]/u', '', $w)))
+            ->flatMap($splitByComma)
+            ->map($cleanText)
             ->filter(fn($w) => mb_strlen($w) >= 2)
-            ->map(fn($w) => mb_strtolower($w, 'UTF-8'))
             ->unique()
             ->take(8)
             ->values();
 
-        $tokenArr = $tokens->all();
-
-        Log::info('🧩 Tokens parsed by comma only', ['tokens' => $tokenArr]);
+        Log::info('🧩 Tokens parsed', ['tokens' => $tokens->all()]);
 
         $phrases = $allVariants
-            ->flatMap(fn($v) => preg_split('/\s*,\s*/u', (string) $v))
-            ->map(fn($s) => trim($s))
-            ->filter(fn($s) => mb_strlen($s) >= 3 && preg_match('/\s/u', $s))
-            ->map(fn($s) => mb_strtolower($s, 'UTF-8'))
+            ->flatMap($splitByComma)
+            ->map($cleanText)
+            ->filter(fn($s) => mb_strlen($s) >= 3 && str_contains($s, ' '))
             ->unique()
             ->take(4)
             ->values();
-        $phraseArr = $phrases->all();
 
         $searchQuery = $latinQuery ?: $cyrilQuery;
-
-        $tsTerms = array_merge(
-            array_map('trim', array_map('strval', $phraseArr)),
-            array_map('trim', array_map('strval', $tokenArr))
-        );
-        $mustPair = [];
-        if (count($tokenArr) >= 2) {
-            $mustPair = ['(' . $tokenArr[0] . ' ' . $tokenArr[1] . ')']; // websearch: space = AND
-        }
+        $tsTerms = [...$phrases, ...$tokens];
+        $mustPair = count($tokens) >= 2 ? ['(' . $tokens[0] . ' ' . $tokens[1] . ')'] : [];
         $webParts = array_merge($mustPair, $tsTerms);
 
         $tsQuery = !empty($webParts)
-            ? implode(' OR ', array_map(function ($t) {
-                return str_contains($t, ' ') ? '"' . str_replace('"', '', $t) . '"' : $t;
-            }, $webParts))
-            : trim((string) $searchQuery);
+            ? implode(' OR ', array_map(fn($t) => str_contains($t, ' ') ? '"' . str_replace('"', '', $t) . '"' : $t, $webParts))
+            : (string) $searchQuery;
 
-        $guessedCategory = null;
+// 🔹 Kategoriya taxmin qilish
         try {
-            $categorizer = app(VacancyCategoryService::class);
-            $guessedCategory = $categorizer->categorize('', (string) ($resume->title ?? ''), (string) ($resume->description ?? ''), '');
-            if (!is_string($guessedCategory) || mb_strtolower($guessedCategory, 'UTF-8') === 'other' || $guessedCategory === '') {
-                $guessedCategory = null;
-            }
-        } catch (\Throwable $e) {
+            $guessedCategory = app(VacancyCategoryService::class)
+                ->categorize('', (string) ($resume->title ?? ''), (string) ($resume->description ?? ''), '');
+            $guessedCategory = (is_string($guessedCategory) && !in_array(mb_strtolower($guessedCategory), ['other', ''], true))
+                ? $guessedCategory
+                : null;
+        } catch (\Throwable) {
             $guessedCategory = null;
         }
 
+// 🔹 HH dan natijalar
         $hhVacancies = cache()->remember(
             "hh:search:{$query}:area97",
             now()->addMinutes(30),
             fn() => $this->hhRepository->search($query, 0, 100, ['area' => 97])
         );
 
-        $buildLocal = function (bool $withCategory) use ($resume, $tsQuery, $tokenArr, $guessedCategory) {
+// 🔹 Lokal vacancy builder
+        $buildLocal = function (bool $withCategory) use ($resume, $tsQuery, $tokens, $guessedCategory) {
             $techCategories = [
                 "IT and Software Development",
                 "Data Science and Analytics",
@@ -299,13 +288,6 @@ class VacancyMatchingService
 
             $resumeCategory = $resume->category ?? null;
 
-            Log::info("🔍 [BUILD_LOCAL] Started building query for resume {$resume->id}", [
-                'resume_category' => $resumeCategory,
-                'guessed_category' => $guessedCategory,
-                'tsQuery' => $tsQuery,
-                'tokens' => $tokenArr,
-            ]);
-
             $qb = DB::table('vacancies')
                 ->where('status', 'publish')
                 ->where('source', 'telegram')
@@ -315,20 +297,19 @@ class VacancyMatchingService
                         ->where('resume_id', $resume->id);
                 });
 
-            if ($resumeCategory && in_array($resumeCategory, $techCategories, true)) {
+            $isTech = in_array($resumeCategory, $techCategories, true);
 
-                $qb->where(function ($query) use ($tsQuery, $tokenArr) {
-                    $query->whereRaw("
-                        to_tsvector('simple', coalesce(description, ''))
-                        @@ websearch_to_tsquery('simple', ?)
-                    ", [$tsQuery]);
+            if ($isTech) {
+                $qb->where(function ($q) use ($tsQuery, $tokens) {
+                    $q->whereRaw("
+                to_tsvector('simple', coalesce(description, '')) @@ websearch_to_tsquery('simple', ?)
+            ", [$tsQuery]);
 
-                    if (!empty($tokenArr)) {
-                        $top = array_slice($tokenArr, 0, min(10, count($tokenArr)));
-                        $query->orWhere(function ($q) use ($top) {
-                            foreach ($top as $t) {
-                                $pattern = "%{$t}%";
-                                $q->orWhere('description', 'ILIKE', $pattern)
+                    if ($tokens->isNotEmpty()) {
+                        $likeTokens = $tokens->take(10)->map(fn($t) => "%{$t}%")->all();
+                        $q->orWhere(function ($sub) use ($likeTokens) {
+                            foreach ($likeTokens as $pattern) {
+                                $sub->orWhere('description', 'ILIKE', $pattern)
                                     ->orWhere('title', 'ILIKE', $pattern);
                             }
                         });
@@ -337,46 +318,34 @@ class VacancyMatchingService
 
                 $qb->select(
                     'id', 'title', 'description', 'source', 'external_id', 'category',
-                    DB::raw("
-                ts_rank_cd(
-                    to_tsvector('simple', coalesce(description, '')),
-                    websearch_to_tsquery('simple', ?)
-                ) as rank
-            ")
+                    DB::raw("ts_rank_cd(to_tsvector('simple', coalesce(description, '')), websearch_to_tsquery('simple', ?)) as rank")
                 )->addBinding($tsQuery, 'select');
             } else {
-                $qb->select(
-                    'id', 'title', 'description', 'source', 'external_id', 'category',
-                    DB::raw("0 as rank")
-                );
+                $qb->select('id', 'title', 'description', 'source', 'external_id', 'category', DB::raw('0 as rank'));
             }
 
-            // 🔸 Category filter log
             if ($withCategory) {
                 if ($resumeCategory) {
-                    $countSameCategory = DB::table('vacancies')
+                    $count = DB::table('vacancies')
                         ->where('status', 'publish')
                         ->where('source', 'telegram')
                         ->where('category', $resumeCategory)
                         ->count();
-
-                    Log::info("📊 [CATEGORY FILTER] Resume [{$resume->id}] '{$resumeCategory}' → {$countSameCategory} total vacancies in DB.");
+                    Log::info("📊 [CATEGORY] {$resumeCategory} → {$count} vacancies.");
                     $qb->where('category', $resumeCategory);
                 } elseif ($guessedCategory) {
-                    Log::info("📊 [GUESSED CATEGORY USED] '{$guessedCategory}' used for filtering.");
+                    Log::info("📊 [GUESSED] {$guessedCategory} used.");
                     $qb->where('category', $guessedCategory);
                 } else {
-                    Log::warning("⚠️ [NO CATEGORY FOUND] No category filter applied!");
+                    Log::warning("⚠️ [NO CATEGORY] No category filter applied!");
                 }
             }
 
-            Log::info("✅ [BUILD_LOCAL] Finished building query for resume {$resume->id} (TECH=" . (in_array($resumeCategory, $techCategories, true) ? 'YES' : 'NO') . ")");
-
+            Log::info("✅ [BUILD_LOCAL] Resume {$resume->id} (TECH=" . ($isTech ? 'YES' : 'NO') . ")");
             return $qb->orderByDesc('rank')->orderByDesc('id');
         };
 
-        $localVacancies = $buildLocal(true)->limit(50)->get();
-        $localVacancies = collect($localVacancies)
+        $localVacancies = collect($buildLocal(true)->limit(50)->get())
             ->take(50)
             ->keyBy(fn($v) => $v->source === 'hh' && $v->external_id ? $v->external_id : "local_{$v->id}");
 
