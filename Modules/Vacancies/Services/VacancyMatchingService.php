@@ -433,11 +433,11 @@ class VacancyMatchingService
                 $vacId = $match['vacancy_id'] ?? null;
 
                 if ($vacId) {
-                    $vac = Db::table('vacancies')->withoutGlobalScopes()->find($vacId);
+                    $vac = Vacancy::withoutGlobalScopes()->find($vacId);
                 }
 
                 if (!$vac && isset($match['external_id'])) {
-                    $vac = Db::table('vacancies')->where('source', 'hh')
+                    $vac = Vacancy::where('source', 'hh')
                         ->where('external_id', $match['external_id'])
                         ->first();
 
