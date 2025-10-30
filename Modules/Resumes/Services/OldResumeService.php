@@ -75,6 +75,12 @@ class OldResumeService
      */
     public function analyze(Resume $resume): void
     {
+        // Build allowed categories list (labels only, excluding "Other") for classification
+        $categoryService = app(VacancyCategoryService::class);
+        $allowedCategoryLabels = $categoryService->getLabelsExceptOther();
+        $allowedCategoriesJson = json_encode($allowedCategoryLabels, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        $resumeText = (string) ($resume->parsed_text ?? $resume->description);
+
         $prompt = <<<PROMPT
             You are an expert HR assistant AI.
             Analyze the following resume text and return a structured JSON object with the following fields only:
@@ -85,30 +91,46 @@ class OldResumeService
             - "keywords": A list of important keywords or technologies mentioned in the resume (useful for search/matching).
             - "language": Detect the main language of the resume text (e.g., "en", "ru", "uz").
             - "title": From the resume, identify up to three (maximum 3) of the most specific and relevant professional titles that accurately represent the candidate’s main expertise and experience.
-                Rules:
-                • Each title must be specific and, if applicable, include both the main role and its associated technology or framework
-                (e.g., "PHP Backend Developer", "React Frontend Developer", "Java Spring Developer", "Python Fullstack Developer").
-                • If a title refers to Backend, Frontend, or Fullstack development, it **must include at least one programming language or framework**
-                (e.g., PHP, Java, .NET, React, Vue, Node.js, etc.).
-                • Titles such as **"Backend Developer"**, **"Frontend Developer"**, or **"Fullstack Developer"** alone are **strictly forbidden** —
-                they cannot appear by themselves **nor as secondary or repeated titles after others.**
-                • Do NOT output any title that ends with or contains only the words “Backend Developer”, “Frontend Developer”, or “Fullstack Developer”
-                without an attached technology name.
-                • Include other relevant non-programming roles (e.g., "Project Manager", "Marketing Specialist", "UI/UX Designer") if they clearly apply.
+                Rules for generating "title":
+                • Each title must be highly specific and reflect both the role and its key technology, framework, or domain focus.
+                    - Examples: "PHP Backend Developer", "C# .NET Developer", "ASP.NET Developer", "Java Spring Developer", "Python Fullstack Developer", "React Frontend Developer", "Digital Marketing Specialist", "HR Manager", "Accountant", "Nurse", "Sales Manager", "Teacher".
+                • Titles referring to Backend, Frontend, or Fullstack development must include at least one programming language or framework (e.g., PHP, Java, .NET, React, Vue, Node.js, etc.).
+                • Strictly forbid vague or generic titles such as: "Backend Developer","Developer", "Software Engineer", "Software Developer", "Engineer", "Frontend Developer", "Programmer", "IT Specialist", "Consultant" — unless they include a clear technology or domain (e.g., "C# Software Engineer", "Python Developer").
+                • Include non-technical roles (e.g., "HR Manager", "Recruitment Specialist", "Project Manager", "Accountant", "Marketing Specialist", "Banking Operations Manager") when relevant.
                 • Do not include parentheses, notes, or explanations — only plain text titles separated by commas.
-                • Prioritize titles that reflect the most emphasized or most recent experience.
+                • Prioritize titles that reflect the most recent or most emphasized experience.
                 • Return up to three concise and distinct titles, separated by commas.
-            - "cover_letter": Write a short, professional cover letter (5-7 sentences) focusing on three key areas that best suit the candidate you listed above. Be polite, confident, concise, and literate.
-                Always include the candidate's real name at the end, in a new paragraph, with the caption "Sincerely" and their name. The letter must be in Russian.
+                • Each title should include one main defining technology or domain — avoid duplication or overlapping meanings.
+                • The output format must look exactly like this:
+                    - Example for IT:
+                    PHP Backend Developer,
+                    C# .NET Developer,
+                    React Frontend Developer
+                    - Example for non-IT:
+                    HR Manager,
+                    Recruitment Specialist,
+                    Banking Operations Manager
+                • After the titles, also append up to two meaningful core skills that logically match the main title(s) directly in the same "title" field.
+                    - For example: (PHP Full-Stack Developer, Laravel Developer, Vue.js Developer, PHP, Laravel)
+                    - For technical roles: use main languages/frameworks (e.g., PHP, Python, JavaScript, Java, C#, React, Node.js, etc.).
+                    - For non-technical roles: use domain skills (e.g., Marketing, SMM, HR, Accounting, Graphic Design, Financial Analysis, Teaching, Project Management, etc.).
+                    - Do NOT include infrastructure/tools such as SQL, Git, CI/CD, Docker, etc.
+                    - Ensure skills are appended in the same comma-separated list, no extra text or brackets.
+
+            - "cover_letter": Write a short, professional cover letter (5–7 sentences) focusing on three key areas that best suit the candidate listed above. Be polite, confident, concise, and literate. Always include the candidate's real name at the end, in a new paragraph, with the caption "Sincerely" and their name. The letter must be in Russian.
+
+            - "category": Choose exactly one category from the allowed list below that best matches this resume. Output the category label as an exact string match from the list. Do not invent new labels. Do not choose "Other".
+              Allowed categories (labels): {$allowedCategoriesJson}
+
             Return only valid JSON. Do not include explanations outside the JSON.
 
             Resume text:
-
-            " . ($resume->parsed_text ?? $resume->description) . "
-
+            {$resumeText}
             PROMPT;
 
-        $response = Http::withToken(env('OPENAI_API_KEY'))
+
+        $response = Http::timeout(120)
+            ->withToken(env('OPENAI_API_KEY'))
             ->post('https://api.openai.com/v1/chat/completions', [
                 'model' => env('OPENAI_MODEL', 'gpt-4o-mini'),
                 'messages' => [
@@ -117,6 +139,9 @@ class OldResumeService
                 ],
                 'temperature' => 0.2,
             ]);
+
+
+
 
         if (! $response->successful()) {
             Log::error("GPT API failed: " . $response->body());
@@ -139,24 +164,58 @@ class OldResumeService
 
 
         $normalizedTitle = $this->extractTitle($analysis['title'] ?? null);
-
-        $resumeAnalyze = ResumeAnalyze::updateOrCreate(
-            ['resume_id' => $resume->id],
-            [
-                'skills'     => $analysis['skills'] ?? null,
-                'strengths'  => $analysis['strengths'] ?? null,
-                'weaknesses' => $analysis['weaknesses'] ?? null,
-                'keywords'   => $analysis['keywords'] ?? null,
-                'language'   => $analysis['language'] ?? 'en',
-                'title'      => $normalizedTitle,
-            ]
-        );
+        Log::info(['normilize title' => $normalizedTitle]);
+//        $resumeAnalyze = ResumeAnalyze::updateOrCreate(
+//            ['resume_id' => $resume->id],
+//            [
+//                'skills'     => $analysis['skills'] ?? null,
+//                'strengths'  => $analysis['strengths'] ?? null,
+//                'weaknesses' => $analysis['weaknesses'] ?? null,
+//                'keywords'   => $analysis['keywords'] ?? null,
+//                'language'   => $analysis['language'] ?? 'en',
+//                'title'      => $normalizedTitle,
+//            ]
+//        );
 
         if ($normalizedTitle !== null) {
             $resume->update(['title' => $normalizedTitle]);
         }
 
-        Log::info('Resume analyzed', ['resume_id' => $resume->id, 'analysis_id' => $resumeAnalyze->id, 'data' => $analysis]);
+        // Persist category if returned and valid
+        $categoryFromAi = isset($analysis['category']) && is_string($analysis['category'])
+            ? trim($analysis['category'])
+            : null;
+
+        $finalCategory = null;
+        if ($categoryFromAi !== null && $categoryFromAi !== '') {
+            // Accept exact label match (case-insensitive)
+            foreach ($allowedCategoryLabels as $label) {
+                if (mb_strtolower($label, 'UTF-8') === mb_strtolower($categoryFromAi, 'UTF-8')) {
+                    $finalCategory = $label;
+                    break;
+                }
+            }
+
+            // If AI returned a slug-like value, try mapping to label
+            if ($finalCategory === null) {
+                $maybeLabel = $categoryService->fromSlug($categoryFromAi);
+                if ($maybeLabel && in_array($maybeLabel, $allowedCategoryLabels, true)) {
+                    $finalCategory = $maybeLabel;
+                }
+            }
+        }
+
+        // Optional fallback categorization from text if AI did not provide a valid label
+        if ($finalCategory === null) {
+            $inferred = $categoryService->categorize(null, $normalizedTitle, $resumeText);
+            if ($inferred && in_array($inferred, $allowedCategoryLabels, true)) {
+                $finalCategory = $inferred;
+            }
+        }
+
+        if ($finalCategory !== null) {
+            $resume->update(['category' => $finalCategory]);
+        }
 
         if (!empty($analysis['cover_letter'])) {
             UserPreference::updateOrCreate(
