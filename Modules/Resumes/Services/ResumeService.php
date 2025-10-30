@@ -182,13 +182,10 @@ class ResumeService
                 if ($maybeLabel && in_array($maybeLabel, $allowedCategoryLabels, true)) {
                     $finalCategory = $maybeLabel;
                 }
-            }
-        }
-
-        if ($finalCategory === null) {
-            $inferred = $categoryService->categorize(null, $normalizedTitle, $resumeText);
-            if ($inferred && in_array($inferred, $allowedCategoryLabels, true)) {
-                $finalCategory = $inferred;
+                $inferred = $categoryService->categorize(null, $normalizedTitle, $resumeText);
+                if ($inferred && in_array($inferred, $allowedCategoryLabels, true)) {
+                    $finalCategory = $inferred;
+                }
             }
         }
 

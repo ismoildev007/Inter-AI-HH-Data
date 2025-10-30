@@ -296,7 +296,6 @@ class VacancyMatchingService
         );
 
         $buildLocal = function (bool $withCategory) use ($resume, $tsQuery, $tokenArr, $guessedCategory) {
-            // IT sohalar ro‘yxati
             $techCategories = [
                 "IT and Software Development",
                 "Data Science and Analytics",
@@ -323,9 +322,7 @@ class VacancyMatchingService
                         ->where('resume_id', $resume->id);
                 });
 
-            // 🔸 Log da aniqlaymiz: resumeCategory TECH ro‘yxatida bormi?
             if ($resumeCategory && in_array($resumeCategory, $techCategories, true)) {
-                Log::info("🧠 [TECH BRANCH ENTERED] Resume [{$resume->id}] category '{$resumeCategory}' is TECH. Running full text + token search.");
 
                 $qb->where(function ($query) use ($tsQuery, $tokenArr) {
                     $query->whereRaw("
@@ -355,8 +352,6 @@ class VacancyMatchingService
             ")
                 )->addBinding($tsQuery, 'select');
             } else {
-                Log::warning("🚫 [NON-TECH BRANCH ENTERED] Resume [{$resume->id}] category '{$resumeCategory}' is NON-TECH or unknown → no search applied.");
-
                 $qb->select(
                     'id', 'title', 'description', 'source', 'external_id', 'category',
                     DB::raw("0 as rank")
@@ -387,49 +382,10 @@ class VacancyMatchingService
             return $qb->orderByDesc('rank')->orderByDesc('id');
         };
 
-//
-//
-//        $techCategories = [
-//            "IT and Software Development",
-//            "Data Science and Analytics",
-//            "QA and Testing",
-//            "DevOps and Cloud Engineering",
-//            "UI/UX and Product Design"
-//        ];
-
         $localVacancies = $buildLocal(true)->limit(50)->get();
-
-//        $resumeCategory = $resume->category ?? null;
-//
-//        if ($resumeCategory && !in_array($resumeCategory, $techCategories, true)) {
-//
-//            $currentCount = $localVacancies->count();
-//            $limit = 50; // umumiy kerakli son
-//            $need = max(0, $limit - $currentCount); // nechta yetmayapti
-//
-//            if ($need > 0) {
-//                $fallback = DB::table('vacancies')
-//                    ->where('status', 'publish')
-//                    ->where('source', 'telegram')
-//                    ->where('category', $resumeCategory)
-//                    ->whereNotIn('id', $localVacancies->pluck('id')->toArray()) // dublikatni oldini oladi
-//                    ->limit($need)
-//                    ->get();
-//
-//                Log::info("⚠️ Low match ($currentCount found). Added {$fallback->count()} fallback vacancies (total target = {$limit}) from category '{$resumeCategory}'.");
-//
-//                $localVacancies = $localVacancies->concat($fallback)->unique('id');
-//            } else {
-//                Log::info("✅ Enough results ($currentCount) found for '{$resumeCategory}', fallback not needed.");
-//            }
-//        } else {
-//            Log::info("✅ Resume category '{$resumeCategory}' is TECH → fallback disabled.");
-//        }
-
         $localVacancies = collect($localVacancies)
             ->take(50)
             ->keyBy(fn($v) => $v->source === 'hh' && $v->external_id ? $v->external_id : "local_{$v->id}");
-
 
 
         Log::info('Data fetch took:' . (microtime(true) - $start) . 's');

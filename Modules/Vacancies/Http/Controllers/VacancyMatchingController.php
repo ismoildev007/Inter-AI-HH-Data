@@ -65,9 +65,11 @@ class VacancyMatchingController extends Controller
                 $join->on('applications.vacancy_id', '=', 'match_results.vacancy_id')
                     ->where('applications.user_id', $user->id);
             })
+            ->leftJoin('vacancies', 'vacancies.id', '=', 'match_results.vacancy_id') // ✅ yangi qo‘shildi
             ->whereIn('match_results.resume_id', $resumeIds)
-            ->orderByRaw('CASE WHEN applications.id IS NULL THEN 0 ELSE 1 END ASC')
-            ->orderByDesc('match_results.score_percent')
+            ->orderByRaw("CASE WHEN vacancies.source = 'hh' THEN 0 ELSE 1 END ASC") // ✅ hh birinchi
+            ->orderByRaw("CASE WHEN applications.id IS NULL THEN 0 ELSE 1 END ASC") // ✅ hali ariza bermaganlar birinchi
+            ->orderByDesc('match_results.score_percent') // ✅ keyin score bo‘yicha kamayish tartibi
             ->select('match_results.*')
             ->get();
 
