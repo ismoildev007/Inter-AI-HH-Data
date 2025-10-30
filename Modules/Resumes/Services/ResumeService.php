@@ -86,10 +86,6 @@ class ResumeService
             You are an expert HR assistant AI.
             Analyze the following resume text and return a structured JSON object with the following fields only:
 
-            - "skills": A list of the candidate's hard and soft skills (only relevant skills, no duplicates).
-            - "strengths": 3–5 short bullet points describing the candidate's main strengths.
-            - "weaknesses": 2–4 short bullet points describing areas that might need improvement.
-            - "keywords": A list of important keywords or technologies mentioned in the resume (useful for search/matching).
             - "language": Detect the main language of the resume text (e.g., "en", "ru", "uz").
             - "title": From the resume, identify up to three (maximum 3) of the most specific and relevant professional titles that accurately represent the candidate’s main expertise and experience.
                 Rules for generating "title":
