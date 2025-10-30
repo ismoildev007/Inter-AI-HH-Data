@@ -21,19 +21,10 @@ class VacancyMatchingController extends Controller
         $this->service = $service;
     }
 
-    public function match(VacancyMatchRequest $request, VacancyMatchingService $service)
+    public function myMatches(VacancyMatchingService $service)
     {
-        $resume = auth()->user()
-            ->resumes()
-            ->where('is_primary', true)
-            ->firstOrFail();
         $user = Auth::user();
         $resumeIds = $user->resumes()->pluck('id');
-
-        // Log::info('Starting match for user', ['user_id' => auth()->id(), 'resume_id' => $resume->id]);
-        // MatchResumeJob::dispatch($resume, $resume->title ?? $resume->description);
-        // Log::info('Dispatched MatchResumeJob', ['user_id' => auth()->id(), 'resume_id' => $resume->id]);
-        $savedData = $service->matchResume($resume, $resume->title ?? $resume->description);
 
         $results = MatchResult::with('vacancy.employer')
             ->leftJoin('applications', function ($join) use ($user) {
@@ -46,19 +37,46 @@ class VacancyMatchingController extends Controller
             ->select('match_results.*')
             ->get();
 
+        if ($results->isEmpty()) {
+            $resume = $user->resumes()
+                ->where('is_primary', true)
+                ->first();
+
+            if ($resume) {
+                $service->matchResume($resume, $resume->title ?? $resume->description);
+
+                $results = MatchResult::with('vacancy.employer')
+                    ->leftJoin('applications', function ($join) use ($user) {
+                        $join->on('applications.vacancy_id', '=', 'match_results.vacancy_id')
+                            ->where('applications.user_id', $user->id);
+                    })
+                    ->whereIn('match_results.resume_id', $resumeIds)
+                    ->orderByRaw('CASE WHEN applications.id IS NULL THEN 0 ELSE 1 END ASC')
+                    ->orderByDesc('match_results.score_percent')
+                    ->select('match_results.*')
+                    ->get();
+            }
+        }
+
         return response()->json([
             'status'  => 'success',
-            'message' => 'Matching finished successfully.',
+            'message' => $results->isEmpty()
+                ? 'Hech qanday moslik topilmadi.'
+                : 'Matching finished successfully.',
             'data'    => VacancyMatchResource::collection($results),
         ]);
     }
 
-
-    public function myMatches()
+    public function match(VacancyMatchRequest $request, VacancyMatchingService $service)
     {
+        $resume = auth()->user()
+            ->resumes()
+            ->where('is_primary', true)
+            ->firstOrFail();
         $user = Auth::user();
-
         $resumeIds = $user->resumes()->pluck('id');
+
+        $service->matchResume($resume, $resume->title ?? $resume->description);
 
         $results = MatchResult::with('vacancy.employer')
             ->leftJoin('applications', function ($join) use ($user) {

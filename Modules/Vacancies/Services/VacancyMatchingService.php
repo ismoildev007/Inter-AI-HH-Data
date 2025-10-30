@@ -231,7 +231,6 @@ class VacancyMatchingService
             ->values();
 
         $tokens = $allVariants
-            // faqat vergul orqali bo‘lamiz
             ->flatMap(fn($v) => preg_split('/\s*,\s*/u', (string) $v))
             ->map(fn($w) => trim(preg_replace('/[\"\'«»“”]/u', '', $w)))
             ->filter(fn($w) => mb_strlen($w) >= 2)
@@ -254,11 +253,6 @@ class VacancyMatchingService
             ->values();
         $phraseArr = $phrases->all();
 
-        $tokensByLen = $tokens->sortByDesc(fn($t) => mb_strlen($t, 'UTF-8'))->values();
-        $mustAnd = array_slice($tokensByLen->all(), 0, 2);
-
-        Log::info('Searching vacancies for terms', ['terms' => $allVariants->all(), 'tokens' => $tokenArr]);
-
         $searchQuery = $latinQuery ?: $cyrilQuery;
 
         $tsTerms = array_merge(
@@ -279,8 +273,7 @@ class VacancyMatchingService
 
         $guessedCategory = null;
         try {
-            /** @var VacancyCategoryService $categorizer */
-            $categorizer = app(\Modules\TelegramChannel\Services\VacancyCategoryService::class);
+            $categorizer = app(VacancyCategoryService::class);
             $guessedCategory = $categorizer->categorize('', (string) ($resume->title ?? ''), (string) ($resume->description ?? ''), '');
             if (!is_string($guessedCategory) || mb_strtolower($guessedCategory, 'UTF-8') === 'other' || $guessedCategory === '') {
                 $guessedCategory = null;
@@ -440,11 +433,11 @@ class VacancyMatchingService
                 $vacId = $match['vacancy_id'] ?? null;
 
                 if ($vacId) {
-                    $vac = Vacancy::withoutGlobalScopes()->find($vacId);
+                    $vac = Db::table('vacancies')->withoutGlobalScopes()->find($vacId);
                 }
 
                 if (!$vac && isset($match['external_id'])) {
-                    $vac = Vacancy::where('source', 'hh')
+                    $vac = Db::table('vacancies')->where('source', 'hh')
                         ->where('external_id', $match['external_id'])
                         ->first();
 

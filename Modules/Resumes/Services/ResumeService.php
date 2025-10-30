@@ -169,6 +169,9 @@ class ResumeService
             : null;
 
         $finalCategory = null;
+        if ($finalCategory !== null) {
+            $resume->update(['category' => $finalCategory]);
+        }
         if ($categoryFromAi !== null && $categoryFromAi !== '') {
             foreach ($allowedCategoryLabels as $label) {
                 if (mb_strtolower($label, 'UTF-8') === mb_strtolower($categoryFromAi, 'UTF-8')) {
@@ -188,11 +191,6 @@ class ResumeService
                 }
             }
         }
-
-        if ($finalCategory !== null) {
-            $resume->update(['category' => $finalCategory]);
-        }
-
         if (!empty($analysis['cover_letter'])) {
             UserPreference::updateOrCreate(
                 ['user_id' => $resume->user_id],
