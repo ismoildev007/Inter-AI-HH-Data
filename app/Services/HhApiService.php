@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Modules\Users\Repositories\HhAccountRepositoryInterface;
 
 class HhApiService
 {
@@ -29,8 +30,8 @@ class HhApiService
             throw new \Exception("User does not have HH account connected.");
         }
 
-        // Ensure valid token
-        if ($hhAccount->expires_at->isPast()) {
+        // Ensure valid token (null-safe)
+        if ($hhAccount->expires_at && $hhAccount->expires_at->isPast()) {
             $this->refreshToken($hhAccount);
         }
 
@@ -166,24 +167,8 @@ class HhApiService
      */
     protected function refreshToken(HhAccount $account)
     {
-        $response = Http::asForm()->post('https://hh.ru/oauth/token', [
-            'grant_type'    => 'refresh_token',
-            'refresh_token' => $account->refresh_token,
-            'client_id'     => config('services.hh.client_id'),
-            'client_secret' => config('services.hh.client_secret'),
-        ]);
-
-        if ($response->failed()) {
-            Log::error('Failed to refresh HH token', ['response' => $response->json()]);
-            throw new \Exception("Failed to refresh HH token");
-        }
-
-        $data = $response->json();
-
-        $account->update([
-            'access_token'  => $data['access_token'],
-            'refresh_token' => $data['refresh_token'] ?? $account->refresh_token,
-            'expires_at'    => Carbon::now()->addSeconds($data['expires_in']),
-        ]);
+        /** @var HhAccountRepositoryInterface $repo */
+        $repo = app(HhAccountRepositoryInterface::class);
+        $repo->refreshToken($account);
     }
 }

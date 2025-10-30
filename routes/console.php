@@ -112,3 +112,27 @@ Schedule::command('app:send-notification-command')
 Schedule::command('users:trials:deactivate')
     ->daily()
     ->withoutOverlapping();
+
+// HH tokenlarini proaktiv yangilash (Users module)
+// Config:
+//   users.hh.refresh.window_hours (default: 6)
+//   users.hh.refresh.cron         (ixtiyoriy, masalan: '0 */6 * * *')
+try {
+    $window = (int) config('users.hh.refresh.window_hours', 6);
+    $cron = config('users.hh.refresh.cron');
+    $cmd = "hh:refresh-tokens --window={$window}";
+
+    if ($cron) {
+        Schedule::command($cmd)
+            ->cron($cron)
+            //->onOneServer()
+            ->withoutOverlapping();
+    } else {
+        Schedule::command($cmd)
+            ->hourly()
+            //->onOneServer()
+            ->withoutOverlapping();
+    }
+} catch (\Throwable $e) {
+    // Agar config hali merge bo'lmagan bo'lsa yoki modul yuklanmasa — schedule bosqichida yiqilmasin
+}

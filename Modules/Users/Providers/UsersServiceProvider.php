@@ -46,7 +46,9 @@ class UsersServiceProvider extends ServiceProvider
      */
     protected function registerCommands(): void
     {
-        // $this->commands([]);
+        $this->commands([
+            \Modules\Users\Console\Commands\RefreshHhTokensCommand::class,
+        ]);
     }
 
     /**
@@ -54,10 +56,7 @@ class UsersServiceProvider extends ServiceProvider
      */
     protected function registerCommandSchedules(): void
     {
-        // $this->app->booted(function () {
-        //     $schedule = $this->app->make(Schedule::class);
-        //     $schedule->command('inspire')->hourly();
-        // });
+        // Scheduling centralized in routes/console.php
     }
 
     /**
