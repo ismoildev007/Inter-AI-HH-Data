@@ -78,12 +78,7 @@ Schedule::command('autoapply:start')
     ->withoutOverlapping();
 // queue: autoapply — Horizon `--queue=autoapply` tinglab turadi (Horizon UI orqali sozlanadi)
 
-// TelegramChannel: source’larni bo‘lib‑bo‘lib dispatch qilish (round‑robin)
-Schedule::command('relay:run --once')
-    ->everyMinute()
-    //->onOneServer()
-    ->withoutOverlapping();
-// queue: telegram-relay (Modules\TelegramChannel\Jobs\SyncSourceChannelJob) — Horizon `telegram-relay` ni tinglaydi
+
 
 // Vakansiyalarni arxivlash (to‘g‘ridan‑to‘g‘ri DB)
 Schedule::command('telegram:vacancies:auto-archive')
@@ -152,3 +147,43 @@ try {
 } catch (\Throwable $e) {
     // Agar config hali merge bo'lmagan bo'lsa yoki modul yuklanmasa — schedule bosqichida yiqilmasin
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// -------------------------------------------------------
+
+// TelegramChannel: source’larni bo‘lib‑bo‘lib dispatch qilish (round‑robin)
+
+
+// Schedule::command('relay:run --once')
+//     ->everyMinute()
+//     ->withoutOverlapping();
+
+
+// queue: telegram-relay (Modules\TelegramChannel\Jobs\SyncSourceChannelJob) — Horizon `telegram-relay` ni tinglaydi
