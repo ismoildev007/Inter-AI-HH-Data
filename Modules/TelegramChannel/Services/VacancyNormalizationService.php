@@ -21,11 +21,12 @@ class VacancyNormalizationService
       throw new \RuntimeException('OPENAI_API_KEY is not configured.');
     }
 
-    // Build strict category list from our canonical categories (exclude "Other")
+    // Build strict category list from our canonical categories (INCLUDING "Other")
     try {
       /** @var \Modules\TelegramChannel\Services\VacancyCategoryService $catSvc */
       $catSvc = app(\Modules\TelegramChannel\Services\VacancyCategoryService::class);
-      $allowedCategoryLabels = $catSvc->getLabelsExceptOther();
+      $all = $catSvc->getCanonicalCategories(); // slug => label
+      $allowedCategoryLabels = array_values($all); // labels only, including 'Other'
     } catch (\Throwable $e) {
       $allowedCategoryLabels = [];
     }

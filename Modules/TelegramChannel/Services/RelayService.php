@@ -377,7 +377,9 @@ class RelayService
                     $aiCategory = (string) ($normalized['category'] ?? '');
                     $category = null;
                     try {
-                        $allowed = $this->categorizer->getLabelsExceptOther();
+                        // Include 'Other' in allowed labels (use canonical list)
+                        $allowedAssoc = $this->categorizer->getCanonicalCategories(); // slug => label
+                        $allowed = array_values($allowedAssoc);
                         foreach ($allowed as $label) {
                             if (mb_strtolower($label, 'UTF-8') === mb_strtolower($aiCategory, 'UTF-8')) {
                                 $category = $label;
