@@ -102,20 +102,14 @@ Schedule::command('telegram:session:soft-reset')
     ->withoutOverlapping();
 // queue kerak emas
 
-// 🔔 Matching and notification job
-// TEMP (testing): run every minute
+// 🔔 Nightly matching and notification job
 Schedule::command('app:send-notification-command')
-    ->everyMinute()
+    ->dailyAt('06:30')
     ->withoutOverlapping();
 
-// ORIGINAL schedule (restore later):
-// Schedule::command('app:send-notification-command')
-//     ->dailyAt('06:30')
-//     ->withoutOverlapping();
-//
-// Schedule::command('app:send-notification-command')
-//     ->dailyAt('18:30')
-//     ->withoutOverlapping();
+Schedule::command('app:send-notification-command')
+    ->dailyAt('18:30')
+    ->withoutOverlapping();
 
 // Foydalanuvchi trial davrini nazorat qiluvchi cron
 Schedule::command('users:trials:deactivate')
