@@ -23,6 +23,16 @@ class VacancyMatchResource extends JsonResource
             ->where('vacancy_id', $this->vacancy_id)
             ->exists();
 
+        // Build detail API link depending on source
+        $detailApi = null;
+        if ($vacancy) {
+            if (($vacancy->source ?? 'telegram') === 'telegram') {
+                $detailApi = url('api/v1/telegram/vacancies/' . $vacancy->id);
+            } elseif (($vacancy->source ?? '') === 'hh' && !empty($vacancy->external_id)) {
+                $detailApi = url('api/v1/hh/vacancies/' . $vacancy->external_id);
+            }
+        }
+
         $vacancyData = [
             'id'          => $vacancy?->id,
             'source'      => $vacancy->source ?? 'telegram',
@@ -34,6 +44,7 @@ class VacancyMatchResource extends JsonResource
             'published_at' => isset($raw['published_at'])
                 ? Carbon::parse($raw['published_at'])->format('Y-m-d H:i:s')
                 : null,
+            'detail_api'  => $detailApi,
         ];
 
         if ($vacancy?->source === 'telegram') {
