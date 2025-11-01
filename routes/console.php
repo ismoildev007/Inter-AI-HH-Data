@@ -178,9 +178,9 @@ try {
 // TelegramChannel: source’larni bo‘lib‑bo‘lib dispatch qilish (round‑robin)
 
 
-// Schedule::command('relay:run --once')
-//     ->everyMinute()
-//     ->withoutOverlapping();
+Schedule::command('relay:run --once')
+    ->everyMinute()
+    ->withoutOverlapping();
 
 
 // queue: telegram-relay (Modules\TelegramChannel\Jobs\SyncSourceChannelJob) — Horizon `telegram-relay` ni tinglaydi
