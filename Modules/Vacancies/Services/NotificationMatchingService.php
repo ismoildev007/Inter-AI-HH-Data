@@ -178,6 +178,15 @@ class NotificationMatchingService
         Log::info('hh vacancies count: ' . count($hhVacancies['items'] ?? []));
 
         $hhItems = $hhVacancies['items'] ?? [];
+
+        // Exclude HH vacancies that were already matched for this resume earlier
+        $existingHhExternalIds = DB::table('match_results as mr')
+            ->join('vacancies as v', 'v.id', '=', 'mr.vacancy_id')
+            ->where('mr.resume_id', $resume->id)
+            ->where('v.source', 'hh')
+            ->pluck('v.external_id')
+            ->filter()
+            ->all();
         foreach ($hhItems as $idx => $item) {
             $extId = $item['id'] ?? null;
             if (!$extId || $localVacancies->has($extId)) continue;
@@ -203,7 +212,9 @@ class NotificationMatchingService
             ];
         }
         $toFetch = collect($hhItems)
-            ->filter(fn($item) => isset($item['id']) && !$localVacancies->has($item['id']))
+            ->filter(fn($item) => isset($item['id'])
+                && !$localVacancies->has($item['id'])
+                && !in_array($item['id'], $existingHhExternalIds, true))
             ->take(10);
         foreach ($toFetch as $idx =>  $item) {
             $extId = $item['id'] ?? null;
