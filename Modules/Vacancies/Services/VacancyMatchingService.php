@@ -104,7 +104,6 @@ class VacancyMatchingService
         $isTech = in_array($resumeCategory, $techCategories, true);
 
         // --- 3. SQL tayyorlash
-        // --- 3. SQL tayyorlash
         $baseSql = "
     SELECT
         v.id, v.title, v.description, v.source, v.external_id, v.category,
@@ -121,6 +120,14 @@ class VacancyMatchingService
 
         $params = [$tsQuery, $resume->id];
 
+// 🔎 Loglash: tsQuery qanday bo‘lganini ko‘rsatamiz
+        Log::info('🔍 [SEARCH QUERY GENERATED]', [
+            'tsQuery' => $tsQuery,
+            'tokens' => $tokens->all(),
+            'phrases' => $phrases->all(),
+            'query_variants' => $allVariants->all(),
+        ]);
+
         if ($isTech) {
             // 👇 Agar resume texnik kategoriya bo‘lsa, title orqali qidirish
             $titleCondition = collect($tokens)
@@ -129,22 +136,49 @@ class VacancyMatchingService
 
             if ($titleCondition) {
                 $baseSql .= " AND ($titleCondition)";
-                Log::info("💻 [TECH MODE] Title orqali qidirish ishlatilmoqda: {$titleCondition}");
+
+                // 🧠 Loglash: title orqali qanday shart yuborilayotganini yozamiz
+                Log::info('💻 [TECH MODE] Title orqali qidirish ishlatilmoqda', [
+                    'category' => $resumeCategory,
+                    'title_condition' => $titleCondition,
+                    'tsQuery_used' => $tsQuery,
+                ]);
+            } else {
+                Log::info('💻 [TECH MODE] Tokenlar bo‘sh, title condition yaratilmagan', [
+                    'category' => $resumeCategory,
+                ]);
             }
         } else {
             // 👇 Texnik bo‘lmasa — category orqali cheklash
             if ($resumeCategory) {
                 $baseSql .= " AND v.category = ?";
                 $params[] = $resumeCategory;
-                Log::info("📊 [CATEGORY FILTER] Used '{$resumeCategory}'");
+                Log::info("📊 [CATEGORY FILTER] Resume kategoriyasi ishlatildi", [
+                    'category' => $resumeCategory,
+                    'tsQuery_used' => $tsQuery,
+                ]);
             } elseif ($guessedCategory) {
                 $baseSql .= " AND v.category = ?";
                 $params[] = $guessedCategory;
-                Log::info("📊 [GUESSED CATEGORY USED] '{$guessedCategory}'");
+                Log::info("📊 [GUESSED CATEGORY USED] AI taxmin qilgan kategoriya ishlatildi", [
+                    'guessedCategory' => $guessedCategory,
+                    'tsQuery_used' => $tsQuery,
+                ]);
+            } else {
+                Log::info("📊 [CATEGORY FILTER] Hech qanday category filter qo‘llanmagan", [
+                    'tsQuery_used' => $tsQuery,
+                ]);
             }
         }
 
         $baseSql .= " ORDER BY rank DESC, id DESC LIMIT 50";
+
+// 🔧 Yakuniy SQL va parametrlarni ham logga yozamiz
+        Log::info('🧾 [FINAL SQL BUILT]', [
+            'sql' => $baseSql,
+            'params' => $params,
+        ]);
+
 
         // --- 4. ASINXRON so‘rovlar
         $promises = [
