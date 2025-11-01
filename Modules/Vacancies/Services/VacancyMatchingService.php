@@ -104,30 +104,46 @@ class VacancyMatchingService
         $isTech = in_array($resumeCategory, $techCategories, true);
 
         // --- 3. SQL tayyorlash
+        // --- 3. SQL tayyorlash
         $baseSql = "
-        SELECT
-            v.id, v.title, v.description, v.source, v.external_id, v.category,
-            CASE
-                WHEN v.category IN ('IT and Software Development', 'Data Science and Analytics', 'QA and Testing', 'DevOps and Cloud Engineering', 'UI/UX and Product Design')
-                THEN ts_rank_cd(to_tsvector('simple', coalesce(v.description, '')), websearch_to_tsquery('simple', ?))
-                ELSE 0
-            END AS rank
-        FROM vacancies v
-        WHERE v.status = 'publish'
-          AND v.source = 'telegram'
-          AND v.id NOT IN (SELECT vacancy_id FROM match_results WHERE resume_id = ?)
-    ";
+    SELECT
+        v.id, v.title, v.description, v.source, v.external_id, v.category,
+        CASE
+            WHEN v.category IN ('IT and Software Development', 'Data Science and Analytics', 'QA and Testing', 'DevOps and Cloud Engineering', 'UI/UX and Product Design')
+            THEN ts_rank_cd(to_tsvector('simple', coalesce(v.description, '') || ' ' || coalesce(v.title, '')), websearch_to_tsquery('simple', ?))
+            ELSE 0
+        END AS rank
+    FROM vacancies v
+    WHERE v.status = 'publish'
+      AND v.source = 'telegram'
+      AND v.id NOT IN (SELECT vacancy_id FROM match_results WHERE resume_id = ?)
+";
+
         $params = [$tsQuery, $resume->id];
 
-        if ($resumeCategory) {
-            $baseSql .= " AND v.category = ?";
-            $params[] = $resumeCategory;
-            Log::info("📊 [CATEGORY FILTER] Used '{$resumeCategory}'");
-        } elseif ($guessedCategory) {
-            $baseSql .= " AND v.category = ?";
-            $params[] = $guessedCategory;
-            Log::info("📊 [GUESSED CATEGORY USED] '{$guessedCategory}'");
+        if ($isTech) {
+            // 👇 Agar resume texnik kategoriya bo‘lsa, title orqali qidirish
+            $titleCondition = collect($tokens)
+                ->map(fn($t) => "LOWER(v.title) LIKE '%" . addslashes(mb_strtolower($t)) . "%'")
+                ->implode(' OR ');
+
+            if ($titleCondition) {
+                $baseSql .= " AND ($titleCondition)";
+                Log::info("💻 [TECH MODE] Title orqali qidirish ishlatilmoqda: {$titleCondition}");
+            }
+        } else {
+            // 👇 Texnik bo‘lmasa — category orqali cheklash
+            if ($resumeCategory) {
+                $baseSql .= " AND v.category = ?";
+                $params[] = $resumeCategory;
+                Log::info("📊 [CATEGORY FILTER] Used '{$resumeCategory}'");
+            } elseif ($guessedCategory) {
+                $baseSql .= " AND v.category = ?";
+                $params[] = $guessedCategory;
+                Log::info("📊 [GUESSED CATEGORY USED] '{$guessedCategory}'");
+            }
         }
+
         $baseSql .= " ORDER BY rank DESC, id DESC LIMIT 50";
 
         // --- 4. ASINXRON so‘rovlar
