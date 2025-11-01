@@ -96,7 +96,7 @@ class TransactionController extends Controller
 
         $stats = [
             'total' => (clone $baseAggregate)->count(),
-            'success' => (clone $baseAggregate)->where('payment_status', 'success')->count(),
+            'active' => (clone $baseAggregate)->where('payment_status', 'active')->count(),
             'pending' => (clone $baseAggregate)->where('payment_status', 'pending')->count(),
             'failed' => (clone $baseAggregate)->where('payment_status', 'failed')->count(),
         ];

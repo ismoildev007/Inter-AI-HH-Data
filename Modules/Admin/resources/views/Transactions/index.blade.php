@@ -32,9 +32,9 @@
                 <span class="hint">All-time processed</span>
             </div>
             <div class="transactions-stat-card">
-                <span class="label">Successful</span>
-                <span class="value text-success">{{ number_format($stats['success'] ?? 0) }}</span>
-                <span class="hint">Payment status success</span>
+                <span class="label">Active</span>
+                <span class="value text-success">{{ number_format($stats['active'] ?? 0) }}</span>
+                <span class="hint">Payment status active</span>
             </div>
             <div class="transactions-stat-card">
                 <span class="label">Pending</span>

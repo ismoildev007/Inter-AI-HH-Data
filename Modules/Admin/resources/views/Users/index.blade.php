@@ -534,6 +534,7 @@
                         <th class="text-muted">User</th>
                         <th class="text-muted">Email</th>
                         <th class="text-muted">Joined</th>
+                        <th class="text-muted">Actions</th>
                       
                     </tr>
                 </thead>
@@ -571,6 +572,15 @@
                                         <span>{{ $u->created_at->diffForHumans() }}</span>
                                     @endif
                                 </div>
+                            </td>
+                            <td data-label="Actions" class="users-action">
+                                <form method="POST" action="{{ route('admin.users.destroy', $u) }}" onsubmit="event.stopPropagation(); return confirm('Foydalanuvchini o\'chirmoqchimisiz?');" onclick="event.stopPropagation();">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="btn btn-sm btn-danger">
+                                        <i class="feather-trash-2"></i> Delete
+                                    </button>
+                                </form>
                             </td>
 
                         </tr>

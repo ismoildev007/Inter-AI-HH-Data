@@ -43,6 +43,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('users/admin-check/{user}/mark-not-working', [UserController::class, 'adminCheckMarkNotWorking'])->name('users.admin_check.mark_not_working');
         Route::post('users/admin-check/{user}/verify', [UserController::class, 'adminCheckVerify'])->name('users.admin_check.verify');
         Route::get('users/admin-check/{user}', [UserController::class, 'adminCheckShow'])->name('users.admin_check.show');
+        Route::delete('users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
         Route::get('users/{id}', [UserController::class, 'show'])->name('users.show');
         Route::get('users/{user}/vacancies', [UserController::class, 'vacancies'])->name('users.vacancies.index');
         Route::get('users/{user}/subscriptions', [UserController::class, 'subscriptions'])->name('users.subscriptions.index');

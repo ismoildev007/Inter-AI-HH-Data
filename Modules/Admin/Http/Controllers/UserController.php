@@ -414,4 +414,22 @@ class UserController extends Controller
             'methods' => $methods,
         ]);
     }
+
+    /**
+     * Delete user.
+     */
+    public function destroy(User $user)
+    {
+        try {
+            $user->delete();
+
+            return redirect()
+                ->route('admin.users.index')
+                ->with('status', 'Foydalanuvchi muvaffaqiyatli o\'chirildi.');
+        } catch (\Throwable $e) {
+            return redirect()
+                ->back()
+                ->with('error', 'O\'chirishda xatolik yuz berdi.');
+        }
+    }
 }
