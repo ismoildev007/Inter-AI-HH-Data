@@ -21,6 +21,16 @@ class VacancyNormalizationService
       throw new \RuntimeException('OPENAI_API_KEY is not configured.');
     }
 
+    // Build strict category list from our canonical categories (exclude "Other")
+    try {
+      /** @var \Modules\TelegramChannel\Services\VacancyCategoryService $catSvc */
+      $catSvc = app(\Modules\TelegramChannel\Services\VacancyCategoryService::class);
+      $allowedCategoryLabels = $catSvc->getLabelsExceptOther();
+    } catch (\Throwable $e) {
+      $allowedCategoryLabels = [];
+    }
+    $allowedCategoriesJson = json_encode($allowedCategoryLabels, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+
     $prompt = <<<PROMPT
 You are an assistant that cleans and standardizes job vacancy posts into a fixed JSON schema. Always read the full title and description before you format the vacancy.
 
@@ -40,7 +50,8 @@ Schema:
     "phones": ["+998...", "..."],
     "telegram_usernames": ["@user", "@user2"]
   },
-  "description": "string"
+  "description": "string",
+  "category": "string"
 }
 
 Field rules:
@@ -54,6 +65,11 @@ Field rules:
   - Put ALL remaining vacancy information (responsibilities, requirements, skills, salary, currency, bonuses, schedule, shift, format, contract, trial period, experience, location, deadlines, how to apply, preferred contact method/time, languages, start date, etc.).
   - Preserve numbers and currency exactly as in text.
   - Write neatly with proper punctuation, commas, spaces, and line breaks.
+
+- category:
+  - Choose exactly ONE label from the allowed list below that best matches the vacancy.
+  - Output the category as an EXACT string from the list — do not invent new labels and do not choose "Other".
+  - Allowed categories (labels): {$allowedCategoriesJson}
 
 Input text:
 """

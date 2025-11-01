@@ -372,14 +372,22 @@ class RelayService
                 }
 
 
-                // Determine category (from cache if present; else categorize now)
+                // Determine category: trust AI output strictly against allowed labels; no heuristic fallback
                 if (!is_string($category) || $category === '') {
-                    $category = $this->categorizer->categorize(
-                        (string) ($normalized['category'] ?? ''),
-                        (string) ($normalized['title'] ?? ''),
-                        (string) ($normalized['description'] ?? ''),
-                        (string) ($normalized['category_raw'] ?? '')
-                    );
+                    $aiCategory = (string) ($normalized['category'] ?? '');
+                    $category = null;
+                    try {
+                        $allowed = $this->categorizer->getLabelsExceptOther();
+                        foreach ($allowed as $label) {
+                            if (mb_strtolower($label, 'UTF-8') === mb_strtolower($aiCategory, 'UTF-8')) {
+                                $category = $label;
+                                break;
+                            }
+                        }
+                    } catch (\Throwable $e) {
+                        // If allowed list not available, keep null
+                        $category = $aiCategory !== '' ? $aiCategory : null;
+                    }
                 }
 
                 // Store normalization+category to cache for retry reuse
