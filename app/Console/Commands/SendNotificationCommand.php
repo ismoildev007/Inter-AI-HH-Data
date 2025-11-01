@@ -44,6 +44,9 @@ class SendNotificationCommand extends Command
             $this->line("👤 Checking matches for user: {$user->first_name}");
 
             $totalNewMatches = 0;
+            $localList = [];
+            $hhList = [];
+            $seenVacancyIds = [];
 
             foreach ($user->resumes as $resume) {
                 $this->line("   🧠 Matching resume #{$resume->id}: {$resume->title}");
@@ -64,6 +67,23 @@ class SendNotificationCommand extends Command
                 if ($newMatches->isNotEmpty()) {
                     $totalNewMatches += $newMatches->count();
                     $this->info("      ✅ New matches for resume #{$resume->id}: {$newMatches->count()}");
+
+                    // Build per-source short lists for Telegram message (max 10 + 10)
+                    foreach ($newMatches as $match) {
+                        $vac = $match->vacancy;
+                        if (!$vac) { continue; }
+                        if (in_array($vac->id, $seenVacancyIds, true)) { continue; }
+                        $seenVacancyIds[] = $vac->id;
+
+                        $title = $vac->title ?? '—';
+                        $title = $this->cleanTitle($title);
+
+                        if ($vac->source === 'telegram' && count($localList) < 10) {
+                            $localList[] = $title;
+                        } elseif ($vac->source === 'hh' && count($hhList) < 10) {
+                            $hhList[] = $title;
+                        }
+                    }
 
                     MatchResult::whereIn('id', $newMatches->pluck('id'))
                         ->update(['notified_at' => now()]);
@@ -99,6 +119,25 @@ class SendNotificationCommand extends Command
                             ]),
                         ]);
 
+                    // Compose optional detailed lists (titles) per source
+                    $sections = [];
+                    if (!empty($localList)) {
+                        $header = $user->language === 'ru' ? 'Telegram вакансии' : ($user->language === 'uz' ? 'Telegram vakansiyalar' : 'Telegram vacancies');
+                        $lines = [];
+                        foreach ($localList as $i => $t) { $lines[] = ($i + 1) . '. ' . $t; }
+                        $sections[] = $header . ":\n" . implode("\n", $lines);
+                    }
+                    if (!empty($hhList)) {
+                        $header = $user->language === 'ru' ? 'HH вакансии' : ($user->language === 'uz' ? 'HH vakansiyalar' : 'HH vacancies');
+                        $lines = [];
+                        foreach ($hhList as $i => $t) { $lines[] = ($i + 1) . '. ' . $t; }
+                        $sections[] = $header . ":\n" . implode("\n", $lines);
+                    }
+
+                    if (!empty($sections)) {
+                        $message .= "\n\n" . implode("\n\n", $sections);
+                    }
+
                     try {
                         $telegram->sendMessage([
                             'chat_id'      => $user->chat_id,
@@ -121,5 +160,15 @@ class SendNotificationCommand extends Command
             }
         }
         Log::info('✅ Matching and notifications completed.');
+    }
+
+    private function cleanTitle(string $text): string
+    {
+        $text = strip_tags($text);
+        $text = preg_replace('/\s+/u', ' ', $text);
+        // Remove most Markdown control chars to avoid formatting issues
+        $text = str_replace(["*", "_", "`"], '', $text);
+        $text = trim($text);
+        return mb_strlen($text) > 70 ? (mb_substr($text, 0, 70) . '…') : $text;
     }
 }
