@@ -163,10 +163,8 @@ class ResumeService
             : null;
 
         $finalCategory = null;
-        if ($finalCategory !== null) {
-            $resume->update(['category' => $finalCategory]);
-        }
         if ($categoryFromAi !== null && $categoryFromAi !== '') {
+            // Exact label match (case-insensitive) against allowed labels
             foreach ($allowedCategoryLabels as $label) {
                 if (mb_strtolower($label, 'UTF-8') === mb_strtolower($categoryFromAi, 'UTF-8')) {
                     $finalCategory = $label;
@@ -174,16 +172,26 @@ class ResumeService
                 }
             }
 
+            // Try to interpret as slug or alternate form
             if ($finalCategory === null) {
                 $maybeLabel = $categoryService->fromSlug($categoryFromAi);
                 if ($maybeLabel && in_array($maybeLabel, $allowedCategoryLabels, true)) {
                     $finalCategory = $maybeLabel;
                 }
-                $inferred = $categoryService->categorize(null, $normalizedTitle, $resumeText);
-                if ($inferred && in_array($inferred, $allowedCategoryLabels, true)) {
-                    $finalCategory = $inferred;
-                }
             }
+        }
+
+        // Fallback: infer from title/description if AI value invalid or missing
+        if ($finalCategory === null) {
+            $inferred = $categoryService->categorize(null, $normalizedTitle, $resumeText);
+            if ($inferred && in_array($inferred, $allowedCategoryLabels, true)) {
+                $finalCategory = $inferred;
+            }
+        }
+
+        // Persist the category if determined
+        if ($finalCategory !== null) {
+            $resume->update(['category' => $finalCategory]);
         }
         if (!empty($analysis['cover_letter'])) {
             UserPreference::updateOrCreate(
