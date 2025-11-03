@@ -138,8 +138,6 @@ class VacancyMatchingService
             )
             SELECT DISTINCT ON (id) *
             FROM combined
-            ORDER BY id, rank DESC
-            LIMIT 50
         ";
 
         $params = [$tsQuery, $resume->id];
