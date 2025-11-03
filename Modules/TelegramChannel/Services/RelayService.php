@@ -26,6 +26,24 @@ class RelayService
         private VacancyCategoryService $categorizer,
     ) {}
 
+    /**
+     * Increment per-minute OpenAI call metrics for relay (cls|norm).
+     * Uses Cache::add to set TTL on first write, then increment.
+     */
+    private function incOaiMetric(string $op): void
+    {
+        try {
+            $ttl = (int) config('telegramchannel_relay.metrics.ttl_sec', 7200);
+            $bucket = date('YmdHi'); // per-minute bucket
+            $key = 'oai:relay:' . $op . ':' . $bucket;
+            // ensure key exists with TTL, then increment
+            \Cache::add($key, 0, $ttl > 0 ? $ttl : 7200);
+            \Cache::increment($key);
+        } catch (\Throwable $e) {
+            // metrics are best-effort; ignore failures
+        }
+    }
+
     public function syncOneByUsername(string $peer): int
     {
         // DB da shu kanal bor deb faraz qilamiz (username yoki channel_id orqali)
@@ -173,7 +191,15 @@ class RelayService
             // Track highest successfully SENT message id (for optional retry policy)
             $maxDeliveredId = $lastId;
             $seenIds = [];
+            // Optional per-run GPT call cap (classification + normalization)
+            $gptCap = (int) config('telegramchannel_relay.limits.max_gpt_calls_per_run', 0); // 0 = unlimited
+            $gptCalls = 0;
+
             foreach ($messages as $m) {
+                // If throttled/FLOOD_WAIT detected during this batch, stop processing further messages
+                if ($stopLoop || $floodWait > 0) {
+                    break;
+                }
                 $id = (int) ($m['id'] ?? 0);
                 if ($id <= 0) continue;
                 if (isset($seenIds[$id])) {
@@ -269,12 +295,61 @@ class RelayService
 
                 // Note: lock for dedupe will be acquired right before sending
 
-                // Classify content to ensure it's an employer vacancy
-                try {
-                    $cls = $this->classifier->classify($text);
-                } catch (\Throwable $e) {
-                    Log::error('Classification error', ['err' => $e->getMessage()]);
-                    continue; // skip on error; keep loop running
+                // Classify content to ensure it's an employer vacancy (with cache + error cache)
+                $cls = null;
+                $clsUsedCache = false;
+                $clsCacheKey = null;
+                $clsErrKey = null;
+                $clsCfg = (array) config('telegramchannel_relay.cache.classification', []);
+                $clsCacheEnabled = (bool) ($clsCfg['enabled'] ?? true);
+                $clsTtlSec = (int) ($clsCfg['ttl_sec'] ?? 172800);
+                $errCfg = (array) config('telegramchannel_relay.cache.error', []);
+                $errTtlSec = (int) ($errCfg['ttl_sec'] ?? 7200);
+
+                $model = (string) config('telegramchannel.openai_model', env('OPENAI_MODEL', 'gpt-4.1-nano'));
+                if ($rawHash !== '') {
+                    $clsCacheKey = 'tg:cls:v1:' . $rawHash . ':' . $model;
+                    $clsErrKey   = 'tg:oai:err:cls:v1:' . $rawHash . ':' . $model;
+                }
+
+                // Skip if recent error cached
+                if ($clsErrKey && Cache::has($clsErrKey)) {
+                    continue;
+                }
+
+                // Try cache
+                if ($clsCacheEnabled && $clsCacheKey) {
+                    try {
+                        $c = Cache::get($clsCacheKey);
+                        if (is_array($c) && isset($c['label'])) {
+                            $cls = $c;
+                            $clsUsedCache = true;
+                        }
+                    } catch (\Throwable $e) {
+                        // ignore cache read failure
+                    }
+                }
+
+                // Not cached — call classifier (respect per-run GPT cap)
+                if (!$cls) {
+                    if ($gptCap > 0 && $gptCalls >= $gptCap) {
+                        $stopLoop = true;
+                        break;
+                    }
+                    try {
+                        // metrics: count classification API calls per minute bucket
+                        $this->incOaiMetric('cls');
+                        $cls = $this->classifier->classify($text);
+                        $gptCalls++;
+                        if ($clsCacheEnabled && $clsCacheKey) {
+                            try { Cache::put($clsCacheKey, $cls, $clsTtlSec); } catch (\Throwable $e) {}
+                        }
+                    } catch (\Throwable $e) {
+                        Log::error('Classification error', ['err' => $e->getMessage()]);
+                        // error-result cache to avoid repeated failures for the same content
+                        if ($clsErrKey) { try { Cache::put($clsErrKey, 1, $errTtlSec); } catch (\Throwable $ie) {} }
+                        continue; // skip on error; keep loop running
+                    }
                 }
                 $threshold = (float) config('telegramchannel_relay.filtering.classification_threshold', 0.8);
                 if (($cls['label'] ?? '') !== 'employer_vacancy' || (float) ($cls['confidence'] ?? 0) < $threshold) {
@@ -304,10 +379,23 @@ class RelayService
                     }
                 }
                 if (!$normalized) {
+                    // Skip if recent normalization error cached
+                    $normErrKey = $normCacheKey ? ('tg:oai:err:norm:v1:' . $rawHash . ':' . $model) : null;
+                    if ($normErrKey && Cache::has($normErrKey)) {
+                        continue;
+                    }
                     try {
+                        if ($gptCap > 0 && $gptCalls >= $gptCap) {
+                            $stopLoop = true;
+                            break;
+                        }
+                        // metrics: count normalization API calls per minute bucket
+                        $this->incOaiMetric('norm');
                         $normalized = $this->normalizer->normalize($text, '@'.$plainSource, $id);
+                        $gptCalls++;
                     } catch (\Throwable $e) {
                         Log::error('Normalization error', ['err' => $e->getMessage()]);
+                        if ($normErrKey) { try { Cache::put($normErrKey, 1, $errTtlSec); } catch (\Throwable $ie) {} }
                         continue; // skip on error
                     }
                 }

@@ -4,6 +4,7 @@ namespace Modules\TelegramChannel\Services;
 
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Modules\TelegramChannel\Support\ContentFingerprint;
 
 class VacancyClassificationService
 {
@@ -43,6 +44,10 @@ Text:
 Return JSON like: {"label":"employer_vacancy","confidence":0.88,"language":"uz"}
 PROMPT;
 
+        $maxConf  = (int) config('telegramchannel_relay.openai.classification_max_tokens', 9000);
+        $hardConf = (int) config('telegramchannel_relay.openai.classification_hard_cap', 10000);
+        $maxTokens = max(1, min($maxConf, $hardConf));
+
         $response = Http::withToken($apiKey)
             ->timeout(60)
             ->retry(3, fn($attempt) => [500, 2000, 5000][$attempt - 1] ?? 5000)
@@ -53,11 +58,34 @@ PROMPT;
                     ['role' => 'user', 'content' => $prompt],
                 ],
                 'temperature' => 0.1,
+                // Bound output size by config (small JSON)
+                'max_tokens' => $maxTokens,
             ]);
 
         if ($response->failed()) {
             Log::error('Vacancy classification failed', ['status' => $response->status(), 'body' => $response->body()]);
             throw new \RuntimeException('OpenAI classification request failed: ' . $response->status());
+        }
+
+        // Optional token usage logging
+        if ((bool) config('telegramchannel_relay.metrics.log_usage', true)) {
+            try {
+                $usage = (array) $response->json('usage', []);
+                $finish = (string) $response->json('choices.0.finish_reason', '');
+                Log::info('OpenAI usage (relay)', [
+                    'op' => 'classification',
+                    'model' => $model,
+                    'prompt_tokens' => (int) ($usage['prompt_tokens'] ?? 0),
+                    'completion_tokens' => (int) ($usage['completion_tokens'] ?? 0),
+                    'total_tokens' => (int) ($usage['total_tokens'] ?? 0),
+                    'max_tokens' => $maxTokens,
+                    'finish' => $finish,
+                    'hash' => ContentFingerprint::raw($rawText),
+                    'minute' => date('Y-m-d H:i'),
+                ]);
+            } catch (\Throwable $e) {
+                // best-effort only
+            }
         }
 
         $content = (string) $response->json('choices.0.message.content', '');

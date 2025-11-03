@@ -1,6 +1,34 @@
 <?php
 
 return [
+    // Caching for GPT operations used by RelayService
+    'cache' => [
+        'classification' => [
+            'enabled' => true,
+            // Cache classification result (label, confidence, language)
+            'ttl_sec' => env('TG_RELAY_CLASSIFICATION_TTL', 172800), // 2 days
+        ],
+        'normalization' => [
+            'enabled' => true,
+            'ttl_sec' => env('TG_RELAY_NORMALIZATION_TTL', 86400), // 1 day
+        ],
+        // Cache to avoid repeated failures on the same content
+        'error' => [
+            'enabled' => true,
+            'ttl_sec' => env('TG_RELAY_ERROR_TTL', 7200), // 2 hours
+        ],
+    ],
+
+    // OpenAI token limits (RelayService-related services only)
+    'openai' => [
+        // Classification: short JSON, keep small
+        'classification_max_tokens' => 9000,
+        'classification_hard_cap'   => 10000,
+
+        // Normalization: richer JSON; base + hard cap
+        'normalization_max_tokens' => 9000,
+        'normalization_hard_cap'   => 10000,
+    ],
     // Filtering and dedupe policies
     'filtering' => [
         'use_channel_rules' => true,
@@ -155,6 +183,17 @@ return [
         // If true, do NOT advance last_message_id past the last successfully sent message.
         // This makes failed sends reprocessed on the next run (safe retry), at the cost of potential reprocessing.
         'reprocess_on_send_failure' => true,
+    ],
+    // Additional safety limits and counters (RelayService only)
+    'limits' => [
+        // Max number of GPT calls (classification + normalization) per run. 0 = unlimited.
+        'max_gpt_calls_per_run' => env('TG_RELAY_MAX_GPT_PER_RUN', 0),
+    ],
+    'metrics' => [
+        // TTL for per-minute OpenAI counters
+        'ttl_sec' => env('TG_RELAY_METRICS_TTL', 7200),
+        // Detailed per-call token usage logging (prompt/completion/total)
+        'log_usage' => true,
     ],
     // Dispatch policy: round-robin per minute to smooth load
     'dispatch' => [
