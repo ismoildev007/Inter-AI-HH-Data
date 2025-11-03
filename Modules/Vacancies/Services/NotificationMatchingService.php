@@ -147,6 +147,7 @@ class NotificationMatchingService
                 $qb->select('id', 'title', 'description', 'source', 'external_id', 'category', DB::raw('0 as rank'));
             }
 
+            // 🧩 Kategoriya bo‘yicha qidiruv
             if ($withCategory) {
                 if ($resumeCategory) {
                     $count = DB::table('vacancies')
@@ -154,6 +155,7 @@ class NotificationMatchingService
                         ->where('source', 'telegram')
                         ->where('category', $resumeCategory)
                         ->count();
+
                     Log::info("📊 [CATEGORY] {$resumeCategory} → {$count} vacancies.");
                     $qb->where('category', $resumeCategory);
                 } elseif ($guessedCategory) {
@@ -164,9 +166,39 @@ class NotificationMatchingService
                 }
             }
 
+            // 🔍 Agar tokens mavjud bo‘lsa, title orqali qidiruv natijasini ham log qilamiz
+            if ($tokens->isNotEmpty()) {
+                try {
+                    $likeTokens = $tokens->take(10)->map(fn($t) => "%{$t}%")->all();
+                    $titleCount = DB::table('vacancies')
+                        ->where('status', 'publish')
+                        ->where('source', 'telegram')
+                        ->where(function ($q) use ($likeTokens) {
+                            foreach ($likeTokens as $pattern) {
+                                $q->orWhere('title', 'ILIKE', $pattern)
+                                    ->orWhere('description', 'ILIKE', $pattern);
+                            }
+                        })
+                        ->count();
+
+                    Log::info('📈 [TITLE SEARCH RESULT]', [
+                        'resume_id' => $resume->id,
+                        'token_count' => $tokens->count(),
+                        'vacancy_count' => $titleCount,
+                        'tokens' => $tokens->all(),
+                    ]);
+                } catch (\Throwable $e) {
+                    Log::error('❌ [TITLE SEARCH ERROR]', [
+                        'resume_id' => $resume->id,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+            }
+
             Log::info("✅ [BUILD_LOCAL] Resume {$resume->id} (TECH=" . ($isTech ? 'YES' : 'NO') . ")");
             return $qb->orderByDesc('rank')->orderByDesc('id');
         };
+
 
         $localVacancies = collect($buildLocal(true)->limit(10)->get())
             ->take(10)
