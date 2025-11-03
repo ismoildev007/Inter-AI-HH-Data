@@ -13,7 +13,7 @@ class AutoArchiveVacanciesCommand extends Command
 
     public function handle(): int
     {
-        $days = (int) config('telegramchannel_relay.dedupe.auto_archive_days', 7);
+        $days = (int) config('telegramchannel_relay.dedupe.auto_archive_days', 60);
         if ($days <= 0) {
             $this->warn('Auto-archive disabled (days <= 0).');
             return self::SUCCESS;
