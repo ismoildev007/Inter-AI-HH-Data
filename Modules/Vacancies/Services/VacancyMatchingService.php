@@ -126,7 +126,6 @@ class VacancyMatchingService
         Log::info('🔍 [SEARCH QUERY GENERATED]', [
             'tsQuery' => $tsQuery,
             'tokens' => $tokens->all(),
-            'phrases' => $phrases->all(),
             'query_variants' => $allVariants->all(),
         ]);
 
