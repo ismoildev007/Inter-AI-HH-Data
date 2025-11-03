@@ -35,7 +35,7 @@ class VacancyMatchingService
         Log::info('🚀 Job started', ['resume_id' => $resume->id, 'query' => $query]);
         $start = microtime(true);
 
-// --- 1. Query normalization
+        // --- 1. Query normalization
         $latinQuery = TranslitHelper::toLatin($query);
         $cyrilQuery = TranslitHelper::toCyrillic($query);
         $translator = new GoogleTranslate();
@@ -53,9 +53,8 @@ class VacancyMatchingService
             ->filter()
             ->values();
 
-// --- 2. Vergul bo‘yicha ajratish
         $splitByComma = fn($v) => preg_split('/\s*,\s*/u', (string) $v);
-        $cleanText = fn($w) => trim(preg_replace('/[\"\'«»“”]/u', '', $w));
+        $cleanText = fn($w) => mb_strtolower(trim(preg_replace('/[\"\'«»“”]/u', '', $w)), 'UTF-8');
 
         $tokens = $allVariants
             ->flatMap($splitByComma)
@@ -65,9 +64,25 @@ class VacancyMatchingService
             ->take(8)
             ->values();
 
-        Log::info('🧩 Tokens parsed (comma-separated)', ['tokens' => $tokens->all()]);
+        Log::info('🧩 Tokens parsed', ['tokens' => $tokens->all()]);
 
-// --- 3. Category aniqlash
+        $phrases = $allVariants
+            ->flatMap($splitByComma)
+            ->map($cleanText)
+            ->filter(fn($s) => mb_strlen($s) >= 3 && str_contains($s, ' '))
+            ->unique()
+            ->take(4)
+            ->values();
+
+        $searchQuery = $latinQuery ?: $cyrilQuery;
+        $tsTerms = [...$phrases, ...$tokens];
+        $mustPair = count($tokens) >= 2 ? ['(' . $tokens[0] . ' ' . $tokens[1] . ')'] : [];
+        $webParts = array_merge($mustPair, $tsTerms);
+        $tsQuery = !empty($webParts)
+            ? implode(' OR ', array_map(fn($t) => str_contains($t, ' ') ? '"' . str_replace('"', '', $t) . '"' : $t, $webParts))
+            : (string) $searchQuery;
+
+        // --- 2. Guess category
         try {
             $guessedCategory = app(VacancyCategoryService::class)
                 ->categorize('', (string) ($resume->title ?? ''), (string) ($resume->description ?? ''), '');
@@ -88,7 +103,6 @@ class VacancyMatchingService
         ];
         $isTech = in_array($resumeCategory, $techCategories, true);
 
-// --- 4. Har bir token uchun alohida SELECT
         $selects = [];
         $params = [];
 
@@ -119,24 +133,78 @@ class VacancyMatchingService
 
 
         $baseSql = "
-    WITH combined AS (
-        " . implode(" UNION ALL ", $selects) . "
-    )
-    SELECT DISTINCT ON (id) *
-    FROM combined
-    ORDER BY id, rank DESC
-    LIMIT 50
-";
+            WITH combined AS (
+                " . implode(" UNION ALL ", $selects) . "
+            )
+            SELECT DISTINCT ON (id) *
+            FROM combined
+            ORDER BY id, rank DESC
+            LIMIT 50
+        ";
 
-        Log::info('🧾 [FINAL SQL BUILT]', [
-            'resume_id' => $resume->id,
-            'sql' => $baseSql,
-            'params_count' => count($params),
+        $params = [$tsQuery, $resume->id];
+
+// 🔎 Loglash: tsQuery qanday bo‘lganini ko‘rsatamiz
+        Log::info('🔍 [SEARCH QUERY GENERATED]', [
+            'tsQuery' => $tsQuery,
             'tokens' => $tokens->all(),
+            'phrases' => $phrases->all(),
+            'query_variants' => $allVariants->all(),
+        ]);
+
+        if ($isTech) {
+            // 👇 Agar resume texnik kategoriya bo‘lsa, title orqali qidirish
+            $titleCondition = collect($tokens)
+                ->map(fn($t) => "LOWER(v.title) LIKE '%" . addslashes(mb_strtolower($t)) . "%'")
+                ->implode(' OR ');
+
+            if ($titleCondition) {
+                $baseSql .= " AND ($titleCondition)";
+
+                // 🧠 Loglash: title orqali qanday shart yuborilayotganini yozamiz
+                Log::info('💻 [TECH MODE] Title orqali qidirish ishlatilmoqda', [
+                    'category' => $resumeCategory,
+                    'title_condition' => $titleCondition,
+                    'tsQuery_used' => $tsQuery,
+                ]);
+            } else {
+                Log::info('💻 [TECH MODE] Tokenlar bo‘sh, title condition yaratilmagan', [
+                    'category' => $resumeCategory,
+                ]);
+            }
+        } else {
+            // 👇 Texnik bo‘lmasa — category orqali cheklash
+            if ($resumeCategory) {
+                $baseSql .= " AND v.category = ?";
+                $params[] = $resumeCategory;
+                Log::info("📊 [CATEGORY FILTER] Resume kategoriyasi ishlatildi", [
+                    'category' => $resumeCategory,
+                    'tsQuery_used' => $tsQuery,
+                ]);
+            } elseif ($guessedCategory) {
+                $baseSql .= " AND v.category = ?";
+                $params[] = $guessedCategory;
+                Log::info("📊 [GUESSED CATEGORY USED] AI taxmin qilgan kategoriya ishlatildi", [
+                    'guessedCategory' => $guessedCategory,
+                    'tsQuery_used' => $tsQuery,
+                ]);
+            } else {
+                Log::info("📊 [CATEGORY FILTER] Hech qanday category filter qo‘llanmagan", [
+                    'tsQuery_used' => $tsQuery,
+                ]);
+            }
+        }
+
+        $baseSql .= " ORDER BY rank DESC, id DESC LIMIT 50";
+
+// 🔧 Yakuniy SQL va parametrlarni ham logga yozamiz
+        Log::info('🧾 [FINAL SQL BUILT]', [
+            'sql' => $baseSql,
+            'params' => $params,
         ]);
 
 
-// --- 6. Asinxron so‘rovlar
+        // --- 4. ASINXRON so‘rovlar
         $promises = [
             'hh' => \GuzzleHttp\Promise\Create::promiseFor(
                 cache()->remember(
@@ -152,7 +220,7 @@ class VacancyMatchingService
         $hhVacancies = $results['hh'];
         $localRows = collect($results['local']);
 
-// --- 7. Rank boost (avvalgiday)
+        // --- 5. Local vacancy rank update
         $localVacancies = $localRows
             ->map(function ($v) use ($isTech, $tokens) {
                 if ($isTech && !empty($tokens)) {
@@ -168,7 +236,6 @@ class VacancyMatchingService
             ->sortByDesc('rank')
             ->take(50)
             ->keyBy(fn($v) => $v->source === 'hh' && $v->external_id ? $v->external_id : "local_{$v->id}");
-
 
         Log::info('Data fetch took:' . (microtime(true) - $start) . 's');
         Log::info('Local vacancies: ' . $localVacancies->count());
