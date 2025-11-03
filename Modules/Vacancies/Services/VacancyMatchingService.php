@@ -53,9 +53,9 @@ class VacancyMatchingService
             ->filter()
             ->values();
 
+        // --- 2. Vergul bo‘yicha ajratamiz
         $splitByComma = fn($v) => preg_split('/\s*,\s*/u', (string) $v);
-        $cleanText = fn($w) => mb_strtolower(trim(preg_replace('/[\"\'«»“”]/u', '', $w)), 'UTF-8');
-
+        $cleanText = fn($w) => trim(preg_replace('/[\"\'«»“”]/u', '', $w));
         $tokens = $allVariants
             ->flatMap($splitByComma)
             ->map($cleanText)
@@ -66,21 +66,23 @@ class VacancyMatchingService
 
         Log::info('🧩 Tokens parsed', ['tokens' => $tokens->all()]);
 
-        $phrases = $allVariants
+        // --- 2. Vergul bo‘yicha ajratish (har bir bo‘lak alohida token bo‘ladi)
+        $splitByComma = fn($v) => preg_split('/\s*,\s*/u', (string) $v);
+        $cleanText = fn($w) => trim(preg_replace('/[\"\'«»“”]/u', '', $w));
+
+        $tokens = $allVariants
             ->flatMap($splitByComma)
             ->map($cleanText)
-            ->filter(fn($s) => mb_strlen($s) >= 3 && str_contains($s, ' '))
+            ->filter(fn($w) => mb_strlen($w) >= 2)
             ->unique()
-            ->take(4)
+            ->take(10)
             ->values();
 
-        $searchQuery = $latinQuery ?: $cyrilQuery;
-        $tsTerms = [...$phrases, ...$tokens];
-        $mustPair = count($tokens) >= 2 ? ['(' . $tokens[0] . ' ' . $tokens[1] . ')'] : [];
-        $webParts = array_merge($mustPair, $tsTerms);
-        $tsQuery = !empty($webParts)
-            ? implode(' OR ', array_map(fn($t) => str_contains($t, ' ') ? '"' . str_replace('"', '', $t) . '"' : $t, $webParts))
-            : (string) $searchQuery;
+        Log::info('🧩 Tokens parsed (comma-split)', ['tokens' => $tokens->all()]);
+
+// --- 3. tsQuery OR bo‘yicha yasaymiz
+        $tsQuery = $tokens->map(fn($t) => '"' . str_replace('"', '', $t) . '"')->implode(' | ');
+
 
         // --- 2. Guess category
         try {
