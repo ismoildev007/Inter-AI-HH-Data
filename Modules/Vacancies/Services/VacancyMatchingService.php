@@ -103,42 +103,20 @@ class VacancyMatchingService
         ];
         $isTech = in_array($resumeCategory, $techCategories, true);
 
-        $selects = [];
-        $params = [];
-
-        foreach ($tokens as $token) {
-            $selects[] = "
-        SELECT
-            v.id, v.title, v.description, v.source, v.external_id, v.category,
-            COALESCE(
-                ts_rank_cd(
-                    to_tsvector('simple', coalesce(v.description, '') || ' ' || coalesce(v.title, '')),
-                    plainto_tsquery('simple', ?)
-                ), 0
-            )
-            + CASE
-                WHEN LOWER(v.title) LIKE '%' || LOWER(?) || '%' THEN 0.05
-                WHEN LOWER(v.description) LIKE '%' || LOWER(?) || '%' THEN 0.03
-                ELSE 0
-              END AS rank
-        FROM vacancies v
-        WHERE v.status = 'publish'
-          AND v.source = 'telegram'
-          AND (v.category IS NULL OR LOWER(v.category) <> 'other')   -- ✅ yangi shart
-          AND v.id NOT IN (SELECT vacancy_id FROM match_results WHERE resume_id = ?)
-    ";
-
-            $params = array_merge($params, [$token, $token, $token, $resume->id]);
-        }
-
-
+        // --- 3. SQL tayyorlash
         $baseSql = "
-            WITH combined AS (
-                " . implode(" UNION ALL ", $selects) . "
-            )
-            SELECT DISTINCT ON (id) *
-            FROM combined
-        ";
+    SELECT
+        v.id, v.title, v.description, v.source, v.external_id, v.category,
+        CASE
+            WHEN v.category IN ('IT and Software Development', 'Data Science and Analytics', 'QA and Testing', 'DevOps and Cloud Engineering', 'UI/UX and Product Design')
+            THEN ts_rank_cd(to_tsvector('simple', coalesce(v.description, '') || ' ' || coalesce(v.title, '')), websearch_to_tsquery('simple', ?))
+            ELSE 0
+        END AS rank
+    FROM vacancies v
+    WHERE v.status = 'publish'
+      AND v.source = 'telegram'
+      AND v.id NOT IN (SELECT vacancy_id FROM match_results WHERE resume_id = ?)
+";
 
         $params = [$tsQuery, $resume->id];
 
