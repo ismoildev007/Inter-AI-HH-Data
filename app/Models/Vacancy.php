@@ -8,6 +8,8 @@ class Vacancy extends Model
 {
     public const STATUS_PUBLISH = 'publish';
     public const STATUS_ARCHIVE = 'archive';
+    public const STATUS_QUEUED  = 'queued';
+    public const STATUS_FAILED  = 'failed';
     protected $fillable = [
         'source',
         'external_id',

@@ -563,7 +563,63 @@ class RelayService
                 // Optional final transform layer (regex replacements)
                 $out = $this->transform->handle($ruleKey, $html, $target);
 
-                // Send to target
+                // Decoupled delivery: queue a delivery job and advance last id
+                // Ensure only one queued record per message via distributed lock
+                $lockParts = [$sourceId, $sourceLink];
+                if (!empty($rawHash)) { $lockParts[] = $rawHash; }
+                if (!empty($normalizedHash)) { $lockParts[] = $normalizedHash; }
+                if (!empty($signature)) { $lockParts[] = $signature; }
+                $lockKey = 'tg:msg:' . sha1(implode('|', $lockParts));
+                $lock = Cache::lock($lockKey, 600);
+                if (!$lock->get()) {
+                    if ((bool) config('telegramchannel_relay.debug.log_memory', false)) {
+                        Log::debug('Dedup: message lock busy, skipping queue', ['peer' => $peer, 'id' => $id, 'lock' => $lockKey]);
+                    }
+                    continue;
+                }
+                try {
+                    $existsByLink2 = Vacancy::where('source_id', $sourceId)
+                        ->where('source_message_id', $sourceLink)
+                        ->exists();
+                    if ($existsByLink2) {
+                        continue;
+                    }
+                    $vac = null;
+                    try {
+                        $vac = Vacancy::create([
+                            'source' => 'telegram',
+                            'title' => $normalized['title'] ?? null,
+                            'company' => $normalized['company'] ?? null,
+                            'category' => $category ?: null,
+                            'contact' => [
+                                'phones' => $phones,
+                                'telegram_usernames' => $users,
+                            ],
+                            'description' => $normalized['description'] ?? null,
+                            'language' => $normalized['language'] ?? null,
+                            'status' => \App\Models\Vacancy::STATUS_QUEUED,
+                            'apply_url' => $applyUrl,
+                            'source_id' => $sourceId,
+                            'source_message_id' => $sourceLink,
+                            'signature' => $signature,
+                            'raw_hash' => $rawHash ?: null,
+                            'normalized_hash' => $normalizedHash ?: null,
+                        ]);
+                    } catch (\Throwable $e) {
+                        Log::error('Failed to save queued Vacancy', ['err' => $e->getMessage()]);
+                    }
+                    if ($vac) {
+                        \Modules\TelegramChannel\Jobs\DeliverVacancyJob::dispatch($vac->id)->onQueue('telegram-relay');
+                        // Treat as delivered for last_id progression in decoupled mode
+                        if ($id > $maxDeliveredId) { $maxDeliveredId = $id; }
+                    }
+                } finally {
+                    optional($lock)->release();
+                }
+                // Skip direct send in RelayService (delivery is queued)
+                continue;
+
+                // Send to target (disabled due to decoupled delivery)
                 $targetLink = null;
                 if ($target) {
                     // Prefer @username for peer; fallback to numeric channel_id
