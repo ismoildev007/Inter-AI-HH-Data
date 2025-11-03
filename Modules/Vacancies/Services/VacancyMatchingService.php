@@ -188,7 +188,7 @@ class VacancyMatchingService
                 $baseSql .= " AND v.category = ?";
                 $params[] = $resumeCategory;
 
-                Log::info('📊 [NON-TECH: CATEGORY FILTER APPLIED]', [
+                Log::info('📊 [Categoriyaga tegishli barcha vacansiyalar]', [
                     'resume_id' => $resume->id,
                     'category' => $resumeCategory,
                     'tsQuery_used' => $tsQuery,
@@ -200,7 +200,6 @@ class VacancyMatchingService
                     ->implode(' OR ');
 
                 if ($titleCondition) {
-                    // E’tibor: bu shart category bilan emas, umumiy barcha vacancy ichida ishlaydi
                     $unionSql = "
                 SELECT
                     v.id, v.title, v.description, v.source, v.external_id, v.category,
