@@ -110,11 +110,13 @@ class VacancyMatchingService
         FROM vacancies v
         WHERE v.status = 'publish'
           AND v.source = 'telegram'
+          AND (v.category IS NULL OR LOWER(v.category) <> 'other')   -- ✅ yangi shart
           AND v.id NOT IN (SELECT vacancy_id FROM match_results WHERE resume_id = ?)
     ";
 
             $params = array_merge($params, [$token, $token, $token, $resume->id]);
         }
+
 
         $baseSql = "
     WITH combined AS (
