@@ -294,7 +294,7 @@ class VacancyMatchingService
                 return $v;
             })
             ->sortByDesc('rank')
-            ->take(50)
+            ->take(100)
             ->keyBy(fn($v) => $v->source === 'hh' && $v->external_id ? $v->external_id : "local_{$v->id}");
 
         Log::info('Data fetch took:' . (microtime(true) - $start) . 's');
@@ -329,7 +329,7 @@ class VacancyMatchingService
 
         $toFetch = collect($hhItems)
             ->filter(fn($item) => isset($item['id']) && !$localVacancies->has($item['id']))
-            ->take(50);
+            ->take(100);
 
         foreach ($toFetch as $idx => $item) {
             $extId = $item['id'] ?? null;
