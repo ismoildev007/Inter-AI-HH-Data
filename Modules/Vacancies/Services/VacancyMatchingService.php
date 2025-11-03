@@ -194,6 +194,23 @@ class VacancyMatchingService
                     'tsQuery_used' => $tsQuery,
                 ]);
 
+                try {
+                    // Shu kategoriyaga oid vakansiyalarni olib sanaymiz
+                    $categoryVacancies = DB::select($baseSql, $params);
+                    $categoryCount = count($categoryVacancies);
+
+                    Log::info('📈 [Kategoriya bo‘yicha topilgan vacansiyalar soni]', [
+                        'resume_id' => $resume->id,
+                        'category' => $resumeCategory,
+                        'count' => $categoryCount,
+                    ]);
+                } catch (\Throwable $e) {
+                    Log::error('❌ [Kategoriya bo‘yicha qidiruvda xato]', [
+                        'resume_id' => $resume->id,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+
                 // 🟢 2. Shu bilan birga title orqali umumiy search (barcha vacancies ichidan)
                 $titleCondition = collect($tokens)
                     ->map(fn($t) => "LOWER(v.title) LIKE '%" . addslashes(mb_strtolower($t)) . "%'")
@@ -217,6 +234,22 @@ class VacancyMatchingService
                         'resume_id' => $resume->id,
                         'title_condition' => $titleCondition,
                     ]);
+
+                    try {
+                        // Title orqali qidiruv natijasini olib sanaymiz
+                        $titleVacancies = DB::select($unionSql, [$tsQuery, $resume->id]);
+                        $titleCount = count($titleVacancies);
+
+                        Log::info('📈 [Title orqali qidirilgan vacansiyalar soni]', [
+                            'resume_id' => $resume->id,
+                            'count' => $titleCount,
+                        ]);
+                    } catch (\Throwable $e) {
+                        Log::error('❌ [Title qidiruvda xato]', [
+                            'resume_id' => $resume->id,
+                            'error' => $e->getMessage(),
+                        ]);
+                    }
 
                     // 🧩 3. Ikkisini birlashtiramiz (kategoriya + global title qidiruv)
                     $baseSql = "($baseSql) UNION ($unionSql)";
