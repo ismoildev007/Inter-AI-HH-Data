@@ -94,7 +94,6 @@ class VacancyMatchingService
         }
 
         $resumeCategory = $resume->category ?? null;
-
         $techCategories = [
             "IT and Software Development",
             "Data Science and Analytics",
@@ -102,162 +101,86 @@ class VacancyMatchingService
             "DevOps and Cloud Engineering",
             "UI/UX and Product Design"
         ];
-
         $isTech = in_array($resumeCategory, $techCategories, true);
 
-        if ($isTech && $resumeCategory) {
-            $rankExpr = "
-        CASE
-            WHEN v.category = ?
-            THEN ts_rank_cd(
-                to_tsvector('simple', coalesce(v.description, '') || ' ' || coalesce(v.title, '')),
-                websearch_to_tsquery('simple', ?)
-            )
-            ELSE 0
-        END AS rank
-    ";
-            $params = [$resumeCategory, $tsQuery, $resume->id];
-        } else {
-            $rankExpr = "
-        ts_rank_cd(
-            to_tsvector('simple', coalesce(v.description, '') || ' ' || coalesce(v.title, '')),
-            websearch_to_tsquery('simple', ?)
-        ) AS rank
-    ";
-            $params = [$tsQuery, $resume->id];
-        }
-
+        // --- 3. SQL tayyorlash
         $baseSql = "
     SELECT
         v.id, v.title, v.description, v.source, v.external_id, v.category,
-        {$rankExpr}
+        CASE
+            WHEN v.category IN ('IT and Software Development', 'Data Science and Analytics', 'QA and Testing', 'DevOps and Cloud Engineering', 'UI/UX and Product Design')
+            THEN ts_rank_cd(to_tsvector('simple', coalesce(v.description, '') || ' ' || coalesce(v.title, '')), websearch_to_tsquery('simple', ?))
+            ELSE 0
+        END AS rank
     FROM vacancies v
     WHERE v.status = 'publish'
       AND v.source = 'telegram'
       AND v.id NOT IN (SELECT vacancy_id FROM match_results WHERE resume_id = ?)
 ";
 
-        if ($isTech) {
-            $baseSql .= " AND v.category = ?";
-            $params[] = $resumeCategory;
+        $params = [$tsQuery, $resume->id];
 
+// 🔎 Loglash: tsQuery qanday bo‘lganini ko‘rsatamiz
+        Log::info('🔍 [SEARCH QUERY GENERATED]', [
+            'tsQuery' => $tsQuery,
+            'tokens' => $tokens->all(),
+            'phrases' => $phrases->all(),
+            'query_variants' => $allVariants->all(),
+        ]);
+
+        if ($isTech) {
+            // 👇 Agar resume texnik kategoriya bo‘lsa, title orqali qidirish
             $titleCondition = collect($tokens)
                 ->map(fn($t) => "LOWER(v.title) LIKE '%" . addslashes(mb_strtolower($t)) . "%'")
                 ->implode(' OR ');
 
             if ($titleCondition) {
-                $baseSql .= " AND ({$titleCondition})";
+                $baseSql .= " AND ($titleCondition)";
+
+                // 🧠 Loglash: title orqali qanday shart yuborilayotganini yozamiz
+                Log::info('💻 [TECH MODE] Title orqali qidirish ishlatilmoqda', [
+                    'category' => $resumeCategory,
+                    'title_condition' => $titleCondition,
+                    'tsQuery_used' => $tsQuery,
+                ]);
+            } else {
+                Log::info('💻 [TECH MODE] Tokenlar bo‘sh, title condition yaratilmagan', [
+                    'category' => $resumeCategory,
+                ]);
             }
-
-            $finalSql = "{$baseSql} ORDER BY rank DESC, id DESC LIMIT 50";
-
-            Log::info('💻 [TECH MODE: EXACT CATEGORY SEARCH]', [
-                'resume_id' => $resume->id,
-                'category' => $resumeCategory,
-                'title_condition' => $titleCondition ?: null,
-                'is_tech' => true,
-                'sql' => $finalSql,
-                'params' => $params,
-            ]);
-
         } else {
-            // non-tech uchun ikkita qism: kategoriya + title orqali
-            $unionSql = null;
-            $categoryCount = 0;
-            $titleCount = 0;
-
+            // 👇 Texnik bo‘lmasa — category orqali cheklash
             if ($resumeCategory) {
                 $baseSql .= " AND v.category = ?";
                 $params[] = $resumeCategory;
-
-                // 🔹 Kategoriya bo‘yicha topilganlar sonini log qilamiz
-                try {
-                    $categoryVacancies = DB::select($baseSql, $params);
-                    $categoryCount = count($categoryVacancies);
-                    Log::info('📊 [CATEGORY SEARCH RESULTS]', [
-                        'resume_id' => $resume->id,
-                        'category' => $resumeCategory,
-                        'count' => $categoryCount,
-                    ]);
-                } catch (\Throwable $e) {
-                    Log::error('❌ [CATEGORY SEARCH ERROR]', [
-                        'resume_id' => $resume->id,
-                        'category' => $resumeCategory,
-                        'error' => $e->getMessage(),
-                    ]);
-                }
-
-                $titleCondition = collect($tokens)
-                    ->map(fn($t) => "LOWER(v.title) LIKE '%" . addslashes(mb_strtolower($t)) . "%'")
-                    ->implode(' OR ');
-
-                if ($titleCondition) {
-                    $unionSql = "
-                SELECT
-                    v.id, v.title, v.description, v.source, v.external_id, v.category,
-                    ts_rank_cd(to_tsvector('simple', coalesce(v.description, '') || ' ' || coalesce(v.title, '')),
-                        websearch_to_tsquery('simple', ?)
-                    ) AS rank
-                FROM vacancies v
-                WHERE v.status = 'publish'
-                  AND v.source = 'telegram'
-                  AND ($titleCondition)
-                  AND v.id NOT IN (SELECT vacancy_id FROM match_results WHERE resume_id = ?)
-            ";
-
-                    // 🔹 Title orqali topilganlar sonini log qilamiz
-                    try {
-                        $titleVacancies = DB::select($unionSql, [$tsQuery, $resume->id]);
-                        $titleCount = count($titleVacancies);
-                        Log::info('🌍 [TITLE SEARCH RESULTS]', [
-                            'resume_id' => $resume->id,
-                            'title_condition' => $titleCondition,
-                            'count' => $titleCount,
-                        ]);
-                    } catch (\Throwable $e) {
-                        Log::error('❌ [TITLE SEARCH ERROR]', [
-                            'resume_id' => $resume->id,
-                            'error' => $e->getMessage(),
-                        ]);
-                    }
-                }
-            }
-
-            if ($unionSql) {
-                $finalSql = "
-            WITH combined AS (
-                {$baseSql}
-                UNION ALL
-                {$unionSql}
-            )
-            SELECT * FROM combined
-            ORDER BY rank DESC, id DESC
-            LIMIT 50
-        ";
-                $params = array_merge($params, [$tsQuery, $resume->id]);
+                Log::info("📊 [CATEGORY FILTER] Resume kategoriyasi ishlatildi", [
+                    'category' => $resumeCategory,
+                    'tsQuery_used' => $tsQuery,
+                ]);
+            } elseif ($guessedCategory) {
+                $baseSql .= " AND v.category = ?";
+                $params[] = $guessedCategory;
+                Log::info("📊 [GUESSED CATEGORY USED] AI taxmin qilgan kategoriya ishlatildi", [
+                    'guessedCategory' => $guessedCategory,
+                    'tsQuery_used' => $tsQuery,
+                ]);
             } else {
-                $finalSql = "{$baseSql} ORDER BY rank DESC, id DESC LIMIT 50";
+                Log::info("📊 [CATEGORY FILTER] Hech qanday category filter qo‘llanmagan", [
+                    'tsQuery_used' => $tsQuery,
+                ]);
             }
-
-            Log::info('🧾 [NON-TECH FINAL SQL BUILT]', [
-                'resume_id' => $resume->id,
-                'category' => $resumeCategory,
-                'is_tech' => false,
-                'category_vacancies' => $categoryCount,
-                'title_vacancies' => $titleCount,
-                'total_found' => $categoryCount + $titleCount,
-                'sql' => $finalSql,
-                'params' => $params,
-            ]);
         }
 
+        $baseSql .= " ORDER BY rank DESC, id DESC LIMIT 50";
+
+// 🔧 Yakuniy SQL va parametrlarni ham logga yozamiz
         Log::info('🧾 [FINAL SQL BUILT]', [
-            'resume_id' => $resume->id,
-            'sql' => $finalSql,
+            'sql' => $baseSql,
             'params' => $params,
-            'is_tech' => $isTech,
         ]);
 
+
+        // --- 4. ASINXRON so‘rovlar
         $promises = [
             'hh' => \GuzzleHttp\Promise\Create::promiseFor(
                 cache()->remember(
@@ -266,13 +189,14 @@ class VacancyMatchingService
                     fn() => $this->hhRepository->search($query, 0, 100, ['area' => 97])
                 )
             ),
-            'local' => \GuzzleHttp\Promise\Create::promiseFor(DB::select($finalSql, $params)),
+            'local' => \GuzzleHttp\Promise\Create::promiseFor(DB::select($baseSql, $params)),
         ];
 
         $results = Promise\Utils::unwrap($promises);
         $hhVacancies = $results['hh'];
         $localRows = collect($results['local']);
 
+        // --- 5. Local vacancy rank update
         $localVacancies = $localRows
             ->map(function ($v) use ($isTech, $tokens) {
                 if ($isTech && !empty($tokens)) {
@@ -288,7 +212,6 @@ class VacancyMatchingService
             ->sortByDesc('rank')
             ->take(50)
             ->keyBy(fn($v) => $v->source === 'hh' && $v->external_id ? $v->external_id : "local_{$v->id}");
-
 
         Log::info('Data fetch took:' . (microtime(true) - $start) . 's');
         Log::info('Local vacancies: ' . $localVacancies->count());
