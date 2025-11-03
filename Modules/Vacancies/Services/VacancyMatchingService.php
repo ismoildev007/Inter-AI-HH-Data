@@ -53,9 +53,10 @@ class VacancyMatchingService
             ->filter()
             ->values();
 
-        // --- 2. Vergul bo‘yicha ajratamiz
+        // --- 2. Vergul bo‘yicha ajratish (har bir bo‘lak alohida token bo‘ladi)
         $splitByComma = fn($v) => preg_split('/\s*,\s*/u', (string) $v);
         $cleanText = fn($w) => trim(preg_replace('/[\"\'«»“”]/u', '', $w));
+
         $tokens = $allVariants
             ->flatMap($splitByComma)
             ->map($cleanText)
@@ -66,29 +67,27 @@ class VacancyMatchingService
 
         Log::info('🧩 Tokens parsed', ['tokens' => $tokens->all()]);
 
-        // --- 2. Vergul bo‘yicha ajratish (har bir bo‘lak alohida token bo‘ladi)
-        $splitByComma = fn($v) => preg_split('/\s*,\s*/u', (string) $v);
-        $cleanText = fn($w) => trim(preg_replace('/[\"\'«»“”]/u', '', $w));
-
-        $tokens = $allVariants
+        $phrases = $allVariants
             ->flatMap($splitByComma)
             ->map($cleanText)
-            ->filter(fn($w) => mb_strlen($w) >= 2)
+            ->filter(fn($s) => mb_strlen($s) >= 3 && str_contains($s, ' '))
             ->unique()
-            ->take(10)
+            ->take(4)
             ->values();
 
-        Log::info('🧩 Tokens parsed (comma-split)', ['tokens' => $tokens->all()]);
-
-// --- 3. tsQuery OR bo‘yicha yasaymiz
-        $tsQuery = $tokens->map(fn($t) => '"' . str_replace('"', '', $t) . '"')->implode(' | ');
-
+        $searchQuery = $latinQuery ?: $cyrilQuery;
+        $tsTerms = [...$phrases, ...$tokens];
+        $mustPair = count($tokens) >= 2 ? ['(' . $tokens[0] . ' ' . $tokens[1] . ')'] : [];
+        $webParts = array_merge($mustPair, $tsTerms);
+        $tsQuery = !empty($webParts)
+            ? implode(' OR ', array_map(fn($t) => str_contains($t, ' ') ? '"' . str_replace('"', '', $t) . '"' : $t, $webParts))
+            : (string) $searchQuery;
 
         // --- 2. Guess category
         try {
             $guessedCategory = app(VacancyCategoryService::class)
                 ->categorize('', (string) ($resume->title ?? ''), (string) ($resume->description ?? ''), '');
-            $guessedCategory = (is_string($guessedCategory) && !in_array(mb_strtolower($guessedCategory), ['other', ''], true))
+            $guessedCategory = (is_string($guessedCategory) && !in_array(mb_strtolower($guessedCategory), [], true))
                 ? $guessedCategory
                 : null;
         } catch (\Throwable) {
@@ -107,30 +106,29 @@ class VacancyMatchingService
 
         // --- 3. SQL tayyorlash
         $baseSql = "
-    SELECT
-        v.id, v.title, v.description, v.source, v.external_id, v.category,
-        CASE
-            WHEN v.category IN ('IT and Software Development', 'Data Science and Analytics', 'QA and Testing', 'DevOps and Cloud Engineering', 'UI/UX and Product Design')
-            THEN ts_rank_cd(to_tsvector('simple', coalesce(v.description, '') || ' ' || coalesce(v.title, '')), websearch_to_tsquery('simple', ?))
-            ELSE 0
-        END AS rank
-    FROM vacancies v
-    WHERE v.status = 'publish'
-      AND v.source = 'telegram'
-      AND v.id NOT IN (SELECT vacancy_id FROM match_results WHERE resume_id = ?)
-";
+            SELECT
+                v.id, v.title, v.description, v.source, v.external_id, v.category,
+                CASE
+                    WHEN v.category IN ('IT and Software Development', 'Data Science and Analytics', 'QA and Testing', 'DevOps and Cloud Engineering', 'UI/UX and Product Design')
+                    THEN ts_rank_cd(to_tsvector('simple', coalesce(v.description, '') || ' ' || coalesce(v.title, '')), websearch_to_tsquery('simple', ?))
+                    ELSE 0
+                END AS rank
+            FROM vacancies v
+            WHERE v.status = 'publish'
+              AND v.source = 'telegram'
+              AND v.id NOT IN (SELECT vacancy_id FROM match_results WHERE resume_id = ?)
+        ";
 
         $params = [$tsQuery, $resume->id];
 
-// 🔎 Loglash: tsQuery qanday bo‘lganini ko‘rsatamiz
         Log::info('🔍 [SEARCH QUERY GENERATED]', [
             'tsQuery' => $tsQuery,
             'tokens' => $tokens->all(),
+            'phrases' => $phrases->all(),
             'query_variants' => $allVariants->all(),
         ]);
 
         if ($isTech) {
-            // 👇 Agar resume texnik kategoriya bo‘lsa, title orqali qidirish
             $titleCondition = collect($tokens)
                 ->map(fn($t) => "LOWER(v.title) LIKE '%" . addslashes(mb_strtolower($t)) . "%'")
                 ->implode(' OR ');
@@ -138,7 +136,6 @@ class VacancyMatchingService
             if ($titleCondition) {
                 $baseSql .= " AND ($titleCondition)";
 
-                // 🧠 Loglash: title orqali qanday shart yuborilayotganini yozamiz
                 Log::info('💻 [TECH MODE] Title orqali qidirish ishlatilmoqda', [
                     'category' => $resumeCategory,
                     'title_condition' => $titleCondition,
@@ -150,7 +147,6 @@ class VacancyMatchingService
                 ]);
             }
         } else {
-            // 👇 Texnik bo‘lmasa — category orqali cheklash
             if ($resumeCategory) {
                 $baseSql .= " AND v.category = ?";
                 $params[] = $resumeCategory;
@@ -174,14 +170,12 @@ class VacancyMatchingService
 
         $baseSql .= " ORDER BY rank DESC, id DESC LIMIT 50";
 
-// 🔧 Yakuniy SQL va parametrlarni ham logga yozamiz
         Log::info('🧾 [FINAL SQL BUILT]', [
             'sql' => $baseSql,
             'params' => $params,
         ]);
 
 
-        // --- 4. ASINXRON so‘rovlar
         $promises = [
             'hh' => \GuzzleHttp\Promise\Create::promiseFor(
                 cache()->remember(
@@ -197,7 +191,6 @@ class VacancyMatchingService
         $hhVacancies = $results['hh'];
         $localRows = collect($results['local']);
 
-        // --- 5. Local vacancy rank update
         $localVacancies = $localRows
             ->map(function ($v) use ($isTech, $tokens) {
                 if ($isTech && !empty($tokens)) {
