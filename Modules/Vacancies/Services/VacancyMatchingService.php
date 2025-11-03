@@ -105,6 +105,7 @@ class VacancyMatchingService
 
         $isTech = in_array($resumeCategory, $techCategories, true);
 
+// ✅ rank expression farqli: non-tech uchun har doim ts_rank_cd
         if ($isTech && $resumeCategory) {
             $rankExpr = "
         CASE
@@ -116,35 +117,17 @@ class VacancyMatchingService
             ELSE 0
         END AS rank
     ";
-
             $params = [$resumeCategory, $tsQuery, $resume->id];
-
-            Log::info('🏷️ [RANK SCOPE SET TO EXACT CATEGORY]', [
-                'resume_id' => $resume->id,
-                'rank_applied_category' => $resumeCategory,
-                'is_tech' => true,
-            ]);
         } else {
             $rankExpr = "
-        CASE
-            WHEN v.category IN ('IT and Software Development','Data Science and Analytics','QA and Testing','DevOps and Cloud Engineering','UI/UX and Product Design')
-            THEN ts_rank_cd(
-                to_tsvector('simple', coalesce(v.description, '') || ' ' || coalesce(v.title, '')),
-                websearch_to_tsquery('simple', ?)
-            )
-            ELSE 0
-        END AS rank
+        ts_rank_cd(
+            to_tsvector('simple', coalesce(v.description, '') || ' ' || coalesce(v.title, '')),
+            websearch_to_tsquery('simple', ?)
+        ) AS rank
     ";
-
             $params = [$tsQuery, $resume->id];
-
-            Log::info('🏷️ [RANK SCOPE SET TO 5-TECH CATEGORIES]', [
-                'resume_id' => $resume->id,
-                'is_tech' => false,
-            ]);
         }
 
-// ✅ Asosiy bazaviy SQL
         $baseSql = "
     SELECT
         v.id, v.title, v.description, v.source, v.external_id, v.category,
@@ -155,15 +138,7 @@ class VacancyMatchingService
       AND v.id NOT IN (SELECT vacancy_id FROM match_results WHERE resume_id = ?)
 ";
 
-        Log::info('🔍 [SEARCH QUERY GENERATED]', [
-            'tsQuery' => $tsQuery,
-            'tokens' => $tokens->all(),
-            'phrases' => $phrases->all(),
-            'query_variants' => $allVariants->all(),
-        ]);
-
         if ($isTech) {
-            // ✅ Tech kategoriya uchun aniq moslash
             $baseSql .= " AND v.category = ?";
             $params[] = $resumeCategory;
 
@@ -175,27 +150,15 @@ class VacancyMatchingService
                 $baseSql .= " AND ({$titleCondition})";
             }
 
-            Log::info('💻 [TECH MODE: EXACT CATEGORY SEARCH]', [
-                'resume_id' => $resume->id,
-                'category' => $resumeCategory,
-                'title_condition' => $titleCondition ?: null,
-                'params_order' => $params,
-            ]);
+            $finalSql = "{$baseSql} ORDER BY rank DESC, id DESC LIMIT 50";
         } else {
-            // 🧩 Non-tech uchun
+            // non-tech uchun ikkita qism: kategoriya + title orqali
             $unionSql = null;
 
             if ($resumeCategory) {
                 $baseSql .= " AND v.category = ?";
                 $params[] = $resumeCategory;
 
-                Log::info('📊 [Categoriyaga tegishli barcha vacansiyalar]', [
-                    'resume_id' => $resume->id,
-                    'category' => $resumeCategory,
-                    'tsQuery_used' => $tsQuery,
-                ]);
-
-                // Title qidiruv sharti
                 $titleCondition = collect($tokens)
                     ->map(fn($t) => "LOWER(v.title) LIKE '%" . addslashes(mb_strtolower($t)) . "%'")
                     ->implode(' OR ');
@@ -213,37 +176,9 @@ class VacancyMatchingService
                   AND ($titleCondition)
                   AND v.id NOT IN (SELECT vacancy_id FROM match_results WHERE resume_id = ?)
             ";
-
-                    Log::info('🌍 [NON-TECH: GLOBAL TITLE SEARCH ADDED]', [
-                        'resume_id' => $resume->id,
-                        'title_condition' => $titleCondition,
-                    ]);
                 }
-            } elseif ($guessedCategory) {
-                $baseSql .= " AND v.category = ?";
-                $params[] = $guessedCategory;
-
-                Log::info('🧠 [NON-TECH: GUESSED CATEGORY FILTER USED]', [
-                    'resume_id' => $resume->id,
-                    'guessed_category' => $guessedCategory,
-                    'tsQuery_used' => $tsQuery,
-                ]);
-            } else {
-                $titleCondition = collect($tokens)
-                    ->map(fn($t) => "LOWER(v.title) LIKE '%" . addslashes(mb_strtolower($t)) . "%'")
-                    ->implode(' OR ');
-
-                if ($titleCondition) {
-                    $baseSql .= " AND ($titleCondition)";
-                }
-
-                Log::info('🌐 [NON-TECH: NO CATEGORY, FULL TABLE SEARCH]', [
-                    'resume_id' => $resume->id,
-                    'title_condition' => $titleCondition ?: null,
-                ]);
             }
 
-            // 🧩 Ikkalasini birlashtirish (kategoriya + title search)
             if ($unionSql) {
                 $finalSql = "
             WITH combined AS (
@@ -257,21 +192,8 @@ class VacancyMatchingService
         ";
                 $params = array_merge($params, [$tsQuery, $resume->id]);
             } else {
-                $finalSql = "
-            {$baseSql}
-            ORDER BY rank DESC, id DESC
-            LIMIT 50
-        ";
+                $finalSql = "{$baseSql} ORDER BY rank DESC, id DESC LIMIT 50";
             }
-        }
-
-// Agar tech bo‘lsa, final SQL baseSql bo‘ladi
-        if ($isTech) {
-            $finalSql = "
-        {$baseSql}
-        ORDER BY rank DESC, id DESC
-        LIMIT 50
-    ";
         }
 
         Log::info('🧾 [FINAL SQL BUILT]', [
