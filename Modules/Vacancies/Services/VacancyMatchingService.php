@@ -103,7 +103,16 @@ class VacancyMatchingService
         ];
         $isTech = in_array($resumeCategory, $techCategories, true);
 
-        // --- 3. SQL tayyorlash
+// 🧠 Log: Resume kategoriyasi va texnik ekanligini ko‘rsatamiz
+        Log::info('🧩 [CATEGORY DETECTED]', [
+            'resume_id' => $resume->id,
+            'resume_title' => $resume->title,
+            'resume_category' => $resumeCategory,
+            'is_tech_category' => $isTech,
+            'tech_categories_list' => $techCategories,
+        ]);
+
+// --- 3. SQL tayyorlash
         $baseSql = "
     SELECT
         v.id, v.title, v.description, v.source, v.external_id, v.category,
@@ -133,7 +142,6 @@ class VacancyMatchingService
                 ->map(fn($t) => "LOWER(v.title) LIKE '%" . addslashes(mb_strtolower($t)) . "%'")
                 ->implode(' OR ');
 
-            // Agar tokenlar mavjud bo‘lsa
             if ($titleCondition) {
                 // ✅ Faqat shu kategoriyadagi vakansiyalar ichidan qidirish
                 $baseSql .= " AND v.category = ?";
@@ -142,8 +150,10 @@ class VacancyMatchingService
                 // ✅ Title orqali so‘rov
                 $baseSql .= " AND ($titleCondition)";
 
-                Log::info('💻 [TECH MODE] Title orqali qidirish ishlatilmoqda (kategoriya cheklovi bilan)', [
+                Log::info('💻 [TECH MODE ACTIVE]', [
+                    'resume_id' => $resume->id,
                     'category' => $resumeCategory,
+                    'search_scope' => 'ONLY this category (tech)',
                     'title_condition' => $titleCondition,
                     'tsQuery_used' => $tsQuery,
                 ]);
@@ -152,8 +162,11 @@ class VacancyMatchingService
                 $baseSql .= " AND v.category = ?";
                 $params[] = $resumeCategory;
 
-                Log::info('💻 [TECH MODE] Tokenlar yo‘q, lekin kategoriya bo‘yicha cheklov qo‘llandi', [
+                Log::info('💻 [TECH MODE: NO TOKENS]', [
+                    'resume_id' => $resume->id,
                     'category' => $resumeCategory,
+                    'search_scope' => 'ONLY this category (tech)',
+                    'reason' => 'No tokens found, category filter only',
                 ]);
             }
         } else {
@@ -162,20 +175,26 @@ class VacancyMatchingService
                 $baseSql .= " AND v.category = ?";
                 $params[] = $resumeCategory;
 
-                Log::info('📊 [NON-TECH] Resume kategoriyasi ishlatildi', [
+                Log::info('📊 [NON-TECH MODE: CATEGORY FILTER USED]', [
+                    'resume_id' => $resume->id,
                     'category' => $resumeCategory,
+                    'search_scope' => 'Resume category filter applied',
                     'tsQuery_used' => $tsQuery,
                 ]);
             } elseif ($guessedCategory) {
                 $baseSql .= " AND v.category = ?";
                 $params[] = $guessedCategory;
 
-                Log::info('📊 [NON-TECH] AI taxmin qilgan kategoriya ishlatildi', [
-                    'guessedCategory' => $guessedCategory,
+                Log::info('🧠 [NON-TECH MODE: GUESSED CATEGORY USED]', [
+                    'resume_id' => $resume->id,
+                    'guessed_category' => $guessedCategory,
+                    'search_scope' => 'AI predicted category used',
                     'tsQuery_used' => $tsQuery,
                 ]);
             } else {
-                Log::info('📊 [NON-TECH] Hech qanday kategoriya cheklovi yo‘q', [
+                Log::info('📊 [NON-TECH MODE: NO CATEGORY FILTER]', [
+                    'resume_id' => $resume->id,
+                    'search_scope' => 'No category limit, full search',
                     'tsQuery_used' => $tsQuery,
                 ]);
             }
@@ -184,8 +203,10 @@ class VacancyMatchingService
         $baseSql .= " ORDER BY rank DESC, id DESC LIMIT 50";
 
         Log::info('🧾 [FINAL SQL BUILT]', [
+            'resume_id' => $resume->id,
             'sql' => $baseSql,
             'params' => $params,
+            'is_tech' => $isTech,
         ]);
 
 
