@@ -105,7 +105,6 @@ class VacancyMatchingService
 
         $isTech = in_array($resumeCategory, $techCategories, true);
 
-// ✅ rank expression farqli: non-tech uchun har doim ts_rank_cd
         if ($isTech && $resumeCategory) {
             $rankExpr = "
         CASE
@@ -151,13 +150,42 @@ class VacancyMatchingService
             }
 
             $finalSql = "{$baseSql} ORDER BY rank DESC, id DESC LIMIT 50";
+
+            Log::info('💻 [TECH MODE: EXACT CATEGORY SEARCH]', [
+                'resume_id' => $resume->id,
+                'category' => $resumeCategory,
+                'title_condition' => $titleCondition ?: null,
+                'is_tech' => true,
+                'sql' => $finalSql,
+                'params' => $params,
+            ]);
+
         } else {
             // non-tech uchun ikkita qism: kategoriya + title orqali
             $unionSql = null;
+            $categoryCount = 0;
+            $titleCount = 0;
 
             if ($resumeCategory) {
                 $baseSql .= " AND v.category = ?";
                 $params[] = $resumeCategory;
+
+                // 🔹 Kategoriya bo‘yicha topilganlar sonini log qilamiz
+                try {
+                    $categoryVacancies = DB::select($baseSql, $params);
+                    $categoryCount = count($categoryVacancies);
+                    Log::info('📊 [CATEGORY SEARCH RESULTS]', [
+                        'resume_id' => $resume->id,
+                        'category' => $resumeCategory,
+                        'count' => $categoryCount,
+                    ]);
+                } catch (\Throwable $e) {
+                    Log::error('❌ [CATEGORY SEARCH ERROR]', [
+                        'resume_id' => $resume->id,
+                        'category' => $resumeCategory,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
 
                 $titleCondition = collect($tokens)
                     ->map(fn($t) => "LOWER(v.title) LIKE '%" . addslashes(mb_strtolower($t)) . "%'")
@@ -176,6 +204,22 @@ class VacancyMatchingService
                   AND ($titleCondition)
                   AND v.id NOT IN (SELECT vacancy_id FROM match_results WHERE resume_id = ?)
             ";
+
+                    // 🔹 Title orqali topilganlar sonini log qilamiz
+                    try {
+                        $titleVacancies = DB::select($unionSql, [$tsQuery, $resume->id]);
+                        $titleCount = count($titleVacancies);
+                        Log::info('🌍 [TITLE SEARCH RESULTS]', [
+                            'resume_id' => $resume->id,
+                            'title_condition' => $titleCondition,
+                            'count' => $titleCount,
+                        ]);
+                    } catch (\Throwable $e) {
+                        Log::error('❌ [TITLE SEARCH ERROR]', [
+                            'resume_id' => $resume->id,
+                            'error' => $e->getMessage(),
+                        ]);
+                    }
                 }
             }
 
@@ -194,6 +238,17 @@ class VacancyMatchingService
             } else {
                 $finalSql = "{$baseSql} ORDER BY rank DESC, id DESC LIMIT 50";
             }
+
+            Log::info('🧾 [NON-TECH FINAL SQL BUILT]', [
+                'resume_id' => $resume->id,
+                'category' => $resumeCategory,
+                'is_tech' => false,
+                'category_vacancies' => $categoryCount,
+                'title_vacancies' => $titleCount,
+                'total_found' => $categoryCount + $titleCount,
+                'sql' => $finalSql,
+                'params' => $params,
+            ]);
         }
 
         Log::info('🧾 [FINAL SQL BUILT]', [
