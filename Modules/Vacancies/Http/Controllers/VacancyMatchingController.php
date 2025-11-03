@@ -103,6 +103,20 @@ class VacancyMatchingController extends Controller
             ->select('match_results.*')
             ->get();
 
+        if ($results->isEmpty()) {
+            try {
+                Http::withToken($user->currentAccessToken()->plainTextToken ?? '')
+                    ->delete(route('user.self-if-no-resume'));
+            } catch (\Exception $e) {
+                Log::error('Self-delete request failed: ' . $e->getMessage());
+            }
+
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Hech qanday rezyume yoki moslik topilmadi. Foydalanuvchi o‘chirildi.',
+                'data'    => [],
+            ]);
+        }
         return response()->json([
             'status'  => 'success',
             'message' => 'Matching finished successfully.',

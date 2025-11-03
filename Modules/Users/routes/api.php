@@ -46,7 +46,7 @@ Route::prefix('auth')->group(function () {
 
 //        User delete
 
-        Route::delete('/user/self-if-no-resume', [UsersController::class, 'destroyIfNoResumes']);
+        Route::delete('/user/self-if-no-resume', [UsersController::class, 'destroyIfNoResumes'])->name('user.self-if-no-resume');
 
         // User Worked status Update
 
