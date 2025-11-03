@@ -185,24 +185,13 @@ class VacancyMatchingService
             // 👇 Texnik bo‘lmagan kategoriya
             if ($resumeCategory) {
                 // 🟢 1. Shu kategoriyaga tegishli barcha vakansiyalarni chiqaramiz
-                $categorySql = $baseSql . " AND v.category = ? ORDER BY rank DESC, id DESC LIMIT 100";
-                $categoryParams = array_merge($params, [$resumeCategory]);
+                $baseSql .= " AND v.category = ?";
+                $params[] = $resumeCategory;
 
                 Log::info('📊 [NON-TECH: CATEGORY FILTER APPLIED]', [
                     'resume_id' => $resume->id,
                     'category' => $resumeCategory,
                     'tsQuery_used' => $tsQuery,
-                    'params' => $categoryParams,
-                ]);
-
-                // Shu kategoriyadagi vakansiyalarni olamiz
-                $categoryVacancies = DB::select($categorySql, $categoryParams);
-                $categoryCount = count($categoryVacancies);
-
-                Log::info('📈 [NON-TECH: CATEGORY VACANCIES FETCHED]', [
-                    'resume_id' => $resume->id,
-                    'category' => $resumeCategory,
-                    'count' => $categoryCount,
                 ]);
 
                 // 🟢 2. Shu bilan birga title orqali umumiy search (barcha vacancies ichidan)
@@ -210,11 +199,9 @@ class VacancyMatchingService
                     ->map(fn($t) => "LOWER(v.title) LIKE '%" . addslashes(mb_strtolower($t)) . "%'")
                     ->implode(' OR ');
 
-                $globalVacancies = collect();
-                $globalCount = 0;
-
                 if ($titleCondition) {
-                    $globalSql = "
+                    // E’tibor: bu shart category bilan emas, umumiy barcha vacancy ichida ishlaydi
+                    $unionSql = "
                 SELECT
                     v.id, v.title, v.description, v.source, v.external_id, v.category,
                     ts_rank_cd(to_tsvector('simple', coalesce(v.description, '') || ' ' || coalesce(v.title, '')),
@@ -225,39 +212,17 @@ class VacancyMatchingService
                   AND v.source = 'telegram'
                   AND ($titleCondition)
                   AND v.id NOT IN (SELECT vacancy_id FROM match_results WHERE resume_id = ?)
-                ORDER BY rank DESC, id DESC
-                LIMIT 100
             ";
-
-                    $globalVacancies = collect(DB::select($globalSql, [$tsQuery, $resume->id]));
-                    $globalCount = $globalVacancies->count();
 
                     Log::info('🌍 [NON-TECH: GLOBAL TITLE SEARCH ADDED]', [
                         'resume_id' => $resume->id,
                         'title_condition' => $titleCondition,
-                        'tsQuery_used' => $tsQuery,
-                        'count' => $globalCount,
                     ]);
+
+                    // 🧩 3. Ikkisini birlashtiramiz (kategoriya + global title qidiruv)
+                    $baseSql = "($baseSql) UNION ($unionSql)";
+                    $params = array_merge($params, [$tsQuery, $resume->id]);
                 }
-
-                // 🧩 3. Natijalarni birlashtiramiz
-                $allVacancies = collect($categoryVacancies)
-                    ->merge($globalVacancies)
-                    ->unique('id')
-                    ->sortByDesc('rank')
-                    ->take(100)
-                    ->values();
-
-                Log::info('✅ [NON-TECH: FINAL MERGED VACANCIES]', [
-                    'resume_id' => $resume->id,
-                    'category' => $resumeCategory,
-                    'category_count' => $categoryCount,
-                    'global_title_count' => $globalCount,
-                    'total_after_merge' => $allVacancies->count(),
-                ]);
-
-                // ✅ $localVacancies o‘zgaruvchisi sifatida ishlatish uchun
-                $localVacancies = $allVacancies;
             } elseif ($guessedCategory) {
                 $baseSql .= " AND v.category = ?";
                 $params[] = $guessedCategory;
