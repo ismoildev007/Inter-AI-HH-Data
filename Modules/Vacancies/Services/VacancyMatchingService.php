@@ -104,15 +104,14 @@ class VacancyMatchingService
         ];
         $isTech = in_array($resumeCategory, $techCategories, true);
 
-        // --- 3. SQL tayyorlash
+        // --- 3. SQL tayyorlash (TO‘G‘RILANGAN)
         $baseSql = "
             SELECT
                 v.id, v.title, v.description, v.source, v.external_id, v.category,
-                CASE
-                    WHEN v.category IN ('IT and Software Development', 'Data Science and Analytics', 'QA and Testing', 'DevOps and Cloud Engineering', 'UI/UX and Product Design')
-                    THEN ts_rank_cd(to_tsvector('simple', coalesce(v.description, '') || ' ' || coalesce(v.title, '')), websearch_to_tsquery('simple', ?))
-                    ELSE 0
-                END AS rank
+                ts_rank_cd(
+                    to_tsvector('simple', coalesce(v.description, '') || ' ' || coalesce(v.title, '')),
+                    plainto_tsquery('simple', ?)
+                ) AS rank
             FROM vacancies v
             WHERE v.status = 'publish'
               AND v.source = 'telegram'
