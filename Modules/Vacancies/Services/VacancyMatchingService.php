@@ -96,30 +96,33 @@ class VacancyMatchingService
             $selects[] = "
         SELECT
             v.id, v.title, v.description, v.source, v.external_id, v.category,
-            ts_rank_cd(
-                to_tsvector('simple', coalesce(v.description, '') || ' ' || coalesce(v.title, '')),
-                plainto_tsquery('simple', ?)
-            ) AS rank
+            COALESCE(
+                ts_rank_cd(
+                    to_tsvector('simple', coalesce(v.description, '') || ' ' || coalesce(v.title, '')),
+                    plainto_tsquery('simple', ?)
+                ), 0
+            )
+            + CASE
+                WHEN LOWER(v.title) LIKE '%' || LOWER(?) || '%' THEN 0.05
+                WHEN LOWER(v.description) LIKE '%' || LOWER(?) || '%' THEN 0.03
+                ELSE 0
+              END AS rank
         FROM vacancies v
         WHERE v.status = 'publish'
           AND v.source = 'telegram'
           AND v.id NOT IN (SELECT vacancy_id FROM match_results WHERE resume_id = ?)
-          AND (
-              LOWER(v.title) LIKE '%' || LOWER(?) || '%'
-              OR LOWER(v.description) LIKE '%' || LOWER(?) || '%'
-          )
     ";
 
-            $params = array_merge($params, [$token, $resume->id, $token, $token]);
+            $params = array_merge($params, [$token, $token, $token, $resume->id]);
         }
 
-// --- 5. Birlashtirish
         $baseSql = "
     WITH combined AS (
         " . implode(" UNION ALL ", $selects) . "
     )
-    SELECT * FROM combined
-    ORDER BY rank DESC, id DESC
+    SELECT DISTINCT ON (id) *
+    FROM combined
+    ORDER BY id, rank DESC
     LIMIT 50
 ";
 
@@ -129,6 +132,7 @@ class VacancyMatchingService
             'params_count' => count($params),
             'tokens' => $tokens->all(),
         ]);
+
 
 // --- 6. Asinxron so‘rovlar
         $promises = [
