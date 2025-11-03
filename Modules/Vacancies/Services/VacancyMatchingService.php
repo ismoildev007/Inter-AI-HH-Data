@@ -94,6 +94,7 @@ class VacancyMatchingService
         }
 
         $resumeCategory = $resume->category ?? null;
+
         $techCategories = [
             "IT and Software Development",
             "Data Science and Analytics",
@@ -101,34 +102,65 @@ class VacancyMatchingService
             "DevOps and Cloud Engineering",
             "UI/UX and Product Design"
         ];
+
         $isTech = in_array($resumeCategory, $techCategories, true);
 
-// 🧠 Log: Resume kategoriyasi va texnik ekanligini ko‘rsatamiz
-        Log::info('🧩 [CATEGORY DETECTED]', [
-            'resume_id' => $resume->id,
-            'resume_title' => $resume->title,
-            'resume_category' => $resumeCategory,
-            'is_tech_category' => $isTech,
-            'tech_categories_list' => $techCategories,
-        ]);
+// --- 1) Rank ifodasini DINAMIK tuzamiz
+        if ($isTech && $resumeCategory) {
+            // ✅ Rank faqat rezume kategoriyasiga teng bo‘lsa hisoblanadi
+            $rankExpr = "
+        CASE
+            WHEN v.category = ?
+            THEN ts_rank_cd(
+                to_tsvector('simple', coalesce(v.description, '') || ' ' || coalesce(v.title, '')),
+                websearch_to_tsquery('simple', ?)
+            )
+            ELSE 0
+        END AS rank
+    ";
 
-// --- 3. SQL tayyorlash
+            // ⚠️ Parametrlar TARTIBI: (1) category-for-rank, (2) tsQuery, (3) resume_id) ...
+            $params = [$resumeCategory, $tsQuery, $resume->id];
+
+            Log::info('🏷️ [RANK SCOPE SET TO EXACT CATEGORY]', [
+                'resume_id' => $resume->id,
+                'rank_applied_category' => $resumeCategory,
+                'is_tech' => true,
+            ]);
+        } else {
+            // 🟦 Texnik emas (yoki category yo‘q) — eski mantiq: 5 ta toifaga rank, boshqalarga 0
+            $rankExpr = "
+        CASE
+            WHEN v.category IN ('IT and Software Development','Data Science and Analytics','QA and Testing','DevOps and Cloud Engineering','UI/UX and Product Design')
+            THEN ts_rank_cd(
+                to_tsvector('simple', coalesce(v.description, '') || ' ' || coalesce(v.title, '')),
+                websearch_to_tsquery('simple', ?)
+            )
+            ELSE 0
+        END AS rank
+    ";
+
+            // ⚠️ Parametrlar TARTIBI: (1) tsQuery, (2) resume_id)
+            $params = [$tsQuery, $resume->id];
+
+            Log::info('🏷️ [RANK SCOPE SET TO 5-TECH CATEGORIES]', [
+                'resume_id' => $resume->id,
+                'is_tech' => false,
+            ]);
+        }
+
+// --- 2) Bazaviy SQL
         $baseSql = "
     SELECT
         v.id, v.title, v.description, v.source, v.external_id, v.category,
-        CASE
-            WHEN v.category IN ('IT and Software Development', 'Data Science and Analytics', 'QA and Testing', 'DevOps and Cloud Engineering', 'UI/UX and Product Design')
-            THEN ts_rank_cd(to_tsvector('simple', coalesce(v.description, '') || ' ' || coalesce(v.title, '')), websearch_to_tsquery('simple', ?))
-            ELSE 0
-        END AS rank
+        {$rankExpr}
     FROM vacancies v
     WHERE v.status = 'publish'
       AND v.source = 'telegram'
       AND v.id NOT IN (SELECT vacancy_id FROM match_results WHERE resume_id = ?)
 ";
 
-        $params = [$tsQuery, $resume->id];
-
+// 🔎 Log: tsQuery va tokenlar
         Log::info('🔍 [SEARCH QUERY GENERATED]', [
             'tsQuery' => $tsQuery,
             'tokens' => $tokens->all(),
@@ -137,66 +169,89 @@ class VacancyMatchingService
         ]);
 
         if ($isTech) {
+            // ✅ Aynan shu rezume kategoriyasi bo‘yicha cheklaymiz
+            $baseSql .= " AND v.category = ?";
+            $params[] = $resumeCategory;
 
-            // 👇 Agar resume texnik kategoriya bo‘lsa
+            // Title LIKE qismi
             $titleCondition = collect($tokens)
                 ->map(fn($t) => "LOWER(v.title) LIKE '%" . addslashes(mb_strtolower($t)) . "%'")
                 ->implode(' OR ');
 
             if ($titleCondition) {
-                // ✅ Faqat shu kategoriyadagi vakansiyalar ichidan qidirish
-                $baseSql .= " AND v.category = ?";
-                $params[] = $resumeCategory;
-
-                // ✅ Title orqali so‘rov
-                $baseSql .= " AND ($titleCondition)";
-
-                Log::info('💻 [TECH MODE ACTIVE]', [
-                    'resume_id' => $resume->id,
-                    'category' => $resumeCategory,
-                    'search_scope' => 'ONLY this category (tech)',
-                    'title_condition' => $titleCondition,
-                    'tsQuery_used' => $tsQuery,
-                ]);
-            } else {
-                // Token bo‘lmasa, faqat shu kategoriyadagi vakansiyalarni olib kelamiz
-                $baseSql .= " AND v.category = ?";
-                $params[] = $resumeCategory;
-
-                Log::info('💻 [TECH MODE: NO TOKENS]', [
-                    'resume_id' => $resume->id,
-                    'category' => $resumeCategory,
-                    'search_scope' => 'ONLY this category (tech)',
-                    'reason' => 'No tokens found, category filter only',
-                ]);
+                $baseSql .= " AND ({$titleCondition})";
             }
+
+            Log::info('💻 [TECH MODE: EXACT CATEGORY SEARCH]', [
+                'resume_id' => $resume->id,
+                'category' => $resumeCategory,
+                'title_condition' => $titleCondition ?: null,
+                'params_order' => $params,
+            ]);
         } else {
             // 👇 Texnik bo‘lmagan kategoriya
             if ($resumeCategory) {
+                // 🟢 1. Shu kategoriyaga tegishli barcha vakansiyalarni chiqaramiz
                 $baseSql .= " AND v.category = ?";
                 $params[] = $resumeCategory;
 
-                Log::info('📊 [NON-TECH MODE: CATEGORY FILTER USED]', [
+                Log::info('📊 [NON-TECH: CATEGORY FILTER APPLIED]', [
                     'resume_id' => $resume->id,
                     'category' => $resumeCategory,
-                    'search_scope' => 'Resume category filter applied',
                     'tsQuery_used' => $tsQuery,
                 ]);
+
+                // 🟢 2. Shu bilan birga title orqali umumiy search (barcha vacancies ichidan)
+                $titleCondition = collect($tokens)
+                    ->map(fn($t) => "LOWER(v.title) LIKE '%" . addslashes(mb_strtolower($t)) . "%'")
+                    ->implode(' OR ');
+
+                if ($titleCondition) {
+                    // E’tibor: bu shart category bilan emas, umumiy barcha vacancy ichida ishlaydi
+                    $unionSql = "
+                SELECT
+                    v.id, v.title, v.description, v.source, v.external_id, v.category,
+                    ts_rank_cd(to_tsvector('simple', coalesce(v.description, '') || ' ' || coalesce(v.title, '')),
+                        websearch_to_tsquery('simple', ?)
+                    ) AS rank
+                FROM vacancies v
+                WHERE v.status = 'publish'
+                  AND v.source = 'telegram'
+                  AND ($titleCondition)
+                  AND v.id NOT IN (SELECT vacancy_id FROM match_results WHERE resume_id = ?)
+            ";
+
+                    Log::info('🌍 [NON-TECH: GLOBAL TITLE SEARCH ADDED]', [
+                        'resume_id' => $resume->id,
+                        'title_condition' => $titleCondition,
+                    ]);
+
+                    // 🧩 3. Ikkisini birlashtiramiz (kategoriya + global title qidiruv)
+                    $baseSql = "($baseSql) UNION ($unionSql)";
+                    $params = array_merge($params, [$tsQuery, $resume->id]);
+                }
             } elseif ($guessedCategory) {
                 $baseSql .= " AND v.category = ?";
                 $params[] = $guessedCategory;
 
-                Log::info('🧠 [NON-TECH MODE: GUESSED CATEGORY USED]', [
+                Log::info('🧠 [NON-TECH: GUESSED CATEGORY FILTER USED]', [
                     'resume_id' => $resume->id,
                     'guessed_category' => $guessedCategory,
-                    'search_scope' => 'AI predicted category used',
                     'tsQuery_used' => $tsQuery,
                 ]);
             } else {
-                Log::info('📊 [NON-TECH MODE: NO CATEGORY FILTER]', [
+                // 🟡 Category umuman yo‘q — umumiy search
+                $titleCondition = collect($tokens)
+                    ->map(fn($t) => "LOWER(v.title) LIKE '%" . addslashes(mb_strtolower($t)) . "%'")
+                    ->implode(' OR ');
+
+                if ($titleCondition) {
+                    $baseSql .= " AND ($titleCondition)";
+                }
+
+                Log::info('🌐 [NON-TECH: NO CATEGORY, FULL TABLE SEARCH]', [
                     'resume_id' => $resume->id,
-                    'search_scope' => 'No category limit, full search',
-                    'tsQuery_used' => $tsQuery,
+                    'title_condition' => $titleCondition ?: null,
                 ]);
             }
         }
