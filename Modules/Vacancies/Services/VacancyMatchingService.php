@@ -120,7 +120,6 @@ class VacancyMatchingService
 
         $params = [$tsQuery, $resume->id];
 
-// 🔎 Loglash: tsQuery qanday bo‘lganini ko‘rsatamiz
         Log::info('🔍 [SEARCH QUERY GENERATED]', [
             'tsQuery' => $tsQuery,
             'tokens' => $tokens->all(),
@@ -129,16 +128,18 @@ class VacancyMatchingService
         ]);
 
         if ($isTech) {
-            // 👇 Agar resume texnik kategoriya bo‘lsa, title orqali qidirish
+            // 👇 Agar resume texnik kategoriya bo‘lsa
             $titleCondition = collect($tokens)
                 ->map(fn($t) => "LOWER(v.title) LIKE '%" . addslashes(mb_strtolower($t)) . "%'")
                 ->implode(' OR ');
 
+            // Agar tokenlar mavjud bo‘lsa
             if ($titleCondition) {
-                // ✅ Faqat shu kategoriyaga oid vakansiyalar ichidan qidirish
+                // ✅ Faqat shu kategoriyadagi vakansiyalar ichidan qidirish
                 $baseSql .= " AND v.category = ?";
                 $params[] = $resumeCategory;
 
+                // ✅ Title orqali so‘rov
                 $baseSql .= " AND ($titleCondition)";
 
                 Log::info('💻 [TECH MODE] Title orqali qidirish ishlatilmoqda (kategoriya cheklovi bilan)', [
@@ -147,28 +148,34 @@ class VacancyMatchingService
                     'tsQuery_used' => $tsQuery,
                 ]);
             } else {
-                Log::info('💻 [TECH MODE] Tokenlar bo‘sh, title condition yaratilmagan', [
+                // Token bo‘lmasa, faqat shu kategoriyadagi vakansiyalarni olib kelamiz
+                $baseSql .= " AND v.category = ?";
+                $params[] = $resumeCategory;
+
+                Log::info('💻 [TECH MODE] Tokenlar yo‘q, lekin kategoriya bo‘yicha cheklov qo‘llandi', [
                     'category' => $resumeCategory,
                 ]);
             }
         } else {
-            // 👇 Texnik bo‘lmasa — category orqali cheklash
+            // 👇 Texnik bo‘lmagan kategoriya
             if ($resumeCategory) {
                 $baseSql .= " AND v.category = ?";
                 $params[] = $resumeCategory;
-                Log::info("📊 [CATEGORY FILTER] Resume kategoriyasi ishlatildi", [
+
+                Log::info('📊 [NON-TECH] Resume kategoriyasi ishlatildi', [
                     'category' => $resumeCategory,
                     'tsQuery_used' => $tsQuery,
                 ]);
             } elseif ($guessedCategory) {
                 $baseSql .= " AND v.category = ?";
                 $params[] = $guessedCategory;
-                Log::info("📊 [GUESSED CATEGORY USED] AI taxmin qilgan kategoriya ishlatildi", [
+
+                Log::info('📊 [NON-TECH] AI taxmin qilgan kategoriya ishlatildi', [
                     'guessedCategory' => $guessedCategory,
                     'tsQuery_used' => $tsQuery,
                 ]);
             } else {
-                Log::info("📊 [CATEGORY FILTER] Hech qanday category filter qo‘llanmagan", [
+                Log::info('📊 [NON-TECH] Hech qanday kategoriya cheklovi yo‘q', [
                     'tsQuery_used' => $tsQuery,
                 ]);
             }
