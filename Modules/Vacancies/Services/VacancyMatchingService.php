@@ -281,7 +281,7 @@ class VacancyMatchingService
             }
         }
 
-        $baseSql .= " ORDER BY rank DESC, id DESC LIMIT 100";
+        $baseSql .= " ORDER BY rank DESC, id DESC LIMIT 50";
 
         Log::info('🧾 [FINAL SQL BUILT]', [
             'resume_id' => $resume->id,
@@ -319,7 +319,7 @@ class VacancyMatchingService
                 return $v;
             })
             ->sortByDesc('rank')
-            ->take(100)
+            ->take(50)
             ->keyBy(fn($v) => $v->source === 'hh' && $v->external_id ? $v->external_id : "local_{$v->id}");
 
         Log::info('Data fetch took:' . (microtime(true) - $start) . 's');
@@ -354,7 +354,7 @@ class VacancyMatchingService
 
         $toFetch = collect($hhItems)
             ->filter(fn($item) => isset($item['id']) && !$localVacancies->has($item['id']))
-            ->take(100);
+            ->take(50);
 
         foreach ($toFetch as $idx => $item) {
             $extId = $item['id'] ?? null;
