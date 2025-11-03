@@ -107,15 +107,15 @@ class VacancyMatchingService
 
         if ($isTech && $resumeCategory) {
             $rankExpr = "
-                CASE
-                    WHEN v.category = ?
-                    THEN ts_rank_cd(
-                        to_tsvector('simple', coalesce(v.description, '') || ' ' || coalesce(v.title, '')),
-                        websearch_to_tsquery('simple', ?)
-                    )
-                    ELSE 0
-                END AS rank
-            ";
+        CASE
+            WHEN v.category = ?
+            THEN ts_rank_cd(
+                to_tsvector('simple', coalesce(v.description, '') || ' ' || coalesce(v.title, '')),
+                websearch_to_tsquery('simple', ?)
+            )
+            ELSE 0
+        END AS rank
+    ";
 
             $params = [$resumeCategory, $tsQuery, $resume->id];
 
@@ -126,15 +126,15 @@ class VacancyMatchingService
             ]);
         } else {
             $rankExpr = "
-                CASE
-                    WHEN v.category IN ('IT and Software Development','Data Science and Analytics','QA and Testing','DevOps and Cloud Engineering','UI/UX and Product Design')
-                    THEN ts_rank_cd(
-                        to_tsvector('simple', coalesce(v.description, '') || ' ' || coalesce(v.title, '')),
-                        websearch_to_tsquery('simple', ?)
-                    )
-                    ELSE 0
-                END AS rank
-            ";
+        CASE
+            WHEN v.category IN ('IT and Software Development','Data Science and Analytics','QA and Testing','DevOps and Cloud Engineering','UI/UX and Product Design')
+            THEN ts_rank_cd(
+                to_tsvector('simple', coalesce(v.description, '') || ' ' || coalesce(v.title, '')),
+                websearch_to_tsquery('simple', ?)
+            )
+            ELSE 0
+        END AS rank
+    ";
 
             $params = [$tsQuery, $resume->id];
 
@@ -144,15 +144,16 @@ class VacancyMatchingService
             ]);
         }
 
+// ✅ Asosiy bazaviy SQL
         $baseSql = "
-            SELECT
-                v.id, v.title, v.description, v.source, v.external_id, v.category,
-                {$rankExpr}
-            FROM vacancies v
-            WHERE v.status = 'publish'
-              AND v.source = 'telegram'
-              AND v.id NOT IN (SELECT vacancy_id FROM match_results WHERE resume_id = ?)
-        ";
+    SELECT
+        v.id, v.title, v.description, v.source, v.external_id, v.category,
+        {$rankExpr}
+    FROM vacancies v
+    WHERE v.status = 'publish'
+      AND v.source = 'telegram'
+      AND v.id NOT IN (SELECT vacancy_id FROM match_results WHERE resume_id = ?)
+";
 
         Log::info('🔍 [SEARCH QUERY GENERATED]', [
             'tsQuery' => $tsQuery,
@@ -162,11 +163,10 @@ class VacancyMatchingService
         ]);
 
         if ($isTech) {
-            // ✅ Aynan shu rezume kategoriyasi bo‘yicha cheklaymiz
+            // ✅ Tech kategoriya uchun aniq moslash
             $baseSql .= " AND v.category = ?";
             $params[] = $resumeCategory;
 
-            // Title LIKE qismi
             $titleCondition = collect($tokens)
                 ->map(fn($t) => "LOWER(v.title) LIKE '%" . addslashes(mb_strtolower($t)) . "%'")
                 ->implode(' OR ');
@@ -182,9 +182,10 @@ class VacancyMatchingService
                 'params_order' => $params,
             ]);
         } else {
-            // 👇 Texnik bo‘lmagan kategoriya
+            // 🧩 Non-tech uchun
+            $unionSql = null;
+
             if ($resumeCategory) {
-                // 🟢 1. Shu kategoriyaga tegishli barcha vakansiyalarni chiqaramiz
                 $baseSql .= " AND v.category = ?";
                 $params[] = $resumeCategory;
 
@@ -194,24 +195,7 @@ class VacancyMatchingService
                     'tsQuery_used' => $tsQuery,
                 ]);
 
-                try {
-                    // Shu kategoriyaga oid vakansiyalarni olib sanaymiz
-                    $categoryVacancies = DB::select($baseSql, $params);
-                    $categoryCount = count($categoryVacancies);
-
-                    Log::info('📈 [Kategoriya bo‘yicha topilgan vacansiyalar soni]', [
-                        'resume_id' => $resume->id,
-                        'category' => $resumeCategory,
-                        'count' => $categoryCount,
-                    ]);
-                } catch (\Throwable $e) {
-                    Log::error('❌ [Kategoriya bo‘yicha qidiruvda xato]', [
-                        'resume_id' => $resume->id,
-                        'error' => $e->getMessage(),
-                    ]);
-                }
-
-                // 🟢 2. Shu bilan birga title orqali umumiy search (barcha vacancies ichidan)
+                // Title qidiruv sharti
                 $titleCondition = collect($tokens)
                     ->map(fn($t) => "LOWER(v.title) LIKE '%" . addslashes(mb_strtolower($t)) . "%'")
                     ->implode(' OR ');
@@ -234,26 +218,6 @@ class VacancyMatchingService
                         'resume_id' => $resume->id,
                         'title_condition' => $titleCondition,
                     ]);
-
-                    try {
-                        // Title orqali qidiruv natijasini olib sanaymiz
-                        $titleVacancies = DB::select($unionSql, [$tsQuery, $resume->id]);
-                        $titleCount = count($titleVacancies);
-
-                        Log::info('📈 [Title orqali qidirilgan vacansiyalar soni]', [
-                            'resume_id' => $resume->id,
-                            'count' => $titleCount,
-                        ]);
-                    } catch (\Throwable $e) {
-                        Log::error('❌ [Title qidiruvda xato]', [
-                            'resume_id' => $resume->id,
-                            'error' => $e->getMessage(),
-                        ]);
-                    }
-
-                    // 🧩 3. Ikkisini birlashtiramiz (kategoriya + global title qidiruv)
-                    $baseSql = "($baseSql) UNION ($unionSql)";
-                    $params = array_merge($params, [$tsQuery, $resume->id]);
                 }
             } elseif ($guessedCategory) {
                 $baseSql .= " AND v.category = ?";
@@ -265,7 +229,6 @@ class VacancyMatchingService
                     'tsQuery_used' => $tsQuery,
                 ]);
             } else {
-                // 🟡 Category umuman yo‘q — umumiy search
                 $titleCondition = collect($tokens)
                     ->map(fn($t) => "LOWER(v.title) LIKE '%" . addslashes(mb_strtolower($t)) . "%'")
                     ->implode(' OR ');
@@ -279,17 +242,44 @@ class VacancyMatchingService
                     'title_condition' => $titleCondition ?: null,
                 ]);
             }
+
+            // 🧩 Ikkalasini birlashtirish (kategoriya + title search)
+            if ($unionSql) {
+                $finalSql = "
+            WITH combined AS (
+                {$baseSql}
+                UNION ALL
+                {$unionSql}
+            )
+            SELECT * FROM combined
+            ORDER BY rank DESC, id DESC
+            LIMIT 50
+        ";
+                $params = array_merge($params, [$tsQuery, $resume->id]);
+            } else {
+                $finalSql = "
+            {$baseSql}
+            ORDER BY rank DESC, id DESC
+            LIMIT 50
+        ";
+            }
         }
 
-        $baseSql .= " ORDER BY rank DESC, id DESC LIMIT 50";
+// Agar tech bo‘lsa, final SQL baseSql bo‘ladi
+        if ($isTech) {
+            $finalSql = "
+        {$baseSql}
+        ORDER BY rank DESC, id DESC
+        LIMIT 50
+    ";
+        }
 
         Log::info('🧾 [FINAL SQL BUILT]', [
             'resume_id' => $resume->id,
-            'sql' => $baseSql,
+            'sql' => $finalSql,
             'params' => $params,
             'is_tech' => $isTech,
         ]);
-
 
         $promises = [
             'hh' => \GuzzleHttp\Promise\Create::promiseFor(
@@ -299,7 +289,7 @@ class VacancyMatchingService
                     fn() => $this->hhRepository->search($query, 0, 100, ['area' => 97])
                 )
             ),
-            'local' => \GuzzleHttp\Promise\Create::promiseFor(DB::select($baseSql, $params)),
+            'local' => \GuzzleHttp\Promise\Create::promiseFor(DB::select($finalSql, $params)),
         ];
 
         $results = Promise\Utils::unwrap($promises);
@@ -321,6 +311,7 @@ class VacancyMatchingService
             ->sortByDesc('rank')
             ->take(50)
             ->keyBy(fn($v) => $v->source === 'hh' && $v->external_id ? $v->external_id : "local_{$v->id}");
+
 
         Log::info('Data fetch took:' . (microtime(true) - $start) . 's');
         Log::info('Local vacancies: ' . $localVacancies->count());
