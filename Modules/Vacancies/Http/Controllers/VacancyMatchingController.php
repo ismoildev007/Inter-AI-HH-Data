@@ -7,6 +7,7 @@ use App\Models\MatchResult;
 use App\Models\Resume;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Modules\Users\Http\Controllers\UsersController;
 use Modules\Vacancies\Http\Requests\VacancyMatchRequest;
 use Modules\Vacancies\Http\Resources\VacancyMatchResource;
 use Modules\Vacancies\Jobs\MatchResumeJob;
@@ -60,11 +61,10 @@ class VacancyMatchingController extends Controller
         }
 
         if ($results->isEmpty()) {
-            try {
-                Http::withToken($user->currentAccessToken()->plainTextToken ?? '')
-                    ->delete(route('user.self-if-no-resume'));
-            } catch (\Exception $e) {
-                Log::error('Self-delete request failed: ' . $e->getMessage());
+            $user = Auth::user();
+
+            if (! $user->resumes()->exists()) {
+                app(UsersController::class)->destroyIfNoResumes(request());
             }
 
             return response()->json([
@@ -104,11 +104,10 @@ class VacancyMatchingController extends Controller
             ->get();
 
         if ($results->isEmpty()) {
-            try {
-                Http::withToken($user->currentAccessToken()->plainTextToken ?? '')
-                    ->delete(route('user.self-if-no-resume'));
-            } catch (\Exception $e) {
-                Log::error('Self-delete request failed: ' . $e->getMessage());
+            $user = Auth::user();
+
+            if (! $user->resumes()->exists()) {
+                app(UsersController::class)->destroyIfNoResumes(request());
             }
 
             return response()->json([
@@ -117,6 +116,7 @@ class VacancyMatchingController extends Controller
                 'data'    => [],
             ]);
         }
+
         return response()->json([
             'status'  => 'success',
             'message' => 'Matching finished successfully.',
