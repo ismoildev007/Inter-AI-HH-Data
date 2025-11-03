@@ -256,7 +256,7 @@ class VacancyMatchingService
             }
         }
 
-        $baseSql .= " ORDER BY rank DESC, id DESC LIMIT 50";
+        $baseSql .= " ORDER BY rank DESC, id DESC LIMIT 100";
 
         Log::info('🧾 [FINAL SQL BUILT]', [
             'resume_id' => $resume->id,
