@@ -137,6 +137,7 @@ class VacancyMatchingService
         ]);
 
         if ($isTech) {
+
             // 👇 Agar resume texnik kategoriya bo‘lsa
             $titleCondition = collect($tokens)
                 ->map(fn($t) => "LOWER(v.title) LIKE '%" . addslashes(mb_strtolower($t)) . "%'")
