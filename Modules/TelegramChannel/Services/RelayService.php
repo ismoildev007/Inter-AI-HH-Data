@@ -295,7 +295,7 @@ class RelayService
 
                 // Note: lock for dedupe will be acquired right before sending
 
-                // Classify content to ensure it's an employer vacancy (with cache + error cache)
+                // Classify content to ensure it's an employer vacancy (with cache + error cache + in-flight lock)
                 $cls = null;
                 $clsUsedCache = false;
                 $clsCacheKey = null;
@@ -330,25 +330,50 @@ class RelayService
                     }
                 }
 
-                // Not cached — call classifier (respect per-run GPT cap)
+                // Not cached — call classifier (respect per-run GPT cap) with in-flight lock per rawHash+model
                 if (!$cls) {
                     if ($gptCap > 0 && $gptCalls >= $gptCap) {
                         $stopLoop = true;
                         break;
                     }
+                    $clsLock = null;
+                    $acq = false;
                     try {
-                        // metrics: count classification API calls per minute bucket
-                        $this->incOaiMetric('cls');
-                        $cls = $this->classifier->classify($text);
-                        $gptCalls++;
+                        if ($rawHash !== '') {
+                            $lkey = 'tg:cls:lock:v1:' . $rawHash . ':' . $model;
+                            $clsLock = Cache::lock($lkey, 120);
+                            try {
+                                $clsLock->block(1);
+                                $acq = true;
+                            } catch (\Illuminate\Contracts\Cache\LockTimeoutException $e) {
+                                // Another worker is classifying the same content; skip this message
+                                continue;
+                            }
+                        }
+                        // Re-check cache after acquiring lock: another worker might have finished meanwhile
                         if ($clsCacheEnabled && $clsCacheKey) {
-                            try { Cache::put($clsCacheKey, $cls, $clsTtlSec); } catch (\Throwable $e) {}
+                            $c2 = Cache::get($clsCacheKey);
+                            if (is_array($c2) && isset($c2['label'])) {
+                                $cls = $c2;
+                                $clsUsedCache = true;
+                            }
+                        }
+                        if (!$cls) {
+                            // metrics: count classification API calls per minute bucket
+                            $this->incOaiMetric('cls');
+                            $cls = $this->classifier->classify($text);
+                            $gptCalls++;
+                            if ($clsCacheEnabled && $clsCacheKey) {
+                                try { Cache::put($clsCacheKey, $cls, $clsTtlSec); } catch (\Throwable $e) {}
+                            }
                         }
                     } catch (\Throwable $e) {
                         Log::error('Classification error', ['err' => $e->getMessage()]);
                         // error-result cache to avoid repeated failures for the same content
                         if ($clsErrKey) { try { Cache::put($clsErrKey, 1, $errTtlSec); } catch (\Throwable $ie) {} }
                         continue; // skip on error; keep loop running
+                    } finally {
+                        if ($acq && $clsLock) { optional($clsLock)->release(); }
                     }
                 }
                 $threshold = (float) config('telegramchannel_relay.filtering.classification_threshold', 0.8);
@@ -384,19 +409,47 @@ class RelayService
                     if ($normErrKey && Cache::has($normErrKey)) {
                         continue;
                     }
+                    if ($gptCap > 0 && $gptCalls >= $gptCap) {
+                        $stopLoop = true;
+                        break;
+                    }
+                    $normLock = null;
+                    $acqN = false;
                     try {
-                        if ($gptCap > 0 && $gptCalls >= $gptCap) {
-                            $stopLoop = true;
-                            break;
+                        if ($rawHash !== '' && $model !== '') {
+                            $lkeyN = 'tg:norm:lock:v1:' . $rawHash . ':' . $model;
+                            $normLock = Cache::lock($lkeyN, 180);
+                            try {
+                                $normLock->block(1);
+                                $acqN = true;
+                            } catch (\Illuminate\Contracts\Cache\LockTimeoutException $e) {
+                                // Another worker is normalizing same content; skip and let cache be used next run
+                                continue;
+                            }
                         }
-                        // metrics: count normalization API calls per minute bucket
-                        $this->incOaiMetric('norm');
-                        $normalized = $this->normalizer->normalize($text, '@'.$plainSource, $id);
-                        $gptCalls++;
+                        // Re-check normalization cache after acquiring lock
+                        if ($normCacheKey) {
+                            $cached2 = Cache::get($normCacheKey);
+                            if (is_array($cached2) && isset($cached2['normalized']) && is_array($cached2['normalized'])) {
+                                $normalized = $cached2['normalized'];
+                                if (isset($cached2['category']) && is_string($cached2['category'])) {
+                                    $category = $cached2['category'];
+                                }
+                                $usedCache = true;
+                            }
+                        }
+                        if (!$normalized) {
+                            // metrics: count normalization API calls per minute bucket
+                            $this->incOaiMetric('norm');
+                            $normalized = $this->normalizer->normalize($text, '@'.$plainSource, $id);
+                            $gptCalls++;
+                        }
                     } catch (\Throwable $e) {
                         Log::error('Normalization error', ['err' => $e->getMessage()]);
                         if ($normErrKey) { try { Cache::put($normErrKey, 1, $errTtlSec); } catch (\Throwable $ie) {} }
                         continue; // skip on error
+                    } finally {
+                        if ($acqN && $normLock) { optional($normLock)->release(); }
                     }
                 }
 
