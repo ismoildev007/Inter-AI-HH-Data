@@ -135,10 +135,13 @@ class VacancyMatchingService
                 ->implode(' OR ');
 
             if ($titleCondition) {
+                // ✅ Faqat shu kategoriyaga oid vakansiyalar ichidan qidirish
+                $baseSql .= " AND v.category = ?";
+                $params[] = $resumeCategory;
+
                 $baseSql .= " AND ($titleCondition)";
 
-                // 🧠 Loglash: title orqali qanday shart yuborilayotganini yozamiz
-                Log::info('💻 [TECH MODE] Title orqali qidirish ishlatilmoqda', [
+                Log::info('💻 [TECH MODE] Title orqali qidirish ishlatilmoqda (kategoriya cheklovi bilan)', [
                     'category' => $resumeCategory,
                     'title_condition' => $titleCondition,
                     'tsQuery_used' => $tsQuery,
@@ -173,14 +176,12 @@ class VacancyMatchingService
 
         $baseSql .= " ORDER BY rank DESC, id DESC LIMIT 50";
 
-// 🔧 Yakuniy SQL va parametrlarni ham logga yozamiz
         Log::info('🧾 [FINAL SQL BUILT]', [
             'sql' => $baseSql,
             'params' => $params,
         ]);
 
 
-        // --- 4. ASINXRON so‘rovlar
         $promises = [
             'hh' => \GuzzleHttp\Promise\Create::promiseFor(
                 cache()->remember(
@@ -196,7 +197,6 @@ class VacancyMatchingService
         $hhVacancies = $results['hh'];
         $localRows = collect($results['local']);
 
-        // --- 5. Local vacancy rank update
         $localVacancies = $localRows
             ->map(function ($v) use ($isTech, $tokens) {
                 if ($isTech && !empty($tokens)) {
