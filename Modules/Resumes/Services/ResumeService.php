@@ -234,41 +234,75 @@ class ResumeService
                     Log::info("Parsing PDF file: " . $path);
 
                     $parser = new \Smalot\PdfParser\Parser();
-
+                
                     try {
                         $pdf = $parser->parseFile($path);
                         $text = trim($pdf->getText());
-
-                        // Agar Smalot bo‘sh qaytarsa, pdftotext fallback ishlatamiz
-                        if (!$text || strlen($text) < 50) {
-                            Log::warning("Smalot returned empty text, switching to pdftotext fallback...");
-
-                            $tmpTxt = tempnam(sys_get_temp_dir(), 'pdf_') . '.txt';
-                            $cmd = sprintf(
-                                'pdftotext -layout %s %s',
-                                escapeshellarg($path),
-                                escapeshellarg($tmpTxt)
-                            );
-                            exec($cmd, $output, $code);
-
-                            if ($code === 0 && file_exists($tmpTxt)) {
-                                $text = file_get_contents($tmpTxt);
-                                @unlink($tmpTxt);
-                            } else {
-                                Log::error("pdftotext failed [code=$code]: " . implode("\n", $output));
-                                return null;
-                            }
-                        }
-
-                        // ✅ UTF-8 tozalash (ENG MUHIM QISM)
-                        $text = $this->sanitizeText($text);
-
-                        Log::info("Parsed text length: " . strlen($text));
-                        return trim($text);
                     } catch (\Throwable $e) {
-                        Log::error("PDF parse failed: " . $e->getMessage());
-                        return null;
+                        Log::warning("Smalot PDF parser failed: {$e->getMessage()} — switching to pdftotext...");
+                        $text = null;
                     }
+                
+                    // 🔹 Fallback shart
+                    if (!$text || strlen($text) < 50) {
+                        $tmpTxt = tempnam(sys_get_temp_dir(), 'pdf_') . '.txt';
+                        $cmd = sprintf(
+                            'pdftotext -layout %s %s',
+                            escapeshellarg($path),
+                            escapeshellarg($tmpTxt)
+                        );
+                        exec($cmd, $output, $code);
+                
+                        if ($code === 0 && file_exists($tmpTxt)) {
+                            $text = file_get_contents($tmpTxt);
+                            @unlink($tmpTxt);
+                        } else {
+                            Log::error("pdftotext failed [code=$code]: " . implode("\n", $output));
+                            return null;
+                        }
+                    }
+                
+                    // UTF-8 sanitizatsiya
+                    $text = $this->sanitizeText($text);
+                
+                    Log::info("Parsed text length: " . strlen($text));
+                    return trim($text);
+                    // $parser = new \Smalot\PdfParser\Parser();
+
+                    // try {
+                    //     $pdf = $parser->parseFile($path);
+                    //     $text = trim($pdf->getText());
+
+                    //     // Agar Smalot bo‘sh qaytarsa, pdftotext fallback ishlatamiz
+                    //     if (!$text || strlen($text) < 50) {
+                    //         Log::warning("Smalot returned empty text, switching to pdftotext fallback...");
+
+                    //         $tmpTxt = tempnam(sys_get_temp_dir(), 'pdf_') . '.txt';
+                    //         $cmd = sprintf(
+                    //             'pdftotext -layout %s %s',
+                    //             escapeshellarg($path),
+                    //             escapeshellarg($tmpTxt)
+                    //         );
+                    //         exec($cmd, $output, $code);
+
+                    //         if ($code === 0 && file_exists($tmpTxt)) {
+                    //             $text = file_get_contents($tmpTxt);
+                    //             @unlink($tmpTxt);
+                    //         } else {
+                    //             Log::error("pdftotext failed [code=$code]: " . implode("\n", $output));
+                    //             return null;
+                    //         }
+                    //     }
+
+                    //     // ✅ UTF-8 tozalash (ENG MUHIM QISM)
+                    //     $text = $this->sanitizeText($text);
+
+                    //     Log::info("Parsed text length: " . strlen($text));
+                    //     return trim($text);
+                    // } catch (\Throwable $e) {
+                    //     Log::error("PDF parse failed: " . $e->getMessage());
+                    //     return null;
+                    // }
 
 
                 case 'docx':
