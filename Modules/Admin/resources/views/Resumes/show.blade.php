@@ -409,9 +409,9 @@
                         </div>
                         @if($fileUrl)
                             <div class="resume-show-actions mt-3">
-                                <a class="resume-action-btn" href="{{ $fileUrl }}" target="_blank" rel="noopener">
+                                <!-- <a class="resume-action-btn" href="{{ $fileUrl }}" target="_blank" rel="noopener">
                                     <i class="feather-download"></i> Open resume
-                                </a>
+                                </a> -->
                                 @if(isset($openUrl) && $openUrl !== $fileUrl)
                                     <a class="resume-action-btn" href="{{ $openUrl }}" target="_blank" rel="noopener">
                                         <i class="feather-external-link"></i> Open in browser
