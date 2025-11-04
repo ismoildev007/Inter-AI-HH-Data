@@ -220,6 +220,8 @@ return [
             'allow' => env('TG_PUBLISH_PER_MIN', 10), // per minute
             'every' => 60, // seconds
             'block' => 5,  // acquire up to N seconds, then skip current loop
+            // DeliverVacancyJob ichida bir attempt davomida nechta ichki acquire qilish
+            'inner_retries' => env('TG_PUBLISH_INNER_RETRIES', 6),
         ],
     ],
 ];
