@@ -150,14 +150,15 @@ class NotificationMatchingService
 
                 $categoryToUse = $resumeCategory ?: $guessedCategory;
 
-                $qb->where(function ($main) use ($withCategory, $categoryToUse, $tokens) {
-                    // agar category mavjud bo‘lsa — category orqali
+                $qb->where(function ($main) use ($withCategory, $categoryToUse, $tokens, $resume) {
+
+                    // 🟢 1. Category orqali qidiruv (agar mavjud bo‘lsa)
                     if ($withCategory && $categoryToUse) {
                         $main->orWhere('category', $categoryToUse);
                         Log::info("📂 [NON-TECH CATEGORY] {$categoryToUse} qo‘llanildi.");
                     }
 
-                    // 🆕 title yoki description orqali token asosida qidiruv
+                    // 🟢 2. Title orqali qidiruv (doimo ishlaydi)
                     if ($tokens->isNotEmpty()) {
                         $main->orWhere(function ($q) use ($tokens) {
                             foreach ($tokens as $t) {
@@ -167,6 +168,28 @@ class NotificationMatchingService
                             }
                         });
                         Log::info('🔎 [TITLE/DESC SEARCH ADDED FOR NON-TECH]', ['tokens' => $tokens->all()]);
+                    }
+
+                    // 🆕 3. Agar resume->title’da vergul bilan ajratilgan frazalar bo‘lsa, ularni ham skill sifatida qo‘shamiz
+                    $extraSkills = collect(preg_split('/\s*,\s*/u', (string) ($resume->title ?? '')))
+                        ->map(fn($s) => trim($s))
+                        ->filter(fn($s) => mb_strlen($s) > 2)
+                        ->unique()
+                        ->values();
+
+                    if ($extraSkills->isNotEmpty()) {
+                        $main->orWhere(function ($q) use ($extraSkills) {
+                            foreach ($extraSkills as $skill) {
+                                $pattern = "%{$skill}%";
+                                $q->orWhere('title', 'ILIKE', $pattern)
+                                    ->orWhere('description', 'ILIKE', $pattern);
+                            }
+                        });
+
+                        Log::info('🧠 [TITLE-BASED SKILL SEARCH]', [
+                            'resume_id' => $resume->id,
+                            'skills' => $extraSkills->all(),
+                        ]);
                     }
                 });
             }
