@@ -139,7 +139,17 @@ class VacancyMatchingService
                 ->implode(' OR ');
 
             if ($titleCondition) {
-                $baseSql .= " AND ($titleCondition)";
+                $baseSql .= " AND (
+                    (
+                        v.category IN ('IT and Software Development', 'Data Science and Analytics', 'QA and Testing', 'DevOps and Cloud Engineering', 'UI/UX and Product Design')
+                        AND (
+                            $titleCondition
+                            OR to_tsvector('simple', coalesce(v.description, '') || ' ' || coalesce(v.title, ''))
+                               @@ websearch_to_tsquery('simple', ?)
+                        )
+                    )
+                )";
+                $params[] = $tsQuery;
 
                 Log::info('💻 [TECH MODE] Title va vergul bilan ajratilgan qismlar orqali qidirish ishlatilmoqda', [
                     'category' => $resumeCategory,
