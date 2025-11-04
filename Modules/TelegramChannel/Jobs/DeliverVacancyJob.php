@@ -43,6 +43,12 @@ class DeliverVacancyJob implements ShouldQueue, ShouldBeUnique
                 return;
             }
 
+            Log::info('DeliverVacancyJob start', [
+                'vacancy_id' => $vac->id,
+                'attempt' => $this->attempts(),
+                'status' => (string) $vac->status,
+            ]);
+
             // Skip if already delivered or archived
             if (in_array((string) $vac->status, [Vacancy::STATUS_PUBLISH, Vacancy::STATUS_ARCHIVE], true)) {
                 return;
@@ -50,10 +56,13 @@ class DeliverVacancyJob implements ShouldQueue, ShouldBeUnique
 
             $target = TelegramChannel::where('is_target', true)->first();
             if (!$target) {
-                // No target: mark as failed after final attempt
+                // No target configured yet — retry later instead of silently returning
+                Log::warning('DeliverVacancyJob no target channel', ['vacancy_id' => $vac->id, 'attempt' => $this->attempts()]);
                 if ($this->attempts() >= $this->tries) {
                     $vac->status = Vacancy::STATUS_FAILED;
                     $vac->save();
+                } else {
+                    $this->release(30);
                 }
                 return;
             }
@@ -96,9 +105,12 @@ class DeliverVacancyJob implements ShouldQueue, ShouldBeUnique
                 $to = (string) $target->channel_id;
             }
             if (!$to) {
+                Log::warning('DeliverVacancyJob target peer unresolved', ['vacancy_id' => $vac->id, 'attempt' => $this->attempts()]);
                 if ($this->attempts() >= $this->tries) {
                     $vac->status = Vacancy::STATUS_FAILED;
                     $vac->save();
+                } else {
+                    $this->release(30);
                 }
                 return;
             }
