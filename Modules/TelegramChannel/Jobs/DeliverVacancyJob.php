@@ -59,6 +59,20 @@ class DeliverVacancyJob implements ShouldQueue, ShouldBeUnique
         $phones = (array) data_get($vac->contact, 'phones', []);
         $users  = (array) data_get($vac->contact, 'telegram_usernames', []);
         $targetUsername = $target?->username ? '@'.ltrim((string) $target->username, '@') : null;
+
+        // Prepare plain source for Blade:
+        // - Public: '@user' -> 'user'
+        // - Private: 'cid:...' -> null (Blade will show fallback text while href remains the real link)
+        $srcId = (string) ($vac->source_id ?? '');
+        $plainSource = null;
+        if ($srcId !== '') {
+            if (str_starts_with($srcId, '@')) {
+                $plainSource = ltrim($srcId, '@');
+            } elseif (str_starts_with($srcId, 'cid:')) {
+                $plainSource = null;
+            }
+        }
+
         $html = view('telegramchannel::templates.vacancy_post', [
             'title' => (string) ($vac->title ?? ''),
             'company' => (string) ($vac->company ?? ''),
@@ -67,7 +81,7 @@ class DeliverVacancyJob implements ShouldQueue, ShouldBeUnique
             'description' => (string) ($vac->description ?? ''),
             'source_link' => (string) ($vac->source_message_id ?? ''),
             'apply_url' => (string) ($vac->apply_url ?? ''),
-            'plain_username' => ltrim((string) ($vac->source_id ?? ''), '@'),
+            'plain_username' => $plainSource,
             'target_username' => $targetUsername,
         ])->render();
 
@@ -156,4 +170,3 @@ class DeliverVacancyJob implements ShouldQueue, ShouldBeUnique
         }
     }
 }
-

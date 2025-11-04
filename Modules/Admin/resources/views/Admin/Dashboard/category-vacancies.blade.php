@@ -563,7 +563,12 @@
                                 <div class="category-vacancies-index-pill">{{ $firstNumber + $index }}</div>
                             </td>
                             
-                            <td class="fw-semibold text-dark" data-label="Title">{{ $vacancy->title ?? '—' }}</td>
+                            <td class="fw-semibold text-dark" data-label="Title">
+                                {{ $vacancy->title ?? '—' }}
+                                @if(($vacancy->status ?? '') === \App\Models\Vacancy::STATUS_QUEUED)
+                                    <span class="badge bg-warning text-dark ms-2" title="Queued for delivery">queued</span>
+                                @endif
+                            </td>
                             <td class="text-nowrap" data-label="Created">{{ optional($vacancy->created_at)->format('M d, Y') ?? '—' }}</td>
                             <td class="text-end actions-cell text-nowrap" data-label="Actions">
                                 <button type="button"

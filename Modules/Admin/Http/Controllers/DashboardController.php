@@ -620,9 +620,27 @@ class DashboardController extends Controller
             })
             ->count();
 
+        // Queued (status=queued) count across current filters/date range
+        $queuedCount = DB::table('vacancies')
+            ->when($filter === 'telegram', function ($query) {
+                $query->whereRaw('LOWER(source) LIKE ?', ['telegram%']);
+            })
+            ->when($dateFrom, function ($query) use ($dateFrom) {
+                $query->where('created_at', '>=', $dateFrom);
+            })
+            ->when($dateTo, function ($query) use ($dateTo) {
+                $query->where('created_at', '<=', $dateTo);
+            })
+            ->when($filter === 'hh', function ($query) {
+                $query->whereRaw('LOWER(source) LIKE ?', ['hh%']);
+            })
+            ->where('status', \App\Models\Vacancy::STATUS_QUEUED)
+            ->count();
+
         return view('admin::Admin.Dashboard.categories', [
             'rows' => $rows,
             'totalCount' => $totalCount,
+            'queuedCount' => $queuedCount,
             'filter' => $filter,
             'search' => $search,
             'dateFilter' => [
