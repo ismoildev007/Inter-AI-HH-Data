@@ -122,18 +122,28 @@ class NotificationMatchingService
 
             $isTech = in_array($resumeCategory, $techCategories, true);
 
+            // 🔧 NEW: title ni vergul bilan ajratish
+            $titleParts = collect(explode(',', (string) ($resume->title ?? '')))
+                ->map(fn($t) => trim($t))
+                ->filter()
+                ->values();
+
+            // eski tokenlar bilan birga title qismlarini ham qo‘shamiz
+            $searchTokens = $tokens->merge($titleParts)->unique()->values();
+
             if ($isTech) {
-                $qb->where(function ($q) use ($tsQuery, $tokens) {
+                $qb->where(function ($q) use ($tsQuery, $searchTokens) {
+                    // PostgreSQL to_tsvector search
                     $q->whereRaw("
-                to_tsvector('simple', coalesce(description, '')) @@ websearch_to_tsquery('simple', ?)
+                to_tsvector('simple', coalesce(description, '') || ' ' || coalesce(title, '')) @@ websearch_to_tsquery('simple', ?)
             ", [$tsQuery]);
 
-                    if ($tokens->isNotEmpty()) {
-                        $likeTokens = $tokens->take(10)->map(fn($t) => "%{$t}%")->all();
+                    if ($searchTokens->isNotEmpty()) {
+                        $likeTokens = $searchTokens->take(10)->map(fn($t) => "%{$t}%")->all();
                         $q->orWhere(function ($sub) use ($likeTokens) {
                             foreach ($likeTokens as $pattern) {
-                                $sub->orWhere('description', 'ILIKE', $pattern)
-                                    ->orWhere('title', 'ILIKE', $pattern);
+                                $sub->orWhere('title', 'ILIKE', $pattern)
+                                    ->orWhere('description', 'ILIKE', $pattern);
                             }
                         });
                     }
@@ -141,13 +151,24 @@ class NotificationMatchingService
 
                 $qb->select(
                     'id', 'title', 'description', 'source', 'external_id', 'category',
-                    DB::raw("ts_rank_cd(to_tsvector('simple', coalesce(description, '')), websearch_to_tsquery('simple', ?)) as rank")
+                    DB::raw("ts_rank_cd(to_tsvector('simple', coalesce(description, '') || ' ' || coalesce(title, '')), websearch_to_tsquery('simple', ?)) as rank")
                 )->addBinding($tsQuery, 'select');
             } else {
+                // ❗ Non-tech categorylarda ham title orqali qidirish qo‘shamiz
+                if ($searchTokens->isNotEmpty()) {
+                    $likeTokens = $searchTokens->take(10)->map(fn($t) => "%{$t}%")->all();
+                    $qb->where(function ($q) use ($likeTokens) {
+                        foreach ($likeTokens as $pattern) {
+                            $q->orWhere('title', 'ILIKE', $pattern)
+                                ->orWhere('description', 'ILIKE', $pattern);
+                        }
+                    });
+                }
+
                 $qb->select('id', 'title', 'description', 'source', 'external_id', 'category', DB::raw('0 as rank'));
             }
 
-            // 🧩 Kategoriya bo‘yicha qidiruv
+            // 🧩 Kategoriya bo‘yicha filter
             if ($withCategory) {
                 if ($resumeCategory) {
                     $count = DB::table('vacancies')
@@ -166,10 +187,10 @@ class NotificationMatchingService
                 }
             }
 
-            // 🔍 Agar tokens mavjud bo‘lsa, title orqali qidiruv natijasini ham log qilamiz
-            if ($tokens->isNotEmpty()) {
+            // 🔍 Tokenlar bo‘yicha title/description log
+            if ($searchTokens->isNotEmpty()) {
                 try {
-                    $likeTokens = $tokens->take(10)->map(fn($t) => "%{$t}%")->all();
+                    $likeTokens = $searchTokens->take(10)->map(fn($t) => "%{$t}%")->all();
                     $titleCount = DB::table('vacancies')
                         ->where('status', 'publish')
                         ->where('source', 'telegram')
@@ -183,9 +204,9 @@ class NotificationMatchingService
 
                     Log::info('📈 [TITLE SEARCH RESULT]', [
                         'resume_id' => $resume->id,
-                        'token_count' => $tokens->count(),
+                        'token_count' => $searchTokens->count(),
                         'vacancy_count' => $titleCount,
-                        'tokens' => $tokens->all(),
+                        'tokens' => $searchTokens->all(),
                     ]);
                 } catch (\Throwable $e) {
                     Log::error('❌ [TITLE SEARCH ERROR]', [
