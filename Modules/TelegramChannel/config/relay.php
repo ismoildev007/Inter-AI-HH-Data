@@ -107,7 +107,7 @@ return [
         'skip_if_signature_published' => true,
         'skip_if_raw_hash_published' => true,
         'skip_if_normalized_hash_published' => true,
-        // Allow multiple ARCHIVED rows with the same signature (requires dropping unique on signature)
+        
         'allow_multiple_archived' => true,
         // Footer handles to strip when hashing raw or normalized content
         'footer_handles' => [
@@ -218,7 +218,7 @@ return [
             'key' => 'tg:publish',
             // ruxsat etilgan yuborishlar soni / 60s (ENV talab qilinmaydi)
             // Kerak bo'lsa shu faylda sonni o'zgartiring
-            'allow' => 30, // per minute (config-driven)
+            'allow' => 60, // per minute (config-driven)
             'every' => 60, // seconds
             'block' => 5,  // acquire up to N seconds per inner attempt
             // DeliverVacancyJob ichida bir attempt davomida nechta ichki acquire qilish (config-driven)

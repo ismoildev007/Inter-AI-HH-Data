@@ -223,12 +223,31 @@ class RelayService
                             ->where('status', Vacancy::STATUS_PUBLISH)
                             ->exists();
                         if ($rawPublished) {
+                            // Save skipped record for traceability
+                            try {
+                                Vacancy::create([
+                                    'source' => 'telegram',
+                                    'status' => Vacancy::STATUS_SKIPPED,
+                                    'source_id' => $sourceId ?? null,
+                                    'source_message_id' => $sourceLink ?? null,
+                                    'raw_hash' => $rawHash,
+                                ]);
+                            } catch (\Throwable $e) {}
                             continue;
                         }
                     }
                     if (!$allowArchivedDuplicates) {
                         $rawExists = Vacancy::where('raw_hash', $rawHash)->exists();
                         if ($rawExists) {
+                            try {
+                                Vacancy::create([
+                                    'source' => 'telegram',
+                                    'status' => Vacancy::STATUS_SKIPPED,
+                                    'source_id' => $sourceId ?? null,
+                                    'source_message_id' => $sourceLink ?? null,
+                                    'raw_hash' => $rawHash,
+                                ]);
+                            } catch (\Throwable $e) {}
                             continue;
                         }
                     }
@@ -461,12 +480,32 @@ class RelayService
                             ->where('status', Vacancy::STATUS_PUBLISH)
                             ->exists();
                         if ($existsNormalizedPublished) {
+                            try {
+                                Vacancy::create([
+                                    'source' => 'telegram',
+                                    'status' => Vacancy::STATUS_SKIPPED,
+                                    'source_id' => $sourceId ?? null,
+                                    'source_message_id' => $sourceLink ?? null,
+                                    'raw_hash' => $rawHash ?: null,
+                                    'normalized_hash' => $normalizedHash,
+                                ]);
+                            } catch (\Throwable $e) {}
                             continue;
                         }
                     }
                     if (!$allowArchivedDuplicates) {
                         $existsNormalizedAny = Vacancy::where('normalized_hash', $normalizedHash)->exists();
                         if ($existsNormalizedAny) {
+                            try {
+                                Vacancy::create([
+                                    'source' => 'telegram',
+                                    'status' => Vacancy::STATUS_SKIPPED,
+                                    'source_id' => $sourceId ?? null,
+                                    'source_message_id' => $sourceLink ?? null,
+                                    'raw_hash' => $rawHash ?: null,
+                                    'normalized_hash' => $normalizedHash,
+                                ]);
+                            } catch (\Throwable $e) {}
                             continue;
                         }
                     }
@@ -501,12 +540,34 @@ class RelayService
                             ->where('status', Vacancy::STATUS_PUBLISH)
                             ->exists();
                         if ($existsPublished) {
+                            try {
+                                Vacancy::create([
+                                    'source' => 'telegram',
+                                    'status' => Vacancy::STATUS_SKIPPED,
+                                    'source_id' => $sourceId ?? null,
+                                    'source_message_id' => $sourceLink ?? null,
+                                    'raw_hash' => $rawHash ?: null,
+                                    'normalized_hash' => $normalizedHash ?: null,
+                                    'signature' => $signature,
+                                ]);
+                            } catch (\Throwable $e) {}
                             continue;
                         }
                     }
                     if (!$allowArchivedDuplicates) {
                         $existsAny = Vacancy::where('signature', $signature)->exists();
                         if ($existsAny) {
+                            try {
+                                Vacancy::create([
+                                    'source' => 'telegram',
+                                    'status' => Vacancy::STATUS_SKIPPED,
+                                    'source_id' => $sourceId ?? null,
+                                    'source_message_id' => $sourceLink ?? null,
+                                    'raw_hash' => $rawHash ?: null,
+                                    'normalized_hash' => $normalizedHash ?: null,
+                                    'signature' => $signature,
+                                ]);
+                            } catch (\Throwable $e) {}
                             continue;
                         }
                     }

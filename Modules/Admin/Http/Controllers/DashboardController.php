@@ -638,10 +638,28 @@ class DashboardController extends Controller
             ->where('status', \App\Models\Vacancy::STATUS_QUEUED)
             ->count();
 
+        // Skipped (status=skipped) count across current filters/date range
+        $skippedCount = DB::table('vacancies')
+            ->when($filter === 'telegram', function ($query) {
+                $query->whereRaw('LOWER(source) LIKE ?', ['telegram%']);
+            })
+            ->when($dateFrom, function ($query) use ($dateFrom) {
+                $query->where('created_at', '>=', $dateFrom);
+            })
+            ->when($dateTo, function ($query) use ($dateTo) {
+                $query->where('created_at', '<=', $dateTo);
+            })
+            ->when($filter === 'hh', function ($query) {
+                $query->whereRaw('LOWER(source) LIKE ?', ['hh%']);
+            })
+            ->where('status', \App\Models\Vacancy::STATUS_SKIPPED)
+            ->count();
+
         return view('admin::Admin.Dashboard.categories', [
             'rows' => $rows,
             'totalCount' => $totalCount,
             'queuedCount' => $queuedCount,
+            'skippedCount' => $skippedCount,
             'filter' => $filter,
             'search' => $search,
             'dateFilter' => [
@@ -859,6 +877,31 @@ class DashboardController extends Controller
         return view('admin::Admin.Dashboard.failed-vacancies', [
             'vacancies' => $vacancies,
             'queuedCount' => $queuedCount,
+            'filter' => $filter,
+        ]);
+    }
+
+    /**
+     * List vacancies with status=skipped (dedupe hits) for review (read‑only).
+     */
+    public function skippedVacancies(Request $request)
+    {
+        $filter = strtolower($request->query('filter', 'all'));
+        if (!in_array($filter, ['all', 'telegram', 'hh'], true)) {
+            $filter = 'all';
+        }
+
+        $query = Vacancy::query()->where('status', Vacancy::STATUS_SKIPPED);
+        if ($filter === 'telegram') {
+            $query->whereRaw('LOWER(source) LIKE ?', ['telegram%']);
+        } elseif ($filter === 'hh') {
+            $query->whereRaw('LOWER(source) LIKE ?', ['hh%']);
+        }
+
+        $vacancies = $query->orderByDesc('id')->paginate(50)->withQueryString();
+
+        return view('admin::Admin.Dashboard.skipped-vacancies', [
+            'vacancies' => $vacancies,
             'filter' => $filter,
         ]);
     }

@@ -200,7 +200,7 @@ return [
             'balance' => 'auto',
             'autoScalingStrategy' => 'time',
             // One process per Telegram session for stability
-            'maxProcesses' => 3,
+            'maxProcesses' => 1,
             // Avoid periodic rotation by time/job count to reduce SIGTERM interruptions
             'maxTime' => 0,   // unlimited
             'maxJobs' => 0,   // unlimited
@@ -234,8 +234,8 @@ return [
                 'connection' => 'redis',
                 'queue' => ['telegram-relay'],
                 'balance' => 'simple',
-                'processes' => 3,
-                'maxProcesses' => 3,
+                'processes' => 1,
+                'maxProcesses' => 1,
                 'timeout' => 180,
             ],
             'autoapply' => [
@@ -253,7 +253,7 @@ return [
             ],
             'telegram-relay' => [
                 // Keep single process locally as well
-                'maxProcesses' => 3,
+                'maxProcesses' => 1,
             ],
             'autoapply' => [
                 'processes' => 1,

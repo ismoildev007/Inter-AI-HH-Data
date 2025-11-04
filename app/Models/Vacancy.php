@@ -10,6 +10,9 @@ class Vacancy extends Model
     public const STATUS_ARCHIVE = 'archive';
     public const STATUS_QUEUED  = 'queued';
     public const STATUS_FAILED  = 'failed';
+    public const STATUS_SKIPPED = 'skipped';
+    // public const STATUS_QUEUED  = 'queued';
+    // public const STATUS_FAILED  = 'failed';
     protected $fillable = [
         'source',
         'external_id',
