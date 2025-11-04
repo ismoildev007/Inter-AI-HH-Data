@@ -144,26 +144,7 @@ class NotificationMatchingService
                     DB::raw("ts_rank_cd(to_tsvector('simple', coalesce(description, '')), websearch_to_tsquery('simple', ?)) as rank")
                 )->addBinding($tsQuery, 'select');
             } else {
-                $qb->where(function ($q) use ($tsQuery, $tokens) {
-                    $q->whereRaw("
-                to_tsvector('simple', coalesce(description, '')) @@ websearch_to_tsquery('simple', ?)
-            ", [$tsQuery]);
-
-                    if ($tokens->isNotEmpty()) {
-                        $likeTokens = $tokens->take(10)->map(fn($t) => "%{$t}%")->all();
-                        $q->orWhere(function ($sub) use ($likeTokens) {
-                            foreach ($likeTokens as $pattern) {
-                                $sub->orWhere('description', 'ILIKE', $pattern)
-                                    ->orWhere('title', 'ILIKE', $pattern);
-                            }
-                        });
-                    }
-                });
-
-                $qb->select(
-                    'id', 'title', 'description', 'source', 'external_id', 'category',
-                    DB::raw("ts_rank_cd(to_tsvector('simple', coalesce(description, '')), websearch_to_tsquery('simple', ?)) as rank")
-                )->addBinding($tsQuery, 'select');
+                $qb->select('id', 'title', 'description', 'source', 'external_id', 'category', DB::raw('0 as rank'));
             }
 
             // 🧩 Kategoriya bo‘yicha qidiruv
@@ -175,9 +156,49 @@ class NotificationMatchingService
                         ->where('category', $resumeCategory)
                         ->count();
 
+                    $qb->where(function ($q) use ($tsQuery, $tokens) {
+                        $q->whereRaw("
+                            to_tsvector('simple', coalesce(description, '')) @@ websearch_to_tsquery('simple', ?)
+                        ", [$tsQuery]);
+
+                        if ($tokens->isNotEmpty()) {
+                            $likeTokens = $tokens->take(10)->map(fn($t) => "%{$t}%")->all();
+                            $q->orWhere(function ($sub) use ($likeTokens) {
+                                foreach ($likeTokens as $pattern) {
+                                    $sub->orWhere('description', 'ILIKE', $pattern)
+                                        ->orWhere('title', 'ILIKE', $pattern);
+                                }
+                            });
+                        }
+                    });
+
+                    $qb->select(
+                        'id', 'title', 'description', 'source', 'external_id', 'category',
+                        DB::raw("ts_rank_cd(to_tsvector('simple', coalesce(description, '')), websearch_to_tsquery('simple', ?)) as rank")
+                    )->addBinding($tsQuery, 'select');
                     Log::info("📊 [CATEGORY] {$resumeCategory} → {$count} vacancies.");
                     $qb->where('category', $resumeCategory);
                 } elseif ($guessedCategory) {
+                    $qb->where(function ($q) use ($tsQuery, $tokens) {
+                        $q->whereRaw("
+                            to_tsvector('simple', coalesce(description, '')) @@ websearch_to_tsquery('simple', ?)
+                        ", [$tsQuery]);
+
+                        if ($tokens->isNotEmpty()) {
+                            $likeTokens = $tokens->take(10)->map(fn($t) => "%{$t}%")->all();
+                            $q->orWhere(function ($sub) use ($likeTokens) {
+                                foreach ($likeTokens as $pattern) {
+                                    $sub->orWhere('description', 'ILIKE', $pattern)
+                                        ->orWhere('title', 'ILIKE', $pattern);
+                                }
+                            });
+                        }
+                    });
+
+                    $qb->select(
+                        'id', 'title', 'description', 'source', 'external_id', 'category',
+                        DB::raw("ts_rank_cd(to_tsvector('simple', coalesce(description, '')), websearch_to_tsquery('simple', ?)) as rank")
+                    )->addBinding($tsQuery, 'select');
                     Log::info("📊 [GUESSED] {$guessedCategory} used.");
                     $qb->where('category', $guessedCategory);
                 } else {
