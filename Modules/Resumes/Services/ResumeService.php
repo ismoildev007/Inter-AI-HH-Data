@@ -5,9 +5,11 @@ namespace Modules\Resumes\Services;
 use App\Models\Resume;
 use App\Models\ResumeAnalyze;
 use App\Models\UserPreference;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Modules\Users\Http\Controllers\UsersController;
 use Smalot\PdfParser\Parser as PdfParser;
 use PhpOffice\PhpWord\IOFactory as WordIO;
 use Modules\Resumes\Interfaces\ResumeInterface;
@@ -80,6 +82,14 @@ class ResumeService
         $allowedCategoryLabels = $categoryService->getLabelsExceptOther();
         $allowedCategoriesJson = json_encode($allowedCategoryLabels, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         $resumeText = (string) ($resume->parsed_text ?? $resume->description);
+        if (empty(trim($resumeText))) {
+            Log::info("Skip analyze: resume text is empty for resume ID {$resume->id}");
+            $user = $resume->user_id;
+            if (! $user->resumes()->exists()) {
+                app(UsersController::class)->destroyIfNoResumes(request());
+            }
+            return;
+        }
 
         $prompt = <<<PROMPT
             You are an expert HR assistant AI.
