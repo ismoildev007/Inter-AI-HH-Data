@@ -415,18 +415,23 @@
                     <span class="visitors-hero__meta-item"><i class="feather-list"></i>On this page: {{ number_format($pageVisitors) }}</span>
                 </div>
             </div>
-            <div class="visitors-stats">
-                <div class="visitors-stat-card">
-                    <span class="label">Visits on this page</span>
-                    <span class="value">{{ number_format($pageVisits) }}</span>
-                    <span class="hint">Sum across listed visitors</span>
+                <div class="visitors-stats">
+                    <div class="visitors-stat-card">
+                        <span class="label">Visits on this page</span>
+                        <span class="value">{{ number_format($pageVisits) }}</span>
+                        <span class="hint">Sum across listed visitors</span>
+                    </div>
+                    <div class="visitors-stat-card">
+                        <span class="label">Top visitor</span>
+                        <span class="value">{{ $topVisit ? number_format($topVisit) : '—' }}</span>
+                        <span class="hint">Highest visits count</span>
+                    </div>
+                    <div class="visitors-stat-card">
+                        <span class="label">Average per user</span>
+                        <span class="value">{{ isset($avgPerUser) ? number_format($avgPerUser, 2) : '—' }}</span>
+                        <span class="hint">{{ isset($totalVisits,$totalUsers) ? number_format($totalVisits).' / '.number_format($totalUsers) : 'All users' }}</span>
+                    </div>
                 </div>
-                <div class="visitors-stat-card">
-                    <span class="label">Top visitor</span>
-                    <span class="value">{{ $topVisit ? number_format($topVisit) : '—' }}</span>
-                    <span class="hint">Highest visits count</span>
-                </div>
-            </div>
         </div>
     </div>
 

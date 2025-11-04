@@ -84,7 +84,12 @@ return [
     */
 
     'waits' => [
+        // Default queue (users, notifications, interviews, matches, etc.)
         'redis:default' => 60,
+        // Telegram relay dedicated queue
+        'redis:telegram-relay' => 60,
+        // Auto-apply queue
+        'redis:autoapply' => 60,
     ],
 
     /*

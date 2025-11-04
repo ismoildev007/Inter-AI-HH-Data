@@ -503,8 +503,25 @@ class DashboardController extends Controller
             ->orderByDesc('visits_count')
             ->paginate(50);
 
+        // Global totals for average calculation across entire dataset
+        $totalUsers = DB::table('visits')
+            ->when($sourceFilter !== 'all', function ($q) use ($sourceFilter) { $q->where('source', $sourceFilter); })
+            ->whereNotNull('user_id')
+            ->distinct('user_id')
+            ->count('user_id');
+
+        $totalVisits = DB::table('visits')
+            ->when($sourceFilter !== 'all', function ($q) use ($sourceFilter) { $q->where('source', $sourceFilter); })
+            ->whereNotNull('user_id')
+            ->count();
+
+        $avgPerUser = $totalUsers > 0 ? ($totalVisits / $totalUsers) : 0;
+
         return view('admin::Admin.Dashboard.top-visitors', [
             'rows' => $rows,
+            'totalUsers' => $totalUsers,
+            'totalVisits' => $totalVisits,
+            'avgPerUser' => $avgPerUser,
         ]);
     }
 
