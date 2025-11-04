@@ -86,6 +86,7 @@ class HHVacancyController extends Controller
                 'language' => $vacancy->language,
                 'signature' => $vacancy->signature,
                 'source_id' => $vacancy->source_id,
+                'apply_url' => $vacancy->apply_url,
                 'source_message_id' => $vacancy->source_message_id,
                 'target_message_id' => $vacancy->target_message_id,
                 'target_msg_id' => $vacancy->target_msg_id,
@@ -168,7 +169,7 @@ class HHVacancyController extends Controller
 
     public function hhSearch(Request $request)
     {
-        
+
         $query = $request->get('query', 'developer');
         $page = (int) $request->get('page', 0);
         $perPage = (int) $request->get('per_page', 100);
