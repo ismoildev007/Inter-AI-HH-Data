@@ -34,6 +34,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/vacancies/categories', [DashboardController::class, 'vacancyCategories'])->name('vacancies.categories');
         // Failed vacancies management (decoupled delivery)
         Route::get('/vacancies/failed', [DashboardController::class, 'failedVacancies'])->name('vacancies.failed');
+        Route::post('/vacancies/failed/requeue-all', [DashboardController::class, 'vacanciesRequeueAll'])->name('vacancies.requeue_all');
 
         // Profile
         Route::get('profile', [ProfileController::class, 'index'])->name('profile');

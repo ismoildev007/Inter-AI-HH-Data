@@ -880,4 +880,35 @@ class DashboardController extends Controller
 
         return redirect()->back()->with('status', 'Vacancy re-queued for delivery.');
     }
+
+    /**
+     * Bulk re-queue all failed vacancies (optionally by source filter).
+     */
+    public function vacanciesRequeueAll(Request $request)
+    {
+        $filter = strtolower($request->input('filter', $request->query('filter', 'all')));
+        if (!in_array($filter, ['all', 'telegram', 'hh'], true)) {
+            $filter = 'all';
+        }
+
+        $base = Vacancy::query()->where('status', Vacancy::STATUS_FAILED);
+        if ($filter === 'telegram') {
+            $base->whereRaw('LOWER(source) LIKE ?', ['telegram%']);
+        } elseif ($filter === 'hh') {
+            $base->whereRaw('LOWER(source) LIKE ?', ['hh%']);
+        }
+
+        $count = 0;
+        $base->select('id')->orderBy('id')->chunkById(200, function ($rows) use (&$count) {
+            $ids = collect($rows)->pluck('id')->all();
+            if (empty($ids)) return false;
+            Vacancy::whereIn('id', $ids)->update(['status' => Vacancy::STATUS_QUEUED]);
+            foreach ($ids as $id) {
+                DeliverVacancyJob::dispatch($id)->onQueue('telegram-relay');
+            }
+            $count += count($ids);
+        });
+
+        return redirect()->back()->with('status', "Re-queued {$count} vacancy(ies).");
+    }
 }
