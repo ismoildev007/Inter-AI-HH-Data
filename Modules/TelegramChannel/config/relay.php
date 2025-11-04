@@ -216,12 +216,13 @@ return [
     'throttle' => [
         'publish' => [
             'key' => 'tg:publish',
-            // ruxsat etilgan yuborishlar soni / davr
-            'allow' => env('TG_PUBLISH_PER_MIN', 10), // per minute
+            // ruxsat etilgan yuborishlar soni / 60s (ENV talab qilinmaydi)
+            // Kerak bo'lsa shu faylda sonni o'zgartiring
+            'allow' => 30, // per minute (config-driven)
             'every' => 60, // seconds
-            'block' => 5,  // acquire up to N seconds, then skip current loop
-            // DeliverVacancyJob ichida bir attempt davomida nechta ichki acquire qilish
-            'inner_retries' => env('TG_PUBLISH_INNER_RETRIES', 6),
+            'block' => 5,  // acquire up to N seconds per inner attempt
+            // DeliverVacancyJob ichida bir attempt davomida nechta ichki acquire qilish (config-driven)
+            'inner_retries' => 6,
         ],
     ],
 ];

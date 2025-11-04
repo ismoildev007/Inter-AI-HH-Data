@@ -124,7 +124,12 @@ class DeliverVacancyJob implements ShouldQueue, ShouldBeUnique
                     $sigLock = Cache::lock('tg:sig:' . $sig, 60);
                     if (!$sigLock->get()) {
                         // Another worker is processing same signature; retry shortly
-                        $this->release(5);
+                        if ($this->attempts() >= ($this->tries - 1)) {
+                            $vac->status = Vacancy::STATUS_FAILED;
+                            $vac->save();
+                        } else {
+                            $this->release(5);
+                        }
                         return;
                     }
                 }
@@ -148,17 +153,23 @@ class DeliverVacancyJob implements ShouldQueue, ShouldBeUnique
                         ->block($tBlock)
                         ->then(function () use (&$acquired, $tg, $to, $html, $target, &$tMsgId, &$targetLink, &$floodDelay, &$sendError) {
                             $acquired = true;
-                            try {
-                                $resp = $tg->sendMessage($to, $html);
-                                $tMsgId = $resp['id'] ?? null;
-                                if (!$tMsgId && isset($resp['message']['id'])) {
-                                    $tMsgId = $resp['message']['id'];
+                        try {
+                            $resp = $tg->sendMessage($to, $html);
+                            // Robustly extract message id from possible structures
+                            $tMsgId = $resp['id'] ?? null;
+                            if (!$tMsgId && isset($resp['message']['id'])) {
+                                $tMsgId = $resp['message']['id'];
+                            }
+                            if (!$tMsgId && isset($resp['result']['message']['id'])) {
+                                $tMsgId = $resp['result']['message']['id'];
+                            }
+                            if (!$tMsgId && isset($resp['updates']) && is_array($resp['updates'])) {
+                                foreach ($resp['updates'] as $u) {
+                                    if (isset($u['message']['id'])) { $tMsgId = $u['message']['id']; break; }
+                                    if (isset($u['update']['message']['id'])) { $tMsgId = $u['update']['message']['id']; break; }
                                 }
-                                if (!$tMsgId && isset($resp['updates']) && is_array($resp['updates'])) {
-                                    foreach ($resp['updates'] as $u) {
-                                        if (isset($u['message']['id'])) { $tMsgId = $u['message']['id']; break; }
-                                    }
-                                }
+                            }
+                            $tMsgId = $tMsgId ? (int) $tMsgId : null;
                                 if (is_numeric($tMsgId)) {
                                     $plain = $target?->username ? ltrim((string) $target->username, '@') : null;
                                     if ($plain) {
@@ -187,8 +198,13 @@ class DeliverVacancyJob implements ShouldQueue, ShouldBeUnique
                 }
 
                 if (!$acquired) {
-                    // Could not acquire throttle; release to retry later
-                    $this->release($tBlock > 0 ? $tBlock : 5);
+                    // Could not acquire throttle; release to retry later or fail near limit
+                    if ($this->attempts() >= ($this->tries - 1)) {
+                        $vac->status = Vacancy::STATUS_FAILED;
+                        $vac->save();
+                    } else {
+                        $this->release($tBlock > 0 ? $tBlock : 5);
+                    }
                     return;
                 }
 
