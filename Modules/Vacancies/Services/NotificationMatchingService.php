@@ -123,6 +123,7 @@ class NotificationMatchingService
             $isTech = in_array($resumeCategory, $techCategories, true);
 
             if ($isTech) {
+                // 🔹 texnik kategoriya – avvalgi mantiq saqlanadi
                 $qb->where(function ($q) use ($tsQuery, $tokens) {
                     $q->whereRaw("
                 to_tsvector('simple', coalesce(description, '')) @@ websearch_to_tsquery('simple', ?)
@@ -144,100 +145,65 @@ class NotificationMatchingService
                     DB::raw("ts_rank_cd(to_tsvector('simple', coalesce(description, '')), websearch_to_tsquery('simple', ?)) as rank")
                 )->addBinding($tsQuery, 'select');
             } else {
-                $qb->select('id', 'title', 'description', 'source', 'external_id', 'category', DB::raw('0 as rank'));
-            }
+                // 🔹 TEXNIK EMAS — category bo‘yicha ham, umumiy title search ham
+                $qb->select(
+                    'id', 'title', 'description', 'source', 'external_id', 'category',
+                    DB::raw('0 as rank')
+                );
 
-            // 🧩 Kategoriya bo‘yicha qidiruv
-            if ($withCategory) {
-                if ($resumeCategory) {
-                    $count = DB::table('vacancies')
-                        ->where('status', 'publish')
-                        ->where('source', 'telegram')
-                        ->where('category', $resumeCategory)
-                        ->count();
+                $qb->where(function ($main) use ($tokens, $tsQuery, $resume, $resumeCategory) {
 
-                    $qb->where(function ($q) use ($tsQuery, $tokens) {
-                        $q->whereRaw("
-                            to_tsvector('simple', coalesce(description, '')) @@ websearch_to_tsquery('simple', ?)
-                        ", [$tsQuery]);
+                    // 🟢 1. Agar kategoriya mavjud bo‘lsa — shu kategoriyadagi barcha vacancies
+                    if (!empty($resumeCategory)) {
+                        $main->orWhere('category', $resumeCategory);
+                        Log::info("📂 [NON-TECH CATEGORY] {$resumeCategory} vacancies included.");
+                    }
 
-                        if ($tokens->isNotEmpty()) {
-                            $likeTokens = $tokens->take(10)->map(fn($t) => "%{$t}%")->all();
-                            $q->orWhere(function ($sub) use ($likeTokens) {
-                                foreach ($likeTokens as $pattern) {
-                                    $sub->orWhere('description', 'ILIKE', $pattern)
-                                        ->orWhere('title', 'ILIKE', $pattern);
-                                }
-                            });
-                        }
-                    });
+                    // 🟢 2. Full-text search (butun vacancies bazasidan)
+                    $main->orWhereRaw("
+                to_tsvector('simple', coalesce(description, '')) @@ websearch_to_tsquery('simple', ?)
+            ", [$tsQuery]);
 
-                    $qb->select(
-                        'id', 'title', 'description', 'source', 'external_id', 'category',
-                        DB::raw("ts_rank_cd(to_tsvector('simple', coalesce(description, '')), websearch_to_tsquery('simple', ?)) as rank")
-                    )->addBinding($tsQuery, 'select');
-                    Log::info("📊 [CATEGORY] {$resumeCategory} → {$count} vacancies.");
-                    $qb->where('category', $resumeCategory);
-                } elseif ($guessedCategory) {
-                    $qb->where(function ($q) use ($tsQuery, $tokens) {
-                        $q->whereRaw("
-                            to_tsvector('simple', coalesce(description, '')) @@ websearch_to_tsquery('simple', ?)
-                        ", [$tsQuery]);
-
-                        if ($tokens->isNotEmpty()) {
-                            $likeTokens = $tokens->take(10)->map(fn($t) => "%{$t}%")->all();
-                            $q->orWhere(function ($sub) use ($likeTokens) {
-                                foreach ($likeTokens as $pattern) {
-                                    $sub->orWhere('description', 'ILIKE', $pattern)
-                                        ->orWhere('title', 'ILIKE', $pattern);
-                                }
-                            });
-                        }
-                    });
-
-                    $qb->select(
-                        'id', 'title', 'description', 'source', 'external_id', 'category',
-                        DB::raw("ts_rank_cd(to_tsvector('simple', coalesce(description, '')), websearch_to_tsquery('simple', ?)) as rank")
-                    )->addBinding($tsQuery, 'select');
-                    Log::info("📊 [GUESSED] {$guessedCategory} used.");
-                    $qb->where('category', $guessedCategory);
-                } else {
-                    Log::warning("⚠️ [NO CATEGORY] No category filter applied!");
-                }
-            }
-
-            // 🔍 Agar tokens mavjud bo‘lsa, title orqali qidiruv natijasini ham log qilamiz
-            if ($tokens->isNotEmpty()) {
-                try {
-                    $likeTokens = $tokens->take(10)->map(fn($t) => "%{$t}%")->all();
-                    $titleCount = DB::table('vacancies')
-                        ->where('status', 'publish')
-                        ->where('source', 'telegram')
-                        ->where(function ($q) use ($likeTokens) {
-                            foreach ($likeTokens as $pattern) {
+                    // 🟢 3. Tokenlar orqali title/description qidiruv (butun bazadan)
+                    if ($tokens->isNotEmpty()) {
+                        $main->orWhere(function ($q) use ($tokens) {
+                            foreach ($tokens as $t) {
+                                $pattern = "%{$t}%";
                                 $q->orWhere('title', 'ILIKE', $pattern)
                                     ->orWhere('description', 'ILIKE', $pattern);
                             }
-                        })
-                        ->count();
+                        });
+                        Log::info('🔎 [TITLE/DESC SEARCH ADDED FOR NON-TECH]', ['tokens' => $tokens->all()]);
+                    }
 
-                    Log::info('📈 [TITLE SEARCH RESULT]', [
-                        'resume_id' => $resume->id,
-                        'token_count' => $tokens->count(),
-                        'vacancy_count' => $titleCount,
-                        'tokens' => $tokens->all(),
-                    ]);
-                } catch (\Throwable $e) {
-                    Log::error('❌ [TITLE SEARCH ERROR]', [
-                        'resume_id' => $resume->id,
-                        'error' => $e->getMessage(),
-                    ]);
-                }
+                    // 🟢 4. Resume->title da vergul bilan ajratilgan frazalar bo‘lsa — skill qidiruvi
+                    $extraSkills = collect(preg_split('/\s*,\s*/u', (string) ($resume->title ?? '')))
+                        ->map(fn($s) => trim($s))
+                        ->filter(fn($s) => mb_strlen($s) > 2)
+                        ->unique()
+                        ->values();
+
+                    if ($extraSkills->isNotEmpty()) {
+                        $main->orWhere(function ($q) use ($extraSkills) {
+                            foreach ($extraSkills as $skill) {
+                                $pattern = "%{$skill}%";
+                                $q->orWhere('title', 'ILIKE', $pattern)
+                                    ->orWhere('description', 'ILIKE', $pattern);
+                            }
+                        });
+
+                        Log::info('🧠 [TITLE-BASED SKILL SEARCH]', [
+                            'resume_id' => $resume->id,
+                            'skills' => $extraSkills->all(),
+                        ]);
+                    }
+                });
             }
 
             Log::info("✅ [BUILD_LOCAL] Resume {$resume->id} (TECH=" . ($isTech ? 'YES' : 'NO') . ")");
             return $qb->orderByDesc('rank')->orderByDesc('id');
         };
+
 
 
         $localVacancies = collect($buildLocal(true)->limit(10)->get())
