@@ -109,7 +109,8 @@ class DeliverVacancyJob implements ShouldQueue, ShouldBeUnique
                 if ($sig !== '') {
                     $sigLock = Cache::lock('tg:sig:' . $sig, 600);
                     if (!$sigLock->get()) {
-                        // Already being processed elsewhere
+                        // Another worker is processing same signature; retry shortly
+                        $this->release(5);
                         return;
                     }
                 }
