@@ -24,31 +24,44 @@
                 : route('admin.resumes.download', $resume->id);
         }
         $fileMime = $resume->file_mime ?? '—';
-        // Compute an "open" URL that can preview Office docs when possible
+        // Build a public-or-signed URL for direct browser access (e.g., Office viewer)
+        $publicSourceUrl = null;
+        if ($resume->file_path) {
+            if (preg_match('#^https?://#', $resume->file_path) === 1) {
+                $publicSourceUrl = $resume->file_path;
+            } else {
+                try {
+                    $storagePath = ltrim($resume->file_path, '/');
+                    $disk = \Illuminate\Support\Facades\Storage::disk('spaces');
+                    if ($disk->exists($storagePath)) {
+                        try {
+                            $publicSourceUrl = $disk->temporaryUrl($storagePath, now()->addMinutes(15));
+                        } catch (\Throwable $e) {
+                            $publicSourceUrl = $disk->url($storagePath);
+                        }
+                    }
+                } catch (\Throwable $e) {
+                    $publicSourceUrl = null;
+                }
+            }
+        }
+
+        // Choose how to open based on MIME
         $openUrl = $fileUrl;
-        if ($fileUrl && $fileMime && $fileMime !== '—') {
+        if ($publicSourceUrl && $fileMime && $fileMime !== '—') {
             $isPdf = str_starts_with($fileMime, 'application/pdf');
-            $isImage = str_starts_with($fileMime, 'image/');
             $isOffice = in_array($fileMime, [
-                'application/msword', // .doc
-                'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // .docx
-                'application/vnd.ms-excel', // .xls
-                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
-                'application/vnd.ms-powerpoint', // .ppt
-                'application/vnd.openxmlformats-officedocument.presentationml.presentation', // .pptx
+                'application/msword',
+                'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                'application/vnd.ms-excel',
+                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                'application/vnd.ms-excel.sheet.macroEnabled.12',
             ], true);
 
-            if ($isPdf || $isImage) {
-                $openUrl = $fileUrl;
+            if ($isPdf) {
+                $openUrl = $publicSourceUrl; // open PDF directly
             } elseif ($isOffice) {
-                // Office Online viewer requires a publicly accessible absolute URL.
-                // Use viewer only when the file URL is already absolute (e.g., S3 or CDN).
-                if (preg_match('#^https?://#', $fileUrl) === 1) {
-                    $openUrl = 'https://view.officeapps.live.com/op/embed.aspx?src=' . urlencode($fileUrl);
-                } else {
-                    // Fallback to direct link if not publicly accessible
-                    $openUrl = $fileUrl;
-                }
+                $openUrl = 'https://view.officeapps.live.com/op/view.aspx?src=' . urlencode($publicSourceUrl);
             }
         }
         $fileSize = $resume->file_size ? number_format((int) $resume->file_size / 1024, 0) . ' KB' : '—';
@@ -396,9 +409,14 @@
                         </div>
                         @if($fileUrl)
                             <div class="resume-show-actions mt-3">
-                                <a class="resume-action-btn" href="{{ $openUrl }}" target="_blank" rel="noopener">
+                                <a class="resume-action-btn" href="{{ $fileUrl }}" target="_blank" rel="noopener">
                                     <i class="feather-download"></i> Open resume
                                 </a>
+                                @if(isset($openUrl) && $openUrl !== $fileUrl)
+                                    <a class="resume-action-btn" href="{{ $openUrl }}" target="_blank" rel="noopener">
+                                        <i class="feather-external-link"></i> Open in browser
+                                    </a>
+                                @endif
                             </div>
                         @endif
                     </div>
