@@ -21,7 +21,8 @@ class DeliverVacancyJob implements ShouldQueue, ShouldBeUnique
 
     public function __construct(public int $vacancyId) {}
 
-    public int $tries = 3;
+    // Increase attempts to survive throttling/locks without quick failing
+    public int $tries = 15;
 
     public function uniqueId(): string
     {
@@ -42,6 +43,12 @@ class DeliverVacancyJob implements ShouldQueue, ShouldBeUnique
                 return;
             }
 
+            Log::info('DeliverVacancyJob start', [
+                'vacancy_id' => $vac->id,
+                'attempt' => $this->attempts(),
+                'status' => (string) $vac->status,
+            ]);
+
             // Skip if already delivered or archived
             if (in_array((string) $vac->status, [Vacancy::STATUS_PUBLISH, Vacancy::STATUS_ARCHIVE], true)) {
                 return;
@@ -49,10 +56,13 @@ class DeliverVacancyJob implements ShouldQueue, ShouldBeUnique
 
             $target = TelegramChannel::where('is_target', true)->first();
             if (!$target) {
-                // No target: mark as failed after final attempt
+                // No target configured yet — retry later instead of silently returning
+                Log::warning('DeliverVacancyJob no target channel', ['vacancy_id' => $vac->id, 'attempt' => $this->attempts()]);
                 if ($this->attempts() >= $this->tries) {
                     $vac->status = Vacancy::STATUS_FAILED;
                     $vac->save();
+                } else {
+                    $this->release(30);
                 }
                 return;
             }
@@ -95,9 +105,12 @@ class DeliverVacancyJob implements ShouldQueue, ShouldBeUnique
                 $to = (string) $target->channel_id;
             }
             if (!$to) {
+                Log::warning('DeliverVacancyJob target peer unresolved', ['vacancy_id' => $vac->id, 'attempt' => $this->attempts()]);
                 if ($this->attempts() >= $this->tries) {
                     $vac->status = Vacancy::STATUS_FAILED;
                     $vac->save();
+                } else {
+                    $this->release(30);
                 }
                 return;
             }
@@ -107,7 +120,8 @@ class DeliverVacancyJob implements ShouldQueue, ShouldBeUnique
             $sigLock = null;
             try {
                 if ($sig !== '') {
-                    $sigLock = Cache::lock('tg:sig:' . $sig, 600);
+                    // Shorter TTL to avoid stale locks blocking for long
+                    $sigLock = Cache::lock('tg:sig:' . $sig, 60);
                     if (!$sigLock->get()) {
                         // Another worker is processing same signature; retry shortly
                         $this->release(5);
@@ -126,44 +140,51 @@ class DeliverVacancyJob implements ShouldQueue, ShouldBeUnique
                 $targetLink = null;
                 $floodDelay = 0;
                 $sendError = null;
-                Redis::throttle($tKey)
-                    ->allow($tAllow)
-                    ->every($tEvery)
-                    ->block($tBlock)
-                    ->then(function () use (&$acquired, $tg, $to, $html, $target, &$tMsgId, &$targetLink, &$floodDelay, &$sendError) {
-                        $acquired = true;
-                        try {
-                            $resp = $tg->sendMessage($to, $html);
-                            $tMsgId = $resp['id'] ?? null;
-                            if (!$tMsgId && isset($resp['message']['id'])) {
-                                $tMsgId = $resp['message']['id'];
-                            }
-                            if (!$tMsgId && isset($resp['updates']) && is_array($resp['updates'])) {
-                                foreach ($resp['updates'] as $u) {
-                                    if (isset($u['message']['id'])) { $tMsgId = $u['message']['id']; break; }
+                $innerTries = max(1, (int) (config('telegramchannel_relay.throttle.publish.inner_retries', 6)));
+                for ($i = 0; $i < $innerTries && !$acquired; $i++) {
+                    Redis::throttle($tKey)
+                        ->allow($tAllow)
+                        ->every($tEvery)
+                        ->block($tBlock)
+                        ->then(function () use (&$acquired, $tg, $to, $html, $target, &$tMsgId, &$targetLink, &$floodDelay, &$sendError) {
+                            $acquired = true;
+                            try {
+                                $resp = $tg->sendMessage($to, $html);
+                                $tMsgId = $resp['id'] ?? null;
+                                if (!$tMsgId && isset($resp['message']['id'])) {
+                                    $tMsgId = $resp['message']['id'];
+                                }
+                                if (!$tMsgId && isset($resp['updates']) && is_array($resp['updates'])) {
+                                    foreach ($resp['updates'] as $u) {
+                                        if (isset($u['message']['id'])) { $tMsgId = $u['message']['id']; break; }
+                                    }
+                                }
+                                if (is_numeric($tMsgId)) {
+                                    $plain = $target?->username ? ltrim((string) $target->username, '@') : null;
+                                    if ($plain) {
+                                        $targetLink = 'https://t.me/' . $plain . '/' . $tMsgId;
+                                    } elseif (!empty($target?->channel_id)) {
+                                        $cid = (string) $target->channel_id;
+                                        $cid = ltrim($cid, '-');
+                                        if (str_starts_with($cid, '100')) { $cid = substr($cid, 3); }
+                                        $targetLink = 'https://t.me/c/' . $cid . '/' . $tMsgId;
+                                    }
+                                }
+                            } catch (\Throwable $e) {
+                                $sendError = $e;
+                                $msg = $e->getMessage();
+                                if (preg_match('/FLOOD_WAIT_(\d+)/i', (string) $msg, $m)) {
+                                    $floodDelay = max($floodDelay, (int) ($m[1] ?? 0));
                                 }
                             }
-                            if (is_numeric($tMsgId)) {
-                                $plain = $target?->username ? ltrim((string) $target->username, '@') : null;
-                                if ($plain) {
-                                    $targetLink = 'https://t.me/' . $plain . '/' . $tMsgId;
-                                } elseif (!empty($target?->channel_id)) {
-                                    $cid = (string) $target->channel_id;
-                                    $cid = ltrim($cid, '-');
-                                    if (str_starts_with($cid, '100')) { $cid = substr($cid, 3); }
-                                    $targetLink = 'https://t.me/c/' . $cid . '/' . $tMsgId;
-                                }
-                            }
-                        } catch (\Throwable $e) {
-                            $sendError = $e;
-                            $msg = $e->getMessage();
-                            if (preg_match('/FLOOD_WAIT_(\d+)/i', (string) $msg, $m)) {
-                                $floodDelay = max($floodDelay, (int) ($m[1] ?? 0));
-                            }
-                        }
-                    }, function () use (&$acquired) {
-                        $acquired = false;
-                    });
+                        }, function () use (&$acquired) {
+                            $acquired = false;
+                        });
+                    if (!$acquired) {
+                        // Avoid burning attempts too quickly; short pause before next inner try
+                        sleep(max(1, (int) $tBlock));
+                    }
+                }
 
                 if (!$acquired) {
                     // Could not acquire throttle; release to retry later
