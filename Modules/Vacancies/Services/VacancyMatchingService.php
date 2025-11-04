@@ -61,6 +61,7 @@ class VacancyMatchingService
             ->map($cleanText)
             ->filter(fn($w) => mb_strlen($w) >= 2)
             ->unique()
+            ->take(8)
             ->values();
 
         Log::info('🧩 Tokens parsed', ['tokens' => $tokens->all()]);
@@ -70,6 +71,7 @@ class VacancyMatchingService
             ->map($cleanText)
             ->filter(fn($s) => mb_strlen($s) >= 3 && str_contains($s, ' '))
             ->unique()
+            ->take(4)
             ->values();
 
         $searchQuery = $latinQuery ?: $cyrilQuery;
@@ -77,7 +79,7 @@ class VacancyMatchingService
         $mustPair = count($tokens) >= 2 ? ['(' . $tokens[0] . ' ' . $tokens[1] . ')'] : [];
         $webParts = array_merge($mustPair, $tsTerms);
         $tsQuery = !empty($webParts)
-            ? implode(' | ', array_map(fn($t) => str_contains($t, ' ') ? '"' . str_replace('"', '', $t) . '"' : $t, $webParts))
+            ? implode(' OR ', array_map(fn($t) => str_contains($t, ' ') ? '"' . str_replace('"', '', $t) . '"' : $t, $webParts))
             : (string) $searchQuery;
 
         // --- 2. Guess category
@@ -129,7 +131,7 @@ class VacancyMatchingService
         if ($isTech) {
             // 👇 Agar resume texnik kategoriya bo‘lsa, title orqali qidirish
             $titleCondition = collect($tokens)
-                ->map(fn($t) => "LOWER(v.title) LIKE '%" . mb_strtolower(addcslashes($t, '%_')) . "%'")
+                ->map(fn($t) => "LOWER(v.title) LIKE '%" . addslashes(mb_strtolower($t)) . "%'")
                 ->implode(' OR ');
 
             if ($titleCondition) {
@@ -149,8 +151,8 @@ class VacancyMatchingService
         } else {
             // 👇 Texnik bo‘lmasa — category orqali cheklash
             if ($resumeCategory) {
-                $baseSql .= " AND v.category ILIKE ?";
-                $params[] = '%' . $resumeCategory . '%';
+                $baseSql .= " AND v.category = ?";
+                $params[] = $resumeCategory;
                 Log::info("📊 [CATEGORY FILTER] Resume kategoriyasi ishlatildi", [
                     'category' => $resumeCategory,
                     'tsQuery_used' => $tsQuery,
