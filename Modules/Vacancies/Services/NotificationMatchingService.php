@@ -5,17 +5,13 @@ namespace Modules\Vacancies\Services;
 use App\Models\Resume;
 use App\Models\Vacancy;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Concurrency;
 use Modules\Vacancies\Interfaces\HHVacancyInterface;
 use Modules\Vacancies\Interfaces\VacancyInterface;
-use Spatie\Async\Pool;
 use App\Helpers\TranslitHelper;
-use Illuminate\Support\Facades\Cache;
 use Stichoza\GoogleTranslate\GoogleTranslate;
-use Throwable;
 use Modules\TelegramChannel\Services\VacancyCategoryService;
+use GuzzleHttp\Promise;
 
 class NotificationMatchingService
 {
