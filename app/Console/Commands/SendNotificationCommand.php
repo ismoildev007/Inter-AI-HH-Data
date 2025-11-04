@@ -109,7 +109,7 @@ class SendNotificationCommand extends Command
 
                     $token = $user->createToken('api_token', ['*'], now()->addDays(30))->plainTextToken;
 //                    $webAppUrl = "https://vacancies.inter-ai.uz/#?chat_id={$user->chat_id}&token={$token}&locale={$langCode}";
-                    $webAppUrl = "https://vacancies.inter-ai.uz/#?chat_id=1770556788&token={$token}&locale={$langCode}";
+                    $webAppUrl = "https://vacancies.inter-ai.uz/#?chat_id=6583641407&token={$token}&locale={$langCode}";
 
                     $inlineKeyboard = Keyboard::make()
                         ->inline()
@@ -142,7 +142,7 @@ class SendNotificationCommand extends Command
                     try {
                         $telegram->sendMessage([
 //                            'chat_id'      => $user->chat_id,
-                            'chat_id'      => 1770556788,
+                            'chat_id'      => 6583641407,
                             'text'         => $message,
                             'parse_mode'   => 'Markdown',
                             'reply_markup' => $inlineKeyboard,
