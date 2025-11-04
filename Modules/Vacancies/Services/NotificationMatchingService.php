@@ -130,7 +130,7 @@ class NotificationMatchingService
             ", [$tsQuery]);
 
                     if ($tokens->isNotEmpty()) {
-                        $likeTokens = $tokens->take(10)->map(fn($t) => "%{$t}%")->all();
+                        $likeTokens = $tokens->take(30)->map(fn($t) => "%{$t}%")->all();
                         $q->orWhere(function ($sub) use ($likeTokens) {
                             foreach ($likeTokens as $pattern) {
                                 $sub->orWhere('description', 'ILIKE', $pattern)
@@ -206,8 +206,8 @@ class NotificationMatchingService
 
 
 
-        $localVacancies = collect($buildLocal(true)->limit(10)->get())
-            ->take(10)
+        $localVacancies = collect($buildLocal(true)->limit(30)->get())
+            ->take(30)
             ->keyBy(fn($v) => $v->source === 'hh' && $v->external_id ? $v->external_id : "local_{$v->id}");
 
 
@@ -253,7 +253,7 @@ class NotificationMatchingService
             ->filter(fn($item) => isset($item['id'])
                 && !$localVacancies->has($item['id'])
                 && !in_array($item['id'], $existingHhExternalIds, true))
-            ->take(10);
+            ->take(1);
         foreach ($toFetch as $idx =>  $item) {
             $extId = $item['id'] ?? null;
             if (!$extId || $localVacancies->has($extId)) {
