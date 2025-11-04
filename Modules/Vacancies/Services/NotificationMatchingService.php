@@ -121,20 +121,6 @@ class NotificationMatchingService
                 });
 
             $isTech = in_array($resumeCategory, $techCategories, true);
-            $baseSql = "
-                SELECT
-                    v.id, v.title, v.description, v.source, v.external_id, v.category,
-                    CASE
-                        WHEN v.category IN ('IT and Software Development', 'Data Science and Analytics', 'QA and Testing', 'DevOps and Cloud Engineering', 'UI/UX and Product Design')
-                        THEN ts_rank_cd(to_tsvector('simple', coalesce(v.description, '') || ' ' || coalesce(v.title, '')), websearch_to_tsquery('simple', ?))
-                        ELSE 0
-                    END AS rank
-                FROM vacancies v
-                WHERE v.status = 'publish'
-                  AND v.source = 'telegram'
-                  AND v.id NOT IN (SELECT vacancy_id FROM match_results WHERE resume_id = ?)
-            ";
-            $params = [$tsQuery, $resume->id];
 
             if ($isTech) {
                 $qb->where(function ($q) use ($tsQuery, $tokens) {
@@ -158,25 +144,26 @@ class NotificationMatchingService
                     DB::raw("ts_rank_cd(to_tsvector('simple', coalesce(description, '')), websearch_to_tsquery('simple', ?)) as rank")
                 )->addBinding($tsQuery, 'select');
             } else {
-                if ($resumeCategory) {
-                    $baseSql .= " AND v.category = ?";
-                    $params[] = $resumeCategory;
-                    Log::info("📊 [CATEGORY FILTER] Resume kategoriyasi ishlatildi", [
-                        'category' => $resumeCategory,
-                        'tsQuery_used' => $tsQuery,
-                    ]);
-                } elseif ($guessedCategory) {
-                    $baseSql .= " AND v.category = ?";
-                    $params[] = $guessedCategory;
-                    Log::info("📊 [GUESSED CATEGORY USED] AI taxmin qilgan kategoriya ishlatildi", [
-                        'guessedCategory' => $guessedCategory,
-                        'tsQuery_used' => $tsQuery,
-                    ]);
-                } else {
-                    Log::info("📊 [CATEGORY FILTER] Hech qanday category filter qo‘llanmagan", [
-                        'tsQuery_used' => $tsQuery,
-                    ]);
-                }
+                $qb->where(function ($q) use ($tsQuery, $tokens) {
+                    $q->whereRaw("
+                to_tsvector('simple', coalesce(description, '')) @@ websearch_to_tsquery('simple', ?)
+            ", [$tsQuery]);
+
+                    if ($tokens->isNotEmpty()) {
+                        $likeTokens = $tokens->take(10)->map(fn($t) => "%{$t}%")->all();
+                        $q->orWhere(function ($sub) use ($likeTokens) {
+                            foreach ($likeTokens as $pattern) {
+                                $sub->orWhere('description', 'ILIKE', $pattern)
+                                    ->orWhere('title', 'ILIKE', $pattern);
+                            }
+                        });
+                    }
+                });
+
+                $qb->select(
+                    'id', 'title', 'description', 'source', 'external_id', 'category',
+                    DB::raw("ts_rank_cd(to_tsvector('simple', coalesce(description, '')), websearch_to_tsquery('simple', ?)) as rank")
+                )->addBinding($tsQuery, 'select');
             }
 
             // 🧩 Kategoriya bo‘yicha qidiruv
@@ -226,12 +213,6 @@ class NotificationMatchingService
                     ]);
                 }
             }
-            $baseSql .= " ORDER BY rank DESC, id DESC LIMIT 50";
-
-            Log::info('🧾 [FINAL SQL BUILT]', [
-                'sql' => $baseSql,
-                'params' => $params,
-            ]);
 
             Log::info("✅ [BUILD_LOCAL] Resume {$resume->id} (TECH=" . ($isTech ? 'YES' : 'NO') . ")");
             return $qb->orderByDesc('rank')->orderByDesc('id');
