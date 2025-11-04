@@ -118,53 +118,89 @@ class DeliverVacancyJob implements ShouldQueue, ShouldBeUnique
             $tEvery = (int) ($thr['every'] ?? 60);
             $tBlock = (int) ($thr['block'] ?? 5);
 
-            $acquired = false;
-            $tMsgId = null;
-            $targetLink = null;
-            Redis::throttle($tKey)
-                ->allow($tAllow)
-                ->every($tEvery)
-                ->block($tBlock)
-                ->then(function () use (&$acquired, $tg, $to, $html, $target, &$tMsgId, &$targetLink) {
-                    $acquired = true;
+        $acquired = false;
+        $tMsgId = null;
+        $targetLink = null;
+        $floodDelay = 0;
+        $sendError = null;
+        Redis::throttle($tKey)
+            ->allow($tAllow)
+            ->every($tEvery)
+            ->block($tBlock)
+            ->then(function () use (&$acquired, $tg, $to, $html, $target, &$tMsgId, &$targetLink, &$floodDelay, &$sendError) {
+                $acquired = true;
+                try {
                     $resp = $tg->sendMessage($to, $html);
                     $tMsgId = $resp['id'] ?? null;
                     if (!$tMsgId && isset($resp['message']['id'])) {
                         $tMsgId = $resp['message']['id'];
                     }
+                    if (!$tMsgId && isset($resp['updates']) && is_array($resp['updates'])) {
+                        foreach ($resp['updates'] as $u) {
+                            if (isset($u['message']['id'])) { $tMsgId = $u['message']['id']; break; }
+                        }
+                    }
                     if (is_numeric($tMsgId)) {
                         $plain = $target?->username ? ltrim((string) $target->username, '@') : null;
                         if ($plain) {
                             $targetLink = 'https://t.me/' . $plain . '/' . $tMsgId;
+                        } elseif (!empty($target?->channel_id)) {
+                            $cid = (string) $target->channel_id;
+                            $cid = ltrim($cid, '-');
+                            if (str_starts_with($cid, '100')) { $cid = substr($cid, 3); }
+                            $targetLink = 'https://t.me/c/' . $cid . '/' . $tMsgId;
                         }
                     }
-                }, function () use (&$acquired) {
-                    $acquired = false;
-                });
-
-            if (!$acquired) {
-                // Could not acquire throttle; release to retry later
-                $this->release($tBlock > 0 ? $tBlock : 5);
-                return;
-            }
-
-            if (is_numeric($tMsgId)) {
-                // Success: publish vacancy
-                $vac->target_msg_id = $tMsgId;
-                if ($targetLink) {
-                    $vac->target_message_id = $targetLink;
+                } catch (\Throwable $e) {
+                    $sendError = $e;
+                    $msg = $e->getMessage();
+                    if (preg_match('/FLOOD_WAIT_(\d+)/i', (string) $msg, $m)) {
+                        $floodDelay = max($floodDelay, (int) ($m[1] ?? 0));
+                    }
                 }
-                $vac->status = Vacancy::STATUS_PUBLISH;
+            }, function () use (&$acquired) {
+                $acquired = false;
+            });
+
+        if (!$acquired) {
+            // Could not acquire throttle; release to retry later
+            $this->release($tBlock > 0 ? $tBlock : 5);
+            return;
+        }
+
+        // Handle FLOOD_WAIT gracefully: re-schedule with Telegram-advised delay
+        if ($floodDelay > 0) {
+            Log::warning('DeliverVacancyJob FLOOD_WAIT', [
+                'vacancy_id' => $vac->id,
+                'delay' => $floodDelay,
+            ]);
+            $this->release($floodDelay + 1);
+            return;
+        }
+
+        if (is_numeric($tMsgId)) {
+            // Success: publish vacancy
+            $vac->target_msg_id = $tMsgId;
+            if ($targetLink) {
+                $vac->target_message_id = $targetLink;
+            }
+            $vac->status = Vacancy::STATUS_PUBLISH;
+            $vac->save();
+        } else {
+            // No message id parsed -> retry
+            if ($this->attempts() >= $this->tries) {
+                if ($sendError) {
+                    Log::warning('DeliverVacancyJob send failed', [
+                        'vacancy_id' => $vac->id,
+                        'error' => $sendError->getMessage(),
+                    ]);
+                }
+                $vac->status = Vacancy::STATUS_FAILED;
                 $vac->save();
             } else {
-                // No message id parsed -> retry
-                if ($this->attempts() >= $this->tries) {
-                    $vac->status = Vacancy::STATUS_FAILED;
-                    $vac->save();
-                } else {
-                    $this->release(10);
-                }
+                $this->release(10);
             }
+        }
         } finally {
             optional($sigLock)->release();
         }

@@ -688,7 +688,9 @@
                 <div class="categories-hero__meta">
                     <span class="categories-hero__meta-item"><i class="feather-filter"></i>{{ $activeFilterLabel }}</span>
                     <span class="categories-hero__meta-item"><i class="feather-users"></i>Total Vacancies: {{ number_format($totalVacancies) }}</span>
-                    <span class="categories-hero__meta-item"><i class="feather-clock"></i>Queued: {{ number_format($queuedCount ?? 0) }}</span>
+                    <a class="categories-hero__meta-item" href="{{ route('admin.vacancies.failed', request()->only(['filter','from','to'])) }}" style="text-decoration:none;">
+                        <i class="feather-clock"></i>Queued: {{ number_format($queuedCount ?? 0) }}
+                    </a>
                 </div>
             </div>
             <div class="categories-stats">

@@ -32,6 +32,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/dashboard/billing', [BillingDashboardController::class, 'index'])->name('dashboard.billing');
         Route::get('/visits/top-users', [DashboardController::class, 'topVisitors'])->name('visits.top_users');
         Route::get('/vacancies/categories', [DashboardController::class, 'vacancyCategories'])->name('vacancies.categories');
+        // Failed vacancies management (decoupled delivery)
+        Route::get('/vacancies/failed', [DashboardController::class, 'failedVacancies'])->name('vacancies.failed');
 
         // Profile
         Route::get('profile', [ProfileController::class, 'index'])->name('profile');
@@ -87,6 +89,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('vacancies/category/{category}', [DashboardController::class, 'vacanciesByCategory'])->name('vacancies.by_category');
         Route::patch('vacancies/{vacancy}/category', [DashboardController::class, 'vacancyUpdateCategory'])->name('vacancies.update_category');
         Route::patch('vacancies/{vacancy}/status', [DashboardController::class, 'vacancyUpdateStatus'])->name('vacancies.update_status');
+        Route::post('vacancies/{vacancy}/requeue', [DashboardController::class, 'vacancyRequeue'])->name('vacancies.requeue');
         Route::delete('vacancies/{vacancy}', [DashboardController::class, 'vacancyDestroy'])->name('vacancies.destroy');
         // Vacancy details (single)
         Route::get('vacancies/{id}', [DashboardController::class, 'vacancyShow'])->name('vacancies.show');

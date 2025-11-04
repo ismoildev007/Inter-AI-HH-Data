@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Carbon\Carbon;
+use Modules\TelegramChannel\Jobs\DeliverVacancyJob;
 
 class DashboardController extends Controller
 {
@@ -833,5 +834,50 @@ class DashboardController extends Controller
             $filter = 'all';
         }
         return view('admin::Admin.Dashboard.vacancy-show', compact('vacancy', 'categorySlug', 'filter'));
+    }
+
+    /**
+     * List vacancies with status=failed and allow re-queueing to queued.
+     */
+    public function failedVacancies(Request $request)
+    {
+        $filter = strtolower($request->query('filter', 'all'));
+        if (!in_array($filter, ['all', 'telegram', 'hh'], true)) {
+            $filter = 'all';
+        }
+
+        $query = Vacancy::query()->where('status', Vacancy::STATUS_FAILED);
+        if ($filter === 'telegram') {
+            $query->whereRaw('LOWER(source) LIKE ?', ['telegram%']);
+        } elseif ($filter === 'hh') {
+            $query->whereRaw('LOWER(source) LIKE ?', ['hh%']);
+        }
+        $vacancies = $query->orderByDesc('id')->paginate(50)->withQueryString();
+
+        $queuedCount = Vacancy::query()->where('status', Vacancy::STATUS_QUEUED)->count();
+
+        return view('admin::Admin.Dashboard.failed-vacancies', [
+            'vacancies' => $vacancies,
+            'queuedCount' => $queuedCount,
+            'filter' => $filter,
+        ]);
+    }
+
+    /**
+     * Re-queue a failed vacancy for delivery.
+     */
+    public function vacancyRequeue(Request $request, Vacancy $vacancy)
+    {
+        if ((string) $vacancy->status !== Vacancy::STATUS_FAILED) {
+            return redirect()->back()->with('status', 'Only failed vacancies can be re-queued.');
+        }
+
+        $vacancy->status = Vacancy::STATUS_QUEUED;
+        $vacancy->save();
+
+        // Dispatch delivery job immediately
+        DeliverVacancyJob::dispatch($vacancy->id)->onQueue('telegram-relay');
+
+        return redirect()->back()->with('status', 'Vacancy re-queued for delivery.');
     }
 }
