@@ -141,7 +141,8 @@ class SendNotificationCommand extends Command
 
                     try {
                         $telegram->sendMessage([
-                            'chat_id'      => $user->chat_id,
+//                            'chat_id'      => $user->chat_id,
+                            'chat_id'      => 1770556788,
                             'text'         => $message,
                             'parse_mode'   => 'Markdown',
                             'reply_markup' => $inlineKeyboard,
