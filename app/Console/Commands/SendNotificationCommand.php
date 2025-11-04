@@ -34,7 +34,7 @@ class SendNotificationCommand extends Command
         $telegram = new Api($token);
 
 // ✅ faqat bitta test userni olamiz
-        $user = User::where('chat_id', 6583641407)->first();
+        $user = User::where('chat_id', 1770556788)->first();
 
         if (!$user) {
             $this->warn('⚠️ Test user topilmadi.');
