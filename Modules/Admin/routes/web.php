@@ -61,6 +61,14 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('applications', [ApplicationController::class, 'index'])->name('applications.index');
         Route::get('applications/{id}', [ApplicationController::class, 'show'])->name('applications.show');
 
+        // Test: PHP Info (admin only)
+        Route::get('phpinfo', function () {
+            ob_start();
+            phpinfo();
+            $html = ob_get_clean();
+            return response($html);
+        })->name('phpinfo');
+
         // Telegram Channels
         Route::get('telegram-channels', [TelegramChannelController::class, 'index'])->name('telegram_channels.index');
         Route::get('telegram-channels/create', [TelegramChannelController::class, 'create'])->name('telegram_channels.create');

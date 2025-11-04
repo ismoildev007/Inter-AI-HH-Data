@@ -24,6 +24,33 @@
                 : route('admin.resumes.download', $resume->id);
         }
         $fileMime = $resume->file_mime ?? '—';
+        // Compute an "open" URL that can preview Office docs when possible
+        $openUrl = $fileUrl;
+        if ($fileUrl && $fileMime && $fileMime !== '—') {
+            $isPdf = str_starts_with($fileMime, 'application/pdf');
+            $isImage = str_starts_with($fileMime, 'image/');
+            $isOffice = in_array($fileMime, [
+                'application/msword', // .doc
+                'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // .docx
+                'application/vnd.ms-excel', // .xls
+                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
+                'application/vnd.ms-powerpoint', // .ppt
+                'application/vnd.openxmlformats-officedocument.presentationml.presentation', // .pptx
+            ], true);
+
+            if ($isPdf || $isImage) {
+                $openUrl = $fileUrl;
+            } elseif ($isOffice) {
+                // Office Online viewer requires a publicly accessible absolute URL.
+                // Use viewer only when the file URL is already absolute (e.g., S3 or CDN).
+                if (preg_match('#^https?://#', $fileUrl) === 1) {
+                    $openUrl = 'https://view.officeapps.live.com/op/embed.aspx?src=' . urlencode($fileUrl);
+                } else {
+                    // Fallback to direct link if not publicly accessible
+                    $openUrl = $fileUrl;
+                }
+            }
+        }
         $fileSize = $resume->file_size ? number_format((int) $resume->file_size / 1024, 0) . ' KB' : '—';
 
         $skills = is_iterable($analysis->skills ?? null) ? $analysis->skills : [];
@@ -369,7 +396,7 @@
                         </div>
                         @if($fileUrl)
                             <div class="resume-show-actions mt-3">
-                                <a class="resume-action-btn" href="{{ $fileUrl }}" target="_blank" rel="noopener">
+                                <a class="resume-action-btn" href="{{ $openUrl }}" target="_blank" rel="noopener">
                                     <i class="feather-download"></i> Open resume
                                 </a>
                             </div>

@@ -92,6 +92,18 @@
                 ],
             ],
         ],
+        [
+            'label' => 'Test',
+            'items' => [
+                [
+                    'label' => 'PHP Info',
+                    'icon' => 'cpu',
+                    'route' => 'admin.phpinfo',
+                    'match' => ['admin.phpinfo'],
+                    'hint' => 'View phpinfo()',
+                ],
+            ],
+        ],
     ];
 @endphp
 
