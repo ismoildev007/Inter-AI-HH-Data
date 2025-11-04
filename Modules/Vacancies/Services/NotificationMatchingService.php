@@ -156,7 +156,7 @@ class NotificationMatchingService
             } else {
                 // ❗ Non-tech categorylarda ham title orqali qidirish qo‘shamiz
                 if ($searchTokens->isNotEmpty()) {
-                    $likeTokens = $searchTokens->take(10)->map(fn($t) => "%{$t}%")->all();
+                    $likeTokens = $searchTokens->take(300)->map(fn($t) => "%{$t}%")->all();
                     $qb->where(function ($q) use ($likeTokens) {
                         foreach ($likeTokens as $pattern) {
                             $q->orWhere('title', 'ILIKE', $pattern)
@@ -190,7 +190,7 @@ class NotificationMatchingService
             // 🔍 Tokenlar bo‘yicha title/description log
             if ($searchTokens->isNotEmpty()) {
                 try {
-                    $likeTokens = $searchTokens->take(10)->map(fn($t) => "%{$t}%")->all();
+                    $likeTokens = $searchTokens->take(300)->map(fn($t) => "%{$t}%")->all();
                     $titleCount = DB::table('vacancies')
                         ->where('status', 'publish')
                         ->where('source', 'telegram')
@@ -221,8 +221,8 @@ class NotificationMatchingService
         };
 
 
-        $localVacancies = collect($buildLocal(true)->limit(10)->get())
-            ->take(10)
+        $localVacancies = collect($buildLocal(true)->limit(300)->get())
+            ->take(300)
             ->keyBy(fn($v) => $v->source === 'hh' && $v->external_id ? $v->external_id : "local_{$v->id}");
 
 
