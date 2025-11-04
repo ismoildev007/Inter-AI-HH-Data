@@ -691,9 +691,6 @@
                     <a class="categories-hero__meta-item" href="{{ route('admin.vacancies.failed', request()->only(['filter','from','to'])) }}" style="text-decoration:none;">
                         <i class="feather-clock"></i>Queued: {{ number_format($queuedCount ?? 0) }}
                     </a>
-                    <a class="categories-hero__meta-item" href="{{ route('admin.vacancies.skipped', request()->only(['filter'])) }}" style="text-decoration:none;">
-                        <i class="feather-slash"></i>Skipped: {{ number_format($skippedCount ?? 0) }}
-                    </a>
                 </div>
             </div>
             <div class="categories-stats">
