@@ -148,24 +148,29 @@ class NotificationMatchingService
                 // 🆕 TEXNIK EMAS — category va title asosida qidiruv
                 $qb->select('id', 'title', 'description', 'source', 'external_id', 'category', DB::raw('0 as rank'));
 
-                if ($withCategory) {
-                    $categoryToUse = $resumeCategory ?: $guessedCategory;
-                    if ($categoryToUse) {
-                        $qb->where('category', $categoryToUse);
+                $categoryToUse = $resumeCategory ?: $guessedCategory;
+
+                $qb->where(function ($main) use ($withCategory, $categoryToUse, $tokens) {
+                    // agar category mavjud bo‘lsa — category orqali
+                    if ($withCategory && $categoryToUse) {
+                        $main->orWhere('category', $categoryToUse);
                         Log::info("📂 [NON-TECH CATEGORY] {$categoryToUse} qo‘llanildi.");
                     }
-                }
 
-                // 🆕 title orqali token qidiruv
-                if ($tokens->isNotEmpty()) {
-                    $qb->where(function ($q) use ($tokens) {
-                        foreach ($tokens as $t) {
-                            $q->orWhere('title', 'ILIKE', "%{$t}%");
-                        }
-                    });
-                    Log::info('🔎 [TITLE SEARCH ADDED FOR NON-TECH]', ['tokens' => $tokens->all()]);
-                }
+                    // 🆕 title yoki description orqali token asosida qidiruv
+                    if ($tokens->isNotEmpty()) {
+                        $main->orWhere(function ($q) use ($tokens) {
+                            foreach ($tokens as $t) {
+                                $pattern = "%{$t}%";
+                                $q->orWhere('title', 'ILIKE', $pattern)
+                                    ->orWhere('description', 'ILIKE', $pattern);
+                            }
+                        });
+                        Log::info('🔎 [TITLE/DESC SEARCH ADDED FOR NON-TECH]', ['tokens' => $tokens->all()]);
+                    }
+                });
             }
+
 
             // 🧩 Kategoriya bo‘yicha qidiruv
             if ($withCategory) {
