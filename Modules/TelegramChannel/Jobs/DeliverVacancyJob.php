@@ -67,6 +67,51 @@ class DeliverVacancyJob implements ShouldQueue, ShouldBeUnique
                 return;
             }
 
+            // Pre-send dedupe guard: if identical content already queued/published, do not send
+            try {
+                $sig  = trim((string) ($vac->signature ?? ''));
+                $nh   = trim((string) ($vac->normalized_hash ?? ''));
+                $rh   = trim((string) ($vac->raw_hash ?? ''));
+                $dupWhere = function ($q) use ($sig, $nh, $rh) {
+                    $q->where(function ($w) use ($sig, $nh, $rh) {
+                        $orAdded = false;
+                        if ($sig !== '') { $w->orWhere('signature', $sig); $orAdded = true; }
+                        if ($nh  !== '') { $w->orWhere('normalized_hash', $nh); $orAdded = true; }
+                        if ($rh  !== '') { $w->orWhere('raw_hash', $rh); $orAdded = true; }
+                        if (!$orAdded) { $w->whereRaw('1=0'); }
+                    });
+                };
+
+                // 1) Already published duplicate? -> archive and stop
+                $hasPublishedDup = Vacancy::query()
+                    ->where('id', '!=', $vac->id)
+                    ->whereIn('status', [Vacancy::STATUS_PUBLISH])
+                    ->where($dupWhere)
+                    ->exists();
+                if ($hasPublishedDup) {
+                    $vac->status = Vacancy::STATUS_ARCHIVE;
+                    $vac->save();
+                    Log::info('DeliverVacancyJob dedupe: published exists, archived current', ['vacancy_id' => $vac->id]);
+                    return;
+                }
+
+                // 2) Queued duplicate(s): only the smallest id wins
+                $minQueuedDupId = Vacancy::query()
+                    ->where('id', '!=', $vac->id)
+                    ->whereIn('status', [Vacancy::STATUS_QUEUED])
+                    ->where($dupWhere)
+                    ->min('id');
+                if (is_numeric($minQueuedDupId) && (int)$minQueuedDupId > 0 && (int)$minQueuedDupId < (int)$vac->id) {
+                    $vac->status = Vacancy::STATUS_ARCHIVE;
+                    $vac->save();
+                    Log::info('DeliverVacancyJob dedupe: smaller queued exists, archived current', ['vacancy_id' => $vac->id, 'winner_id' => (int)$minQueuedDupId]);
+                    return;
+                }
+            } catch (\Throwable $e) {
+                // Dedupe check failure should not break delivery; continue
+                Log::warning('DeliverVacancyJob dedupe check error', ['vacancy_id' => $vac->id, 'error' => $e->getMessage()]);
+            }
+
             // Render message
             $phones = (array) data_get($vac->contact, 'phones', []);
             $users  = (array) data_get($vac->contact, 'telegram_usernames', []);

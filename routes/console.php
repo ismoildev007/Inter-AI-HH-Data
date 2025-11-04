@@ -45,6 +45,9 @@ use Illuminate\Foundation\Inspiring;
 use App\Models\Subscription;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
+use Illuminate\Support\Facades\Cache;
+use App\Models\Vacancy;
+use Modules\TelegramChannel\Jobs\DeliverVacancyJob;
 
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
@@ -184,3 +187,44 @@ Schedule::command('relay:run --once')
 
 
 // queue: telegram-relay (Modules\TelegramChannel\Jobs\SyncSourceChannelJob) — Horizon `telegram-relay` ni tinglaydi
+
+// Har daqiqada FAILED vakansiyalarni avtomatik re-queue qilish (queued + dispatch)
+Artisan::command('telegram:vacancies:requeue-failed {--limit=500}', function () {
+    $limit = (int) $this->option('limit');
+    if ($limit <= 0) { $limit = 500; }
+
+    $lock = Cache::lock('tg:requeue_failed', 55);
+    if (!$lock->get()) {
+        $this->warn('Requeue lock busy; skip this minute.');
+        return 0;
+    }
+    try {
+        $ids = Vacancy::query()
+            ->where('status', Vacancy::STATUS_FAILED)
+            ->orderBy('id')
+            ->limit($limit)
+            ->pluck('id')
+            ->all();
+
+        $count = 0;
+        foreach ($ids as $id) {
+            // Atomically move to queued if still failed
+            $updated = Vacancy::where('id', $id)
+                ->where('status', Vacancy::STATUS_FAILED)
+                ->update(['status' => Vacancy::STATUS_QUEUED]);
+            if ($updated) {
+                DeliverVacancyJob::dispatch($id)->onQueue('telegram-relay');
+                $count++;
+            }
+        }
+        $this->info("Re-queued {$count} failed vacancy(ies) (limit={$limit}).");
+        return 0;
+    } finally {
+        optional($lock)->release();
+    }
+})->purpose('Re-queue failed vacancies for delivery');
+
+// Jadval: har daqiqada ishga tushadi
+Schedule::command('telegram:vacancies:requeue-failed')
+    ->everyMinute()
+    ->withoutOverlapping();
