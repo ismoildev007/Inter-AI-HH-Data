@@ -123,25 +123,8 @@ class ResumeService
                     - Do NOT include infrastructure/tools such as SQL, Git, CI/CD, Docker, etc.
                     - Ensure skills are appended in the same comma-separated list, no extra text or brackets.
             - "cover_letter": Write a short, professional cover letter (5–7 sentences) focusing on three key areas that best suit the candidate listed above. Be polite, confident, concise, and literate. Always include the candidate's real name at the end, in a new paragraph, with the caption "Sincerely" and their name. The letter must be in Russian.
-            - "category": Choose exactly one category from the allowed list below that best matches this resume.
-                When analyzing the resume, focus primarily on the candidate’s **most recent 10 years of professional experience** (from the most recent positions listed).
-                If the candidate has changed industries or transitioned into a different professional domain in recent years, prioritize the **current or most recent specialization** rather than earlier experience.
-
-                Give more weight to:
-                - Recent job titles and responsibilities (especially from the last 5–10 years)
-                - Skills and duties mentioned in the latest roles
-                - Education or certifications directly related to those recent roles
-
-                Ignore or down-weight:
-                - Outdated experience that is more than 10 years old unless it matches the current field
-
-                Use the resume context and job titles to infer the best-fitting field from the allowed list below.
-
-                Output only the **category label** as an exact string match from the list.
-                Do not invent new labels and do not choose "Other".
-
-                Allowed categories (labels): {$allowedCategoriesJson}
-
+            - "category": Choose exactly one category from the allowed list below that best matches this resume. Output the category label as an exact string match from the list. Do not invent new labels.
+                Do not choose "Other". Allowed categories (labels): {$allowedCategoriesJson}
             Return only valid JSON. Do not include explanations outside the JSON.
             Resume text:
             {$resumeText}
@@ -344,22 +327,16 @@ class ResumeService
 
                     Log::info("Parsed text length: " . strlen($text));
                     return trim($text);
+                    // $parser = new \Smalot\PdfParser\Parser();
 
-                    // case 'pdf':
-                    //     Log::info("Parsing PDF file: " . $path);
+                    // try {
+                    //     $pdf = $parser->parseFile($path);
+                    //     $text = trim($pdf->getText());
 
-                    //     $parser = new \Smalot\PdfParser\Parser();
-
-                    //     try {
-                    //         $pdf = $parser->parseFile($path);
-                    //         $text = trim($pdf->getText());
-                    //     } catch (\Throwable $e) {
-                    //         Log::warning("Smalot PDF parser failed: {$e->getMessage()} — switching to pdftotext...");
-                    //         $text = null;
-                    //     }
-
-                    //     // 🔹 Fallback shart
+                    //     // Agar Smalot bo‘sh qaytarsa, pdftotext fallback ishlatamiz
                     //     if (!$text || strlen($text) < 50) {
+                    //         Log::warning("Smalot returned empty text, switching to pdftotext fallback...");
+
                     //         $tmpTxt = tempnam(sys_get_temp_dir(), 'pdf_') . '.txt';
                     //         $cmd = sprintf(
                     //             'pdftotext -layout %s %s',
@@ -377,11 +354,15 @@ class ResumeService
                     //         }
                     //     }
 
-                    //     // UTF-8 sanitizatsiya
+                    //     // ✅ UTF-8 tozalash (ENG MUHIM QISM)
                     //     $text = $this->sanitizeText($text);
 
                     //     Log::info("Parsed text length: " . strlen($text));
                     //     return trim($text);
+                    // } catch (\Throwable $e) {
+                    //     Log::error("PDF parse failed: " . $e->getMessage());
+                    //     return null;
+                    // }
 
 
                 case 'docx':

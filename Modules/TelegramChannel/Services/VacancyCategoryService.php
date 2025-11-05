@@ -11,7 +11,6 @@ class VacancyCategoryService
      */
     private array $categories = [
         'marketing_and_advertising'                 => 'Marketing and Advertising',
-        'sales_and_customer_relations'              => 'Sales and Customer Relations',
         'it_and_software_development'               => 'IT and Software Development',
         'data_science_and_analytics'                => 'Data Science and Analytics',
         'product_and_project_management'            => 'Product and Project Management',
@@ -49,6 +48,7 @@ class VacancyCategoryService
         'beauty_and_personal_care'                  => 'Beauty and Personal Care',
         'sports_and_fitness'                        => 'Sports and Fitness',
         'agriculture_and_farming'                   => 'Agriculture and Farming',
+        'sales_and_customer_relations'              => 'Sales and Customer Relations',
         'other' => 'Other',
     ];
 

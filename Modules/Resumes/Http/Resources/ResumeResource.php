@@ -16,8 +16,9 @@ class ResumeResource extends JsonResource
             'parsed_text' => $this->parsed_text,
             'is_primary'  => $this->is_primary,
             'file_path'   => $this->file_path,
-            'file_url'    => $this->file_path 
-                                ? Storage::disk('spaces')->url($this->file_path) 
+            'category'   => $this->category,
+            'file_url'    => $this->file_path
+                                ? Storage::disk('spaces')->url($this->file_path)
                                 : null,
             'skills'      => optional($this->analysis)->skills,
             'strengths'   => optional($this->analysis)->strengths,
