@@ -162,6 +162,8 @@
             font-size: 0.9rem;
             font-weight: 500;
         }
+        .resume-show-chip a { color: inherit; text-decoration: none; }
+        .resume-show-chip a:hover { text-decoration: underline; }
 
         .resume-show-stats {
             display: grid;
@@ -307,7 +309,14 @@
                 </span>
                 <h1 class="resume-show-hero__title">{{ $resume->title ?? 'Untitled resume' }}</h1>
                 <div class="resume-show-hero__meta">
-                    <span class="resume-show-chip"><i class="feather-user"></i>{{ $ownerName }}</span>
+                    <span class="resume-show-chip">
+                        <i class="feather-user"></i>
+                        @if(!empty($user?->id))
+                            <a href="{{ route('admin.users.show', $user->id) }}">{{ $ownerName }}</a>
+                        @else
+                            {{ $ownerName }}
+                        @endif
+                    </span>
                     <!-- <span class="resume-show-chip"><i class="feather-mail"></i>{{ $ownerEmail }}</span> -->
                     <span class="resume-show-chip"><i class="feather-hash"></i>Resume ID {{ $resume->id }}</span>
                     <span class="resume-show-chip"><i class="feather-shield"></i>{{ ucfirst($ownerRole) }}</span>
@@ -353,7 +362,15 @@
                                 <img src="/assets/images/avatar/ava.svg" alt="avatar" class="img-fluid">
                             </div>
                             <div>
-                                <div class="fw-semibold text-dark">{{ $ownerName }}</div>
+                                <div class="fw-semibold text-dark">
+                                    @if(!empty($user?->id))
+                                        <a href="{{ route('admin.users.show', $user->id) }}" style="color: inherit; text-decoration: none;">
+                                            {{ $ownerName }}
+                                        </a>
+                                    @else
+                                        {{ $ownerName }}
+                                    @endif
+                                </div>
                                 <div class="text-muted small">{{ ucfirst($ownerRole) }}</div>
                             </div>
                         </div>
