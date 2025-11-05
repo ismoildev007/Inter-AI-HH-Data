@@ -10,6 +10,9 @@ use App\Models\User;
 use App\Models\Vacancy;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use App\Models\AdminCheckNote;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Schema;
 
 class UserController extends Controller
 {
@@ -133,6 +136,9 @@ class UserController extends Controller
      */
     public function adminCheckMarkNotWorking(User $user)
     {
+        request()->validate([
+            'note' => ['required', 'string', 'max:5000'],
+        ]);
         $status = mb_strtolower((string) ($user->status ?? ''), 'UTF-8');
 
         if ($status !== 'working') {
@@ -146,6 +152,20 @@ class UserController extends Controller
             'admin_check_status' => true,
         ])->save();
 
+        // Save note (history entry)
+        $noteText = (string) request()->input('note', '');
+        AdminCheckNote::create([
+            'user_id' => $user->id,
+            'admin_id' => Auth::id(),
+            'action'  => 'mark_not_working',
+            'note'    => $noteText !== '' ? $noteText : null,
+        ]);
+
+        // Optionally keep last note snapshot on users table
+        if (Schema::hasColumn('users', 'admin_check_reject_note')) {
+            $user->forceFill(['admin_check_reject_note' => $noteText])->save();
+        }
+
         return redirect()
             ->route('admin.users.admin_check')
             ->with('status', 'Foydalanuvchi admin tekshiruvidan o‘tkazilib, “not working” holatiga o‘tkazildi.');
@@ -156,6 +176,9 @@ class UserController extends Controller
      */
     public function adminCheckVerify(User $user)
     {
+        request()->validate([
+            'note' => ['required', 'string', 'max:5000'],
+        ]);
         $status = mb_strtolower((string) ($user->status ?? ''), 'UTF-8');
 
         if ($status !== 'working') {
@@ -173,6 +196,20 @@ class UserController extends Controller
         $user->forceFill([
             'admin_check_status' => true,
         ])->save();
+
+        // Save note (history entry)
+        $noteText = (string) request()->input('note', '');
+        AdminCheckNote::create([
+            'user_id' => $user->id,
+            'admin_id' => Auth::id(),
+            'action'  => 'verify',
+            'note'    => $noteText !== '' ? $noteText : null,
+        ]);
+
+        // Optionally keep last note snapshot on users table
+        if (Schema::hasColumn('users', 'admin_check_verify_note')) {
+            $user->forceFill(['admin_check_verify_note' => $noteText])->save();
+        }
 
         return redirect()
             ->route('admin.users.admin_check')
@@ -252,6 +289,12 @@ class UserController extends Controller
             'successVolume' => (clone $transactionBase)->where('payment_status', 'success')->sum('amount'),
         ];
 
+        $adminCheckNotes = AdminCheckNote::query()
+            ->with('admin')
+            ->where('user_id', $user->id)
+            ->orderByDesc('created_at')
+            ->get();
+
         return [
             'user' => $user,
             'matchedVacancyCount' => $matchedVacancyCount,
@@ -260,6 +303,7 @@ class UserController extends Controller
             'subscriptionStats' => $subscriptionStats,
             'recentTransactions' => $recentTransactions,
             'transactionStats' => $transactionStats,
+            'adminCheckNotes' => $adminCheckNotes,
         ];
     }
 

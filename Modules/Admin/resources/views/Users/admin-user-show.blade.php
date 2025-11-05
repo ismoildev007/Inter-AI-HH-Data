@@ -598,37 +598,25 @@
                     </div>
                 </div>
 
-                <form
-                    method="POST"
-                    action="{{ route('admin.users.admin_check.mark_not_working', $user) }}"
-                    class="user-summary-action user-summary-action--warn {{ $yellowDisabled ? 'user-summary-action--disabled' : '' }}"
-                >
-                    @csrf
-                    <div class="user-summary-action__title">
-                        Ish holatini o‘zgartirish
-                    </div>
+                <div class="user-summary-action user-summary-action--warn {{ $yellowDisabled ? 'user-summary-action--disabled' : '' }}">
+                    <div class="user-summary-action__title">Ish holatini o‘zgartirish</div>
                     <div class="user-summary-action__hint">
                         {{ $isWorkingStatus ? 'Working holatidagi foydalanuvchini “not working”ga o‘tkazish.' : 'Holat allaqachon “not working”.' }}
                     </div>
                     <button
-                        type="submit"
+                        type="button"
                         class="user-summary-action__button"
+                        data-bs-toggle="modal"
+                        data-bs-target="#markNotWorkingModal"
                         {{ $yellowDisabled ? 'disabled' : '' }}
                     >
                         <i class="feather-edit-2"></i>
                         Holatni yangilash
                     </button>
-                </form>
+                </div>
 
-                <form
-                    method="POST"
-                    action="{{ route('admin.users.admin_check.verify', $user) }}"
-                    class="user-summary-action user-summary-action--success {{ $greenDisabled ? 'user-summary-action--disabled' : '' }}"
-                >
-                    @csrf
-                    <div class="user-summary-action__title">
-                        Admin tekshiruvi
-                    </div>
+                <div class="user-summary-action user-summary-action--success {{ $greenDisabled ? 'user-summary-action--disabled' : '' }}">
+                    <div class="user-summary-action__title">Admin tekshiruvi</div>
                     <div class="user-summary-action__hint">
                         @if(!$isWorkingStatus)
                             Status working bo‘lganda tasdiqlash mumkin.
@@ -639,14 +627,16 @@
                         @endif
                     </div>
                     <button
-                        type="submit"
+                        type="button"
                         class="user-summary-action__button"
+                        data-bs-toggle="modal"
+                        data-bs-target="#verifyUserModal"
                         {{ $greenDisabled ? 'disabled' : '' }}
                     >
                         <i class="feather-check"></i>
                         Tasdiqlash
                     </button>
-                </form>
+                </div>
             </div>
         </div>
 
@@ -758,6 +748,51 @@
             </div>
         </div>
 
+        <div class="user-profile-card card mb-4">
+            <div class="card-header d-flex align-items-center justify-content-between">
+                <div>
+                    <h6 class="mb-0">Admin check history</h6>
+                    <span class="text-muted small">Recent approvals and rejections with notes</span>
+                </div>
+            </div>
+            <div class="card-body">
+                @php $notes = ($adminCheckNotes ?? collect()); @endphp
+                @if($notes->isEmpty())
+                    <div class="text-muted">No admin check notes recorded yet.</div>
+                @else
+                    <div class="d-flex flex-column gap-3">
+                        @foreach($notes as $log)
+                            @php
+                                $isVerify = ($log->action ?? '') === 'verify';
+                                $pillClass = $isVerify ? 'bg-success text-white' : 'bg-warning text-dark';
+                                $label = $isVerify ? 'Verified' : 'Not working';
+                                $adminName = optional($log->admin)->first_name || optional($log->admin)->last_name
+                                    ? trim((optional($log->admin)->first_name ?? '') . ' ' . (optional($log->admin)->last_name ?? ''))
+                                    : (optional($log->admin)->email ?? 'Admin');
+                            @endphp
+                            <div class="p-3 rounded" style="background:#f8f9ff;border:1px solid rgba(82,97,172,0.12);">
+                                <div class="d-flex align-items-center justify-content-between mb-2">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span class="badge {{ $pillClass }}">{{ $label }}</span>
+                                        <span class="text-muted small">by {{ $adminName }}</span>
+                                    </div>
+                                    <div class="text-muted small">
+                                        {{ optional($log->created_at)->format('M d, Y H:i') ?? '—' }}
+                                        <span class="ms-1">{{ optional($log->created_at)->diffForHumans() }}</span>
+                                    </div>
+                                </div>
+                                @if($log->note)
+                                    <div class="text-dark">{{ $log->note }}</div>
+                                @else
+                                    <div class="text-muted fst-italic">No note provided.</div>
+                                @endif
+                            </div>
+                        @endforeach
+                    </div>
+                @endif
+            </div>
+        </div>
+
         <!-- <div class="user-profile-card card">
             <div class="card-header d-flex align-items-center justify-content-between">
                 <h6 class="mb-0">Recent transactions</h6>
@@ -826,3 +861,69 @@
         </div> -->
     </div>
 @endsection
+
+@push('scripts')
+<script>
+    // Ensure modals are appended to body (similar to other modals in the admin UI)
+    document.addEventListener('DOMContentLoaded', function () {
+        ['markNotWorkingModal', 'verifyUserModal'].forEach(function(id){
+            const el = document.getElementById(id);
+            if (el && el.parentNode !== document.body) {
+                document.body.appendChild(el);
+            }
+        });
+    });
+</script>
+@endpush
+
+<!-- Mark Not Working Modal -->
+<div class="modal fade" id="markNotWorkingModal" tabindex="-1" aria-labelledby="markNotWorkingModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form method="POST" action="{{ route('admin.users.admin_check.mark_not_working', $user) }}">
+                @csrf
+                <div class="modal-header">
+                    <h5 class="modal-title" id="markNotWorkingModalLabel">Holatni yangilash (Not working)</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label" for="mark-not-working-note">Description</label>
+                        <textarea class="form-control" id="mark-not-working-note" name="note" rows="4" placeholder="Qisqacha izoh kiriting" required></textarea>
+                    </div>
+                    <p class="text-muted small mb-0">Bu izoh tarix sifatida saqlanadi va o‘chirilmaydi.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-warning">Save & Update</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Verify User Modal -->
+<div class="modal fade" id="verifyUserModal" tabindex="-1" aria-labelledby="verifyUserModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form method="POST" action="{{ route('admin.users.admin_check.verify', $user) }}">
+                @csrf
+                <div class="modal-header">
+                    <h5 class="modal-title" id="verifyUserModalLabel">Admin tekshiruvi (Tasdiqlash)</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label" for="verify-user-note">Description</label>
+                        <textarea class="form-control" id="verify-user-note" name="note" rows="4" placeholder="Qisqacha izoh kiriting" required></textarea>
+                    </div>
+                    <p class="text-muted small mb-0">Bu izoh tarix sifatida saqlanadi va o‘chirilmaydi.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success">Save & Verify</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

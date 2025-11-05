@@ -344,6 +344,11 @@
                                             <i class="feather-check-circle"></i> Checked
                                         </span>
                                     </div>
+                                    <div class="admin-check-actions">
+                                        <a href="{{ route('admin.users.admin_check.show', $user) }}" class="btn btn-sm btn-primary">
+                                            Admin check
+                                        </a>
+                                    </div>
                                 </div>
                             </li>
                         @empty
@@ -389,6 +394,11 @@
                                         <span class="admin-check-chip admin-check-chip--unsatisfied">
                                             Qoniqarsiz
                                         </span>
+                                    </div>
+                                    <div class="admin-check-actions">
+                                        <a href="{{ route('admin.users.admin_check.show', $user) }}" class="btn btn-sm btn-primary">
+                                            Admin check
+                                        </a>
                                     </div>
                                 </div>
                             </li>
