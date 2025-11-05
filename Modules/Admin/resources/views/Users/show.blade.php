@@ -428,19 +428,19 @@
                 </div>
             </div>
             <div class="user-profile-stats">
-                <div class="user-profile-stat-card">
+                <!-- <div class="user-profile-stat-card">
                     <span class="label">Joined</span>
                     <span class="value">{{ $joinedFormatted }}</span>
                     <span class="hint">{{ $joinedAgo ? 'Active since ' . $joinedAgo : '—' }}</span>
-                </div>
+                </div> -->
 
-                <div class="user-profile-stat-card">
+                <!-- <div class="user-profile-stat-card">
                     <span class="label">Last resume update</span>
                     <span class="value">{{ $latestResumeFormatted }}</span>
                     <span class="hint">{{ $latestResumeAgo ? 'Updated ' . $latestResumeAgo : 'No resumes yet' }}</span>
-                </div>
+                </div> -->
 
-                <div class="user-profile-stat-card">
+                <!-- <div class="user-profile-stat-card">
                     <span class="label">Matched vacancies</span>
                     <span class="value">{{ $matchedVacancyCount }}</span>
                     <div class="hint">
@@ -452,7 +452,7 @@
                             No matches yet
                         @endif
                     </div>
-                </div>
+                </div> -->
             </div>
         </div>
     </div>
@@ -499,7 +499,7 @@
                     <span class="label">Matched vacancies</span>
                     <div class="value d-flex flex-column gap-2">
                         @if($matchedVacancyCount > 0)
-                            <span>{{ $matchedVacancyCount }} vacancies linked to this user</span>
+                            <span>{{ $matchedVacancyCount }} vacancies linked to this user </span><br><br>
                             <span class="text-muted small">Latest matches listed below</span>
                             <div>
                                 <a href="{{ route('admin.users.vacancies.index', $user->id) }}" class="btn btn-sm btn-primary shadow-sm">
@@ -667,7 +667,7 @@
             </div>
         </div>
 
-        <div class="user-profile-card card">
+        <!-- <div class="user-profile-card card">
             <div class="card-header d-flex align-items-center justify-content-between">
                 <h6 class="mb-0">Recent vacancy matches</h6>
                 <a href="{{ route('admin.users.vacancies.index', $user->id) }}" class="btn btn-sm btn-outline-primary">
@@ -738,6 +738,6 @@
                     </div>
                 @endif
             </div>
-        </div>
+        </div> -->
     </div>
 @endsection
