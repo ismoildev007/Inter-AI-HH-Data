@@ -122,6 +122,12 @@ class NotificationMatchingService
 
             $isTech = in_array($resumeCategory, $techCategories, true);
 
+            // umumiy tsvector (title+description)
+            $tsVectorSql = "
+                setweight(to_tsvector('simple', coalesce(title, '')), 'A') ||
+                setweight(to_tsvector('simple', coalesce(description, '')), 'B')
+            ";
+
             if ($isTech) {
                 // 🧠 Tech kategoriyalarda — faqat shu kategoriyalardagi vacancies ichidan qidiradi
                 $categoriesForSearch = collect([$resumeCategory, $guessedCategory])
