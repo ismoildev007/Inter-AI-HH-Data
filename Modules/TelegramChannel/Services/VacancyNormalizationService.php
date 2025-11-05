@@ -45,7 +45,6 @@ Rules:
 
 Schema:
 {
-  "language": "uz|ru|en|...",
   "title": "string",
   "company": "string",
   "contact": {
@@ -57,7 +56,6 @@ Schema:
 }
 
 Field rules:
-- language: detect from the text.
 - title: must be only the role/position. No generic words like "Vakansiya" or "Xodim kerak". If not explicit, infer from stack/skills.
 - company: use company/brand name if written, else "".
 - contact:
@@ -70,7 +68,8 @@ Field rules:
 
 - category:
   - Choose exactly ONE label from the allowed list below that best matches the vacancy.
-  - Output the category as an EXACT string from the list — do not invent new labels and do not choose "Other".
+  - Do NOT translate the category label; output it exactly as written in the allowed list.
+  - Output the category as an EXACT string from the list — do not invent new labels. If none of the labels clearly fits, choose "Other".
   - Allowed categories (labels): {$allowedCategoriesJson}
 
 Input text:
