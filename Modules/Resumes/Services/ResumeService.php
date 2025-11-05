@@ -84,8 +84,9 @@ class ResumeService
         $resumeText = (string) ($resume->parsed_text ?? $resume->description);
         if (empty(trim($resumeText))) {
             Log::info("Skip analyze: resume text is empty for resume ID {$resume->id}");
-            $user = $resume->user_id;
-            if (! $user->resumes()->exists()) {
+            $user = $resume->user;
+
+            if ($user && !$user->resumes()->exists()) {
                 app(UsersController::class)->destroyIfNoResumes(request());
             }
             return;
@@ -122,8 +123,25 @@ class ResumeService
                     - Do NOT include infrastructure/tools such as SQL, Git, CI/CD, Docker, etc.
                     - Ensure skills are appended in the same comma-separated list, no extra text or brackets.
             - "cover_letter": Write a short, professional cover letter (5–7 sentences) focusing on three key areas that best suit the candidate listed above. Be polite, confident, concise, and literate. Always include the candidate's real name at the end, in a new paragraph, with the caption "Sincerely" and their name. The letter must be in Russian.
-            - "category": Choose exactly one category from the allowed list below that best matches this resume. Output the category label as an exact string match from the list. Do not invent new labels. Do not choose "Other".
-              Allowed categories (labels): {$allowedCategoriesJson}
+            - "category": Choose exactly one category from the allowed list below that best matches this resume.
+                When analyzing the resume, focus primarily on the candidate’s **most recent 10 years of professional experience** (from the most recent positions listed).
+                If the candidate has changed industries or transitioned into a different professional domain in recent years, prioritize the **current or most recent specialization** rather than earlier experience.
+
+                Give more weight to:
+                - Recent job titles and responsibilities (especially from the last 5–10 years)
+                - Skills and duties mentioned in the latest roles
+                - Education or certifications directly related to those recent roles
+
+                Ignore or down-weight:
+                - Outdated experience that is more than 10 years old unless it matches the current field
+
+                Use the resume context and job titles to infer the best-fitting field from the allowed list below.
+
+                Output only the **category label** as an exact string match from the list.
+                Do not invent new labels and do not choose "Other".
+
+                Allowed categories (labels): {$allowedCategoriesJson}
+
             Return only valid JSON. Do not include explanations outside the JSON.
             Resume text:
             {$resumeText}
@@ -275,10 +293,10 @@ class ResumeService
                     // 🔹 2. OCR fallback (agar hali ham matn yo‘q)
                     if (!$text || strlen($text) < 50) {
                         Log::info("No text layer detected — running OCR via Tesseract...");
-                    
+
                         $tmpDir = sys_get_temp_dir() . '/ocr_' . uniqid();
                         @mkdir($tmpDir);
-                    
+
                         // 1️⃣ Convert PDF pages to images (PNG)
                         $cmdConvert = sprintf(
                             'gs -dNOPAUSE -dBATCH -sDEVICE=png16m -r300 -sOutputFile=%s/page_%%03d.png %s',
@@ -286,12 +304,12 @@ class ResumeService
                             escapeshellarg($path)
                         );
                         exec($cmdConvert, $gsOutput, $gsCode);
-                    
+
                         if ($gsCode !== 0) {
                             Log::error("Ghostscript conversion failed [code=$gsCode]: " . implode("\n", $gsOutput));
                             return null;
                         }
-                    
+
                         // 2️⃣ OCR each image
                         $text = '';
                         foreach (glob("$tmpDir/page_*.png") as $imgPath) {
@@ -302,7 +320,7 @@ class ResumeService
                                 escapeshellarg(str_replace('.txt', '', $tmpTxt))
                             );
                             exec($cmdOcr, $ocrOutput, $ocrCode);
-                    
+
                             if ($ocrCode === 0 && file_exists($tmpTxt)) {
                                 $text .= file_get_contents($tmpTxt) . "\n";
                                 @unlink($tmpTxt);
@@ -310,16 +328,16 @@ class ResumeService
                                 Log::warning("Tesseract failed on page {$imgPath} [code=$ocrCode]: " . implode("\n", $ocrOutput));
                             }
                         }
-                    
+
                         // 3️⃣ Cleanup
                         exec("rm -rf " . escapeshellarg($tmpDir));
-                    
+
                         if (strlen(trim($text)) < 50) {
                             Log::error("OCR produced too little text, skipping file.");
                             return null;
                         }
                     }
-                    
+
 
                     // 🔹 UTF-8 sanitizatsiya
                     $text = $this->sanitizeText($text);
