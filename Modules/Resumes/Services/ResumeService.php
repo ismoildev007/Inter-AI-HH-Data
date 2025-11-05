@@ -244,16 +244,16 @@ class ResumeService
                     Log::info("Parsing PDF file: " . $path);
 
                     $parser = new \Smalot\PdfParser\Parser();
-                
+                    $text = null;
+
                     try {
                         $pdf = $parser->parseFile($path);
                         $text = trim($pdf->getText());
                     } catch (\Throwable $e) {
                         Log::warning("Smalot PDF parser failed: {$e->getMessage()} — switching to pdftotext...");
-                        $text = null;
                     }
-                
-                    // 🔹 Fallback shart
+
+                    // 🔹 1. pdftotext fallback
                     if (!$text || strlen($text) < 50) {
                         $tmpTxt = tempnam(sys_get_temp_dir(), 'pdf_') . '.txt';
                         $cmd = sprintf(
@@ -262,31 +262,86 @@ class ResumeService
                             escapeshellarg($tmpTxt)
                         );
                         exec($cmd, $output, $code);
-                
+
                         if ($code === 0 && file_exists($tmpTxt)) {
                             $text = file_get_contents($tmpTxt);
                             @unlink($tmpTxt);
                         } else {
-                            Log::error("pdftotext failed [code=$code]: " . implode("\n", $output));
+                            Log::warning("pdftotext failed [code=$code]: " . implode("\n", $output));
+                            $text = null;
+                        }
+                    }
+
+                    // 🔹 2. OCR fallback (agar hali ham matn yo‘q)
+                    if (!$text || strlen($text) < 50) {
+                        Log::info("No text layer detected — running OCR via Tesseract...");
+                    
+                        $tmpDir = sys_get_temp_dir() . '/ocr_' . uniqid();
+                        @mkdir($tmpDir);
+                    
+                        // 1️⃣ Convert PDF pages to images (PNG)
+                        $cmdConvert = sprintf(
+                            'gs -dNOPAUSE -dBATCH -sDEVICE=png16m -r300 -sOutputFile=%s/page_%%03d.png %s',
+                            escapeshellarg($tmpDir),
+                            escapeshellarg($path)
+                        );
+                        exec($cmdConvert, $gsOutput, $gsCode);
+                    
+                        if ($gsCode !== 0) {
+                            Log::error("Ghostscript conversion failed [code=$gsCode]: " . implode("\n", $gsOutput));
+                            return null;
+                        }
+                    
+                        // 2️⃣ OCR each image
+                        $text = '';
+                        foreach (glob("$tmpDir/page_*.png") as $imgPath) {
+                            $tmpTxt = tempnam(sys_get_temp_dir(), 'ocr_') . '.txt';
+                            $cmdOcr = sprintf(
+                                'tesseract %s %s -l eng',
+                                escapeshellarg($imgPath),
+                                escapeshellarg(str_replace('.txt', '', $tmpTxt))
+                            );
+                            exec($cmdOcr, $ocrOutput, $ocrCode);
+                    
+                            if ($ocrCode === 0 && file_exists($tmpTxt)) {
+                                $text .= file_get_contents($tmpTxt) . "\n";
+                                @unlink($tmpTxt);
+                            } else {
+                                Log::warning("Tesseract failed on page {$imgPath} [code=$ocrCode]: " . implode("\n", $ocrOutput));
+                            }
+                        }
+                    
+                        // 3️⃣ Cleanup
+                        exec("rm -rf " . escapeshellarg($tmpDir));
+                    
+                        if (strlen(trim($text)) < 50) {
+                            Log::error("OCR produced too little text, skipping file.");
                             return null;
                         }
                     }
-                
-                    // UTF-8 sanitizatsiya
+                    
+
+                    // 🔹 UTF-8 sanitizatsiya
                     $text = $this->sanitizeText($text);
-                
+
                     Log::info("Parsed text length: " . strlen($text));
                     return trim($text);
-                    // $parser = new \Smalot\PdfParser\Parser();
 
-                    // try {
-                    //     $pdf = $parser->parseFile($path);
-                    //     $text = trim($pdf->getText());
+                    // case 'pdf':
+                    //     Log::info("Parsing PDF file: " . $path);
 
-                    //     // Agar Smalot bo‘sh qaytarsa, pdftotext fallback ishlatamiz
+                    //     $parser = new \Smalot\PdfParser\Parser();
+
+                    //     try {
+                    //         $pdf = $parser->parseFile($path);
+                    //         $text = trim($pdf->getText());
+                    //     } catch (\Throwable $e) {
+                    //         Log::warning("Smalot PDF parser failed: {$e->getMessage()} — switching to pdftotext...");
+                    //         $text = null;
+                    //     }
+
+                    //     // 🔹 Fallback shart
                     //     if (!$text || strlen($text) < 50) {
-                    //         Log::warning("Smalot returned empty text, switching to pdftotext fallback...");
-
                     //         $tmpTxt = tempnam(sys_get_temp_dir(), 'pdf_') . '.txt';
                     //         $cmd = sprintf(
                     //             'pdftotext -layout %s %s',
@@ -304,15 +359,11 @@ class ResumeService
                     //         }
                     //     }
 
-                    //     // ✅ UTF-8 tozalash (ENG MUHIM QISM)
+                    //     // UTF-8 sanitizatsiya
                     //     $text = $this->sanitizeText($text);
 
                     //     Log::info("Parsed text length: " . strlen($text));
                     //     return trim($text);
-                    // } catch (\Throwable $e) {
-                    //     Log::error("PDF parse failed: " . $e->getMessage());
-                    //     return null;
-                    // }
 
 
                 case 'docx':
