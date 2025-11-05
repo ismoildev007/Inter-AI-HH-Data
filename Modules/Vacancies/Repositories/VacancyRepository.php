@@ -171,7 +171,7 @@ class VacancyRepository implements VacancyInterface
     }
 
 
-    public function createFromHH(array $hhVacancy): Vacancy
+    public function createFromHH(array $hhVacancy, $category): Vacancy
     {
         $now = now();
         Log::info('repository is coming');
@@ -273,24 +273,25 @@ class VacancyRepository implements VacancyInterface
             'apply_url'       => $hhVacancy['alternate_url'] ?? null,
             'raw_data'        => json_encode($hhVacancy, JSON_UNESCAPED_UNICODE),
             'status'          => 'publish',
+            'category'          => $category,
         ]);
 
-        $categoryRaw = '';
-        if (!empty($hhVacancy['specializations']) && is_array($hhVacancy['specializations'])) {
-            $categoryRaw = $hhVacancy['specializations'][0]['name'] ?? '';
-        }
-        if ($categoryRaw === '' && !empty($hhVacancy['professional_roles']) && is_array($hhVacancy['professional_roles'])) {
-            $categoryRaw = $hhVacancy['professional_roles'][0]['name'] ?? '';
-        }
-        $shouldSetCategory = !$vacancy->exists || empty($vacancy->category) || mb_strtolower((string) $vacancy->category, 'UTF-8') === 'other';
-        if ($shouldSetCategory) {
-            $vacancy->category = $categorizer->categorize(
-                $vacancy->category,
-                $vacancy->title ?? '',
-                $description ?? '',
-                $categoryRaw
-            );
-        }
+//        $categoryRaw = '';
+//        if (!empty($hhVacancy['specializations']) && is_array($hhVacancy['specializations'])) {
+//            $categoryRaw = $hhVacancy['specializations'][0]['name'] ?? '';
+//        }
+//        if ($categoryRaw === '' && !empty($hhVacancy['professional_roles']) && is_array($hhVacancy['professional_roles'])) {
+//            $categoryRaw = $hhVacancy['professional_roles'][0]['name'] ?? '';
+//        }
+//        $shouldSetCategory = !$vacancy->exists || empty($vacancy->category) || mb_strtolower((string) $vacancy->category, 'UTF-8') === 'other';
+//        if ($shouldSetCategory) {
+//            $vacancy->category = $categorizer->categorize(
+//                $vacancy->category,
+//                $vacancy->title ?? '',
+//                $description ?? '',
+//                $categoryRaw
+//            );
+//        }
 
         $vacancy->save();
 

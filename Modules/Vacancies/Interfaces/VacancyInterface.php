@@ -1,4 +1,4 @@
-<?php 
+<?php
 
 namespace Modules\Vacancies\Interfaces;
 
@@ -9,6 +9,6 @@ interface VacancyInterface
     public function firstOrCreateFromHH(array $data): Vacancy;
 
     public function bulkUpsertFromHH(array $vacanciesData): array;
-    public function createFromHH(array $hhVacancy): Vacancy;
+    public function createFromHH(array $hhVacancy, $category): Vacancy;
 
 }
