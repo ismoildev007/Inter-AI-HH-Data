@@ -135,37 +135,75 @@ class ResumeService
             {$resumeText}
             PROMPT;
 
+        $mainModel = env('OPENAI_MAIN_MODEL', 'gpt-4o-mini');
+        $categoryModel = env('OPENAI_CATEGORY_MODEL', 'gpt-4.1-nano');
 
-        $response = Http::timeout(120)
-            ->withToken(env('OPENAI_API_KEY'))
-            ->post('https://api.openai.com/v1/chat/completions', [
-                'model' => env('OPENAI_MODEL', 'gpt-4.1-nano'),
-                'messages' => [
-                    ['role' => 'system', 'content' => 'You are a helpful AI for analyzing resumes.'],
-                    ['role' => 'user', 'content' => $prompt],
-                ],
-//                'temperature' => 0.2,
-            ]);
+        $responses = Http::pool(function ($pool) use ($prompt, $mainModel, $categoryModel) {
+            return [
+                // Asosiy model
+                'main' => $pool->as('main')
+                    ->withToken(env('OPENAI_API_KEY'))
+                    ->timeout(120)
+                    ->post('https://api.openai.com/v1/chat/completions', [
+                        'model' => $mainModel,
+                        'messages' => [
+                            ['role' => 'system', 'content' => 'You are a helpful AI for analyzing resumes.'],
+                            ['role' => 'user', 'content' => $prompt],
+                        ],
+                        'temperature' => 0.2,
+                    ]),
 
+                // Category modeli
+                'category' => $pool->as('category')
+                    ->withToken(env('OPENAI_API_KEY'))
+                    ->timeout(120)
+                    ->post('https://api.openai.com/v1/chat/completions', [
+                        'model' => $categoryModel,
+                        'messages' => [
+                            ['role' => 'system', 'content' => 'You are a helpful AI for analyzing resumes.'],
+                            ['role' => 'user', 'content' => $prompt],
+                        ],
+                    ]),
+            ];
+        });
 
-        if (! $response->successful()) {
-            Log::error("GPT API failed: " . $response->body());
+        $responseMain = $responses['main'];
+        $responseCategory = $responses['category'];
+
+        if (!$responseMain->successful() || !$responseCategory->successful()) {
+            Log::error("GPT API failed: MAIN=" . $responseMain->body() . " CATEGORY=" . $responseCategory->body());
             return;
         }
 
-        $content = $response->json('choices.0.message.content');
+        $parseResponse = function ($resp) {
+            $content = $resp->json('choices.0.message.content');
+            $content = trim(preg_replace(['/^```(json)?/i', '/```$/'], '', trim($content)));
+            $json = json_decode($content, true);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                if (preg_match('/\{.*\}/s', $content, $m)) {
+                    $json = json_decode($m[0], true);
+                }
+            }
+            return (json_last_error() === JSON_ERROR_NONE && is_array($json)) ? $json : null;
+        };
 
-        $content = trim($content);
-        $content = preg_replace('/^```(json)?/i', '', $content);
-        $content = preg_replace('/```$/', '', $content);
-        $content = trim($content);
+        $analysisMain = $parseResponse($responseMain);
+        $analysisCategory = $parseResponse($responseCategory);
 
-        $analysis = json_decode($content, true);
-
-        if (json_last_error() !== JSON_ERROR_NONE || !is_array($analysis)) {
-            Log::info("Invalid GPT response: " . $content);
-            throw new \RuntimeException("Invalid GPT response: " . $content);
+        if (!$analysisMain && !$analysisCategory) {
+            Log::info("Invalid GPT responses: main or category invalid");
+            return;
         }
+
+        // --- Birlashtirish
+        $analysis = [
+            'language' => $analysisMain['language'] ?? null,
+            'title' => $analysisMain['title'] ?? null,
+            'cover_letter' => $analysisMain['cover_letter'] ?? null,
+            'category' => $analysisCategory['category']
+                ?? $analysisMain['category']
+                    ?? null,
+        ];
 
 
         $normalizedTitle = $this->extractTitle($analysis['title'] ?? null);
