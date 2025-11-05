@@ -100,6 +100,19 @@
             ],
         ],
     ];
+    
+    // Pending admin-check count: show number of 'working' users not yet admin-checked
+    try {
+        $pendingAdminChecks = \App\Models\User::query()
+            ->whereRaw("LOWER(COALESCE(status, '')) = ?", ['working'])
+            ->where(function ($q) {
+                $q->whereNull('admin_check_status')
+                  ->orWhere('admin_check_status', false);
+            })
+            ->count();
+    } catch (\Throwable $e) {
+        $pendingAdminChecks = 0;
+    }
 @endphp
 
 <nav class="nxl-navigation admin-sidebar">
@@ -170,6 +183,9 @@
                                                 <span class="admin-sidebar__hint">{{ $item['hint'] }}</span>
                                             @endif
                                         </span>
+                                        @if(($item['route'] ?? '') === 'admin.users.admin_check' && !($isActive ?? false) && ($pendingAdminChecks ?? 0) > 0)
+                                            <span class="admin-sidebar__badge">{{ $pendingAdminChecks }}</span>
+                                        @endif
                                         <span class="admin-sidebar__chevron">
                                             <i class="feather-chevron-right"></i>
                                         </span>
@@ -445,11 +461,29 @@
         font-size: 0.78rem;
         color: #94a3b8;
     }
-    .admin-sidebar__chevron {
-        opacity: 0;
-        color: #94a3b8;
-        transition: transform 0.18s ease, opacity 0.18s ease;
-    }
+.admin-sidebar__chevron {
+    opacity: 0;
+    color: #94a3b8;
+    transition: transform 0.18s ease, opacity 0.18s ease;
+}
+.admin-sidebar__badge {
+    position: absolute;
+    top: 6px;
+    right: 10px;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 6px;
+    border-radius: 999px;
+    background: #ef4444;
+    color: #fff;
+    font-size: 11px;
+    line-height: 18px;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 0 2px #fff;
+}
     .admin-sidebar__item.is-active .admin-sidebar__chevron,
     .admin-sidebar__link:hover .admin-sidebar__chevron {
         opacity: 1;

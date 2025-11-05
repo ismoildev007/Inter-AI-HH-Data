@@ -601,7 +601,7 @@
                 <div class="user-summary-action user-summary-action--warn {{ $yellowDisabled ? 'user-summary-action--disabled' : '' }}">
                     <div class="user-summary-action__title">Ish holatini o‘zgartirish</div>
                     <div class="user-summary-action__hint">
-                        {{ $isWorkingStatus ? 'Working holatidagi foydalanuvchini “not working”ga o‘tkazish.' : 'Holat allaqachon “not working”.' }}
+                        {{ $isWorkingStatus ? 'Working holatidagi foydalanuvchini “not working”ga o‘tkazish va qaytarish.' : 'Holat allaqachon “not working”.' }}
                     </div>
                     <button
                         type="button"
@@ -611,7 +611,7 @@
                         {{ $yellowDisabled ? 'disabled' : '' }}
                     >
                         <i class="feather-edit-2"></i>
-                        Holatni yangilash
+                        Qaytarish
                     </button>
                 </div>
 
@@ -623,7 +623,7 @@
                         @elseif($isAdminChecked)
                             Bu foydalanuvchi allaqachon tasdiqlangan.
                         @else
-                            Working foydalanuvchini admin tekshiruvdan o‘tkazish.
+                            Working holatidagi foydalanuvchini admin tekshiruvdan o‘tkazish va tasdiqlash.
                         @endif
                     </div>
                     <button
