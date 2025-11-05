@@ -73,11 +73,11 @@
                 </span>
                 <h1>{{ $category }}</h1>
                 <p>Listing all resumes under this category.</p>
-                <div class="mt-3">
+                <!-- <div class="mt-3">
                     <a href="{{ route('admin.resumes.categories') }}" class="btn btn-outline-primary">
                         <i class="feather-arrow-left me-1"></i> Back to categories
                     </a>
-                </div>
+                </div> -->
             </div>
             <div class="resumes-stats">
                 <div class="resumes-stat-card">
