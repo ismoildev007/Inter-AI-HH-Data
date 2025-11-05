@@ -25,6 +25,13 @@
             'label' => __('admin.sidebar.groups.users.label'),
             'items' => [
                 [
+                    'label' => 'Admin check',
+                    'icon' => 'check-circle',
+                    'route' => 'admin.users.admin_check',
+                    'match' => ['admin.users.admin_check', 'admin.users.admin_check.*'],
+                    'hint' => 'Verification',
+                ],
+                [
                     'label' => __('admin.sidebar.items.users'),
                     'icon' => 'users',
                     'route' => 'admin.users.index',
