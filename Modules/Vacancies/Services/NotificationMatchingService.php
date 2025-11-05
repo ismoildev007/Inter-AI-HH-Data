@@ -123,27 +123,64 @@ class NotificationMatchingService
             $isTech = in_array($resumeCategory, $techCategories, true);
 
             if ($isTech) {
-                // 🔹 texnik kategoriya – avvalgi mantiq saqlanadi
-                $qb->where(function ($q) use ($tsQuery, $tokens) {
-                    $q->whereRaw("
-                to_tsvector('simple', coalesce(description, '')) @@ websearch_to_tsquery('simple', ?)
-            ", [$tsQuery]);
+                // 🧠 Tech kategoriyalarda — faqat shu kategoriyalardagi vacancies ichidan qidiradi
+                $categoriesForSearch = collect([$resumeCategory, $guessedCategory])
+                    ->filter()
+                    ->unique()
+                    ->all();
 
+                if (empty($categoriesForSearch)) {
+                    // agar kategoriya yo‘q bo‘lsa, fallback sifatida umumiy texnik kategoriyalarni olamiz
+                    $categoriesForSearch = $techCategories;
+                }
+
+                $qb->whereIn('category', $categoriesForSearch);
+
+                // 🔍 Keng qidiruv: FT + tokens + extraSkills (lekin shu kategoriya ichida)
+                $extraSkills = collect(preg_split('/\s*,\s*/u', (string) ($resume->title ?? '')))
+                    ->map(fn($s) => trim($s))
+                    ->filter(fn($s) => mb_strlen($s) > 2)
+                    ->unique()
+                    ->values();
+
+                $qb->where(function ($q) use ($tsQuery, $tokens, $extraSkills, $tsVectorSql) {
+                    // 1) Full-text search
+                    $q->whereRaw("$tsVectorSql @@ websearch_to_tsquery('simple', ?)", [$tsQuery]);
+
+                    // 2) Token LIKE qidiruv
                     if ($tokens->isNotEmpty()) {
                         $likeTokens = $tokens->take(10)->map(fn($t) => "%{$t}%")->all();
                         $q->orWhere(function ($sub) use ($likeTokens) {
                             foreach ($likeTokens as $pattern) {
-                                $sub->orWhere('description', 'ILIKE', $pattern)
-                                    ->orWhere('title', 'ILIKE', $pattern);
+                                $sub->orWhere('title', 'ILIKE', $pattern)
+                                    ->orWhere('description', 'ILIKE', $pattern);
                             }
                         });
                     }
+
+                    // 3) Extra skills
+                    if ($extraSkills->isNotEmpty()) {
+                        $q->orWhere(function ($sub) use ($extraSkills) {
+                            foreach ($extraSkills as $skill) {
+                                $pattern = "%{$skill}%";
+                                $sub->orWhere('title', 'ILIKE', $pattern)
+                                    ->orWhere('description', 'ILIKE', $pattern);
+                            }
+                        });
+                        Log::info('🧠 [TECH TITLE-BASED SKILL SEARCH]', [
+                            'skills' => $extraSkills->all(),
+                        ]);
+                    }
                 });
 
+                // Rank (title+desc asosida)
                 $qb->select(
                     'id', 'title', 'description', 'source', 'external_id', 'category',
-                    DB::raw("ts_rank_cd(to_tsvector('simple', coalesce(description, '')), websearch_to_tsquery('simple', ?)) as rank")
+                    DB::raw("ts_rank_cd($tsVectorSql, websearch_to_tsquery('simple', ?)) as rank")
                 )->addBinding($tsQuery, 'select');
+
+                Log::info("💡 [TECH SEARCH LIMITED TO CATEGORIES]", ['categories' => $categoriesForSearch]);
+
             } else {
                 // 🔹 TEXNIK EMAS — category bo‘yicha ham, umumiy title search ham
                 $qb->select(
