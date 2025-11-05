@@ -121,22 +121,9 @@ class NotificationMatchingService
                 });
 
             $isTech = in_array($resumeCategory, $techCategories, true);
-            $baseSql = "
-                SELECT
-                    v.id, v.title, v.description, v.source, v.external_id, v.category,
-                    CASE
-                        WHEN v.category IN ('IT and Software Development', 'Data Science and Analytics', 'QA and Testing', 'DevOps and Cloud Engineering', 'UI/UX and Product Design')
-                        THEN ts_rank_cd(to_tsvector('simple', coalesce(v.description, '') || ' ' || coalesce(v.title, '')), websearch_to_tsquery('simple', ?))
-                        ELSE 0
-                    END AS rank
-                FROM vacancies v
-                WHERE v.status = 'publish'
-                  AND v.source = 'telegram'
-                  AND v.id NOT IN (SELECT vacancy_id FROM match_results WHERE resume_id = ?)
-            ";
-            $params = [$tsQuery, $resume->id];
 
             if ($isTech) {
+                // 🔹 texnik kategoriya – avvalgi mantiq saqlanadi
                 $qb->where(function ($q) use ($tsQuery, $tokens) {
                     $q->whereRaw("
                 to_tsvector('simple', coalesce(description, '')) @@ websearch_to_tsquery('simple', ?)
@@ -158,84 +145,65 @@ class NotificationMatchingService
                     DB::raw("ts_rank_cd(to_tsvector('simple', coalesce(description, '')), websearch_to_tsquery('simple', ?)) as rank")
                 )->addBinding($tsQuery, 'select');
             } else {
-                if ($resumeCategory) {
-                    $baseSql .= " AND v.category = ?";
-                    $params[] = $resumeCategory;
-                    Log::info("📊 [CATEGORY FILTER] Resume kategoriyasi ishlatildi", [
-                        'category' => $resumeCategory,
-                        'tsQuery_used' => $tsQuery,
-                    ]);
-                } elseif ($guessedCategory) {
-                    $baseSql .= " AND v.category = ?";
-                    $params[] = $guessedCategory;
-                    Log::info("📊 [GUESSED CATEGORY USED] AI taxmin qilgan kategoriya ishlatildi", [
-                        'guessedCategory' => $guessedCategory,
-                        'tsQuery_used' => $tsQuery,
-                    ]);
-                } else {
-                    Log::info("📊 [CATEGORY FILTER] Hech qanday category filter qo‘llanmagan", [
-                        'tsQuery_used' => $tsQuery,
-                    ]);
-                }
-            }
+                // 🔹 TEXNIK EMAS — category bo‘yicha ham, umumiy title search ham
+                $qb->select(
+                    'id', 'title', 'description', 'source', 'external_id', 'category',
+                    DB::raw('0 as rank')
+                );
 
-            // 🧩 Kategoriya bo‘yicha qidiruv
-            if ($withCategory) {
-                if ($resumeCategory) {
-                    $count = DB::table('vacancies')
-                        ->where('status', 'publish')
-                        ->where('source', 'telegram')
-                        ->where('category', $resumeCategory)
-                        ->count();
+                $qb->where(function ($main) use ($tokens, $tsQuery, $resume, $resumeCategory) {
 
-                    Log::info("📊 [CATEGORY] {$resumeCategory} → {$count} vacancies.");
-                    $qb->where('category', $resumeCategory);
-                } elseif ($guessedCategory) {
-                    Log::info("📊 [GUESSED] {$guessedCategory} used.");
-                    $qb->where('category', $guessedCategory);
-                } else {
-                    Log::warning("⚠️ [NO CATEGORY] No category filter applied!");
-                }
-            }
+                    // 🟢 1. Agar kategoriya mavjud bo‘lsa — shu kategoriyadagi barcha vacancies
+                    if (!empty($resumeCategory)) {
+                        $main->orWhere('category', $resumeCategory);
+                        Log::info("📂 [NON-TECH CATEGORY] {$resumeCategory} vacancies included.");
+                    }
 
-            // 🔍 Agar tokens mavjud bo‘lsa, title orqali qidiruv natijasini ham log qilamiz
-            if ($tokens->isNotEmpty()) {
-                try {
-                    $likeTokens = $tokens->take(10)->map(fn($t) => "%{$t}%")->all();
-                    $titleCount = DB::table('vacancies')
-                        ->where('status', 'publish')
-                        ->where('source', 'telegram')
-                        ->where(function ($q) use ($likeTokens) {
-                            foreach ($likeTokens as $pattern) {
+                    // 🟢 2. Full-text search (butun vacancies bazasidan)
+                    $main->orWhereRaw("
+                to_tsvector('simple', coalesce(description, '')) @@ websearch_to_tsquery('simple', ?)
+            ", [$tsQuery]);
+
+                    // 🟢 3. Tokenlar orqali title/description qidiruv (butun bazadan)
+                    if ($tokens->isNotEmpty()) {
+                        $main->orWhere(function ($q) use ($tokens) {
+                            foreach ($tokens as $t) {
+                                $pattern = "%{$t}%";
                                 $q->orWhere('title', 'ILIKE', $pattern)
                                     ->orWhere('description', 'ILIKE', $pattern);
                             }
-                        })
-                        ->count();
+                        });
+                        Log::info('🔎 [TITLE/DESC SEARCH ADDED FOR NON-TECH]', ['tokens' => $tokens->all()]);
+                    }
 
-                    Log::info('📈 [TITLE SEARCH RESULT]', [
-                        'resume_id' => $resume->id,
-                        'token_count' => $tokens->count(),
-                        'vacancy_count' => $titleCount,
-                        'tokens' => $tokens->all(),
-                    ]);
-                } catch (\Throwable $e) {
-                    Log::error('❌ [TITLE SEARCH ERROR]', [
-                        'resume_id' => $resume->id,
-                        'error' => $e->getMessage(),
-                    ]);
-                }
+                    // 🟢 4. Resume->title da vergul bilan ajratilgan frazalar bo‘lsa — skill qidiruvi
+                    $extraSkills = collect(preg_split('/\s*,\s*/u', (string) ($resume->title ?? '')))
+                        ->map(fn($s) => trim($s))
+                        ->filter(fn($s) => mb_strlen($s) > 2)
+                        ->unique()
+                        ->values();
+
+                    if ($extraSkills->isNotEmpty()) {
+                        $main->orWhere(function ($q) use ($extraSkills) {
+                            foreach ($extraSkills as $skill) {
+                                $pattern = "%{$skill}%";
+                                $q->orWhere('title', 'ILIKE', $pattern)
+                                    ->orWhere('description', 'ILIKE', $pattern);
+                            }
+                        });
+
+                        Log::info('🧠 [TITLE-BASED SKILL SEARCH]', [
+                            'resume_id' => $resume->id,
+                            'skills' => $extraSkills->all(),
+                        ]);
+                    }
+                });
             }
-            $baseSql .= " ORDER BY rank DESC, id DESC LIMIT 50";
-
-            Log::info('🧾 [FINAL SQL BUILT]', [
-                'sql' => $baseSql,
-                'params' => $params,
-            ]);
 
             Log::info("✅ [BUILD_LOCAL] Resume {$resume->id} (TECH=" . ($isTech ? 'YES' : 'NO') . ")");
             return $qb->orderByDesc('rank')->orderByDesc('id');
         };
+
 
 
         $localVacancies = collect($buildLocal(true)->limit(10)->get())
