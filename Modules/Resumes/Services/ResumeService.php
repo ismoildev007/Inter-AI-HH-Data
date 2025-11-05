@@ -131,6 +131,7 @@ class ResumeService
                 • Do NOT infer from general IT terms — only match exact or semantically equivalent profession domains.
                 • Never guess or randomize — always pick the single best-matching category from the allowed list.
                 • Output the category label exactly as written in the allowed list below.
+                •  If the title (UI/UX Designer, Branding Designer, Product Designer, Figma, Web Design) is one of these, then the category should be equal to this (UI/UX and Product Design).
                 Allowed categories (labels): {$allowedCategoriesJson}
 
 
