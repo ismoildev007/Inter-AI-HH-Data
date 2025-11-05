@@ -479,12 +479,12 @@
                 </span>
                 <h1 class="user-profile-hero__name">{{ $fullName }}</h1>
                 <div class="user-profile-hero__meta">
-                    <div class="user-profile-hero__meta-item">
+                    <!-- <div class="user-profile-hero__meta-item">
                         <i class="feather-mail"></i>
                         {{ $email }}
-                    </div>
+                    </div> -->
                     <div class="user-profile-hero__meta-item">
-                        <i class="feather-hash"></i>
+                        <i class="feather"></i>
                         User ID: {{ $user->id }}
                     </div>
                     @if($phone)
@@ -535,12 +535,12 @@
                     <span class="label">Full name</span>
                     <span class="value">{{ $fullName }}</span>
                 </div>
-                <div class="user-summary-item">
+                <!-- <div class="user-summary-item">
                     <span class="label">Email</span>
                     <span class="value">
                         <a href="mailto:{{ $email }}">{{ $email }}</a>
                     </span>
-                </div>
+                </div> -->
                 <div class="user-summary-item">
                     <span class="label">Phone</span>
                     <span class="value">
@@ -551,10 +551,10 @@
                         @endif
                     </span>
                 </div>
-                <div class="user-summary-item">
+                <!-- <div class="user-summary-item">
                     <span class="label">Role</span>
                     <span class="value">{{ ucfirst($roleName) }}</span>
-                </div>
+                </div> -->
                 <div class="user-summary-item">
                     <span class="label">Created at</span>
                     <span class="value">{{ $joinedFormatted }}</span>
@@ -696,7 +696,7 @@
                                 <tr>
                                     <td style="width: 40%;">
                                         <div class="fw-semibold">{{ $planName }}</div>
-                                        <div class="text-muted small">#{{ $subscription->id }}</div>
+                                        <div class="text-muted small">{{ $subscription->id }}</div>
                                     </td>
                                     <td style="width: 30%;">
                                         <span class="subscription-status-pill {{ $statusClass }}">
