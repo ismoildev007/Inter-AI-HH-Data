@@ -56,7 +56,9 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('resumes', [ResumeController::class, 'index'])->name('resumes.index');
         // Categories listing for resumes
         Route::get('resumes/categories', [ResumeController::class, 'categories'])->name('resumes.categories');
-        Route::get('resumes/categories/{category}', [ResumeController::class, 'categoryShow'])->name('resumes.categories.show');
+        Route::get('resumes/categories/{category}', [ResumeController::class, 'categoryShow'])
+            ->where('category', '.*')
+            ->name('resumes.categories.show');
         Route::get('resumes/{id}', [ResumeController::class, 'show'])->name('resumes.show');
         Route::get('resumes/{id}/download', [ResumeController::class, 'download'])->name('resumes.download');
 
