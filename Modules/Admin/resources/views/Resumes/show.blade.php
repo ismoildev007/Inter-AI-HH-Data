@@ -292,7 +292,7 @@
             <ul class="breadcrumb">
                 <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}">Home</a></li>
                 <li class="breadcrumb-item"><a href="{{ route('admin.resumes.index') }}">Resumes</a></li>
-                <li class="breadcrumb-item">#{{ $resume->id }}</li>
+                <li class="breadcrumb-item">{{ $resume->id }}</li>
             </ul>
         </div>
 
@@ -308,11 +308,11 @@
                 <h1 class="resume-show-hero__title">{{ $resume->title ?? 'Untitled resume' }}</h1>
                 <div class="resume-show-hero__meta">
                     <span class="resume-show-chip"><i class="feather-user"></i>{{ $ownerName }}</span>
-                    <span class="resume-show-chip"><i class="feather-mail"></i>{{ $ownerEmail }}</span>
+                    <!-- <span class="resume-show-chip"><i class="feather-mail"></i>{{ $ownerEmail }}</span> -->
                     <span class="resume-show-chip"><i class="feather-hash"></i>Resume ID {{ $resume->id }}</span>
                     <span class="resume-show-chip"><i class="feather-shield"></i>{{ ucfirst($ownerRole) }}</span>
                     @if($ownerPhone)
-                        <span class="resume-show-chip"><i class="feather-phone"></i>+998{{ $ownerPhone }}</span>
+                        <span class="resume-show-chip"><i class="feather-phone"></i>+998 {{ $ownerPhone }}</span>
                     @endif
                     @if($language !== '—')
                         <span class="resume-show-chip"><i class="feather-globe"></i>{{ strtoupper($language) }}</span>
@@ -358,15 +358,15 @@
                             </div>
                         </div>
                         <div class="summary-grid">
-                            <div class="summary-chip">
+                            <!-- <div class="summary-chip">
                                 <span class="label">Email</span>
                                 <span class="value"><a href="mailto:{{ $ownerEmail }}">{{ $ownerEmail }}</a></span>
-                            </div>
+                            </div> -->
                             <div class="summary-chip">
                                 <span class="label">Phone</span>
                                 <span class="value">
                                     @if($ownerPhone)
-                                        <a href="tel:{{ preg_replace('/\s+/', '', $ownerPhone) }}">+998{{ $ownerPhone }}</a>
+                                        <a href="tel:{{ preg_replace('/\s+/', '', $ownerPhone) }}">+998 {{ $ownerPhone }}</a>
                                     @else
                                         <span class="text-muted">Not provided</span>
                                     @endif
@@ -391,21 +391,24 @@
                     <div class="card-body">
                         <div class="summary-grid">
                             <div class="summary-chip">
-                                <span class="label">File type</span>
-                                <span class="value">{{ $fileMime }}</span>
+                                <span class="label">Category</span>
+                                <span class="value">{{ $resume->category ?? 'NOT CATEGORY !' }}</span>
                             </div>
-                            <div class="summary-chip">
+                            
+                            <!-- <div class="summary-chip">
                                 <span class="label">File size</span>
                                 <span class="value">{{ $fileSize }}</span>
+                            </div> -->
+                            <div class="summary-chip">
+                                <span class="label">File type</span>
+                                <span class="value">{{ $fileMime }}</span>
                             </div>
                             <div class="summary-chip">
                                 <span class="label">Created</span>
                                 <span class="value">{{ $createdFormatted }}</span>
                             </div>
-                            <div class="summary-chip">
-                                <span class="label">Last update</span>
-                                <span class="value">{{ $updatedFormatted }}</span>
-                            </div>
+                            
+                            
                         </div>
                         @if($fileUrl)
                             <div class="resume-show-actions mt-3">
@@ -423,33 +426,37 @@
                 </div>
             </div>
 
-            <div class="col-xl-4 col-lg-6">
+            <!-- <div class="col-xl-4 col-lg-6">
                 <div class="resume-show-card card h-100">
                     <div class="card-header"><h6 class="mb-0">Summary</h6></div>
                     <div class="card-body">
-                        <div class="summary-grid">
-                            <div class="summary-chip">
+                        <div class="summary-grid"> -->
+                            <!-- <div class="summary-chip">
                                 <span class="label">Language</span>
                                 <span class="value">{{ $language }}</span>
-                            </div>
-                            <div class="summary-chip">
+                            </div> -->
+                            <!-- <div class="summary-chip">
+                                <span class="label">Category</span>
+                                <span class="value">{{ $resume->category ?? '—' }}</span>
+                            </div> -->
+                            <!-- <div class="summary-chip">
                                 <span class="label">Description</span>
                                 <span class="value">{{ $resume->description ?? '—' }}</span>
-                            </div>
-                            <div class="summary-chip">
+                            </div> -->
+                            <!-- <div class="summary-chip">
                                 <span class="label">Keywords</span>
                                 <span class="value">{{ count($keywords) }}</span>
-                            </div>
-                            <div class="summary-chip">
+                            </div> -->
+                            <!-- <div class="summary-chip">
                                 <span class="label">Skills</span>
                                 <span class="value">{{ count($skills) }}</span>
-                            </div>
-                        </div>
+                            </div> -->
+                        <!-- </div>
                     </div>
                 </div>
-            </div>
+            </div> -->
 
-            @if($skills)
+            <!-- @if($skills)
                 <div class="col-12 analysis-block">
                     <div class="resume-show-card card">
                         <div class="card-header"><h6 class="mb-0">Skills</h6></div>
@@ -477,9 +484,9 @@
                         </div>
                     </div>
                 </div>
-            @endif
+            @endif -->
 
-            @if($weaknesses)
+            <!-- @if($weaknesses)
                 <div class="col-12 analysis-block">
                     <div class="resume-show-card card">
                         <div class="card-header"><h6 class="mb-0">Weaknesses</h6></div>
@@ -492,9 +499,9 @@
                         </div>
                     </div>
                 </div>
-            @endif
+            @endif -->
 
-            @if($keywords)
+            <!-- @if($keywords)
                 <div class="col-12 analysis-block">
                     <div class="resume-show-card card">
                         <div class="card-header"><h6 class="mb-0">Keywords</h6></div>
@@ -507,7 +514,7 @@
                         </div>
                     </div>
                 </div>
-            @endif
+            @endif -->
         </div>
     </div>
 @endsection
