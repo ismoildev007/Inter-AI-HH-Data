@@ -7,6 +7,7 @@ use App\Models\Resume;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class ResumeController extends Controller
 {
@@ -30,6 +31,50 @@ class ResumeController extends Controller
         return view('admin::Resumes.index', [
             'resumes' => $resumes,
             'search' => $search,
+        ]);
+    }
+
+    /**
+     * Resume categories list.
+     */
+    public function categories(Request $request)
+    {
+        $categories = Resume::query()
+            ->select('category', DB::raw('COUNT(*) as total'))
+            ->whereNotNull('category')
+            ->whereRaw("TRIM(COALESCE(category, '')) <> ''")
+            ->groupBy('category')
+            ->orderBy('category')
+            ->get();
+
+        $totalResumes = Resume::count();
+
+        return view('admin::Resumes.categories.index', [
+            'categories' => $categories,
+            'totalResumes' => $totalResumes,
+        ]);
+    }
+
+    /**
+     * Show resumes by category.
+     */
+    public function categoryShow(string $category, Request $request)
+    {
+        // Route value should already be decoded; ensure we treat it as plain string
+        $selectedCategory = $category;
+
+        $resumes = Resume::with('user')
+            ->where('category', $selectedCategory)
+            ->latest()
+            ->paginate(15)
+            ->withQueryString();
+
+        $totalInCategory = Resume::where('category', $selectedCategory)->count();
+
+        return view('admin::Resumes.categories.show', [
+            'resumes' => $resumes,
+            'category' => $selectedCategory,
+            'totalInCategory' => $totalInCategory,
         ]);
     }
 

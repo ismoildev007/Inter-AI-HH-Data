@@ -81,6 +81,20 @@
             color: #475569;
         }
 
+        /* Action stat card (clickable) */
+        .resumes-stat-card--action {
+            display: block;
+            text-decoration: none;
+            color: inherit;
+            cursor: pointer;
+            transition: transform 0.18s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+        }
+        .resumes-stat-card--action:hover {
+            border-color: rgba(59, 130, 246, 0.28);
+            box-shadow: 0 22px 44px rgba(59, 130, 246, 0.14);
+            transform: translateY(-2px);
+        }
+
         .resumes-stats {
             flex: 1 1 300px;
             display: grid;
@@ -542,6 +556,7 @@
                 <h1>Resumes catalogue</h1>
                 <p>Track every saved profile, highlight primary resumes, and connect candidates with the right
                     opportunities in seconds.</p>
+                
             </div>
             <div class="resumes-stats">
                 <div class="resumes-stat-card">
@@ -564,6 +579,13 @@
                     <span class="value">{{ number_format($uniqueAuthors) }}</span>
                     <span class="hint">Represented on this page</span>
                 </div>
+                <a href="{{ route('admin.resumes.categories') }}" class="resumes-stat-card resumes-stat-card--action">
+                    <span class="label">Browse</span>
+                    <span class="value" style="display:flex;align-items:center;gap:8px;">
+                         Categories
+                    </span>
+                    <span class="hint">Open categories list</span>
+                </a>
             </div>
         </div>
     </div>
