@@ -498,6 +498,7 @@ class DashboardController extends Controller
             ->when($sourceFilter !== 'all', function ($q) use ($sourceFilter) { $q->where('visits.source', $sourceFilter); })
             ->selectRaw('COALESCE(users.id, visits.user_id) as id')
             ->selectRaw('users.first_name, users.last_name, users.email')
+            ->selectRaw('MAX(visits.visited_at) as last_visited_at')
             ->selectRaw('COUNT(*) as visits_count')
             ->groupBy(DB::raw('COALESCE(users.id, visits.user_id)'), 'users.first_name', 'users.last_name', 'users.email')
             ->orderByDesc('visits_count')

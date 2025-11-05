@@ -442,7 +442,7 @@
                     <tr>
                         <th style="width: 110px;" class="text-muted">Listing</th>
                         <th class="text-muted">User</th>
-                        <th class="text-muted">Email</th>
+                        <th class="text-muted">Last visit</th>
                         <th class="text-end text-muted">Visits</th>
                     </tr>
                 </thead>
@@ -462,7 +462,11 @@
                                     </div>
                                 </div>
                             </td>
-                            <td data-label="Email">{{ $visitor->email ?? '—' }}</td>
+                            @php
+                                $last = $visitor->last_visited_at ?? null;
+                                $lastFormatted = $last ? \Illuminate\Support\Carbon::parse($last)->format('Y-m-d H:i') : '—';
+                            @endphp
+                            <td data-label="Last visit">{{ $lastFormatted }}</td>
                             <td data-label="Visits" class="text-end fw-semibold">{{ number_format($visitor->visits_count) }}</td>
                         </tr>
                     @empty
