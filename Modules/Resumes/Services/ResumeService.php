@@ -123,16 +123,11 @@ class ResumeService
                     - Do NOT include infrastructure/tools such as SQL, Git, CI/CD, Docker, etc.
                     - Ensure skills are appended in the same comma-separated list, no extra text or brackets.
             - "cover_letter": Write a short, professional cover letter (5–7 sentences) focusing on three key areas that best suit the candidate listed above. Be polite, confident, concise, and literate. Always include the candidate's real name at the end, in a new paragraph, with the caption "Sincerely" and their name. The letter must be in Russian.
-            - "category": Choose **exactly one** category from the allowed list below that best matches the identified "title" above, not the full resume text.
-                ⚙️ Rules for choosing "category":
-                • Base the category choice strictly on the "title" field that was identified earlier — do NOT use the resume text directly.
-                • The category must directly correspond to the candidate’s primary role(s) or domain area indicated in "title".
-                • Do NOT use the "Other" category.
-                • Do NOT infer from general IT terms — only match exact or semantically equivalent profession domains.
-                • Never guess or randomize — always pick the single best-matching category from the allowed list.
-                • Output the category label exactly as written in the allowed list below.
-                •  If the title (UI/UX Designer, Branding Designer, Product Designer, Figma, Web Design) is one of these, then the category should be equal to this (UI/UX and Product Design).
-                Allowed categories (labels): {$allowedCategoriesJson}
+            - category:
+              - Choose exactly ONE label from the allowed list below that best matches the vacancy.
+              - Do NOT translate the category label; output it exactly as written in the allowed list.
+              - Output the category as an EXACT string from the list — do not invent new labels. If none of the labels clearly fits, choose "Other".
+              - Allowed categories (labels): {$allowedCategoriesJson}
 
 
             Return only valid JSON. Do not include explanations outside the JSON.
