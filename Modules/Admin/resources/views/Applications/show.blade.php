@@ -108,6 +108,8 @@
             font-size: 0.9rem;
             font-weight: 500;
         }
+        .app-show-hero__meta-item a { color: inherit; text-decoration: none; }
+        .app-show-hero__meta-item a:hover { text-decoration: underline; }
 
         .app-show-stats {
             display: grid;
@@ -263,7 +265,13 @@
                 </span>
                 <h1 class="app-show-hero__title">{{ $vacancy->title ?? 'Application #' . $application->id }}</h1>
                 <div class="app-show-hero__meta">
-                    <span class="app-show-hero__meta-item"><i class="feather-user"></i>{{ $candidateName }}</span>
+                    <span class="app-show-hero__meta-item"><i class="feather-user"></i>
+                        @if(!empty($candidate?->id))
+                            <a href="{{ route('admin.users.show', $candidate->id) }}">{{ $candidateName }}</a>
+                        @else
+                            {{ $candidateName }}
+                        @endif
+                    </span>
                     <span class="app-show-hero__meta-item"><i class="feather-mail"></i>{{ $candidateEmail }}</span>
                     <span class="app-show-hero__meta-item"><i class="feather-hash"></i>ID {{ $application->id }}</span>
                     @if($vacancy && $vacancy->company)
@@ -306,7 +314,13 @@
                                 <img src="/assets/images/avatar/ava.svg" alt="avatar" class="img-fluid">
                             </div>
                             <div>
-                                <div class="fw-semibold text-dark">{{ $candidateName }}</div>
+                                <div class="fw-semibold text-dark">
+                                    @if(!empty($candidate?->id))
+                                        <a href="{{ route('admin.users.show', $candidate->id) }}" style="color: inherit; text-decoration: none;">{{ $candidateName }}</a>
+                                    @else
+                                        {{ $candidateName }}
+                                    @endif
+                                </div>
                                 <div class="text-muted small">{{ ucfirst($candidateRole) }}</div>
                             </div>
                         </div>
