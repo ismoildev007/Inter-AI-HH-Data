@@ -296,7 +296,7 @@ class VacancyMatchingService
                         ->first();
 
                     if (!$vac && isset($match['raw'])) {
-                        $vac = $this->vacancyRepository->createFromHH($match['raw'], $resumeCategory);
+                        $vac = $this->vacancyRepository->createFromHH($match['raw']);
                     }
                 }
 
