@@ -429,18 +429,20 @@
                             
                             
                         </div>
-                        @if($fileUrl)
-                            <div class="resume-show-actions mt-3">
-                                <!-- <a class="resume-action-btn" href="{{ $fileUrl }}" target="_blank" rel="noopener">
-                                    <i class="feather-download"></i> Open resume
-                                </a> -->
-                                @if(isset($openUrl) && $openUrl !== $fileUrl)
-                                    <a class="resume-action-btn" href="{{ $openUrl }}" target="_blank" rel="noopener">
-                                        <i class="feather-external-link"></i> Open in browser
-                                    </a>
-                                @endif
-                            </div>
-                        @endif
+                        <div class="resume-show-actions mt-3">
+                            @if($fileUrl && isset($openUrl) && $openUrl !== $fileUrl)
+                                <a class="resume-action-btn" href="{{ $openUrl }}" target="_blank" rel="noopener">
+                                    <i class="feather-external-link"></i> Open in browser
+                                </a>
+                            @endif
+                            <form method="POST" action="{{ route('admin.resumes.destroy', ['resume' => $resume->id]) }}" onsubmit="return confirm('Delete this resume?');">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="btn btn-sm btn-outline-danger shadow-sm">
+                                    <i class="feather-trash me-1"></i> Delete resume
+                                </button>
+                            </form>
+                        </div>
                     </div>
                 </div>
             </div>

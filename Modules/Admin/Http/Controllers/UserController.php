@@ -13,6 +13,7 @@ use Illuminate\Support\Collection;
 use App\Models\AdminCheckNote;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 
 class UserController extends Controller
 {
@@ -465,7 +466,18 @@ class UserController extends Controller
     public function destroy(User $user)
     {
         try {
-            $user->delete();
+            DB::transaction(function () use ($user) {
+                // Delete all resumes belonging to the user first
+                $user->resumes()->get()->each(function ($resume) {
+                    // Optionally cascade to children if needed in the future
+                    // $resume->matchResults()->delete();
+                    // if ($resume->analysis) { $resume->analysis->delete(); }
+                    $resume->delete();
+                });
+
+                // Finally delete the user
+                $user->delete();
+            });
 
             return redirect()
                 ->route('admin.users.index')

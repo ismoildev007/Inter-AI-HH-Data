@@ -60,6 +60,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
             ->where('category', '.*')
             ->name('resumes.categories.show');
         Route::patch('resumes/{resume}/category', [ResumeController::class, 'updateCategory'])->name('resumes.update_category');
+        Route::delete('resumes/{resume}', [ResumeController::class, 'destroy'])->name('resumes.destroy');
         Route::get('resumes/{id}', [ResumeController::class, 'show'])->name('resumes.show');
         Route::get('resumes/{id}/download', [ResumeController::class, 'download'])->name('resumes.download');
 

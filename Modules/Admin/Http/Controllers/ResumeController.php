@@ -9,6 +9,7 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Throwable;
 
 class ResumeController extends Controller
 {
@@ -147,5 +148,38 @@ class ResumeController extends Controller
         ]);
 
         return redirect()->back()->with('status', 'Resume category updated.');
+    }
+
+    /**
+     * Delete a resume and its related records.
+     */
+    public function destroy(Resume $resume)
+    {
+        DB::transaction(function () use ($resume) {
+            // Delete related analysis and match results if exist
+            if (method_exists($resume, 'analysis') && $resume->relationLoaded('analysis') ? $resume->analysis : $resume->analysis()->exists()) {
+                optional($resume->analysis)->delete();
+            }
+            if (method_exists($resume, 'matchResults')) {
+                $resume->matchResults()->delete();
+            }
+
+            // Try to remove stored file if it is on our storage disk (not external URL)
+            try {
+                $path = $resume->file_path ? ltrim($resume->file_path, '/') : null;
+                if ($path && !preg_match('#^https?://#i', $resume->file_path)) {
+                    $disk = Storage::disk('spaces');
+                    if ($disk->exists($path)) {
+                        $disk->delete($path);
+                    }
+                }
+            } catch (Throwable $e) {
+                // ignore storage errors
+            }
+
+            $resume->delete();
+        });
+
+        return redirect()->route('admin.resumes.index')->with('status', 'Resume deleted.');
     }
 }
