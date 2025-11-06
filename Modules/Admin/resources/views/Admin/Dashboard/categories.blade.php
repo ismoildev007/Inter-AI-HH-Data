@@ -3,7 +3,7 @@
 @section('content')
     @php
         $currentFilter = $filter ?? request('filter', 'all');
-        if (!in_array($currentFilter, ['all', 'telegram', 'hh'], true)) {
+        if (!in_array($currentFilter, ['all', 'telegram', 'hh', 'archived'], true)) {
             $currentFilter = 'all';
         }
         $searchTerm = $search ?? request('q', '');
@@ -17,6 +17,7 @@
             'all' => 'All sources',
             'telegram' => 'Telegram',
             'hh' => 'HeadHunter',
+            'archived' => 'Archived',
         ][$currentFilter] ?? ucfirst($currentFilter);
         $dateFilter = $dateFilter ?? ['from' => request('from', ''), 'to' => request('to', '')];
         $dateRangeFrom = $dateFilter['from'] ?? '';
@@ -715,6 +716,7 @@
                     ['value' => 'all', 'label' => 'All', 'description' => 'Show all sources'],
                     ['value' => 'telegram', 'label' => 'Telegram', 'description' => 'Telegram collected vacancies'],
                     ['value' => 'hh', 'label' => 'HH', 'description' => 'HeadHunter imports'],
+                    ['value' => 'archived', 'label' => 'Archived', 'description' => 'Archived vacancies only'],
                 ] as $card)
                     @php
                         $isActive = $currentFilter === $card['value'];

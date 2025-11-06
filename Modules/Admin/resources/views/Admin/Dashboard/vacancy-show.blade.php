@@ -3,7 +3,7 @@
 @section('content')
     @php
         $currentFilter = $filter ?? request('filter', 'all');
-        if (!in_array($currentFilter, ['all','telegram','hh'], true)) {
+        if (!in_array($currentFilter, ['all','telegram','hh','archived'], true)) {
             $currentFilter = 'all';
         }
         $categoryIndexParams = $currentFilter === 'all' ? [] : ['filter' => $currentFilter];

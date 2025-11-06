@@ -532,7 +532,7 @@ class DashboardController extends Controller
     public function vacancyCategories(Request $request)
     {
         $filter = strtolower($request->query('filter', 'all'));
-        if (!in_array($filter, ['all', 'telegram', 'hh'], true)) {
+        if (!in_array($filter, ['all', 'telegram', 'hh', 'archived'], true)) {
             $filter = 'all';
         }
 
@@ -588,6 +588,9 @@ class DashboardController extends Controller
             ->when($filter === 'hh', function ($query) {
                 $query->whereRaw('LOWER(source) LIKE ?', ['hh%']);
             })
+            ->when($filter === 'archived', function ($query) {
+                $query->where('status', \App\Models\Vacancy::STATUS_ARCHIVE);
+            })
             ->groupBy(DB::raw($catExpr))
             ->orderByDesc('c')
             ->get();
@@ -637,6 +640,9 @@ class DashboardController extends Controller
             ->when($filter === 'hh', function ($query) {
                 $query->whereRaw('LOWER(source) LIKE ?', ['hh%']);
             })
+            ->when($filter === 'archived', function ($query) {
+                $query->where('status', \App\Models\Vacancy::STATUS_ARCHIVE);
+            })
             ->count();
 
         // Queued (status=queued) count across current filters/date range
@@ -676,7 +682,7 @@ class DashboardController extends Controller
     public function vacanciesByCategory(Request $request, string $category)
     {
         $filter = strtolower($request->query('filter', 'all'));
-        if (!in_array($filter, ['all', 'telegram', 'hh'], true)) {
+        if (!in_array($filter, ['all', 'telegram', 'hh', 'archived'], true)) {
             $filter = 'all';
         }
 
@@ -734,6 +740,8 @@ class DashboardController extends Controller
             $q->whereRaw('LOWER(source) LIKE ?', ['telegram%']);
         })->when($filter === 'hh', function ($q) {
             $q->whereRaw('LOWER(source) LIKE ?', ['hh%']);
+        })->when($filter === 'archived', function ($q) {
+            $q->where('status', \App\Models\Vacancy::STATUS_ARCHIVE);
         })->when($dateFrom, function ($q) use ($dateFrom) {
             $q->where('created_at', '>=', $dateFrom);
         })->when($dateTo, function ($q) use ($dateTo) {
@@ -788,7 +796,7 @@ class DashboardController extends Controller
         ]);
 
         $filter = strtolower($request->input('return_filter', $request->query('filter', 'all')));
-        if (!in_array($filter, ['all', 'telegram', 'hh'], true)) {
+        if (!in_array($filter, ['all', 'telegram', 'hh', 'archived'], true)) {
             $filter = 'all';
         }
         $routeParams = ['id' => $vacancy->id];
@@ -830,7 +838,7 @@ class DashboardController extends Controller
         $vacancy->delete();
 
         $filter = strtolower($request->input('return_filter', $request->query('filter', 'all')));
-        if (!in_array($filter, ['all', 'telegram', 'hh'], true)) {
+        if (!in_array($filter, ['all', 'telegram', 'hh', 'archived'], true)) {
             $filter = 'all';
         }
         $routeParams = $filter === 'all' ? [] : ['filter' => $filter];
@@ -849,7 +857,7 @@ class DashboardController extends Controller
         $categorizer = app(\Modules\TelegramChannel\Services\VacancyCategoryService::class);
         $categorySlug = $vacancy->category ? $categorizer->slugify($vacancy->category) : null;
         $filter = strtolower($request->query('filter', $request->input('return_filter', 'all')));
-        if (!in_array($filter, ['all', 'telegram', 'hh'], true)) {
+        if (!in_array($filter, ['all', 'telegram', 'hh', 'archived'], true)) {
             $filter = 'all';
         }
         return view('admin::Admin.Dashboard.vacancy-show', compact('vacancy', 'categorySlug', 'filter'));

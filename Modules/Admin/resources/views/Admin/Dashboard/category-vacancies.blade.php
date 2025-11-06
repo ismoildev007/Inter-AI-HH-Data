@@ -3,13 +3,14 @@
 @section('content')
     @php
         $currentFilter = $filter ?? request('filter', 'all');
-        if (!in_array($currentFilter, ['all', 'telegram', 'hh'], true)) {
+        if (!in_array($currentFilter, ['all', 'telegram', 'hh', 'archived'], true)) {
             $currentFilter = 'all';
         }
         $filterLabels = [
             'all' => 'All sources',
             'telegram' => 'Telegram',
             'hh' => 'HeadHunter',
+            'archived' => 'Archived',
         ];
         $filterLabel = $filterLabels[$currentFilter] ?? ucfirst($currentFilter);
         $searchTerm = $search ?? request('q', '');
