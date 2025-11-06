@@ -19,6 +19,15 @@ return [
         'discard',
     ],
 
+    // If exact statuses differ per account/locale, these substrings
+    // will be checked case-insensitively to detect discard-like states.
+    'discard_patterns' => [
+        'discard', // en
+        'reject',  // en: rejected
+        'declin',  // en: decline/declined
+        'отказ',   // ru: отказ
+    ],
+
     // AI provider settings
     'ai' => [
         'provider' => 'openai',

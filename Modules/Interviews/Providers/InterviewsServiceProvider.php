@@ -46,7 +46,9 @@ class InterviewsServiceProvider extends ServiceProvider
      */
     protected function registerCommands(): void
     {
-        // $this->commands([]);
+        $this->commands([
+            \Modules\Interviews\Console\Commands\BackfillDiscardInterviewsCommand::class,
+        ]);
     }
 
     /**
