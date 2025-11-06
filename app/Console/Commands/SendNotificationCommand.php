@@ -28,140 +28,104 @@ class SendNotificationCommand extends Command
      */
     public function handle()
     {
-        Log::info('🚀 Matching and notification started.');
+        Log::info('🚀 Single-user matching and notification started.');
 
         $token = '8086335636:AAGGAWtnPfbDGUviunLMwk7S7y2yNPUkl4Q';
         $telegram = new Api($token);
 
-        $users = User::get();
-        $this->line('Found ' . $users->count() . ' users with resumes and chat IDs.');
+        // 🎯 Faqat bitta foydalanuvchini olish
+        $user = User::where('chat_id', '6583641407')->first();
 
-        if ($users->isEmpty()) {
-            $this->warn('No users found with valid resumes and chat IDs.');
+        if (!$user) {
+            $this->error('❌ User with chat_id 6583641407 not found.');
+            Log::warning('❌ User with chat_id 6583641407 not found.');
             return;
         }
-        foreach ($users as $user) {
-            $this->line("👤 Checking matches for user: {$user->first_name}");
 
-            $totalNewMatches = 0;
-            // $localList = [];
-            // $hhList = [];
-            // $seenVacancyIds = [];
+        $this->info("👤 Checking matches for user: {$user->first_name} ({$user->chat_id})");
 
-            foreach ($user->resumes as $resume) {
-                $this->line("   🧠 Matching resume #{$resume->id}: {$resume->title}");
+        $totalNewMatches = 0;
 
-                try {
-                    $savedData = $this->matchingService->matchResume($resume, $resume->title ?? 'developer');
-                } catch (\Throwable $e) {
-                    Log::error("❌ Error matching resume {$resume->id}: " . $e->getMessage());
-                    continue;
-                }
+        foreach ($user->resumes as $resume) {
+            $this->line("   🧠 Matching resume #{$resume->id}: {$resume->title}");
 
-                $newMatches = MatchResult::where('resume_id', $resume->id)
-                    ->whereNull('notified_at')
-                    ->with('vacancy')
-                    ->get();
-                $this->line("      🔍 Found {$newMatches->count()} new matches for resume #{$resume->id}");
-
-                if ($newMatches->isNotEmpty()) {
-                    $totalNewMatches += $newMatches->count();
-                    $this->info("      ✅ New matches for resume #{$resume->id}: {$newMatches->count()}");
-
-                    // Build per-source short lists for Telegram message (max 10 + 10)
-                    // foreach ($newMatches as $match) {
-                    //     $vac = $match->vacancy;
-                    //     if (!$vac) { continue; }
-                    //     if (in_array($vac->id, $seenVacancyIds, true)) { continue; }
-                    //     $seenVacancyIds[] = $vac->id;
-
-                    //     $title = $vac->title ?? '—';
-                    //     $title = $this->cleanTitle($title);
-
-                    //     if ($vac->source === 'telegram' && count($localList) < 10) {
-                    //         $localList[] = $title;
-                    //     } elseif ($vac->source === 'hh' && count($hhList) < 10) {
-                    //         $hhList[] = $title;
-                    //     }
-                    // }
-
-                    MatchResult::whereIn('id', $newMatches->pluck('id'))
-                        ->update(['notified_at' => now()]);
-                    $this->info("      🕒 Updated notified_at for resume #{$resume->id}");
-                }
+            try {
+                $savedData = $this->matchingService->matchResume($resume, $resume->title ?? 'developer');
+            } catch (\Throwable $e) {
+                Log::error("❌ Error matching resume {$resume->id}: " . $e->getMessage());
+                continue;
             }
-            $this->line("   🎯 Total new matches for user {$user->first_name}: {$totalNewMatches}");
-            if ($totalNewMatches > 0) {
-                try {
-                    $langCode = $user->language ?? 'ru';
 
-                    if ($user->language === 'uz') {
-                        $message = "Sun’iy intellekt siz uchun aynan mos bo‘lgan *{$totalNewMatches}* ta ish o‘rnini topdi! 🚀\n\nImkonni qo‘ldan boy bermang — batafsil ma’lumotni ilovada ko’rishingiz mumkin👇";
-                        $buttonText = "Dasturga Kirish";
-                    } elseif ($user->language === 'ru') {
-                        $message = "Наш ИИ нашёл для вас *{$totalNewMatches}* подходящих вакансий! 🚀\n\nНе упустите шанс — посмотрите подробности прямо сейчас в приложении 👇";
-                        $buttonText = "Войти в программу";
-                    } else {
-                        $message = "Our AI has found *{$totalNewMatches}* job positions that perfectly match your profile! 🚀\n\nDon’t miss this opportunity — check the details in the app right now 👇";
-                        $buttonText = "Sign in";
-                    }
-                    $user->tokens()->delete();
+            $newMatches = MatchResult::where('resume_id', $resume->id)
+                ->whereNull('notified_at')
+                ->with('vacancy')
+                ->get();
 
-                    $token = $user->createToken('api_token', ['*'], now()->addDays(30))->plainTextToken;
-                    $webAppUrl = "https://vacancies.inter-ai.uz/#?chat_id={$user->chat_id}&token={$token}&locale={$langCode}";
-//                    $webAppUrl = "https://vacancies.inter-ai.uz/#?chat_id=1770556788&token={$token}&locale={$langCode}";
+            $this->line("      🔍 Found {$newMatches->count()} new matches for resume #{$resume->id}");
 
-                    $inlineKeyboard = Keyboard::make()
-                        ->inline()
-                        ->row([
-                            Keyboard::inlineButton([
-                                'text'    => $buttonText,
-                                'web_app' => ['url' => $webAppUrl],
-                            ]),
-                        ]);
+            if ($newMatches->isNotEmpty()) {
+                $totalNewMatches += $newMatches->count();
+                $this->info("      ✅ New matches for resume #{$resume->id}: {$newMatches->count()}");
 
-                    // Compose optional detailed lists (titles) per source
-                    // $sections = [];
-                    // if (!empty($localList)) {
-                    //     $header = $user->language === 'ru' ? 'Telegram вакансии' : ($user->language === 'uz' ? 'Telegram vakansiyalar' : 'Telegram vacancies');
-                    //     $lines = [];
-                    //     foreach ($localList as $i => $t) { $lines[] = ($i + 1) . '. ' . $t; }
-                    //     $sections[] = $header . ":\n" . implode("\n", $lines);
-                    // }
-                    // if (!empty($hhList)) {
-                    //     $header = $user->language === 'ru' ? 'HH вакансии' : ($user->language === 'uz' ? 'HH vakansiyalar' : 'HH vacancies');
-                    //     $lines = [];
-                    //     foreach ($hhList as $i => $t) { $lines[] = ($i + 1) . '. ' . $t; }
-                    //     $sections[] = $header . ":\n" . implode("\n", $lines);
-                    // }
-
-                    // if (!empty($sections)) {
-                    //     $message .= "\n\n" . implode("\n\n", $sections);
-                    // }
-
-                    try {
-                        $telegram->sendMessage([
-                            'chat_id'      => $user->chat_id,
-                            'text'         => $message,
-                            'parse_mode'   => 'Markdown',
-                            'reply_markup' => $inlineKeyboard,
-                        ]);
-
-                        Log::info("✅ Dashboard button sent to user {$user->id}");
-                    } catch (\Throwable $e) {
-                        Log::error("❌ Telegram send failed for user {$user->id}: " . $e->getMessage());
-                    }
-                    $this->info("✅ Sent message to {$user->email} ({$totalNewMatches} matches)");
-                    Log::info("✅ Notification sent to user {$user->id}");
-                } catch (\Throwable $e) {
-                    Log::error("❌ Telegram send failed for user {$user->id}: " . $e->getMessage());
-                }
-            } else {
-                $this->line("ℹ️ No new matches for {$user->email}");
+                MatchResult::whereIn('id', $newMatches->pluck('id'))
+                    ->update(['notified_at' => now()]);
+                $this->info("      🕒 Updated notified_at for resume #{$resume->id}");
             }
         }
-        Log::info('✅ Matching and notifications completed.');
+
+        $this->line("   🎯 Total new matches for user {$user->first_name}: {$totalNewMatches}");
+
+        if ($totalNewMatches > 0) {
+            try {
+                $langCode = $user->language ?? 'ru';
+
+                if ($user->language === 'uz') {
+                    $message = "Sun’iy intellekt siz uchun aynan mos bo‘lgan *{$totalNewMatches}* ta ish o‘rnini topdi! 🚀\n\nImkonni qo‘ldan boy bermang — batafsil ma’lumotni ilovada ko’rishingiz mumkin👇";
+                    $buttonText = "Dasturga Kirish";
+                } elseif ($user->language === 'ru') {
+                    $message = "Наш ИИ нашёл для вас *{$totalNewMatches}* подходящих вакансий! 🚀\n\nНе упустите шанс — посмотрите подробности прямо сейчас в приложении 👇";
+                    $buttonText = "Войти в программу";
+                } else {
+                    $message = "Our AI has found *{$totalNewMatches}* job positions that perfectly match your profile! 🚀\n\nDon’t miss this opportunity — check the details in the app right now 👇";
+                    $buttonText = "Sign in";
+                }
+
+                // 🔑 Token yaratish
+                $user->tokens()->delete();
+                $token = $user->createToken('api_token', ['*'], now()->addDays(30))->plainTextToken;
+
+                $webAppUrl = "https://vacancies.inter-ai.uz/#?chat_id={$user->chat_id}&token={$token}&locale={$langCode}";
+
+                $inlineKeyboard = Keyboard::make()
+                    ->inline()
+                    ->row([
+                        Keyboard::inlineButton([
+                            'text'    => $buttonText,
+                            'web_app' => ['url' => $webAppUrl],
+                        ]),
+                    ]);
+
+                // 📨 Telegram xabari yuborish
+                $telegram->sendMessage([
+                    'chat_id'      => $user->chat_id,
+                    'text'         => $message,
+                    'parse_mode'   => 'Markdown',
+                    'reply_markup' => $inlineKeyboard,
+                ]);
+
+                Log::info("✅ Telegram message sent to user {$user->id}");
+                $this->info("✅ Sent message to {$user->email} ({$totalNewMatches} matches)");
+
+            } catch (\Throwable $e) {
+                Log::error("❌ Telegram send failed for user {$user->id}: " . $e->getMessage());
+            }
+        } else {
+            $this->line("ℹ️ No new matches for {$user->email}");
+        }
+
+        Log::info('✅ Single-user matching and notification completed.');
     }
+
 
     // private function cleanTitle(string $text): string
     // {
