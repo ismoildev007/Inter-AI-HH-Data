@@ -232,8 +232,8 @@ class NotificationMatchingService
         };
 
 // Execute query (synchronous, no promises)
-        $localVacancies = collect($buildLocal()->limit(50)->get())
-            ->take(50)
+        $localVacancies = collect($buildLocal()->limit(10)->get())
+            ->take(10)
             ->keyBy(fn($v) => $v->source === 'hh' && $v->external_id ? $v->external_id : "local_{$v->id}");
 
         Log::info('✅ [SEARCH COMPLETED]', [
