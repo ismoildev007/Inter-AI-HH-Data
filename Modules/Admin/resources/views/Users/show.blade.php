@@ -529,6 +529,31 @@
                         @endif
                     </div>
                 </div>
+                @php $coverLetter = optional($user->preference)->cover_letter; @endphp
+                <div class="user-summary-item" @if(!empty($coverLetter)) data-bs-toggle="modal" data-bs-target="#coverLetterModal" role="button" style="cursor: pointer;" @endif>
+                    <span class="label">Cover letter</span>
+                    <div class="value d-flex flex-column gap-2">
+                        @if(!empty($coverLetter))
+                            <span class="text-muted small">Saved cover letter</span>
+                            <div id="coverLetterRaw" class="d-none">{!! nl2br(e($coverLetter)) !!}</div>
+                        @else
+                            <span class="text-muted">No cover letter</span>
+                        @endif
+                    </div>
+                </div>
+                <div class="user-summary-item">
+                    <span class="label text-danger">Delete user</span>
+                    <div class="value d-flex flex-column gap-2">
+                        <span class="text-muted small">Permanently remove this user</span>
+                        <form method="POST" action="{{ route('admin.users.destroy', $user) }}" onsubmit="event.stopPropagation(); return confirm('Foydalanuvchini o\'chirmoqchimisiz?');">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" class="btn btn-sm btn-danger shadow-sm">
+                                <i class="feather-trash me-1"></i> Delete user
+                            </button>
+                        </form>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -739,5 +764,43 @@
                 @endif
             </div>
         </div> -->
+        <!-- Cover Letter Modal -->
+        <div class="modal fade" id="coverLetterModal" tabindex="-1" aria-labelledby="coverLetterModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="coverLetterModalLabel">User Cover Letter</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div id="coverLetterContent" style="white-space: pre-wrap; word-break: break-word;"></div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 @endsection
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const modalEl = document.getElementById('coverLetterModal');
+    if (!modalEl) return;
+    if (modalEl.parentNode !== document.body) {
+        document.body.appendChild(modalEl);
+    }
+    const contentEl = modalEl.querySelector('#coverLetterContent');
+    modalEl.addEventListener('show.bs.modal', function () {
+        const rawEl = document.getElementById('coverLetterRaw');
+        if (rawEl && contentEl) {
+            contentEl.innerHTML = rawEl.innerHTML.trim();
+        } else if (contentEl) {
+            contentEl.textContent = '';
+        }
+    });
+});
+</script>
+@endpush
