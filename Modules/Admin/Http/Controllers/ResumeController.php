@@ -90,7 +90,12 @@ class ResumeController extends Controller
     public function show($id)
     {
         $resume = Resume::with(['user', 'analysis'])->findOrFail($id);
-        return view('admin::Resumes.show', compact('resume'));
+
+        // Provide category options excluding "Other" for inline editing
+        $categorizer = app(\Modules\TelegramChannel\Services\VacancyCategoryService::class);
+        $categoryOptions = $categorizer->getLabelsExceptOther();
+
+        return view('admin::Resumes.show', compact('resume', 'categoryOptions'));
     }
 
     /**

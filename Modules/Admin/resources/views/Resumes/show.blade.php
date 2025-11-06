@@ -409,7 +409,9 @@
                         <div class="summary-grid">
                             <div class="summary-chip">
                                 <span class="label">Category</span>
-                                <span class="value">{{ $resume->category ?? 'NOT CATEGORY !' }}</span>
+                                <span class="value" id="resume-category-display" role="button" style="cursor: pointer;" data-bs-toggle="modal" data-bs-target="#resumeCategoryEditModal">
+                                    {{ $resume->category ?? '—' }}
+                                </span>
                             </div>
                             
                             <!-- <div class="summary-chip">
@@ -534,4 +536,49 @@
             @endif -->
         </div>
     </div>
+    
+    <!-- Edit Category Modal -->
+    <div class="modal fade" id="resumeCategoryEditModal" tabindex="-1" aria-labelledby="resumeCategoryEditModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <form method="POST" action="{{ route('admin.resumes.update_category', ['resume' => $resume->id]) }}">
+                    @csrf
+                    @method('PATCH')
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="resumeCategoryEditModalLabel">Update resume category</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label" for="resume-category-select">Category</label>
+                            <select class="form-select" id="resume-category-select" name="category" required>
+                                <option value="" disabled {{ empty($resume->category) ? 'selected' : '' }}>Select a category</option>
+                                @foreach(($categoryOptions ?? []) as $label)
+                                    <option value="{{ $label }}" {{ ($label === ($resume->category ?? '')) ? 'selected' : '' }}>{{ $label }}</option>
+                                @endforeach
+                            </select>
+                            <div class="form-text">Other is excluded. Choose a specific category.</div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Save</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const modalEl = document.getElementById('resumeCategoryEditModal');
+    if (!modalEl) return;
+    // Move modal to <body> to avoid stacking-context/z-index issues under tinted containers
+    if (modalEl.parentNode !== document.body) {
+        document.body.appendChild(modalEl);
+    }
+});
+</script>
+@endpush
 @endsection
