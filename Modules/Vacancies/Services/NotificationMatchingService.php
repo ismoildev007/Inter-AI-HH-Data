@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Cache;
 use Stichoza\GoogleTranslate\GoogleTranslate;
 use Throwable;
 use Modules\TelegramChannel\Services\VacancyCategoryService;
+use GuzzleHttp\Promise;
 
 class NotificationMatchingService
 {
