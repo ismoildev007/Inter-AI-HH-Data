@@ -128,7 +128,7 @@ class SyncHhNegotiationsCommand extends Command
 
                                     $lang = $user->language ?? 'ru';
                                     if ($lang === 'uz') {
-                                        $text = "📣 *HH yangilanishi*\n\nSizning *\"{$vacancyTitle}\"* vakansiyasidagi holatingiz yangilandi:\n*{$statusLabel}*\n\nBatafsil ma’lumotni ilovada ko‘rishingiz mumkin👇";
+                                        $text = "📣 *HH yangilanishi*\n\nSizning *\"{$vacancyTitle}\"* vakansiyasidagi holatingiz yangilandi. \n\nBatafsil ma’lumotni ilovada ko‘rishingiz mumkin👇";
                                         $btnText = "Dasturga kirish";
                                     } elseif ($lang === 'ru') {
                                         $text = "📣 *Обновление HH*\n\nВаш статус по вакансии *«{$vacancyTitle}»* изменился на:\n*{$statusLabel}*\n\nПосмотреть детали в приложении👇";
