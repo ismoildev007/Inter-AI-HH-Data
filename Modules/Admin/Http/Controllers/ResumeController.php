@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 class ResumeController extends Controller
 {
@@ -71,10 +72,15 @@ class ResumeController extends Controller
 
         $totalInCategory = Resume::where('category', $selectedCategory)->count();
 
+        // Provide category options (exclude "Other") for editing
+        $categorizer = app(\Modules\TelegramChannel\Services\VacancyCategoryService::class);
+        $categoryOptions = $categorizer->getLabelsExceptOther();
+
         return view('admin::Resumes.categories.show', [
             'resumes' => $resumes,
             'category' => $selectedCategory,
             'totalInCategory' => $totalInCategory,
+            'categoryOptions' => $categoryOptions,
         ]);
     }
 
@@ -116,5 +122,25 @@ class ResumeController extends Controller
         $headers['Content-Disposition'] = 'inline; filename="' . $filename . '"';
 
         return $disk->response($path, $filename, $headers);
+    }
+
+    /**
+     * Update resume category (exclude "Other" from allowed choices).
+     */
+    public function updateCategory(Request $request, Resume $resume)
+    {
+        $categorizer = app(\Modules\TelegramChannel\Services\VacancyCategoryService::class);
+        // Only allow human labels except "Other"
+        $allowed = $categorizer->getLabelsExceptOther();
+
+        $validated = $request->validate([
+            'category' => ['required', Rule::in($allowed)],
+        ]);
+
+        $resume->update([
+            'category' => $validated['category'],
+        ]);
+
+        return redirect()->back()->with('status', 'Resume category updated.');
     }
 }

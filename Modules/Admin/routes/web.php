@@ -59,6 +59,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('resumes/categories/{category}', [ResumeController::class, 'categoryShow'])
             ->where('category', '.*')
             ->name('resumes.categories.show');
+        Route::patch('resumes/{resume}/category', [ResumeController::class, 'updateCategory'])->name('resumes.update_category');
         Route::get('resumes/{id}', [ResumeController::class, 'show'])->name('resumes.show');
         Route::get('resumes/{id}/download', [ResumeController::class, 'download'])->name('resumes.download');
 
