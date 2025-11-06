@@ -534,8 +534,8 @@
                     <span class="label">Cover letter</span>
                     <div class="value d-flex flex-column gap-2">
                         @if(!empty($coverLetter))
-                            <span class="text-muted small">Saved cover letter.
-                                <br>Click to view full content
+                            <span class="text-muted small">Saved cover letter.<br>
+                                <br>Click to view full content<br>
                                 <br>Ko'rish uchun bosing.
                             </span>
                             <div id="coverLetterRaw" class="d-none">{!! nl2br(e($coverLetter)) !!}</div>
