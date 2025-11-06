@@ -131,7 +131,7 @@ class HHVacancyRepository implements HHVacancyInterface
 
         $terms = array_filter(array_map('trim', explode(',', $query)));
 
-        $languages = ['uz', 'ru', 'en'];
+        $languages = ['ru', 'en'];
         $translator = new GoogleTranslate();
         $translator->setSource('auto');
 
