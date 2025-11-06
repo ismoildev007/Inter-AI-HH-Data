@@ -33,12 +33,12 @@ class NotificationMatchingService
 
     public function matchResume(Resume $resume, $query): array
     {
+
         Log::info('🚀 Job started', ['resume_id' => $resume->id, 'query' => $query]);
         $start = microtime(true);
 
         $latinQuery = TranslitHelper::toLatin($query);
         $cyrilQuery = TranslitHelper::toCyrillic($query);
-
         $translator = new GoogleTranslate();
         $translator->setSource('auto');
 
@@ -79,7 +79,6 @@ class NotificationMatchingService
         $tsTerms = [...$phrases, ...$tokens];
         $mustPair = count($tokens) >= 2 ? ['(' . $tokens[0] . ' ' . $tokens[1] . ')'] : [];
         $webParts = array_merge($mustPair, $tsTerms);
-
         $tsQuery = !empty($webParts)
             ? implode(' OR ', array_map(fn($t) => str_contains($t, ' ') ? '"' . str_replace('"', '', $t) . '"' : $t, $webParts))
             : (string) $searchQuery;
@@ -94,180 +93,143 @@ class NotificationMatchingService
             $guessedCategory = null;
         }
 
-        $hhVacancies = cache()->remember(
-            "hh:search:{$query}:area97",
-            now()->addMinutes(30),
-            fn() => $this->hhRepository->search($query, 0, 100, ['area' => 97])
-        );
+        $resumeCategory = $resume->category ?? null;
+        $techCategories = [
+            "IT and Software Development",
+            "Data Science and Analytics",
+            "QA and Testing",
+            "DevOps and Cloud Engineering",
+            "UI/UX and Product Design"
+        ];
+        $isTech = in_array($resumeCategory, $techCategories, true);
 
-        $buildLocal = function (bool $withCategory) use ($resume, $tsQuery, $tokens, $guessedCategory) {
-            $techCategories = [
-                "IT and Software Development",
-                "Data Science and Analytics",
-                "QA and Testing",
-                "DevOps and Cloud Engineering",
-                "UI/UX and Product Design"
-            ];
+        $baseSql = "
+            SELECT
+                v.id, v.title, v.description, v.source, v.external_id, v.category,
+                CASE
+                    WHEN v.category IN ('IT and Software Development', 'Data Science and Analytics', 'QA and Testing', 'DevOps and Cloud Engineering', 'UI/UX and Product Design')
+                    THEN ts_rank_cd(to_tsvector('simple', coalesce(v.description, '') || ' ' || coalesce(v.title, '')), websearch_to_tsquery('simple', ?))
+                    ELSE 0
+                END AS rank
+            FROM vacancies v
+            WHERE v.status = 'publish'
+              AND v.source = 'telegram'
+              AND v.id NOT IN (SELECT vacancy_id FROM match_results WHERE resume_id = ?)
+        ";
 
-            $resumeCategory = $resume->category ?? null;
+        $params = [$tsQuery, $resume->id];
 
-            $qb = DB::table('vacancies')
-                ->where('status', 'publish')
-                ->where('source', 'telegram')
-                ->whereNotIn('id', function ($q) use ($resume) {
-                    $q->select('vacancy_id')
-                        ->from('match_results')
-                        ->where('resume_id', $resume->id);
-                });
+        Log::info('🔍 [SEARCH QUERY GENERATED]', [
+            'tsQuery' => $tsQuery,
+            'tokens' => $tokens->all(),
+            'phrases' => $phrases->all(),
+            'query_variants' => $allVariants->all(),
+        ]);
 
-            $isTech = in_array($resumeCategory, $techCategories, true);
+        if ($isTech) {
+            // 🔧 NEW: title ni vergul bilan bo‘lib olish
+            $titleParts = collect(explode(',', (string) ($resume->title ?? '')))
+                ->map(fn($t) => trim($t))
+                ->filter()
+                ->values();
 
-            // umumiy tsvector (title+description)
-            $tsVectorSql = "
-                setweight(to_tsvector('simple', coalesce(title, '')), 'A') ||
-                setweight(to_tsvector('simple', coalesce(description, '')), 'B')
-            ";
+            // eski tokenlar bilan birga title qismlarini ham qo‘shamiz
+            $searchTokens = $tokens->merge($titleParts)->unique()->values();
 
-            if ($isTech) {
-                // 🧠 Tech kategoriyalarda — faqat shu kategoriyalardagi vacancies ichidan qidiradi
-                $categoriesForSearch = collect([$resumeCategory, $guessedCategory])
-                    ->filter()
-                    ->unique()
-                    ->all();
+            $titleCondition = $searchTokens
+                ->map(fn($t) => "LOWER(v.title) LIKE '%" . addslashes(mb_strtolower($t)) . "%'")
+                ->implode(' OR ');
 
-                if (empty($categoriesForSearch)) {
-                    // agar kategoriya yo‘q bo‘lsa, fallback sifatida umumiy texnik kategoriyalarni olamiz
-                    $categoriesForSearch = $techCategories;
-                }
+            if ($titleCondition) {
+                $baseSql .= " AND (
+                    (
+                        v.category IN ('IT and Software Development', 'Data Science and Analytics', 'QA and Testing', 'DevOps and Cloud Engineering', 'UI/UX and Product Design')
+                        AND (
+                            $titleCondition
+                            OR to_tsvector('simple', coalesce(v.description, '') || ' ' || coalesce(v.title, ''))
+                               @@ websearch_to_tsquery('simple', ?)
+                        )
+                    )
+                )";
+                $params[] = $tsQuery;
 
-                $qb->whereIn('category', $categoriesForSearch);
-
-                // 🔍 Keng qidiruv: FT + tokens + extraSkills (lekin shu kategoriya ichida)
-                $extraSkills = collect(preg_split('/\s*,\s*/u', (string) ($resume->title ?? '')))
-                    ->map(fn($s) => trim($s))
-                    ->filter(fn($s) => mb_strlen($s) > 2)
-                    ->unique()
-                    ->values();
-
-                $qb->where(function ($q) use ($tsQuery, $tokens, $extraSkills, $tsVectorSql) {
-                    // 1) Full-text search
-                    $q->whereRaw("$tsVectorSql @@ websearch_to_tsquery('simple', ?)", [$tsQuery]);
-
-                    // 2) Token LIKE qidiruv
-                    if ($tokens->isNotEmpty()) {
-                        $likeTokens = $tokens->take(10)->map(fn($t) => "%{$t}%")->all();
-                        $q->orWhere(function ($sub) use ($likeTokens) {
-                            foreach ($likeTokens as $pattern) {
-                                $sub->orWhere('title', 'ILIKE', $pattern)
-                                    ->orWhere('description', 'ILIKE', $pattern);
-                            }
-                        });
-                    }
-
-                    // 3) Extra skills
-                    if ($extraSkills->isNotEmpty()) {
-                        $q->orWhere(function ($sub) use ($extraSkills) {
-                            foreach ($extraSkills as $skill) {
-                                $pattern = "%{$skill}%";
-                                $sub->orWhere('title', 'ILIKE', $pattern)
-                                    ->orWhere('description', 'ILIKE', $pattern);
-                            }
-                        });
-                        Log::info('🧠 [TECH TITLE-BASED SKILL SEARCH]', [
-                            'skills' => $extraSkills->all(),
-                        ]);
-                    }
-                });
-
-                // Rank (title+desc asosida)
-                $qb->select(
-                    'id', 'title', 'description', 'source', 'external_id', 'category',
-                    DB::raw("ts_rank_cd($tsVectorSql, websearch_to_tsquery('simple', ?)) as rank")
-                )->addBinding($tsQuery, 'select');
-
-                Log::info("💡 [TECH SEARCH LIMITED TO CATEGORIES]", ['categories' => $categoriesForSearch]);
-
+                Log::info('💻 [TECH MODE] Title va vergul bilan ajratilgan qismlar orqali qidirish ishlatilmoqda', [
+                    'category' => $resumeCategory,
+                    'title_condition' => $titleCondition,
+                    'tsQuery_used' => $tsQuery,
+                ]);
             } else {
-                // 🔹 TEXNIK EMAS — category bo‘yicha ham, umumiy title search ham
-                $qb->select(
-                    'id', 'title', 'description', 'source', 'external_id', 'category',
-                    DB::raw('0 as rank')
-                );
-
-                $qb->where(function ($main) use ($tokens, $tsQuery, $resume, $resumeCategory) {
-
-                    // 🟢 1. Agar kategoriya mavjud bo‘lsa — shu kategoriyadagi barcha vacancies
-                    if (!empty($resumeCategory)) {
-                        $main->orWhere('category', $resumeCategory);
-                        Log::info("📂 [NON-TECH CATEGORY] {$resumeCategory} vacancies included.");
-                    }
-
-                    // 🟢 2. Full-text search (butun vacancies bazasidan)
-                    $main->orWhereRaw("
-                to_tsvector('simple', coalesce(description, '')) @@ websearch_to_tsquery('simple', ?)
-            ", [$tsQuery]);
-
-                    // 🟢 3. Tokenlar orqali title/description qidiruv (butun bazadan)
-                    if ($tokens->isNotEmpty()) {
-                        $main->orWhere(function ($q) use ($tokens) {
-                            foreach ($tokens as $t) {
-                                $pattern = "%{$t}%";
-                                $q->orWhere('title', 'ILIKE', $pattern)
-                                    ->orWhere('description', 'ILIKE', $pattern);
-                            }
-                        });
-                        Log::info('🔎 [TITLE/DESC SEARCH ADDED FOR NON-TECH]', ['tokens' => $tokens->all()]);
-                    }
-
-                    // 🟢 4. Resume->title da vergul bilan ajratilgan frazalar bo‘lsa — skill qidiruvi
-                    $extraSkills = collect(preg_split('/\s*,\s*/u', (string) ($resume->title ?? '')))
-                        ->map(fn($s) => trim($s))
-                        ->filter(fn($s) => mb_strlen($s) > 2)
-                        ->unique()
-                        ->values();
-
-                    if ($extraSkills->isNotEmpty()) {
-                        $main->orWhere(function ($q) use ($extraSkills) {
-                            foreach ($extraSkills as $skill) {
-                                $pattern = "%{$skill}%";
-                                $q->orWhere('title', 'ILIKE', $pattern)
-                                    ->orWhere('description', 'ILIKE', $pattern);
-                            }
-                        });
-
-                        Log::info('🧠 [TITLE-BASED SKILL SEARCH]', [
-                            'resume_id' => $resume->id,
-                            'skills' => $extraSkills->all(),
-                        ]);
-                    }
-                });
+                Log::info('💻 [TECH MODE] Tokenlar bo‘sh, title condition yaratilmagan', [
+                    'category' => $resumeCategory,
+                ]);
             }
+        } else {
+            if ($resumeCategory) {
+                $baseSql .= " AND v.category = ?";
+                $params[] = $resumeCategory;
+                Log::info("📊 [CATEGORY FILTER] Resume kategoriyasi ishlatildi", [
+                    'category' => $resumeCategory,
+                    'tsQuery_used' => $tsQuery,
+                ]);
+            } elseif ($guessedCategory) {
+                $baseSql .= " AND v.category = ?";
+                $params[] = $guessedCategory;
+                Log::info("📊 [GUESSED CATEGORY USED] AI taxmin qilgan kategoriya ishlatildi", [
+                    'guessedCategory' => $guessedCategory,
+                    'tsQuery_used' => $tsQuery,
+                ]);
+            } else {
+                Log::info("📊 [CATEGORY FILTER] Hech qanday category filter qo‘llanmagan", [
+                    'tsQuery_used' => $tsQuery,
+                ]);
+            }
+        }
 
-            Log::info("✅ [BUILD_LOCAL] Resume {$resume->id} (TECH=" . ($isTech ? 'YES' : 'NO') . ")");
-            return $qb->orderByDesc('rank')->orderByDesc('id');
-        };
+        $baseSql .= " ORDER BY rank DESC, id DESC LIMIT 10";
+
+        Log::info('🧾 [FINAL SQL BUILT]', [
+            'sql' => $baseSql,
+            'params' => $params,
+        ]);
 
 
+        $promises = [
+            'hh' => \GuzzleHttp\Promise\Create::promiseFor(
+                cache()->remember(
+                    "hh:search:{$query}:area97",
+                    now()->addMinutes(30),
+                    fn() => $this->hhRepository->search($query, 0, 100, ['area' => 97])
+                )
+            ),
+            'local' => \GuzzleHttp\Promise\Create::promiseFor(DB::select($baseSql, $params)),
+        ];
 
-        $localVacancies = collect($buildLocal(true)->limit(10)->get())
+        $results = Promise\Utils::unwrap($promises);
+        $hhVacancies = $results['hh'];
+        $localRows = collect($results['local']);
+
+        $localVacancies = $localRows
+            ->map(function ($v) use ($isTech, $tokens) {
+                if ($isTech && !empty($tokens)) {
+                    foreach (array_slice($tokens->all(), 0, 10) as $t) {
+                        $pattern = mb_strtolower($t);
+                        if (str_contains(mb_strtolower($v->title), $pattern) || str_contains(mb_strtolower($v->description), $pattern)) {
+                            $v->rank += 0.1;
+                        }
+                    }
+                }
+                return $v;
+            })
+            ->sortByDesc('rank')
             ->take(10)
             ->keyBy(fn($v) => $v->source === 'hh' && $v->external_id ? $v->external_id : "local_{$v->id}");
-
 
         Log::info('Data fetch took:' . (microtime(true) - $start) . 's');
         Log::info('Local vacancies: ' . $localVacancies->count());
         Log::info('hh vacancies count: ' . count($hhVacancies['items'] ?? []));
 
+        // --- 6. Vacancies prepare
         $hhItems = $hhVacancies['items'] ?? [];
-
-        // Exclude HH vacancies that were already matched for this resume earlier
-        $existingHhExternalIds = DB::table('match_results as mr')
-            ->join('vacancies as v', 'v.id', '=', 'mr.vacancy_id')
-            ->where('mr.resume_id', $resume->id)
-            ->where('v.source', 'hh')
-            ->pluck('v.external_id')
-            ->filter()
-            ->all();
         foreach ($hhItems as $idx => $item) {
             $extId = $item['id'] ?? null;
             if (!$extId || $localVacancies->has($extId)) continue;
@@ -288,28 +250,23 @@ class NotificationMatchingService
             $vacanciesPayload[] = [
                 'id'   => $v->id,
                 'vacancy_id'   => $v->id,
-                // 'title' => $v->title,
                 'text' => mb_substr(strip_tags($v->description), 0, 2000),
             ];
         }
+
         $toFetch = collect($hhItems)
-            ->filter(fn($item) => isset($item['id'])
-                && !$localVacancies->has($item['id'])
-                && !in_array($item['id'], $existingHhExternalIds, true))
+            ->filter(fn($item) => isset($item['id']) && !$localVacancies->has($item['id']))
             ->take(10);
-        foreach ($toFetch as $idx =>  $item) {
+
+        foreach ($toFetch as $idx => $item) {
             $extId = $item['id'] ?? null;
-            if (!$extId || $localVacancies->has($extId)) {
-                continue;
-            }
-            // $title = $item['name'] ?? 'No title';
+            if (!$extId || $localVacancies->has($extId)) continue;
+
             $text = ($item['snippet']['requirement'] ?? '') . "\n" .
                 ($item['snippet']['responsibility'] ?? '');
-
             if (!empty(trim($text))) {
                 $vacanciesPayload[] = [
                     'id'          => null,
-                    // 'title'       => mb_substr(strip_tags($title), 0, 200),
                     'text'        => mb_substr(strip_tags($text), 0, 1000),
                     'external_id' => $extId,
                     'raw'         => $item,
@@ -317,13 +274,15 @@ class NotificationMatchingService
                 ];
             }
         }
+
         if (empty($vacanciesPayload)) {
             Log::info('No vacancies to match for resume', ['resume_id' => $resume->id]);
             return [];
         }
-        Log::info('Prepared payload with ' . count($vacanciesPayload) . ' vacancies');
-        $vacancyMap = collect($vacanciesPayload)->keyBy(fn($v, $k) => $v['id'] ?? "new_{$k}");
 
+        Log::info('Prepared payload with ' . count($vacanciesPayload) . ' vacancies');
+
+        // --- 7. Save results
         $savedData = [];
         foreach ($vacanciesPayload as $match) {
             try {
@@ -333,22 +292,17 @@ class NotificationMatchingService
                 if ($vacId) {
                     $vac = Vacancy::withoutGlobalScopes()->find($vacId);
                 }
-
                 if (!$vac && isset($match['external_id'])) {
                     $vac = Vacancy::where('source', 'hh')
                         ->where('external_id', $match['external_id'])
                         ->first();
 
                     if (!$vac && isset($match['raw'])) {
-                        $vac = $this->vacancyRepository->createFromHH($match['raw']);
+                        $vac = $this->vacancyRepository->createFromHH($match['raw'], $resumeCategory);
                     }
                 }
 
                 if (!$vac && !empty($vacId)) {
-                    Log::info('⚙️ Local vacancy not found via model, saving manually', [
-                        'vacancy_id' => $vacId,
-                    ]);
-
                     $savedData[] = [
                         'resume_id'     => $resume->id,
                         'vacancy_id'    => $vacId,
@@ -357,7 +311,6 @@ class NotificationMatchingService
                         'updated_at'    => now(),
                         'created_at'    => now(),
                     ];
-
                     continue;
                 }
 
@@ -379,11 +332,8 @@ class NotificationMatchingService
             }
         }
 
-
-
         if (!empty($savedData)) {
             $chunks = array_chunk($savedData, 200);
-
             DB::transaction(function () use ($chunks) {
                 foreach ($chunks as $chunk) {
                     DB::table('match_results')->upsert(
@@ -395,10 +345,7 @@ class NotificationMatchingService
             });
         }
 
-        Log::info('All details took finished: ' . (microtime(true) - $start) . 's');
-
-        Log::info('Matching finished', ['resume_id' => $resume->id]);
-
+        Log::info('All details finished: ' . (microtime(true) - $start) . 's');
         return $savedData;
     }
 }
