@@ -4,12 +4,16 @@ namespace Modules\Applications\Console\Commands;
 
 use App\Models\Application;
 use App\Models\HhAccount;
+use App\Models\User;
 use App\Models\Vacancy;
 use Illuminate\Console\Command;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Log;
 use Modules\Users\Repositories\HhAccountRepositoryInterface;
 use Modules\Vacancies\Interfaces\HHVacancyInterface;
+use Telegram\Bot\Api;
+use Telegram\Bot\Keyboard\Keyboard;
+use Telegram\Bot\Laravel\Facades\Telegram;
 
 class SyncHhNegotiationsCommand extends Command
 {
@@ -98,7 +102,6 @@ class SyncHhNegotiationsCommand extends Command
                             $updatedCount++;
 
                             $triggerStates = ['interview', 'interview_scheduled', 'invitation', 'offer', 'hired','invited', 'assessments', 'assessment', 'test'];
-
                             if (in_array($stateId, $triggerStates, true)) {
                                 if ($vacancy->source === config('interviews.source_filter', 'hh')) {
                                     if (!$app->interview_job_dispatched_at) {
@@ -107,9 +110,68 @@ class SyncHhNegotiationsCommand extends Command
                                     }
                                 }
                             }
-                       
+
+                            try {
+                                $user = User::find($account->user_id);
+                                $chatId = $user->chat_id;
+                                if ($user && $user->chat_id) {
+                                    $statusLabel = match (strtolower((string)$stateId)) {
+                                        'interview', 'interview_scheduled' => 'Interview',
+                                        'invitation', 'invited'            => 'Invitation',
+                                        'offer'                             => 'Offer',
+                                        'hired'                             => 'Hired',
+                                        'assessments', 'assessment', 'test'=> 'Assessment',
+                                        default                             => (string)$stateId,
+                                    };
+
+                                    $vacancyTitle = trim($vacancy->title ?? 'Vacancy');
+
+                                    $lang = $user->language ?? 'ru';
+                                    if ($lang === 'uz') {
+                                        $text = "📣 *HH yangilanishi*\n\nSizning *\"{$vacancyTitle}\"* vakansiyasidagi holatingiz yangilandi:\n*{$statusLabel}*\n\nBatafsil ma’lumotni ilovada ko‘rishingiz mumkin👇";
+                                        $btnText = "Dasturga kirish";
+                                    } elseif ($lang === 'ru') {
+                                        $text = "📣 *Обновление HH*\n\nВаш статус по вакансии *«{$vacancyTitle}»* изменился на:\n*{$statusLabel}*\n\nПосмотреть детали в приложении👇";
+                                        $btnText = "Войти в программу";
+                                    } else {
+                                        $text = "📣 *HH Update*\n\nYour status for *\"{$vacancyTitle}\"* changed to:\n*{$statusLabel}*\n\nOpen the app for details👇";
+                                        $btnText = "Open App";
+                                    }
+
+                                    $user->tokens()->delete();
+                                    $token = $user->createToken('api_token', ['*'], now()->addDays(30))->plainTextToken;
+                                    $webAppUrl = "https://vacancies.inter-ai.uz/#?token={$token}&chat_id={$chatId}";
+
+                                    $inlineKeyboard = Keyboard::make()
+                                        ->inline()
+                                        ->row([
+                                            Keyboard::inlineButton([
+                                                'text'    => $btnText,
+                                                'web_app' => ['url' => $webAppUrl],
+                                            ]),
+                                        ]);
+
+                                    Telegram::bot('mybot')->sendMessage([
+                                        'chat_id'      => $chatId,
+                                        'text'         => $text,
+                                        'parse_mode'   => 'Markdown',
+                                        'reply_markup' => $inlineKeyboard,
+                                    ]);
+
+                                    Log::info('✅ HH status notification sent', [
+                                        'user_id'   => $user->id,
+                                        'chat_id'   => $chatId,
+                                        'vacancy'   => $vacancyTitle,
+                                        'new_state' => $stateId,
+                                    ]);
+                                }
+                            } catch (\Throwable $e) {
+                                Log::error('❌ Telegram notify failed', [
+                                    'user_id' => $account->user_id,
+                                    'error'   => $e->getMessage(),
+                                ]);
+                            }
                         }
-                      
                     }
 
                     $page++;
