@@ -107,32 +107,9 @@ class SyncHhNegotiationsCommand extends Command
                                     }
                                 }
                             }
+                       
                         }
-
-                        // Ensure discard interview presence for decline/discard states (idempotent)
-                        $discardStates = (array) config('interviews.discard_statuses', ['discard']);
-                        $discardPatterns = (array) config('interviews.discard_patterns', []);
-                        $isDiscard = in_array($stateId, $discardStates, true);
-                        if (!$isDiscard && !empty($discardPatterns)) {
-                            foreach ($discardPatterns as $pattern) {
-                                if ($pattern !== '' && stripos((string) $stateId, (string) $pattern) !== false) {
-                                    $isDiscard = true;
-                                    break;
-                                }
-                            }
-                        }
-                        if ($isDiscard) {
-                            try {
-                                app(\Modules\Interviews\Services\InterviewService::class)
-                                    ->ensureDiscardForApplication($app);
-                            } catch (\Throwable $e) {
-                                Log::warning('Ensure discard interview failed', [
-                                    'application_id' => $app->id,
-                                    'state' => $stateId,
-                                    'error' => $e->getMessage(),
-                                ]);
-                            }
-                        }
+                      
                     }
 
                     $page++;
