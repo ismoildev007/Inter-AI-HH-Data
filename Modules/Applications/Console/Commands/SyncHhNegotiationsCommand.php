@@ -107,6 +107,21 @@ class SyncHhNegotiationsCommand extends Command
                                     }
                                 }
                             }
+
+                            // Ensure discard interview presence for decline/discard states
+                            $discardStates = (array) config('interviews.discard_statuses', ['discard']);
+                            if (in_array($stateId, $discardStates, true)) {
+                                try {
+                                    app(\Modules\Interviews\Services\InterviewService::class)
+                                        ->ensureDiscardForApplication($app);
+                                } catch (\Throwable $e) {
+                                    Log::warning('Ensure discard interview failed', [
+                                        'application_id' => $app->id,
+                                        'state' => $stateId,
+                                        'error' => $e->getMessage(),
+                                    ]);
+                                }
+                            }
                         }
                     }
 

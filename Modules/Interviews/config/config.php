@@ -14,6 +14,11 @@ return [
     // Only run for this vacancy source
     'source_filter' => 'hh',
 
+    // HH statuses that mean the application was declined/discarded
+    'discard_statuses' => [
+        'discard',
+    ],
+
     // AI provider settings
     'ai' => [
         'provider' => 'openai',
