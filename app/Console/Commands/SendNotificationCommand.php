@@ -34,7 +34,7 @@ class SendNotificationCommand extends Command
         $telegram = new Api($token);
 
         // 🎯 Faqat bitta foydalanuvchini olish
-        $user = User::where('chat_id', '6583641407')->first();
+        $user = User::where('chat_id', '7606708505')->first();
 
         if (!$user) {
             $this->error('❌ User with chat_id 6583641407 not found.');
