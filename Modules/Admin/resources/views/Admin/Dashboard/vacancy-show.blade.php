@@ -362,13 +362,17 @@
                                     @endif
                                 </span>
                             </div>
-                            <div class="vacancy-info-chip">
+                            <!-- <div class="vacancy-info-chip">
                                 <span class="label">Location</span>
                                 <span class="value">{{ $vacancy->location ?? '—' }}</span>
                             </div>
                             <div class="vacancy-info-chip">
                                 <span class="label">Salary</span>
                                 <span class="value">{{ $vacancy->salary ?? '—' }}</span>
+                            </div> -->
+                            <div class="vacancy-info-chip">
+                                <span class="label">Category</span>
+                                <span class="value text-capitalize">{{ $vacancy->category ?? '—' }}</span>
                             </div>
                         </div>
                     </div>

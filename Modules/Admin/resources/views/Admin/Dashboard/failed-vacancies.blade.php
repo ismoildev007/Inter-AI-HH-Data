@@ -33,16 +33,16 @@
                 </span>
                 <h1 class="categories-hero__title">Failed vacancies</h1>
                 <div class="categories-hero__meta">
-                    <span class="categories-hero__meta-item"><i class="feather-filter"></i>{{ $filterLabel }}</span>
+                    <span class="categories-hero__meta-item"><i class="feather-filter"></i>{{ $filterLabel }}</span> <br>
                     <span class="categories-hero__meta-item"><i class="feather-x-circle"></i>Failed: {{ number_format($totalFailed) }}</span>
                     <span class="categories-hero__meta-item"><i class="feather-clock"></i>Queued: {{ number_format($queuedCount ?? 0) }}</span>
-                    <form method="POST" action="{{ route('admin.vacancies.requeue_all') }}" style="display:inline-block; margin-left:8px;">
+                    <!-- <form method="POST" action="{{ route('admin.vacancies.requeue_all') }}" style="display:inline-block; margin-left:8px;">
                         @csrf
                         <input type="hidden" name="filter" value="{{ $currentFilter }}">
                         <button type="submit" class="btn btn-sm btn-warning">
                             <i class="feather-rotate-ccw"></i> Re‑queue All
                         </button>
-                    </form>
+                    </form> -->
                 </div>
             </div>
         </div>
