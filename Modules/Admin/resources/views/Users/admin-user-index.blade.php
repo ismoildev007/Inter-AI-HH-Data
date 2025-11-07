@@ -280,9 +280,9 @@
                                         <div class="admin-check-item__title">
                                             {{ $fullName !== '' ? $fullName : ($user->email ?? 'User #' . $user->id) }}
                                         </div>
-                                        <div class="admin-check-item__meta">
+                                        <!-- <div class="admin-check-item__meta">
                                             {{ $user->email ?? '—' }} &bullet; ID: {{ $user->id }}
-                                        </div>
+                                        </div> -->
                                     </div>
                                 </div>
                                 <div>
@@ -330,9 +330,9 @@
                                         <div class="admin-check-item__title">
                                             {{ $fullName !== '' ? $fullName : ($user->email ?? 'User #' . $user->id) }}
                                         </div>
-                                        <div class="admin-check-item__meta">
+                                        <!-- <div class="admin-check-item__meta">
                                             {{ $user->email ?? '—' }} &bullet; ID: {{ $user->id }}
-                                        </div>
+                                        </div> -->
                                     </div>
                                 </div>
                                 <div>
@@ -378,9 +378,9 @@
                                         <div class="admin-check-item__title">
                                             {{ $fullName !== '' ? $fullName : ($user->email ?? 'User #' . $user->id) }}
                                         </div>
-                                        <div class="admin-check-item__meta">
+                                        <!-- <div class="admin-check-item__meta">
                                             {{ $user->email ?? '—' }} &bullet; ID: {{ $user->id }}
-                                        </div>
+                                        </div> -->
                                     </div>
                                 </div>
                                 <div>
