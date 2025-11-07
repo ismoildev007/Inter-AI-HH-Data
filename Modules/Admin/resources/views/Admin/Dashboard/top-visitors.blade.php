@@ -190,6 +190,17 @@
             border-bottom-right-radius: 20px;
         }
 
+        /* Trial active indicator */
+        .status-dot {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            box-shadow: 0 0 0 2px rgba(255,255,255,0.9);
+        }
+        .status-dot--green { background: #10b981; }
+        .status-dot--red { background: #ef4444; }
+
         .visitors-index-pill {
             display: inline-flex;
             align-items: center;
@@ -444,6 +455,7 @@
                         <th class="text-muted">User</th>
                         <th class="text-muted">Last visit</th>
                         <th class="text-end text-muted">Visits</th>
+                        <th class="text-muted">Trial</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -468,10 +480,13 @@
                             @endphp
                             <td data-label="Last visit">{{ $lastFormatted }}</td>
                             <td data-label="Visits" class="text-end fw-semibold">{{ number_format($visitor->visits_count) }}</td>
+                            <td data-label="Trial">
+                                <span class="status-dot {{ ($visitor->is_trial_active ?? false) ? 'status-dot--green' : 'status-dot--red' }}"></span>
+                            </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="4" class="text-center visitors-empty">No visitor data found.</td>
+                            <td colspan="5" class="text-center visitors-empty">No visitor data found.</td>
                         </tr>
                     @endforelse
                 </tbody>
