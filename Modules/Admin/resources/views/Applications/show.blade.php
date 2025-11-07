@@ -236,6 +236,12 @@
 
         .resume-link:hover { color: #1c36c9; text-decoration: none; }
 
+        /* Interview card */
+        .interview-list { margin: 0; padding-left: 20px; }
+        .interview-list li { margin-bottom: 10px; font-weight: 600; color: #172655; }
+        .interview-list li .q { font-weight: 600; }
+        .interview-list li .hint { display: block; font-weight: 500; color: #64748b; margin-top: 4px; }
+
         @media (max-width: 991px) {
             .app-show-hero { margin: 1.5rem 1rem; padding: 32px; border-radius: 24px; }
             .app-show-sections { margin: 1.5rem 1rem; }
@@ -449,5 +455,53 @@
                 </div>
             </div>
         </div>
+
+        @php
+            $interviewQuestions = [];
+            if (strtolower((string) $status) === 'interview') {
+                try {
+                    $interview = \Illuminate\Support\Facades\DB::table('interviews')
+                        ->where('application_id', $application->id)
+                        ->orderByDesc('id')
+                        ->first();
+                    if ($interview && isset($interview->id)) {
+                        $rows = \Illuminate\Support\Facades\DB::table('interview_preparations')
+                            ->where('interview_id', $interview->id)
+                            ->orderBy('id')
+                            ->limit(20)
+                            ->get();
+                        $interviewQuestions = collect($rows)
+                            ->map(function ($r) {
+                                return $r->question ?? $r->text ?? $r->content ?? $r->title ?? null;
+                            })
+                            ->filter()
+                            ->values()
+                            ->all();
+                    }
+                } catch (\Throwable $e) {
+                    $interviewQuestions = [];
+                }
+            }
+        @endphp
+
+        @if (strtolower((string) $status) === 'interview' && !empty($interviewQuestions))
+            <div class="row g-4 mt-1">
+                <div class="col-12">
+                    <div class="app-show-card card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h6 class="mb-0">Interview preparation</h6>
+                            <span class="text-muted small">{{ count($interviewQuestions) }} ta savol</span>
+                        </div>
+                        <div class="card-body">
+                            <ol class="interview-list">
+                                @foreach ($interviewQuestions as $i => $q)
+                                    <li><span class="q">{{ $q }}</span></li>
+                                @endforeach
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @endif
     </div>
 @endsection
