@@ -428,11 +428,11 @@
                 </div>
             </div>
             <div class="user-profile-stats">
-                <!-- <div class="user-profile-stat-card">
+                <div class="user-profile-stat-card">
                     <span class="label">Joined</span>
                     <span class="value">{{ $joinedFormatted }}</span>
                     <span class="hint">{{ $joinedAgo ? 'Active since ' . $joinedAgo : '—' }}</span>
-                </div> -->
+                </div>
 
                 <!-- <div class="user-profile-stat-card">
                     <span class="label">Last resume update</span>
@@ -473,7 +473,7 @@
                         <a href="mailto:{{ $email }}">{{ $email }}</a>
                     </span>
                 </div> -->
-                <div class="user-summary-item">
+                <!-- <div class="user-summary-item">
                     <span class="label">Phone</span>
                     <span class="value">
                         @if($phone)
@@ -482,19 +482,34 @@
                             <span class="text-muted">Not provided</span>
                         @endif
                     </span>
-                </div>
+                </div> -->
                 <!-- <div class="user-summary-item">
                     <span class="label">Role</span>
                     <span class="value">{{ ucfirst($roleName) }}</span>
                 </div> -->
-                <div class="user-summary-item">
+                <!-- <div class="user-summary-item">
                     <span class="label">Created at</span>
                     <span class="value">{{ $joinedFormatted }}</span>
-                </div>
+                </div> -->
                 <!-- <div class="user-summary-item">
                     <span class="label">Last activity</span>
                     <span class="value">{{ optional($user->updated_at)->format('M d, Y H:i') ?? '—' }}</span>
                 </div> -->
+                @php $coverLetter = optional($user->preference)->cover_letter; @endphp
+                <div class="user-summary-item" @if(!empty($coverLetter)) data-bs-toggle="modal" data-bs-target="#coverLetterModal" role="button" style="cursor: pointer;" @endif>
+                    <span class="label">Cover letter</span>
+                    <div class="value d-flex flex-column gap-2">
+                        @if(!empty($coverLetter))
+                            <span class="text-muted small">Saved cover letter.<br>
+                                <br>Click to view full content<br>
+                                <br>Ko'rish uchun bosing.
+                            </span>
+                            <div id="coverLetterRaw" class="d-none">{!! nl2br(e($coverLetter)) !!}</div>
+                        @else
+                            <span class="text-muted">No cover letter</span>
+                        @endif
+                    </div>
+                </div>
                 <div class="user-summary-item">
                     <span class="label">Matched vacancies</span>
                     <div class="value d-flex flex-column gap-2">
@@ -529,21 +544,7 @@
                         @endif
                     </div>
                 </div>
-                @php $coverLetter = optional($user->preference)->cover_letter; @endphp
-                <div class="user-summary-item" @if(!empty($coverLetter)) data-bs-toggle="modal" data-bs-target="#coverLetterModal" role="button" style="cursor: pointer;" @endif>
-                    <span class="label">Cover letter</span>
-                    <div class="value d-flex flex-column gap-2">
-                        @if(!empty($coverLetter))
-                            <span class="text-muted small">Saved cover letter.<br>
-                                <br>Click to view full content<br>
-                                <br>Ko'rish uchun bosing.
-                            </span>
-                            <div id="coverLetterRaw" class="d-none">{!! nl2br(e($coverLetter)) !!}</div>
-                        @else
-                            <span class="text-muted">No cover letter</span>
-                        @endif
-                    </div>
-                </div>
+
                 <div class="user-summary-item">
                     <span class="label text-danger">Delete user</span>
                     <div class="value d-flex flex-column gap-2">
