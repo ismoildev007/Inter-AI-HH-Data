@@ -90,7 +90,7 @@ class TransactionController extends Controller
             $query->where('create_time', '<=', $toDate);
         }
 
-        $transactions = $query->paginate(20)->withQueryString();
+        $transactions = $query->paginate(100)->withQueryString();
 
         $baseAggregate = Transaction::query();
 

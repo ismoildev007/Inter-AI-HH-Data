@@ -55,7 +55,7 @@ class SubscriptionController extends Controller
             $query->where('plan_id', $planId);
         }
 
-        $subscriptions = $query->paginate(20)->withQueryString();
+        $subscriptions = $query->paginate(100)->withQueryString();
 
         $stats = [
             'total' => Subscription::count(),

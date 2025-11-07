@@ -503,7 +503,7 @@ class DashboardController extends Controller
             ->selectRaw('COUNT(*) as visits_count')
             ->groupBy(DB::raw('COALESCE(users.id, visits.user_id)'), 'users.first_name', 'users.last_name', 'users.email', 'users.is_trial_active')
             ->orderByDesc('visits_count')
-            ->paginate(50);
+            ->paginate(100);
 
         // Global totals for average calculation across entire dataset
         $totalUsers = DB::table('visits')
@@ -762,7 +762,7 @@ class DashboardController extends Controller
         }
 
         // Paginate to avoid huge responses; can be adjusted as needed
-        $vacancies = $query->paginate(50)->withQueryString();
+        $vacancies = $query->paginate(100)->withQueryString();
 
         $titleCategory = $canonical;
 
@@ -881,7 +881,7 @@ class DashboardController extends Controller
         } elseif ($filter === 'hh') {
             $query->whereRaw('LOWER(source) LIKE ?', ['hh%']);
         }
-        $vacancies = $query->orderByDesc('id')->paginate(50)->withQueryString();
+        $vacancies = $query->orderByDesc('id')->paginate(100)->withQueryString();
 
         $queuedCount = Vacancy::query()->where('status', Vacancy::STATUS_QUEUED)->count();
 

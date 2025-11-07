@@ -27,7 +27,7 @@ class ResumeController extends Controller
                 $query->whereRaw('LOWER(title) LIKE ?', [$like]);
             })
             ->latest()
-            ->paginate(15)
+            ->paginate(100)
             ->withQueryString();
 
         return view('admin::Resumes.index', [

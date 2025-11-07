@@ -45,7 +45,7 @@ class ApplicationController extends Controller
                 });
             })
             ->latest()
-            ->paginate(15)
+            ->paginate(150)
             ->withQueryString();
 
         return view('admin::Applications.index', [

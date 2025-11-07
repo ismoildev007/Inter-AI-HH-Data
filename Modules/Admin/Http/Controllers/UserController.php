@@ -40,7 +40,7 @@ class UserController extends Controller
                 });
             })
             ->latest()
-            ->paginate(15)
+            ->paginate(100)
             ->withQueryString();
 
         return view('admin::Users.index', [
