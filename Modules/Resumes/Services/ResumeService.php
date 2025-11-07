@@ -89,7 +89,24 @@ class ResumeService
             if ($user && !$user->resumes()->exists()) {
                 app(UsersController::class)->destroyIfNoResumes(request());
             }
+            $resume->delete();
             return;
+        }
+        // --- 2. Qo‘lda “kitob/oferta” filtri (Promptsiz)
+        $resumeTextLower = mb_strtolower($resumeText, 'UTF-8');
+        $fakeKeywords = ['OMMAVIY OFERTA', 'OFERTA', 'public offer', 'оферта', 'offer', 'catalog', 'promo', 'advertisement', 'story', 'article'];
+
+        foreach ($fakeKeywords as $word) {
+            if (str_contains($resumeTextLower, $word)) {
+                $user = $resume->user;
+
+                if ($user && !$user->resumes()->exists()) {
+                    app(UsersController::class)->destroyIfNoResumes(request());
+                }
+                $resume->delete();
+                Log::info("Skip analyze: detected non-resume content (e.g. offer/book) for resume ID {$resume->id}");
+                return;
+            }
         }
 
         $prompt = <<<PROMPT
