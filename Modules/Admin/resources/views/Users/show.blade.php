@@ -530,7 +530,7 @@
                     <span class="label">Resume</span>
                     <div class="value d-flex flex-column gap-2">
                         @if($primaryResume)
-                            <span>{{ $primaryResume->title ?? 'Untitled resume' }}</span>
+                            <span>{{ $primaryResume->title ?? 'Untitled resume' }}</span><br>
                             <span class="text-muted small">
                                 Created {{ optional($primaryResume->created_at)->format('M d, Y H:i') ?? '—' }}
                             </span>
@@ -548,7 +548,8 @@
                 <div class="user-summary-item">
                     <span class="label text-danger">Delete user</span>
                     <div class="value d-flex flex-column gap-2">
-                        <span class="text-muted small">Permanently remove this user</span>
+                        <span class="text-muted small">Permanently remove this user</span><br><br>
+                        <span class="text-muted small">delete</span>
                         <form method="POST" action="{{ route('admin.users.destroy', $user) }}" onsubmit="event.stopPropagation(); return confirm('Foydalanuvchini o\'chirmoqchimisiz?');">
                             @csrf
                             @method('DELETE')
