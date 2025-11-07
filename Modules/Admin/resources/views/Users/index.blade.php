@@ -73,6 +73,12 @@
             letter-spacing: -0.01em;
             color: #0f172a;
         }
+        .users-hero-left h1 .inactive-trial-count {
+            margin-left: 10px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #ef4444; /* red for inactive trials */
+        }
 
         .users-hero-left p {
             margin: 0;
@@ -128,6 +134,9 @@
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+        }
+        .users-stat-card .value--red {
+            color: #ef4444;
         }
 
         .users-stat-card .hint {
@@ -342,6 +351,17 @@
             color: #2546ff;
         }
 
+        /* Trial active indicator */
+        .status-dot {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            box-shadow: 0 0 0 2px rgba(255,255,255,0.9);
+        }
+        .status-dot--green { background: #10b981; }
+        .status-dot--red { background: #ef4444; }
+
         .users-created {
             font-size: 0.9rem;
             color: #25335f;
@@ -440,6 +460,10 @@
         $lastJoinedAgo = $lastJoinedAt ? $lastJoinedAt->diffForHumans() : null;
         $searchDisplay = $searchTerm ? \Illuminate\Support\Str::limit($searchTerm, 28) : 'None';
     @endphp
+    @php
+        // Count of users with inactive trials
+        $inactiveTrialCount = \App\Models\User::where('is_trial_active', false)->count();
+    @endphp
 
     <div class="page-header">
         <div class="page-header-left d-flex align-items-center">
@@ -460,7 +484,10 @@
                     <i class="feather-users"></i>
                     Team overview
                 </span>
-                <h1>Users directory</h1>
+                <h1>
+                    Users directory
+                    <span class="inactive-trial-count"></span>
+                </h1>
                 <p>Browse every registered member, keep track of new sign-ups, and jump directly into detailed
                     profiles with a single click.</p>
             </div>
@@ -469,6 +496,11 @@
                     <span class="label">Total users</span>
                     <span class="value">{{ number_format($totalUsers) }}</span>
                     <span class="hint">Across the entire platform</span>
+                </div>
+                <div class="users-stat-card">
+                    <span class="label">Inactive trials</span>
+                    <span class="value value--red">{{ number_format($inactiveTrialCount) }}</span>
+                    <span class="hint">Trials inactive</span>
                 </div>
               
                 <div class="users-stat-card">
@@ -526,6 +558,7 @@
                         
                         <th class="text-muted">Joined</th>
                         <th class="text-muted">Actions</th>
+                        <th class="text-muted">Trial</th>
                       
                     </tr>
                 </thead>
@@ -568,6 +601,9 @@
                                         <i class="feather-trash-2"></i> Delete
                                     </button>
                                 </form>
+                            </td>
+                            <td data-label="Trial">
+                                <span class="status-dot {{ $u->is_trial_active ? 'status-dot--green' : 'status-dot--red' }}"></span>
                             </td>
 
                         </tr>
