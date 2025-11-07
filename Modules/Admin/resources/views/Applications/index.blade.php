@@ -326,20 +326,11 @@
             font-size: 0.85rem;
         }
 
-        .applications-status--approved {
-            background: rgba(60, 214, 133, 0.12);
-            color: #25a566;
-        }
-
-        .applications-status--rejected {
-            background: rgba(248, 112, 112, 0.14);
-            color: #d65454;
-        }
-
-        .applications-status--pending {
-            background: rgba(249, 188, 63, 0.16);
-            color: #ba7c0d;
-        }
+        /* Status colors per spec */
+        .applications-status--interview { background: rgba(60, 214, 133, 0.12); color: #25a566; } /* green */
+        .applications-status--responce { background: rgba(249, 188, 63, 0.16); color: #ba7c0d; } /* yellow */
+        .applications-status--discard { background: rgba(248, 112, 112, 0.14); color: #d65454; }   /* red */
+        .applications-status--already_applied { background: rgba(249, 188, 63, 0.16); color: #ba7c0d; } /* yellow */
 
         .applications-match {
             font-weight: 600;
@@ -727,11 +718,16 @@
                                 </div>
                             </td> -->
                             <td data-label="Status">
-                                @php($st = $app->status)
-                                <div class="applications-status
-                                    {{ $st === 'approved' ? 'applications-status--approved' : ($st === 'rejected' ? 'applications-status--rejected' : 'applications-status--pending') }}">
+                                @php($st = strtolower($app->status ?? ''))
+                                @php(
+                                    $cls = $st === 'interview' ? 'applications-status--interview'
+                                        : ($st === 'responce' ? 'applications-status--responce'
+                                        : ($st === 'discard' ? 'applications-status--discard'
+                                        : ($st === 'already_applied' ? 'applications-status--already_applied' : 'applications-status--responce')))
+                                )
+                                <div class="applications-status {{ $cls }}">
                                     <i class="feather-activity"></i>
-                                    {{ $st ?? 'pending' }}
+                                    {{ $st !== '' ? $st : 'responce' }}
                                 </div>
                             </td>
                             <!-- <td data-label="Match">

@@ -56,7 +56,8 @@
         .applications-applicant .name { font-weight: 600; font-size: 1rem; color: #172655; }
         .applications-vacancy { font-weight: 600; color: #1b2f6f; }
         .applications-vacancy .company { display: inline-flex; align-items: center; gap: 6px; margin-top: 6px; padding: 4px 10px; background: rgba(64,99,255,.12); border-radius: 999px; font-size: .78rem; color: #4054c4; }
-        .applications-status { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 12px; font-weight: 600; font-size: .85rem; background: rgba(249,188,63,.16); color: #ba7c0d; }
+        .applications-status { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 12px; font-weight: 600; font-size: .85rem; }
+        .applications-status--interview { background: rgba(60,214,133,.12); color: #25a566; }
         .applications-submitted { font-size: .9rem; color: #25335f; }
         .applications-submitted span { display: block; font-size: .78rem; color: #8a94b8; }
         .applications-empty { padding: 42px 0; font-size: .95rem; color: #7d88ad; }
@@ -172,7 +173,7 @@
                                 </div>
                             </td>
                             <td data-label="Status">
-                                <div class="applications-status applications-status--pending">
+                                <div class="applications-status applications-status--interview">
                                     <i class="feather-activity"></i>
                                     {{ $app->status ?? 'interview' }}
                                 </div>
