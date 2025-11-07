@@ -345,7 +345,7 @@
                 <div class="resume-show-stat">
                     <span class="label">File size</span>
                     <span class="value">{{ $fileSize }}</span>
-                    <span class="hint">{{ $fileMime }}</span>
+                    <!-- <span class="hint">{{ $fileMime }}</span> -->
                 </div>
             </div>
         </div>
@@ -353,56 +353,7 @@
 
     <div class="resume-show-sections">
         <div class="row g-4">
-            <div class="col-xl-4 col-lg-6">
-                <div class="resume-show-card card h-100">
-                    <div class="card-header"><h6 class="mb-0">Owner</h6></div>
-                    <div class="card-body">
-                        <div class="d-flex align-items-center gap-3 mb-3">
-                            <div class="avatar-text avatar-xl">
-                                <img src="/assets/images/avatar/ava.svg" alt="avatar" class="img-fluid">
-                            </div>
-                            <div>
-                                <div class="fw-semibold text-dark">
-                                    @if(!empty($user?->id))
-                                        <a href="{{ route('admin.users.show', $user->id) }}" style="color: inherit; text-decoration: none;">
-                                            {{ $ownerName }}
-                                        </a>
-                                    @else
-                                        {{ $ownerName }}
-                                    @endif
-                                </div>
-                                <div class="text-muted small">{{ ucfirst($ownerRole) }}</div>
-                            </div>
-                        </div>
-                        <div class="summary-grid">
-                            <!-- <div class="summary-chip">
-                                <span class="label">Email</span>
-                                <span class="value"><a href="mailto:{{ $ownerEmail }}">{{ $ownerEmail }}</a></span>
-                            </div> -->
-                            <div class="summary-chip">
-                                <span class="label">Phone</span>
-                                <span class="value">
-                                    @if($ownerPhone)
-                                        <a href="tel:{{ preg_replace('/\s+/', '', $ownerPhone) }}">+998 {{ $ownerPhone }}</a>
-                                    @else
-                                        <span class="text-muted">Not provided</span>
-                                    @endif
-                                </span>
-                            </div>
-                            <div class="summary-chip">
-                                <span class="label">User ID</span>
-                                <span class="value">{{ $user->id ?? '—' }}</span>
-                            </div>
-                            <!-- <div class="summary-chip">
-                                <span class="label">Profile updated</span>
-                                <span class="value">{{ $profileUpdated }}</span>
-                            </div> -->
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-xl-4 col-lg-6">
+            <div class="col-12">
                 <div class="resume-show-card card h-100">
                     <div class="card-header"><h6 class="mb-0">File</h6></div>
                     <div class="card-body">
@@ -412,8 +363,7 @@
                                 <span class="value" id="resume-category-display" role="button" style="cursor: pointer;" data-bs-toggle="modal" data-bs-target="#resumeCategoryEditModal">
                                     {{ $resume->category ?? '—' }}
                                 </span>
-                            </div>
-                            
+                            </div>                            
                             <!-- <div class="summary-chip">
                                 <span class="label">File size</span>
                                 <span class="value">{{ $fileSize }}</span>
@@ -425,9 +375,7 @@
                             <!-- <div class="summary-chip">
                                 <span class="label">Created</span>
                                 <span class="value">{{ $createdFormatted }}</span>
-                            </div> -->
-                            
-                            
+                            </div> -->                                                       
                         </div>
                         <div class="resume-show-actions mt-3">
                             @if($fileUrl && isset($openUrl) && $openUrl !== $fileUrl)
@@ -446,7 +394,6 @@
                     </div>
                 </div>
             </div>
-
             <!-- <div class="col-xl-4 col-lg-6">
                 <div class="resume-show-card card h-100">
                     <div class="card-header"><h6 class="mb-0">Summary</h6></div>
