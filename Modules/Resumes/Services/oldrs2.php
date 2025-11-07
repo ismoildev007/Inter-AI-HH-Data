@@ -13,7 +13,7 @@ use PhpOffice\PhpWord\IOFactory as WordIO;
 use Modules\Resumes\Interfaces\ResumeInterface;
 use Whoops\Run;
 
-class ResumeService
+class oldrs2
 {
     protected ResumeInterface $repo;
 
