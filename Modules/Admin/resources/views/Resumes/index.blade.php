@@ -564,16 +564,16 @@
                     <span class="value">{{ number_format($totalResumes) }}</span>
                     <span class="hint">Across the entire platform</span>
                 </div>
-                <div class="resumes-stat-card">
+                <!-- <div class="resumes-stat-card">
                     <span class="label">Currently showing</span>
                     <span class="value">{{ number_format($pageCount) }}</span>
                     <span class="hint">On this page</span>
-                </div>
-                <div class="resumes-stat-card">
+                </div> -->
+                <!-- <div class="resumes-stat-card">
                     <span class="label">Primary resumes</span>
                     <span class="value">{{ number_format($primaryCount) }}</span>
                     <span class="hint">Marked as primary</span>
-                </div>
+                </div> -->
                 <div class="resumes-stat-card">
                     <span class="label">Unique authors</span>
                     <span class="value">{{ number_format($uniqueAuthors) }}</span>
@@ -664,7 +664,7 @@
                                     </div>
                                     <div>
                                         <div class="name">{{ trim((optional($r->user)->first_name ?? '').' '.(optional($r->user)->last_name ?? '')) ?: '—' }}</div>
-                                        <div class="meta">{{ optional($r->user)->email ?? 'No email' }}</div>
+                                        <!-- <div class="meta">{{ optional($r->user)->email ?? 'No email' }}</div> -->
                                     </div>
                                 </div>
                             </td>

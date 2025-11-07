@@ -137,7 +137,7 @@
                     </div>
                     <div class="cell cell--subscriber">
                         <span class="subscriber-name">{{ trim(($tx->user->first_name ?? '').' '.($tx->user->last_name ?? '')) ?: 'User #'.$tx->user_id }}</span>
-                        <span class="subscriber-meta">{{ $tx->user?->email }}</span>
+                        <!-- <span class="subscriber-meta">{{ $tx->user?->email }}</span> -->
                     </div>
                     <div class="cell cell--plan">
                         @php

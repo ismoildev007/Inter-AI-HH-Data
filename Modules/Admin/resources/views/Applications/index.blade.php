@@ -618,11 +618,11 @@
                     <span class="value">{{ number_format($totalApplications) }}</span>
                     <span class="hint">Across the entire platform</span>
                 </div>
-                <div class="applications-stat-card">
+                <!-- <div class="applications-stat-card">
                     <span class="label">Currently showing</span>
                     <span class="value">{{ number_format($pageCount) }}</span>
                     <span class="hint">On this page</span>
-                </div>
+                </div> -->
                 <div class="applications-stat-card">
                     <span class="label">Last submission</span>
                     <span class="value">{{ $latestDate }}</span>
@@ -686,7 +686,7 @@
                         <th class="text-muted">Vacancy</th>
                         <th class="text-muted">Resume</th>
                         <th class="text-muted">Status</th>
-                        <th class="text-muted">Match</th>
+                        <!-- <th class="text-muted">Match</th> -->
                         <th class="text-muted">Submitted</th>
                         
                     </tr>
@@ -706,7 +706,7 @@
                                     </div>
                                     <div>
                                         <div class="name">{{ trim((optional($app->user)->first_name ?? '').' '.(optional($app->user)->last_name ?? '')) ?: '—' }}</div>
-                                        <div class="meta">{{ optional($app->user)->email ?? 'No email' }}</div>
+                                        <!-- <div class="meta">{{ optional($app->user)->email ?? 'No email' }}</div> -->
                                     </div>
                                 </div>
                             </td>
@@ -734,12 +734,12 @@
                                     {{ $st ?? 'pending' }}
                                 </div>
                             </td>
-                            <td data-label="Match">
+                            <!-- <td data-label="Match">
                                 <div class="applications-match">
                                     {{ $app->match_score !== null ? number_format($app->match_score, 0) . '%' : '—' }}
                                     <span>Fit score</span>
                                 </div>
-                            </td>
+                            </td> -->
                             <td data-label="Submitted">
                                 <div class="applications-submitted">
                                     {{ optional($app->submitted_at)->format('M d, Y H:i') ?? '—' }}

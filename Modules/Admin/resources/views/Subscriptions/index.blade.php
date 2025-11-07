@@ -123,7 +123,7 @@
                     </div>
                     <div class="cell cell--subscriber">
                         <span class="subscriber-name">{{ $subscription->user?->first_name }} {{ $subscription->user?->last_name }}</span>
-                        <span class="subscriber-meta">{{ $subscription->user?->email ?? 'User #'.$subscription->user_id }}</span>
+                      
                     </div>
                     <div class="cell cell--plan">
                         <span class="plan-name">{{ $subscription->plan?->name ?? '—' }}</span>

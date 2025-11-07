@@ -411,10 +411,10 @@
                 </span>
                 <h1 class="user-profile-hero__name">{{ $fullName }}</h1>
                 <div class="user-profile-hero__meta">
-                    <div class="user-profile-hero__meta-item">
+                    <!-- <div class="user-profile-hero__meta-item">
                         <i class="feather-mail"></i>
                         {{ $email }}
-                    </div>
+                    </div> -->
                     <div class="user-profile-hero__meta-item">
                         <i class="feather-hash"></i>
                         User ID: {{ $user->id }}
@@ -463,16 +463,16 @@
                 <h6 class="mb-0">Account Summary</h6>
             </div>
             <div class="user-summary-grid">
-                <div class="user-summary-item">
+                <!-- <div class="user-summary-item">
                     <span class="label">Full name</span>
                     <span class="value">{{ $fullName }}</span>
-                </div>
-                <div class="user-summary-item">
+                </div> -->
+                <!-- <div class="user-summary-item">
                     <span class="label">Email</span>
                     <span class="value">
                         <a href="mailto:{{ $email }}">{{ $email }}</a>
                     </span>
-                </div>
+                </div> -->
                 <div class="user-summary-item">
                     <span class="label">Phone</span>
                     <span class="value">
@@ -483,18 +483,18 @@
                         @endif
                     </span>
                 </div>
-                <div class="user-summary-item">
+                <!-- <div class="user-summary-item">
                     <span class="label">Role</span>
                     <span class="value">{{ ucfirst($roleName) }}</span>
-                </div>
+                </div> -->
                 <div class="user-summary-item">
                     <span class="label">Created at</span>
                     <span class="value">{{ $joinedFormatted }}</span>
                 </div>
-                <div class="user-summary-item">
+                <!-- <div class="user-summary-item">
                     <span class="label">Last activity</span>
                     <span class="value">{{ optional($user->updated_at)->format('M d, Y H:i') ?? '—' }}</span>
-                </div>
+                </div> -->
                 <div class="user-summary-item">
                     <span class="label">Matched vacancies</span>
                     <div class="value d-flex flex-column gap-2">

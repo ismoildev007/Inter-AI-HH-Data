@@ -337,11 +337,11 @@
                     <span class="value">{{ $createdFormatted }}</span>
                     <span class="hint">{{ $createdAgo ? 'Submitted ' . $createdAgo : '—' }}</span>
                 </div>
-                <div class="resume-show-stat">
+                <!-- <div class="resume-show-stat">
                     <span class="label">Last update</span>
                     <span class="value">{{ $updatedFormatted }}</span>
                     <span class="hint">Most recent change</span>
-                </div>
+                </div> -->
                 <div class="resume-show-stat">
                     <span class="label">File size</span>
                     <span class="value">{{ $fileSize }}</span>
@@ -393,10 +393,10 @@
                                 <span class="label">User ID</span>
                                 <span class="value">{{ $user->id ?? '—' }}</span>
                             </div>
-                            <div class="summary-chip">
+                            <!-- <div class="summary-chip">
                                 <span class="label">Profile updated</span>
                                 <span class="value">{{ $profileUpdated }}</span>
-                            </div>
+                            </div> -->
                         </div>
                     </div>
                 </div>
@@ -422,10 +422,10 @@
                                 <span class="label">File type</span>
                                 <span class="value">{{ $fileMime }}</span>
                             </div>
-                            <div class="summary-chip">
+                            <!-- <div class="summary-chip">
                                 <span class="label">Created</span>
                                 <span class="value">{{ $createdFormatted }}</span>
-                            </div>
+                            </div> -->
                             
                             
                         </div>

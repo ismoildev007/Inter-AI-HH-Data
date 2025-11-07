@@ -470,21 +470,12 @@
                     <span class="value">{{ number_format($totalUsers) }}</span>
                     <span class="hint">Across the entire platform</span>
                 </div>
-                <div class="users-stat-card">
-                    <span class="label">Currently showing</span>
-                    <span class="value">{{ number_format($pageCount) }}</span>
-                    <span class="hint">Users on this page</span>
-                </div>
+              
                 <div class="users-stat-card">
                     <span class="label">Last registration</span>
                     <span class="value">{{ $lastJoinedDate }}</span>
                     <span class="hint">{{ $lastJoinedAgo ? 'Joined ' . $lastJoinedAgo : 'No recent sign-ups' }}</span>
                 </div>
-                <a href="{{ route('admin.users.admin_check') }}" class="users-stat-card users-stat-card--compact users-stat-card--link">
-                    <span class="label">Active search</span>
-                    <span class="value">{{ $searchTerm ? $searchDisplay : 'None' }}</span>
-                    <span class="hint">Keyword filter applied</span>
-                </a>
             </div>
         </div>
     </div>
@@ -532,7 +523,7 @@
                     <tr>
                         <th class="text-muted text-center" style="width: 120px;">Listing</th>
                         <th class="text-muted">User</th>
-                        <th class="text-muted">Email</th>
+                        
                         <th class="text-muted">Joined</th>
                         <th class="text-muted">Actions</th>
                       
@@ -560,11 +551,7 @@
                                     </div>
                                 </div>
                             </td>
-                            <td data-label="Email">
-                                <div class="users-email">
-                                    <a href="mailto:{{ $u->email }}">{{ $u->email }}</a>
-                                </div>
-                            </td>
+                          
                             <td data-label="Joined">
                                 <div class="users-created">
                                     {{ optional($u->created_at)->format('M d, Y') ?? '—' }}

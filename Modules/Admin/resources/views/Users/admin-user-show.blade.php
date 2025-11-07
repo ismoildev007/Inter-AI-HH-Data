@@ -502,13 +502,13 @@
                     <span class="hint">{{ $joinedAgo ? 'Active since ' . $joinedAgo : '—' }}</span>
                 </div>
 
-                <div class="user-profile-stat-card">
+                <!-- <div class="user-profile-stat-card">
                     <span class="label">Last resume update</span>
                     <span class="value">{{ $latestResumeFormatted }}</span>
                     <span class="hint">{{ $latestResumeAgo ? 'Updated ' . $latestResumeAgo : 'No resumes yet' }}</span>
-                </div>
+                </div> -->
 
-                <div class="user-profile-stat-card">
+                <!-- <div class="user-profile-stat-card">
                     <span class="label">Matched vacancies</span>
                     <span class="value">{{ $matchedVacancyCount }}</span>
                     <div class="hint">
@@ -520,7 +520,7 @@
                             No matches yet
                         @endif
                     </div>
-                </div>
+                </div> -->
             </div>
         </div>
     </div>
@@ -555,14 +555,14 @@
                     <span class="label">Role</span>
                     <span class="value">{{ ucfirst($roleName) }}</span>
                 </div> -->
-                <div class="user-summary-item">
+                <!-- <div class="user-summary-item">
                     <span class="label">Created at</span>
                     <span class="value">{{ $joinedFormatted }}</span>
-                </div>
-                <div class="user-summary-item">
+                </div> -->
+                <!-- <div class="user-summary-item">
                     <span class="label">Last activity</span>
                     <span class="value">{{ optional($user->updated_at)->format('M d, Y H:i') ?? '—' }}</span>
-                </div>
+                </div> -->
                 <div class="user-summary-item">
                     <span class="label">Matched vacancies</span>
                     <div class="value d-flex flex-column gap-2">

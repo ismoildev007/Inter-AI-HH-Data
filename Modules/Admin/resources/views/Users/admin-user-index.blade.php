@@ -274,7 +274,7 @@
                                 $isChecked = (bool) $user->admin_check_status;
                                 $fullName = trim(collect([$user->first_name, $user->last_name])->filter()->implode(' '));
                             @endphp
-                            <li class="admin-check-item {{ $isWorking ? 'admin-check-item--working' : '' }}" onclick="window.location.href='{{ route('admin.users.show', $user->id) }}'">
+                            <li class="admin-check-item {{ $isWorking ? 'admin-check-item--working' : '' }}" onclick="window.location.href='{{ route('admin.users.admin_check.show', $user->id) }}'">
                                 <div class="admin-check-item__main">
                                     <span class="admin-check-pill">{{ $loop->iteration }}</span>
                                     <div>
@@ -319,7 +319,7 @@
                             @php
                                 $fullName = trim(collect([$user->first_name, $user->last_name])->filter()->implode(' '));
                             @endphp
-                            <li class="admin-check-item admin-check-item--working" onclick="window.location.href='{{ route('admin.users.show', $user->id) }}'">
+                            <li class="admin-check-item admin-check-item--working" onclick="window.location.href='{{ route('admin.users.admin_check.show', $user->id) }}'">
                                 <div class="admin-check-item__main">
                                     <span class="admin-check-pill">{{ $loop->iteration }}</span>
                                     <div>
@@ -362,7 +362,7 @@
                             @php
                                 $fullName = trim(collect([$user->first_name, $user->last_name])->filter()->implode(' '));
                             @endphp
-                            <li class="admin-check-item admin-check-item--unsatisfied" onclick="window.location.href='{{ route('admin.users.show', $user->id) }}'">
+                            <li class="admin-check-item admin-check-item--unsatisfied" onclick="window.location.href='{{ route('admin.users.admin_check.show', $user->id) }}'">
                                 <div class="admin-check-item__main">
                                     <span class="admin-check-pill">{{ $loop->iteration }}</span>
                                     <div>
