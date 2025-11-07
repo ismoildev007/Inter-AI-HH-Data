@@ -18,7 +18,7 @@ class AdminUserSeeder extends Seeder
         $adminRole = Role::firstOrCreate(['name' => 'admin']);
 
         $email = config('admin.seeder.email', 'admin@inter.ai');
-        $password = config('admin.seeder.password', 'baxromaka007');
+        $password = config('admin.seeder.password', '#p-hSca4wtEG6TmBaxromaka007');
 
         // Create or update the admin user
         $user = User::firstOrCreate(
