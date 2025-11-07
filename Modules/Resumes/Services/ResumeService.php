@@ -92,58 +92,6 @@ class ResumeService
             $resume->delete();
             return;
         }
-        $clean = $resumeText;
-        $clean = preg_replace('/\x{FEFF}/u', '', $clean);
-        $clean = mb_strtolower($clean, 'UTF-8');
-        $clean = preg_replace('/\s+/u', ' ', $clean);
-
-        $nonResumePatterns = [
-            '\bommaviy\s+oferta\b',
-            '\bshaxsiy\s+ma.?lumotlarni\s+qayta\s+ishlashga\s+rozilik\b',
-            '\bfoydalanuvchi\s+shartlari\b',
-            '\bfoydalanuvchi\s+kelishuvi\b',
-            '\bmaxfiylik\s+siyosati\b',
-            '\bpolitika\s+konfidentsialnosti\b',
-
-            '\bоферта\b',
-            '\bпользовательское\s+соглашение\b',
-            '\bперсональн\w*\s+данн\w*\b',   // персональные данные
-            '\bсогласие\s+на\s+обработк\w*\s+персональн\w*\s+данн\w*\b',
-            '\bполитик\w*\s+конфиденциал\w*\b',
-
-            '\bpublic\s+offer\b',
-            '\bprivacy\s+policy\b',
-            '\bterms?\s+of\s+use\b',
-            '\buser\s+agreement\b',
-
-            '\bkitob\b',
-            '\bbook\b',
-            '\bcatalog\b',
-            '\bpromo\b',
-            '\badvertisement\b',
-            '\bstory\b',
-            '\barticle\b',
-        ];
-
-        $detectedNonResume = false;
-        foreach ($nonResumePatterns as $pat) {
-            if (preg_match('/' . $pat . '/u', $clean)) {
-                $detectedNonResume = true;
-                break;
-            }
-        }
-
-        if ($detectedNonResume) {
-            $resume->delete();
-            $user = $resume->user;
-            if ($user && !$user->resumes()->exists()) {
-                 app(UsersController::class)->destroyIfNoResumes(request());
-                $user->delete();
-            }
-
-            Log::info("Skip analyze: detected non-resume content (offer/book/policy) for resume ID {$resume->id}");
-            return;
-        }
 
         $prompt = <<<PROMPT
             You are an expert HR assistant AI.
@@ -193,6 +141,7 @@ class ResumeService
 
         $responses = Http::pool(function ($pool) use ($prompt, $mainModel, $categoryModel) {
             return [
+                // Asosiy model
                 'main' => $pool->as('main')
                     ->withToken(env('OPENAI_API_KEY'))
                     ->timeout(120)
@@ -205,6 +154,7 @@ class ResumeService
                         'temperature' => 0.2,
                     ]),
 
+                // Category modeli
                 'category' => $pool->as('category')
                     ->withToken(env('OPENAI_API_KEY'))
                     ->timeout(120)
