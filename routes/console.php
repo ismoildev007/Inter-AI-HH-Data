@@ -68,10 +68,9 @@ Artisan::command('subscriptions:expire', function () {
 //   Scheduler shart emas; default worker/Horizon ishlashi kifoya.
 
 // HH integratsiyasi (misol):
-Schedule::command('hh:sync-negotiations')
-    ->everyFiveMinutes()
-    //->onOneServer()
-    ->withoutOverlapping();
+// Schedule::command('hh:sync-negotiations')
+//     ->everyFiveMinutes()
+//     ->withoutOverlapping();
 // queue: default (Modules\Interviews\Jobs...) — Horizon default navbatini tinglashi kerak
 
 // Auto apply (misol):
