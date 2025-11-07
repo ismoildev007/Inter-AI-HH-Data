@@ -452,26 +452,26 @@
                     stay ready for the next campaign push.</p>
             </div>
             <div class="telegram-stats">
-                <div class="telegram-stat-card">
+                <!-- <div class="telegram-stat-card">
                     <span class="label">Total channels</span>
                     <span class="value">{{ number_format($totalChannels) }}</span>
                     <span class="hint">Across the entire platform</span>
-                </div>
-                <div class="telegram-stat-card">
+                </div> -->
+                <!-- <div class="telegram-stat-card">
                     <span class="label">Currently showing</span>
                     <span class="value">{{ number_format($pageCount) }}</span>
                     <span class="hint">On this page</span>
-                </div>
+                </div> -->
                 <div class="telegram-stat-card">
                     <span class="label">Targets / Sources</span>
                     <span class="value">{{ number_format($targetCount) }} / {{ number_format($sourceCount) }}</span>
                     <span class="hint">This page breakdown</span>
                 </div>
-                <div class="telegram-stat-card">
+                <!-- <div class="telegram-stat-card">
                     <span class="label">Last added</span>
                     <span class="value">{{ $latestDate }}</span>
                     <span class="hint">{{ $latestAgo ? 'Created ' . $latestAgo : 'No recent additions' }}</span>
-                </div>
+                </div> -->
             </div>
         </div>
     </div>

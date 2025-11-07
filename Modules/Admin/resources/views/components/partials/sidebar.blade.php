@@ -25,25 +25,48 @@
             'label' => __('admin.sidebar.groups.users.label'),
             'items' => [
                 [
-                    'label' => 'Admin check',
-                    'icon' => 'check-circle',
-                    'route' => 'admin.users.admin_check',
-                    'match' => ['admin.users.admin_check', 'admin.users.admin_check.*'],
-                    'hint' => 'Verification',
-                ],
-                [
                     'label' => __('admin.sidebar.items.users'),
                     'icon' => 'users',
-                    'route' => 'admin.users.index',
                     'match' => ['admin.users.*'],
                     'hint' => __('admin.sidebar.hints.directory_profiles'),
+                    'children' => [
+                        [
+                            'label' => 'All users',
+                            'icon'  => 'users',
+                            'route' => 'admin.users.index',
+                            'match' => ['admin.users.index', 'admin.users.show'],
+                            'hint'  => __('admin.sidebar.hints.directory_profiles'),
+                        ],
+                        [
+                            'label' => 'Admin check',
+                            'icon'  => 'check-circle',
+                            'route' => 'admin.users.admin_check',
+                            'match' => ['admin.users.admin_check', 'admin.users.admin_check.*'],
+                            'hint'  => 'Verification',
+                        ],
+                    ],
                 ],
                 [
                     'label' => __('admin.sidebar.items.resumes'),
                     'icon' => 'file-text',
-                    'route' => 'admin.resumes.index',
                     'match' => ['admin.resumes.*'],
                     'hint' => __('admin.sidebar.hints.talent_archive'),
+                    'children' => [
+                        [
+                            'label' => 'All resumes',
+                            'icon'  => 'file-text',
+                            'route' => 'admin.resumes.index',
+                            'match' => ['admin.resumes.index', 'admin.resumes.show', 'admin.resumes.download'],
+                            'hint'  => __('admin.sidebar.hints.talent_archive'),
+                        ],
+                        [
+                            'label' => 'Categories',
+                            'icon'  => 'layers',
+                            'route' => 'admin.resumes.categories',
+                            'match' => ['admin.resumes.categories', 'admin.resumes.categories.show'],
+                            'hint'  => __('admin.sidebar.hints.talent_archive'),
+                        ],
+                    ],
                 ],
                 [
                     'label' => __('admin.sidebar.items.applications'),
@@ -167,30 +190,87 @@
                             </span>
                         </button>
                         <ul class="admin-sidebar__list">
-                            @foreach ($group['items'] as $item)
+                            @foreach ($group['items'] as $itemIndex => $item)
                                 @php
-                                    $patterns = (array)($item['match'] ?? $item['route']);
+                                    $hasChildren = !empty($item['children']) && is_array($item['children']);
+                                    $patterns = (array)($item['match'] ?? ($item['route'] ?? []));
                                     $isActive = request()->routeIs(...$patterns);
+                                    $isAnyChildActive = false;
+                                    if ($hasChildren) {
+                                        foreach ($item['children'] as $child) {
+                                            $childPatterns = (array)($child['match'] ?? ($child['route'] ?? []));
+                                            if (!empty($childPatterns) && request()->routeIs(...$childPatterns)) {
+                                                $isAnyChildActive = true;
+                                                break;
+                                            }
+                                        }
+                                    }
+                                    $itemIsOpen = $isActive || $isAnyChildActive;
                                 @endphp
-                                <li class="admin-sidebar__item {{ $isActive ? 'is-active' : '' }}">
-                                    <a href="{{ route($item['route']) }}" class="admin-sidebar__link">
-                                        <span class="admin-sidebar__icon">
-                                            <i class="feather-{{ $item['icon'] }}"></i>
-                                        </span>
-                                        <span class="admin-sidebar__text">
-                                            <span class="admin-sidebar__label">{{ $item['label'] }}</span>
-                                            @if (!empty($item['hint']))
-                                                <span class="admin-sidebar__hint">{{ $item['hint'] }}</span>
+
+                                @if($hasChildren)
+                                    <li class="admin-sidebar__item has-children {{ $itemIsOpen ? 'is-open is-active' : '' }}" data-item="{{ $index }}-{{ $itemIndex }}">
+                                        <button type="button" class="admin-sidebar__link admin-sidebar__link--toggle" aria-expanded="{{ $itemIsOpen ? 'true' : 'false' }}">
+                                            <span class="admin-sidebar__icon">
+                                                <i class="feather-{{ $item['icon'] }}"></i>
+                                            </span>
+                                            <span class="admin-sidebar__text">
+                                                <span class="admin-sidebar__label">{{ $item['label'] }}</span>
+                                                @if (!empty($item['hint']))
+                                                    <span class="admin-sidebar__hint">{{ $item['hint'] }}</span>
+                                                @endif
+                                            </span>
+                                            <span class="admin-sidebar__chevron admin-sidebar__chevron--down">
+                                                <i class="feather-chevron-down"></i>
+                                            </span>
+                                        </button>
+                                        <ul class="admin-sidebar__sublist">
+                                            @foreach ($item['children'] as $child)
+                                                @php
+                                                    $childPatterns = (array)($child['match'] ?? ($child['route'] ?? []));
+                                                    $childActive = !empty($childPatterns) && request()->routeIs(...$childPatterns);
+                                                @endphp
+                                                <li class="admin-sidebar__subitem {{ $childActive ? 'is-active' : '' }}">
+                                                    <a href="{{ route($child['route']) }}" class="admin-sidebar__sublink">
+                                                        <span class="admin-sidebar__subicon"><i class="feather-{{ $child['icon'] }}"></i></span>
+                                                        <span class="admin-sidebar__subtext">
+                                                            <span class="admin-sidebar__label">{{ $child['label'] }}</span>
+                                                            @if (!empty($child['hint']))
+                                                                <span class="admin-sidebar__hint">{{ $child['hint'] }}</span>
+                                                            @endif
+                                                        </span>
+                                                        @if(($child['route'] ?? '') === 'admin.users.admin_check' && !($childActive ?? false) && ($pendingAdminChecks ?? 0) > 0)
+                                                            <span class="admin-sidebar__badge">{{ $pendingAdminChecks }}</span>
+                                                        @endif
+                                                        <span class="admin-sidebar__chevron">
+                                                            <i class="feather-chevron-right"></i>
+                                                        </span>
+                                                    </a>
+                                                </li>
+                                            @endforeach
+                                        </ul>
+                                    </li>
+                                @else
+                                    <li class="admin-sidebar__item {{ $isActive ? 'is-active' : '' }}">
+                                        <a href="{{ route($item['route']) }}" class="admin-sidebar__link">
+                                            <span class="admin-sidebar__icon">
+                                                <i class="feather-{{ $item['icon'] }}"></i>
+                                            </span>
+                                            <span class="admin-sidebar__text">
+                                                <span class="admin-sidebar__label">{{ $item['label'] }}</span>
+                                                @if (!empty($item['hint']))
+                                                    <span class="admin-sidebar__hint">{{ $item['hint'] }}</span>
+                                                @endif
+                                            </span>
+                                            @if(($item['route'] ?? '') === 'admin.users.admin_check' && !($isActive ?? false) && ($pendingAdminChecks ?? 0) > 0)
+                                                <span class="admin-sidebar__badge">{{ $pendingAdminChecks }}</span>
                                             @endif
-                                        </span>
-                                        @if(($item['route'] ?? '') === 'admin.users.admin_check' && !($isActive ?? false) && ($pendingAdminChecks ?? 0) > 0)
-                                            <span class="admin-sidebar__badge">{{ $pendingAdminChecks }}</span>
-                                        @endif
-                                        <span class="admin-sidebar__chevron">
-                                            <i class="feather-chevron-right"></i>
-                                        </span>
-                                    </a>
-                                </li>
+                                            <span class="admin-sidebar__chevron">
+                                                <i class="feather-chevron-right"></i>
+                                            </span>
+                                        </a>
+                                    </li>
+                                @endif
                             @endforeach
                         </ul>
                     </div>
@@ -413,6 +493,16 @@
     .admin-sidebar__item {
         position: relative;
     }
+    .admin-sidebar__item.has-children .admin-sidebar__link--toggle {
+        width: 100%;
+        text-align: left;
+    }
+    .admin-sidebar__chevron--down {
+        transition: transform 0.18s ease;
+    }
+    .admin-sidebar__item.has-children.is-open .admin-sidebar__chevron--down {
+        transform: rotate(180deg);
+    }
     .admin-sidebar__link {
         display: grid;
         grid-template-columns: auto 1fr auto;
@@ -490,6 +580,56 @@
         transform: translateX(6px);
     }
 
+    /* Submenu */
+    .admin-sidebar__sublist {
+        list-style: none;
+        margin: 4px 0 0 36px;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        max-height: 0;
+        overflow: hidden;
+        opacity: 0;
+        transform: translateY(-4px);
+        transition: max-height 0.2s ease, opacity 0.2s ease, transform 0.2s ease;
+    }
+    .admin-sidebar__item.has-children.is-open > .admin-sidebar__sublist {
+        max-height: 320px;
+        opacity: 1;
+        transform: translateY(0);
+    }
+    .admin-sidebar__sublink {
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        gap: 10px;
+        align-items: center;
+        padding: 9px 12px;
+        border-radius: 10px;
+        color: #334155;
+        text-decoration: none;
+        background: transparent;
+        border: 1px solid transparent;
+        transition: all 0.16s ease;
+    }
+    .admin-sidebar__subitem.is-active .admin-sidebar__sublink,
+    .admin-sidebar__sublink:hover {
+        color: #1d4ed8;
+        background: #eef2ff;
+        border-color: #c7d2fe;
+    }
+    .admin-sidebar__subitem { position: relative; }
+    .admin-sidebar__subicon {
+        width: 28px;
+        height: 28px;
+        border-radius: 8px;
+        display: grid;
+        place-items: center;
+        background: #e2e8f0;
+        color: #1f2937;
+        font-size: 0.95rem;
+    }
+
     @media (max-width: 1199px) {
         .admin-sidebar__inner {
             padding: 16px 12px;
@@ -511,12 +651,19 @@
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         const storageKey = 'adminSidebarGroups';
+        const subStorageKey = 'adminSidebarSubGroups';
         let persisted = {};
+        let subPersisted = {};
 
         try {
             persisted = JSON.parse(window.localStorage.getItem(storageKey) || '{}');
         } catch (error) {
             persisted = {};
+        }
+        try {
+            subPersisted = JSON.parse(window.localStorage.getItem(subStorageKey) || '{}');
+        } catch (error) {
+            subPersisted = {};
         }
 
         document.querySelectorAll('.admin-sidebar__section').forEach((section) => {
@@ -544,6 +691,36 @@
                 persisted[key] = nextState;
                 try {
                     window.localStorage.setItem(storageKey, JSON.stringify(persisted));
+                } catch (error) {
+                    // noop
+                }
+            });
+        });
+
+        // Nested submenu toggles for items with children
+        document.querySelectorAll('.admin-sidebar__item.has-children').forEach((item) => {
+            const key = item.dataset.item;
+            const toggle = item.querySelector('.admin-sidebar__link--toggle');
+            if (!toggle) return;
+
+            const serverOpen = item.classList.contains('is-open');
+
+            if (Object.prototype.hasOwnProperty.call(subPersisted, key)) {
+                const shouldOpen = serverOpen || !!subPersisted[key];
+                item.classList.toggle('is-open', shouldOpen);
+                toggle.setAttribute('aria-expanded', shouldOpen ? 'true' : 'false');
+            } else {
+                toggle.setAttribute('aria-expanded', serverOpen ? 'true' : 'false');
+            }
+
+            toggle.addEventListener('click', () => {
+                const nextState = !item.classList.contains('is-open');
+                item.classList.toggle('is-open', nextState);
+                toggle.setAttribute('aria-expanded', nextState ? 'true' : 'false');
+
+                subPersisted[key] = nextState;
+                try {
+                    window.localStorage.setItem(subStorageKey, JSON.stringify(subPersisted));
                 } catch (error) {
                     // noop
                 }
