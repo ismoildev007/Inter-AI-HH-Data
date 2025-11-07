@@ -102,6 +102,7 @@
             border-radius: 18px;
             background: #ffffff;
             transition: background 0.2s ease, transform 0.18s ease;
+            cursor: pointer;
         }
 
         .admin-check-item__main {
@@ -273,7 +274,7 @@
                                 $isChecked = (bool) $user->admin_check_status;
                                 $fullName = trim(collect([$user->first_name, $user->last_name])->filter()->implode(' '));
                             @endphp
-                            <li class="admin-check-item {{ $isWorking ? 'admin-check-item--working' : '' }}">
+                            <li class="admin-check-item {{ $isWorking ? 'admin-check-item--working' : '' }}" onclick="window.location.href='{{ route('admin.users.show', $user->id) }}'">
                                 <div class="admin-check-item__main">
                                     <span class="admin-check-pill">{{ $loop->iteration }}</span>
                                     <div>
@@ -295,11 +296,6 @@
                                                 <i class="feather-check-circle"></i> Checked
                                             </span>
                                         @endif
-                                    </div>
-                                    <div class="admin-check-actions">
-                                        <a href="{{ route('admin.users.admin_check.show', $user) }}" class="btn btn-sm btn-primary">
-                                            Admin check
-                                        </a>
                                     </div>
                                 </div>
                             </li>
@@ -323,7 +319,7 @@
                             @php
                                 $fullName = trim(collect([$user->first_name, $user->last_name])->filter()->implode(' '));
                             @endphp
-                            <li class="admin-check-item admin-check-item--working">
+                            <li class="admin-check-item admin-check-item--working" onclick="window.location.href='{{ route('admin.users.show', $user->id) }}'">
                                 <div class="admin-check-item__main">
                                     <span class="admin-check-pill">{{ $loop->iteration }}</span>
                                     <div>
@@ -343,11 +339,6 @@
                                         <span class="admin-check-chip admin-check-chip--verified">
                                             <i class="feather-check-circle"></i> Checked
                                         </span>
-                                    </div>
-                                    <div class="admin-check-actions">
-                                        <a href="{{ route('admin.users.admin_check.show', $user) }}" class="btn btn-sm btn-primary">
-                                            Admin check
-                                        </a>
                                     </div>
                                 </div>
                             </li>
@@ -371,7 +362,7 @@
                             @php
                                 $fullName = trim(collect([$user->first_name, $user->last_name])->filter()->implode(' '));
                             @endphp
-                            <li class="admin-check-item admin-check-item--unsatisfied">
+                            <li class="admin-check-item admin-check-item--unsatisfied" onclick="window.location.href='{{ route('admin.users.show', $user->id) }}'">
                                 <div class="admin-check-item__main">
                                     <span class="admin-check-pill">{{ $loop->iteration }}</span>
                                     <div>
@@ -391,14 +382,9 @@
                                         <span class="admin-check-chip admin-check-chip--verified">
                                             <i class="feather-check-circle"></i> Checked
                                         </span>
-                                        <span class="admin-check-chip admin-check-chip--unsatisfied">
+                                        <!-- <span class="admin-check-chip admin-check-chip--unsatisfied">
                                             Qoniqarsiz
-                                        </span>
-                                    </div>
-                                    <div class="admin-check-actions">
-                                        <a href="{{ route('admin.users.admin_check.show', $user) }}" class="btn btn-sm btn-primary">
-                                            Admin check
-                                        </a>
+                                        </span> -->
                                     </div>
                                 </div>
                             </li>
