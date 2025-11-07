@@ -44,6 +44,13 @@
                             'match' => ['admin.users.admin_check', 'admin.users.admin_check.*'],
                             'hint'  => 'Verification',
                         ],
+                        [
+                            'label' => 'Last visit',
+                            'icon'  => 'activity',
+                            'route' => 'admin.visits.top_users',
+                            'match' => ['admin.visits.top_users'],
+                            'hint'  => 'Top visitors',
+                        ],
                     ],
                 ],
                 [
