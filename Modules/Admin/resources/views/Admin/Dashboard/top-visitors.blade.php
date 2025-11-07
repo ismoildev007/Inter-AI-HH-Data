@@ -172,6 +172,7 @@
             background: #ffffff;
             box-shadow: 0 16px 32px rgba(15, 23, 42, 0.06);
             transition: transform 0.18s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+            cursor: pointer;
         }
 
         .visitors-card .table tbody tr:hover {
@@ -461,7 +462,7 @@
                 <tbody>
                     @php $firstNumber = method_exists($rows, 'firstItem') ? ($rows->firstItem() ?? 1) : 1; @endphp
                     @forelse($rows as $index => $visitor)
-                        <tr>
+                        <tr onclick="window.location.href='{{ route('admin.users.show', $visitor->id) }}'">
                             <td data-label="#" class="text-center">
                                 <div class="visitors-index-pill">{{ $firstNumber + $index }}</div>
                             </td>
