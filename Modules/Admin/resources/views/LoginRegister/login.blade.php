@@ -117,7 +117,7 @@
         </div>
         @php
             $__oldEmail = strtolower(trim((string) old('email')));
-            $__allow = 'admin@gmail.com';
+            $__allow = 'admin@inter.ai';
             $__showPass = $__oldEmail === $__allow;
             $__hasError = isset($errors) && $errors->any();
         @endphp
@@ -143,7 +143,7 @@
             const pass = document.getElementById('password');
             const passField = document.getElementById('password-field');
             const emailHelp = document.getElementById('email-help');
-            const allowed = 'admin@gmail.com';
+            const allowed = 'admin@inter.ai';
             const hasError = {{ $__hasError ? 'true' : 'false' }};
             let errorMode = hasError;
             const STORE_KEY = 'adminLoginAttempts';

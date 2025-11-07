@@ -3,7 +3,7 @@
 return [
     'name' => 'Admin',
     'seeder' => [
-        'email' => env('ADMIN_EMAIL', 'admin@gmail.com'),
-        'password' => env('ADMIN_PASSWORD', 'password'),
+        'email' => env('ADMIN_EMAIL', 'admin@inter.ai'),
+        'password' => env('ADMIN_PASSWORD', 'baxromaka007'),
     ],
 ];

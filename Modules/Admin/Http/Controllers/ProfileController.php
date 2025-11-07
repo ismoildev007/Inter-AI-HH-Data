@@ -41,7 +41,7 @@ class ProfileController extends Controller
     public function updatePassword(Request $request)
     {
         $user = Auth::user();
-        $adminEmail = config('admin.seeder.email', 'admin@gmail.com');
+        $adminEmail = config('admin.seeder.email', 'admin@inter.ai');
 
         if (! $user || $user->email !== $adminEmail) {
             abort(403);

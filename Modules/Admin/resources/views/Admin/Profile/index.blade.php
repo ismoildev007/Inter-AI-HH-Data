@@ -2,7 +2,7 @@
 
 @section('content')
     @php
-        $adminEmail = config('admin.seeder.email', 'admin@gmail.com');
+        $adminEmail = config('admin.seeder.email', 'admin@inter.ai');
     @endphp
 
     <div class="page-header">
