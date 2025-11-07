@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Models\MatchResult;
 use App\Models\User;
+use App\Models\Vacancy;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
 use Modules\Vacancies\Services\NotificationMatchingService;
@@ -89,7 +90,6 @@ class SendNotificationCommand extends Command
 
                     $token = $user->createToken('api_token', ['*'], now()->addDays(30))->plainTextToken;
                     $webAppUrl = "https://vacancies.inter-ai.uz/#?chat_id={$user->chat_id}&token={$token}&locale={$langCode}";
-//                    $webAppUrl = "https://vacancies.inter-ai.uz/#?chat_id=1770556788&token={$token}&locale={$langCode}";
 
                     $inlineKeyboard = Keyboard::make()
                         ->inline()
@@ -119,6 +119,47 @@ class SendNotificationCommand extends Command
                 }
             } else {
                 $this->line("ℹ️ No new matches for {$user->email}");
+
+                try {
+                    $langCode = $user->language ?? 'ru';
+                    $vacancyCount = Vacancy::count();
+
+                    if ($user->language === 'uz') {
+                        $message = "Siz uchun hozirda *{$vacancyCount}* ta faol ish o‘rni mavjud 💼\n\nIlovaga kirib, sizga mos yangi takliflarni kuzatib boring — imkonni boy bermang! 🚀👇";
+                        $buttonText = "Dasturga Kirish";
+                    } elseif ($user->language === 'ru') {
+                        $message = "В системе сейчас доступно *{$vacancyCount}* активных вакансий 💼\n\nОткройте приложение и следите за новыми предложениями — не упустите свой шанс! 🚀👇";
+                        $buttonText = "Войти в программу";
+                    } else {
+                        $message = "There are currently *{$vacancyCount}* active job openings available 💼\n\nOpen the app and stay tuned for new opportunities that match your profile! 🚀👇";
+                        $buttonText = "Sign in";
+                    }
+
+
+                    $user->tokens()->delete();
+                    $token = $user->createToken('api_token', ['*'], now()->addDays(30))->plainTextToken;
+                    $webAppUrl = "https://vacancies.inter-ai.uz/#?chat_id={$user->chat_id}&token={$token}&locale={$langCode}";
+
+                    $inlineKeyboard = Keyboard::make()
+                        ->inline()
+                        ->row([
+                            Keyboard::inlineButton([
+                                'text'    => $buttonText,
+                                'web_app' => ['url' => $webAppUrl],
+                            ]),
+                        ]);
+
+                    $telegram->sendMessage([
+                        'chat_id'      => $user->chat_id,
+                        'text'         => $message,
+                        'parse_mode'   => 'Markdown',
+                        'reply_markup' => $inlineKeyboard,
+                    ]);
+
+                    Log::info("📩 No-match info sent to user {$user->id} ({$vacancyCount} vacancies in system)");
+                } catch (\Throwable $e) {
+                    Log::error("❌ Telegram send (no matches) failed for user {$user->id}: " . $e->getMessage());
+                }
             }
         }
         Log::info('✅ Matching and notifications completed.');
