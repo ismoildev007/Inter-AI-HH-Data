@@ -62,4 +62,48 @@ class ApplicationController extends Controller
         $application = Application::with(['user', 'vacancy', 'resume'])->findOrFail($id);
         return view('admin::Applications.show', compact('application'));
     }
+
+    /**
+     * Only applications with status = interview.
+     */
+    public function interview(Request $request)
+    {
+        $search = trim((string) $request->query('q', ''));
+
+        $applications = Application::with(['user', 'vacancy', 'resume'])
+            ->whereRaw("LOWER(COALESCE(status,'')) = ?", ['interview'])
+            ->when($search !== '', function ($query) use ($search) {
+                $normalized = mb_strtolower($search, 'UTF-8');
+                $like = '%' . $normalized . '%';
+                $query->where(function ($inner) use ($search, $like, $normalized) {
+                    if (ctype_digit($search)) {
+                        $inner->orWhere('applications.id', (int) $search);
+                    }
+                    $inner->orWhereHas('user', function ($user) use ($like, $search, $normalized) {
+                            $user->whereRaw('LOWER(first_name) LIKE ?', [$like])
+                                ->orWhereRaw('LOWER(last_name) LIKE ?', [$like])
+                                ->orWhereRaw('LOWER(email) LIKE ?', [$like]);
+                            if (ctype_digit($search)) {
+                                $user->orWhere('phone', 'like', '%' . $search . '%');
+                            }
+                        })
+                        ->orWhereHas('vacancy', function ($vacancy) use ($like) {
+                            $vacancy->whereRaw('LOWER(title) LIKE ?', [$like])
+                                ->orWhereRaw('LOWER(company) LIKE ?', [$like])
+                                ->orWhereRaw('LOWER(category) LIKE ?', [$like]);
+                        })
+                        ->orWhereHas('resume', function ($resume) use ($like) {
+                            $resume->whereRaw('LOWER(title) LIKE ?', [$like]);
+                        });
+                });
+            })
+            ->latest()
+            ->paginate(150)
+            ->withQueryString();
+
+        return view('admin::Applications.interview', [
+            'applications' => $applications,
+            'search' => $search,
+        ]);
+    }
 }

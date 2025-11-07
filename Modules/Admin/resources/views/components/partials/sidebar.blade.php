@@ -78,9 +78,24 @@
                 [
                     'label' => __('admin.sidebar.items.applications'),
                     'icon' => 'briefcase',
-                    'route' => 'admin.applications.index',
                     'match' => ['admin.applications.*'],
                     'hint' => __('admin.sidebar.hints.recruiting_pipeline'),
+                    'children' => [
+                        [
+                            'label' => 'All applications',
+                            'icon'  => 'briefcase',
+                            'route' => 'admin.applications.index',
+                            'match' => ['admin.applications.index', 'admin.applications.show'],
+                            'hint'  => __('admin.sidebar.hints.recruiting_pipeline'),
+                        ],
+                        [
+                            'label' => 'Interview applications',
+                            'icon'  => 'user-check',
+                            'route' => 'admin.applications.interview',
+                            'match' => ['admin.applications.interview'],
+                            'hint'  => 'Status: interview',
+                        ],
+                    ],
                 ],
             ],
         ],

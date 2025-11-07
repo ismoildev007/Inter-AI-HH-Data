@@ -684,7 +684,7 @@
                         <th class="text-muted text-center" style="width: 120px;">Listing</th>
                         <th class="text-muted">Candidate</th>
                         <th class="text-muted">Vacancy</th>
-                        <th class="text-muted">Resume</th>
+                        <!-- <th class="text-muted">Resume</th> -->
                         <th class="text-muted">Status</th>
                         <!-- <th class="text-muted">Match</th> -->
                         <th class="text-muted">Submitted</th>
@@ -721,11 +721,11 @@
                                     @endif
                                 </div>
                             </td>
-                            <td data-label="Resume">
+                            <!-- <td data-label="Resume">
                                 <div class="applications-resume">
                                     {{ optional($app->resume)->title ?? '—' }}
                                 </div>
-                            </td>
+                            </td> -->
                             <td data-label="Status">
                                 @php($st = $app->status)
                                 <div class="applications-status
