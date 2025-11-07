@@ -861,7 +861,8 @@ class DashboardController extends Controller
         if (!in_array($filter, ['all', 'telegram', 'hh', 'archived'], true)) {
             $filter = 'all';
         }
-        return view('admin::Admin.Dashboard.vacancy-show', compact('vacancy', 'categorySlug', 'filter'));
+        $categoryOptions = array_values($categorizer->getCanonicalCategories());
+        return view('admin::Admin.Dashboard.vacancy-show', compact('vacancy', 'categorySlug', 'filter', 'categoryOptions'));
     }
 
     /**
