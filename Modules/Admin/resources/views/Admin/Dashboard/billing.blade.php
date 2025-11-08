@@ -146,8 +146,8 @@
                             </div>
                             <div class="payer-card__meta">
                                 <span class="payer-card__name">{{ $payer['user_name'] }}</span>
-                                @if(!empty($payer['email']))
-                                    <span class="payer-card__email">{{ $payer['email'] }}</span>
+                                @if(!empty($payer['phone']))
+                                    <span class="payer-card__email">{{ $payer['phone'] }}</span>
                                 @endif
                                 <span class="payer-card__payments">{{ $payer['payments_count'] }} ta to‘lov</span>
                             </div>
@@ -186,7 +186,7 @@
                                 <td>{{ $index + 1 }}</td>
                                 <td>{{ $payer['user_name'] }}</td>
                                 <td>
-                                    <span class="table-contact">{{ $payer['email'] ?? '—' }}</span>
+                                    <span class="table-contact">{{ $payer['phone'] ?? '—' }}</span>
                                 </td>
                                 <td>{{ $payer['payments_count'] }}</td>
                                 <td>UZS {{ $formatMoney($payer['total_amount']) }}</td>

@@ -15,9 +15,10 @@ class BillingDashboardController extends Controller
 {
     public function index()
     {
-        // Treat both 'success' and 'active' as paid/active transactions
-        $paidTransactions = Transaction::query()
-            ->whereIn('payment_status', ['success', 'active']);
+        // Treat both 'success' and 'active' as paid for some analytics,
+        // but use only 'active' where strictly required (cards and plan totals)
+        $paidTransactions = Transaction::query()->whereIn('payment_status', ['success', 'active']);
+        $activeTransactions = Transaction::query()->where('payment_status', 'active');
 
         $totalPlans = Plan::count();
 
@@ -31,6 +32,7 @@ class BillingDashboardController extends Controller
             ->get()
             ->keyBy('plan_id');
 
+        // Revenue per plan: include paid transactions (active + success)
         $planRevenueAggregates = (clone $paidTransactions)
             ->join('subscriptions', 'transactions.subscription_id', '=', 'subscriptions.id')
             ->whereNotNull('subscriptions.plan_id')
@@ -54,8 +56,8 @@ class BillingDashboardController extends Controller
             ->groupBy('subscriptions.plan_id', 'transactions.user_id')
             ->get();
 
-        // Only active purchases per plan (status in ['success','active'])
-        $planPurchaseAggregates = (clone $paidTransactions)
+        // Only ACTIVE purchases per plan
+        $planPurchaseAggregates = (clone $activeTransactions)
             ->join('subscriptions', 'transactions.subscription_id', '=', 'subscriptions.id')
             ->whereNotNull('subscriptions.plan_id')
             ->select([
@@ -69,7 +71,8 @@ class BillingDashboardController extends Controller
 
         $totalPayingUsers = $planUserSpendAggregates->pluck('user_id')->unique()->count();
         $totalSubscriptions = $planSubscriptionAggregates->sum('subscriptions_count');
-        $overallRevenue = $planRevenueAggregates->sum('total_amount');
+        // Overall revenue card: sum of paid (active + success) revenue across all plans
+        $overallRevenue = (float) $planRevenueAggregates->sum('total_amount');
 
         $plans = Plan::all()->keyBy('id');
         $planIds = $planPurchaseAggregates->keys()
@@ -169,7 +172,7 @@ class BillingDashboardController extends Controller
             return [
                 'user_id' => $item->user_id,
                 'user_name' => $name !== '' ? $name : ($user?->phone ?? 'Unknown User'),
-                'email' => $user?->email,
+                'phone' => $user?->phone,
                 'total_amount' => (float) $item->total_amount,
                 'payments_count' => (int) $item->payments_count,
             ];
@@ -182,7 +185,7 @@ class BillingDashboardController extends Controller
             return [
                 'user_id' => $item->user_id,
                 'user_name' => $name !== '' ? $name : ($user?->phone ?? 'Unknown User'),
-                'email' => $user?->email,
+                'phone' => $user?->phone,
                 'total_amount' => (float) $item->total_amount,
                 'payments_count' => (int) $item->payments_count,
             ];
