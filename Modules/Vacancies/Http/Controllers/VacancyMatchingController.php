@@ -29,6 +29,7 @@ class VacancyMatchingController extends Controller
         $resumeIds = $user->resumes()->pluck('id');
 
         $results = MatchResult::with('vacancy.employer')
+            ->join('vacancies', 'vacancies.id', '=', 'match_results.vacancy_id')
             ->leftJoin('applications', function ($join) use ($user) {
                 $join->on('applications.vacancy_id', '=', 'match_results.vacancy_id')
                     ->where('applications.user_id', $user->id);
@@ -48,6 +49,7 @@ class VacancyMatchingController extends Controller
                 $service->matchResume($resume, $resume->title ?? $resume->description);
 
                 $results = MatchResult::with('vacancy.employer')
+                    ->join('vacancies', 'vacancies.id', '=', 'match_results.vacancy_id')
                     ->leftJoin('applications', function ($join) use ($user) {
                         $join->on('applications.vacancy_id', '=', 'match_results.vacancy_id')
                             ->where('applications.user_id', $user->id);
@@ -93,6 +95,7 @@ class VacancyMatchingController extends Controller
         $service->matchResume($resume, $resume->title ?? $resume->description);
 
         $results = MatchResult::with('vacancy.employer')
+            ->join('vacancies', 'vacancies.id', '=', 'match_results.vacancy_id')
             ->leftJoin('applications', function ($join) use ($user) {
                 $join->on('applications.vacancy_id', '=', 'match_results.vacancy_id')
                     ->where('applications.user_id', $user->id);
