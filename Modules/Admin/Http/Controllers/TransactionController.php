@@ -57,8 +57,9 @@ class TransactionController extends Controller
 
         if ($status !== 'all' && $status !== '') {
             // Align filtering with subscription-like statuses
-            if ($status === 'active') {
-                $query->whereIn('payment_status', ['active', 'success']);
+            if ($status === 'completed') {
+                // Treat 'completed' as paid, include legacy 'active' + 'success'
+                $query->whereIn('payment_status', ['completed', 'success', 'active']);
             } elseif ($status === 'expired') {
                 $query->whereIn('payment_status', ['expired', 'failed']);
             } elseif ($status === 'cancelled') {
@@ -107,14 +108,14 @@ class TransactionController extends Controller
 
         $stats = [
             'total' => (clone $baseAggregate)->count(),
-            'active' => (clone $baseAggregate)->whereIn('payment_status', ['active', 'success'])->count(),
+            'completed' => (clone $baseAggregate)->whereIn('payment_status', ['completed', 'success', 'active'])->count(),
             'pending' => (clone $baseAggregate)->where('payment_status', 'pending')->count(),
             'expired' => (clone $baseAggregate)->whereIn('payment_status', ['expired', 'failed'])->count(),
             'cancelled' => (clone $baseAggregate)->where('payment_status', 'cancelled')->count(),
         ];
 
         $totalVolume = (clone $baseAggregate)->sum('amount');
-        $activeVolume = (clone $baseAggregate)->whereIn('payment_status', ['active', 'success'])->sum('amount');
+        $completedVolume = (clone $baseAggregate)->whereIn('payment_status', ['completed', 'success', 'active'])->sum('amount');
 
         $methods = Transaction::query()
             ->selectRaw('LOWER(payment_method) as method')
@@ -135,7 +136,7 @@ class TransactionController extends Controller
             'to' => $toDate?->format('Y-m-d') ?? '',
             'stats' => $stats,
             'totalVolume' => $totalVolume,
-            'activeVolume' => $activeVolume,
+            'completedVolume' => $completedVolume,
             'methods' => $methods,
         ]);
     }

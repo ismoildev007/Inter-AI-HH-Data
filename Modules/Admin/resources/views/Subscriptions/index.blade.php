@@ -32,9 +32,9 @@
                 <span class="hint">All time subscriptions</span>
             </div>
             <div class="subscriptions-stat-card">
-                <span class="label">Active</span>
-                <span class="value text-success">{{ number_format($stats['active'] ?? 0) }}</span>
-                <span class="hint">Currently delivering access</span>
+                <span class="label">Completed</span>
+                <span class="value text-success">{{ number_format($stats['completed'] ?? 0) }}</span>
+                <span class="hint">Paid and active access</span>
             </div>
             <div class="subscriptions-stat-card">
                 <span class="label">Expired</span>
@@ -67,7 +67,7 @@
                 <div class="form-floating">
                     <select class="form-select" id="status-filter" name="status">
                         @php
-                            $statuses = ['all' => 'All statuses', 'active' => 'Active', 'pending' => 'Pending', 'expired' => 'Expired', 'cancelled' => 'Cancelled'];
+                            $statuses = ['all' => 'All statuses', 'completed' => 'Completed', 'pending' => 'Pending', 'expired' => 'Expired', 'cancelled' => 'Cancelled'];
                         @endphp
                         @foreach($statuses as $value => $label)
                             <option value="{{ $value }}" {{ $status === $value ? 'selected' : '' }}>{{ $label }}</option>
@@ -136,8 +136,9 @@
                         </span>
                     </div>
                     <div class="cell cell--status">
-                        <span class="status-pill status-pill--{{ $subscription->status ?? 'unknown' }}">
-                            {{ ucfirst($subscription->status ?? 'unknown') }}
+                        @php $subStatus = strtolower($subscription->status ?? 'unknown'); if ($subStatus === 'active') { $subStatus = 'completed'; } @endphp
+                        <span class="status-pill status-pill--{{ $subStatus }}">
+                            {{ ucfirst($subStatus) }}
                         </span>
                     </div>
                     <div class="cell">
@@ -395,6 +396,7 @@
         min-width: 0;
     }
     .status-pill--active { background: rgba(20, 184, 166, 0.18); color: #047857; }
+    .status-pill--completed { background: rgba(20, 184, 166, 0.18); color: #047857; }
     .status-pill--pending { background: rgba(251, 191, 36, 0.2); color: #b45309; }
     .status-pill--expired { background: rgba(148, 163, 184, 0.2); color: #4b5563; }
     .status-pill--cancelled { background: rgba(239, 68, 68, 0.2); color: #b91c1c; }

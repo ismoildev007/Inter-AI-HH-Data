@@ -30,8 +30,9 @@
                         </p>
                     </div>
                     <div class="subscription-summary__status">
-                        <span class="status-pill status-pill--{{ $subscription->status ?? 'unknown' }}">
-                            {{ ucfirst($subscription->status ?? 'unknown') }}
+                        @php $subStatus = strtolower($subscription->status ?? 'unknown'); if ($subStatus === 'active') { $subStatus = 'completed'; } @endphp
+                        <span class="status-pill status-pill--{{ $subStatus }}">
+                            {{ ucfirst($subStatus) }}
                         </span>
                     </div>
                 </div>
@@ -196,6 +197,7 @@
         background: rgba(148, 163, 184, 0.2);
     }
     .status-pill--active { background: rgba(20, 184, 166, 0.18); color: #047857; }
+    .status-pill--completed { background: rgba(20, 184, 166, 0.18); color: #047857; }
     .status-pill--pending { background: rgba(251, 191, 36, 0.2); color: #b45309; }
     .status-pill--expired { background: rgba(148, 163, 184, 0.25); color: #4b5563; }
     .status-pill--cancelled { background: rgba(239, 68, 68, 0.2); color: #b91c1c; }
