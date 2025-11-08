@@ -278,7 +278,7 @@
                             {{ $candidateName }}
                         @endif
                     </span>
-                    <span class="app-show-hero__meta-item"><i class="feather-mail"></i>{{ $candidateEmail }}</span>
+                    <!-- <span class="app-show-hero__meta-item"><i class="feather-mail"></i>{{ $candidateEmail }}</span> -->
                     <span class="app-show-hero__meta-item"><i class="feather-hash"></i>ID {{ $application->id }}</span>
                     @if($vacancy && $vacancy->company)
                         <span class="app-show-hero__meta-item"><i class="feather-layers"></i>{{ $vacancy->company }}</span>
@@ -295,11 +295,11 @@
                     </span>
                     <span class="hint">Current application state</span>
                 </div>
-                <div class="app-show-stat-card">
+                <!-- <div class="app-show-stat-card">
                     <span class="label">Match score</span>
                     <span class="value">{{ $matchScore }}</span>
                     <span class="hint">Fit against vacancy</span>
-                </div>
+                </div> -->
                 <div class="app-show-stat-card">
                     <span class="label">Submitted at</span>
                     <span class="value">{{ $submittedFormatted }}</span>
@@ -331,10 +331,10 @@
                             </div>
                         </div>
                         <div class="info-grid">
-                            <div class="info-chip">
+                            <!-- <div class="info-chip">
                                 <span class="label">Email</span>
                                 <span class="value"><a href="mailto:{{ $candidateEmail }}">{{ $candidateEmail }}</a></span>
-                            </div>
+                            </div> -->
                             <div class="info-chip">
                                 <span class="label">Phone</span>
                                 <span class="value">
@@ -349,10 +349,10 @@
                                 <span class="label">User ID</span>
                                 <span class="value">{{ $candidate->id ?? '—' }}</span>
                             </div>
-                            <div class="info-chip">
+                            <!-- <div class="info-chip">
                                 <span class="label">Profile updated</span>
                                 <span class="value">{{ optional($candidate->updated_at)->format('M d, Y H:i') ?? '—' }}</span>
-                            </div>
+                            </div> -->
                         </div>
                     </div>
                 </div>
@@ -367,18 +367,18 @@
                                 <span class="label">External ID</span>
                                 <span class="value">{{ $application->external_id ?? '—' }}</span>
                             </div>
-                            <div class="info-chip">
+                            <!-- <div class="info-chip">
                                 <span class="label">HH status</span>
                                 <span class="value">{{ $application->hh_status ?? '—' }}</span>
-                            </div>
+                            </div> -->
                             <div class="info-chip">
                                 <span class="label">Submitted</span>
                                 <span class="value">{{ $submittedFormatted }}</span>
                             </div>
-                            <div class="info-chip">
+                            <!-- <div class="info-chip">
                                 <span class="label">Notes</span>
                                 <span class="value">{{ $application->notes ?? '—' }}</span>
-                            </div>
+                            </div> -->
                         </div>
                     </div>
                 </div>
@@ -397,10 +397,10 @@
                                 <span class="label">Created</span>
                                 <span class="value">{{ optional($resume->created_at)->format('M d, Y H:i') ?? '—' }}</span>
                             </div>
-                            <div class="info-chip">
+                            <!-- <div class="info-chip">
                                 <span class="label">Language</span>
                                 <span class="value">{{ $resume->analysis->language ?? '—' }}</span>
-                            </div>
+                            </div> -->
                         </div>
                         @if($resumeFileUrl)
                             <div class="mt-3">
@@ -430,7 +430,7 @@
                                 <span class="label">Category</span>
                                 <span class="value">{{ $vacancy->category ?? '—' }}</span>
                             </div>
-                            <div class="info-chip">
+                            <!-- <div class="info-chip">
                                 <span class="label">Language</span>
                                 <span class="value">{{ $vacancy->language ?? '—' }}</span>
                             </div>
@@ -441,7 +441,7 @@
                             <div class="info-chip">
                                 <span class="label">Salary</span>
                                 <span class="value">{{ $vacancy->salary ?? '—' }}</span>
-                            </div>
+                            </div> -->
                         </div>
                         @if($vacancy && $vacancy->apply_url)
                             <div class="mt-4">

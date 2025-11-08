@@ -15,41 +15,52 @@ class ApplicationController extends Controller
     {
         $search = trim((string) $request->query('q', ''));
 
-        $applications = Application::with(['user', 'vacancy', 'resume'])
+        // Show a single row per user (who has at least one application) with their applications count
+        $usersQuery = \App\Models\User::query()
+            ->whereHas('applications')
             ->when($search !== '', function ($query) use ($search) {
                 $normalized = mb_strtolower($search, 'UTF-8');
                 $like = '%' . $normalized . '%';
-                $query->where(function ($inner) use ($search, $like, $normalized) {
+
+                $query->where(function ($q) use ($search, $like) {
+                    $q->whereRaw('LOWER(first_name) LIKE ?', [$like])
+                        ->orWhereRaw('LOWER(last_name) LIKE ?', [$like])
+                        ->orWhereRaw('LOWER(email) LIKE ?', [$like]);
+
                     if (ctype_digit($search)) {
-                        $inner->orWhere('applications.id', (int) $search);
+                        $q->orWhere('phone', 'like', '%' . $search . '%');
                     }
-
-                    $inner->orWhereRaw('LOWER(applications.status) LIKE ?', [$like])
-                        ->orWhereHas('user', function ($user) use ($like, $search, $normalized) {
-                            $user->whereRaw('LOWER(first_name) LIKE ?', [$like])
-                                ->orWhereRaw('LOWER(last_name) LIKE ?', [$like])
-                                ->orWhereRaw('LOWER(email) LIKE ?', [$like]);
-
-                            if (ctype_digit($search)) {
-                                $user->orWhere('phone', 'like', '%' . $search . '%');
-                            }
-                        })
-                        ->orWhereHas('vacancy', function ($vacancy) use ($like) {
-                            $vacancy->whereRaw('LOWER(title) LIKE ?', [$like])
-                                ->orWhereRaw('LOWER(company) LIKE ?', [$like])
-                                ->orWhereRaw('LOWER(category) LIKE ?', [$like]);
-                        })
-                        ->orWhereHas('resume', function ($resume) use ($like) {
-                            $resume->whereRaw('LOWER(title) LIKE ?', [$like]);
-                        });
+                })
+                // Also allow searching by vacancy/resume/application properties
+                ->orWhereHas('applications', function ($appQ) use ($search, $like) {
+                    $appQ->whereRaw('LOWER(status) LIKE ?', [$like])
+                        ->orWhere('applications.id', ctype_digit($search) ? (int) $search : null);
+                })
+                ->orWhereHas('applications.vacancy', function ($vacQ) use ($like) {
+                    $vacQ->whereRaw('LOWER(title) LIKE ?', [$like])
+                        ->orWhereRaw('LOWER(company) LIKE ?', [$like])
+                        ->orWhereRaw('LOWER(category) LIKE ?', [$like]);
+                })
+                ->orWhereHas('applications.resume', function ($resQ) use ($like) {
+                    $resQ->whereRaw('LOWER(title) LIKE ?', [$like]);
                 });
             })
-            ->latest()
-            ->paginate(150)
-            ->withQueryString();
+            // Count applications per user
+            ->withCount('applications')
+            // Latest application for quick preview data
+            ->with(['applications' => function ($q) {
+                $q->select(['id', 'user_id', 'vacancy_id', 'status', 'match_score', 'submitted_at', 'created_at'])
+                    ->orderByRaw('COALESCE(submitted_at, created_at) DESC');
+            }, 'applications.vacancy'])
+            // Latest submission timestamp to sort by
+            ->addSelect(['latest_application_at' => Application::selectRaw('MAX(COALESCE(submitted_at, created_at))')
+                ->whereColumn('applications.user_id', 'users.id')])
+            ->orderByDesc('latest_application_at');
+
+        $users = $usersQuery->paginate(150)->withQueryString();
 
         return view('admin::Applications.index', [
-            'applications' => $applications,
+            'users' => $users,
             'search' => $search,
         ]);
     }
@@ -61,6 +72,24 @@ class ApplicationController extends Controller
     {
         $application = Application::with(['user', 'vacancy', 'resume'])->findOrFail($id);
         return view('admin::Applications.show', compact('application'));
+    }
+
+    /**
+     * Show a single user's applications list.
+     */
+    public function user($id)
+    {
+        $user = \App\Models\User::query()
+            ->with(['applications' => function ($q) {
+                $q->with(['vacancy', 'resume'])
+                    ->orderByRaw('COALESCE(submitted_at, created_at) DESC');
+            }])
+            ->findOrFail($id);
+
+        return view('admin::Applications.Application-show', [
+            'user' => $user,
+            'applications' => $user->applications,
+        ]);
     }
 
     /**

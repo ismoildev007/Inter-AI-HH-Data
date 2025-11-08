@@ -67,6 +67,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         // Applications
         Route::get('applications', [ApplicationController::class, 'index'])->name('applications.index');
         Route::get('applications/interview', [ApplicationController::class, 'interview'])->name('applications.interview');
+        Route::get('applications/user/{id}', [ApplicationController::class, 'user'])->name('applications.user');
         Route::get('applications/{id}', [ApplicationController::class, 'show'])->name('applications.show');
 
         // Test: PHP Info (admin only)

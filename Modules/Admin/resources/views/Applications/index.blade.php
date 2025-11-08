@@ -561,23 +561,31 @@
     </style>
 
     @php
+        use Illuminate\Support\Carbon;
         $searchTerm = $search ?? request('q');
-        $isPaginator = $applications instanceof \Illuminate\Contracts\Pagination\Paginator;
-        $items = $isPaginator ? $applications->getCollection() : collect($applications);
-        $totalApplications = $applications instanceof \Illuminate\Contracts\Pagination\LengthAwarePaginator ? $applications->total() : $items->count();
+        $isPaginator = isset($users) && ($users instanceof \Illuminate\Contracts\Pagination\Paginator || $users instanceof \Illuminate\Contracts\Pagination\LengthAwarePaginator);
+        $items = $isPaginator ? $users->getCollection() : collect($users ?? []);
+        // Total applications across the platform (not just visible rows)
+        $totalApplications = \App\Models\Application::count();
         $pageCount = $items->count();
         $latestTimestamp = $items
-            ->map(fn ($application) => $application->submitted_at ?? $application->created_at)
+            ->map(function ($u) {
+                if (!empty($u->latest_application_at)) {
+                    try { return Carbon::parse($u->latest_application_at); } catch (\Throwable $e) { return null; }
+                }
+                return optional($u->applications->first())->submitted_at ?? optional($u->applications->first())->created_at;
+            })
             ->filter()
             ->max();
         $latestDate = $latestTimestamp ? $latestTimestamp->format('M d, Y') : '—';
         $latestAgo = $latestTimestamp ? $latestTimestamp->diffForHumans() : null;
-        $approvedCount = $items->filter(fn ($application) => $application->status === 'approved')->count();
-        $approvalRate = $pageCount > 0 ? round(($approvedCount / max($pageCount, 1)) * 100) : null;
+        // Average match score using latest application per user if available
         $matchAvg = $items
-            ->filter(fn ($application) => $application->match_score !== null)
-            ->avg('match_score');
+            ->map(fn ($u) => optional($u->applications->first())->match_score)
+            ->filter(fn ($v) => $v !== null)
+            ->avg();
         $matchAvgDisplay = $matchAvg !== null ? number_format($matchAvg, 1) . '%' : '—';
+        $approvalRate = null; // n/a for grouped view
     @endphp
 
     <div class="page-header">
@@ -674,20 +682,19 @@
                     <tr>
                         <th class="text-muted text-center" style="width: 120px;">Listing</th>
                         <th class="text-muted">Candidate</th>
-                        <th class="text-muted">Vacancy</th>
-                        <!-- <th class="text-muted">Resume</th> -->
-                        <th class="text-muted">Status</th>
-                        <!-- <th class="text-muted">Match</th> -->
+                        <!-- <th class="text-muted">Latest Vacancy</th> -->
+                        <th class="text-muted">Latest Status</th>
                         <th class="text-muted">Submitted</th>
                         
                     </tr>
                 </thead>
                 <tbody>
-                    @forelse($applications as $app)
-                        <tr onclick="window.location.href='{{ route('admin.applications.show', $app->id) }}'">
+                    @forelse($users as $u)
+                        @php($latestApp = optional($u->applications->first()))
+                        <tr onclick="window.location.href='{{ route('admin.applications.user', $u->id) }}'">
                             <td data-label="#" class="text-center align-middle">
                                 <div class="applications-index-pill">
-                                    {{ (method_exists($applications, 'firstItem') ? ($applications->firstItem() ?? 1) : 1) + $loop->index }}
+                                    {{ (method_exists($users, 'firstItem') ? ($users->firstItem() ?? 1) : 1) + $loop->index }}
                                 </div>
                             </td>
                             <td data-label="Candidate">
@@ -696,29 +703,24 @@
                                         <img src="/assets/images/avatar/ava.svg" class="img-fluid" alt="avatar">
                                     </div>
                                     <div>
-                                        <div class="name">{{ trim((optional($app->user)->first_name ?? '').' '.(optional($app->user)->last_name ?? '')) ?: '—' }}</div>
-                                        <!-- <div class="meta">{{ optional($app->user)->email ?? 'No email' }}</div> -->
+                                        <div class="name">{{ trim(($u->first_name ?? '').' '.($u->last_name ?? '')) ?: '—' }}</div>
+                                        <!-- <div class="meta">{{ $u->email ?? 'No email' }}</div> -->
                                     </div>
                                 </div>
                             </td>
-                            <td data-label="Vacancy">
+                            <!-- <td data-label="Vacancy">
                                 <div class="applications-vacancy">
-                                    {{ optional($app->vacancy)->title ?? '—' }}
-                                    @if(optional($app->vacancy)->company)
+                                    {{ optional($latestApp->vacancy)->title ?? '—' }}
+                                    @if(optional($latestApp->vacancy)->company)
                                         <div class="company">
                                             <i class="feather-briefcase"></i>
-                                            {{ $app->vacancy->company }}
+                                            {{ $latestApp->vacancy->company }}
                                         </div>
                                     @endif
                                 </div>
-                            </td>
-                            <!-- <td data-label="Resume">
-                                <div class="applications-resume">
-                                    {{ optional($app->resume)->title ?? '—' }}
-                                </div>
                             </td> -->
                             <td data-label="Status">
-                                @php($st = strtolower($app->status ?? ''))
+                                @php($st = strtolower($latestApp->status ?? ''))
                                 @php(
                                     $cls = $st === 'interview' ? 'applications-status--interview'
                                         : ($st === 'responce' ? 'applications-status--responce'
@@ -730,18 +732,10 @@
                                     {{ $st !== '' ? $st : 'responce' }}
                                 </div>
                             </td>
-                            <!-- <td data-label="Match">
-                                <div class="applications-match">
-                                    {{ $app->match_score !== null ? number_format($app->match_score, 0) . '%' : '—' }}
-                                    <span>Fit score</span>
-                                </div>
-                            </td> -->
                             <td data-label="Submitted">
                                 <div class="applications-submitted">
-                                    {{ optional($app->submitted_at)->format('M d, Y H:i') ?? '—' }}
-                                    @if($app->submitted_at)
-                                        <span>{{ $app->submitted_at->diffForHumans() }}</span>
-                                    @endif
+                                    {{ number_format($u->applications_count ?? 0) }}
+                                    <span>applications</span>
                                 </div>
                             </td>
       
@@ -749,7 +743,7 @@
                     @empty
                         <tr>
                             <td colspan="8" class="text-center applications-empty">
-                                No applications found. Try adjusting your filters or search keywords.
+                                No users with applications found. Try adjusting your filters or search keywords.
                             </td>
                         </tr>
                     @endforelse
@@ -757,9 +751,9 @@
             </table>
         </div>
 
-        @if($applications instanceof \Illuminate\Contracts\Pagination\Paginator || $applications instanceof \Illuminate\Contracts\Pagination\LengthAwarePaginator)
+        @if($users instanceof \Illuminate\Contracts\Pagination\Paginator || $users instanceof \Illuminate\Contracts\Pagination\LengthAwarePaginator)
             <div class="applications-pagination">
-                {{ $applications->links('vendor.pagination.bootstrap-5') }}
+                {{ $users->links('vendor.pagination.bootstrap-5') }}
             </div>
         @endif
     </div>
