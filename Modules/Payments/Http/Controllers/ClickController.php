@@ -87,13 +87,19 @@ class ClickController extends Controller
             }
 
             if (isset($request->error) && (int)$request->error !== 0) {
+                $errorNote = $request->error_note ?? 'Unknown error';
+            
+                // 💡 Click'dan kelgan matnni UTF-8 ga o‘tkazamiz
+                if (!mb_check_encoding($errorNote, 'UTF-8')) {
+                    $errorNote = mb_convert_encoding($errorNote, 'UTF-8', 'Windows-1251');
+                }
+            
                 Log::warning('CLICK COMPLETE: payment failed on Click side', [
                     'error' => $request->error,
-                    'error_note' => $request->error_note ?? 'Unknown error',
+                    'error_note' => $errorNote,
                     'transaction_id' => $request->merchant_trans_id,
                 ]);
             
-                // Transactionni "failed" deb yangilaymiz
                 $transaction = Transaction::find($request->merchant_trans_id);
                 if ($transaction) {
                     $transaction->update([
@@ -107,10 +113,11 @@ class ClickController extends Controller
                     'click_trans_id' => $request->click_trans_id ?? null,
                     'merchant_trans_id' => (string)($transaction->id ?? $request->merchant_trans_id),
                     'merchant_confirm_id' => (int)($transaction->id ?? 0),
-                    'error' => $request->error,
-                    'error_note' => $request->error_note ?? 'Payment failed on Click side',
+                    'error' => (int)$request->error,
+                    'error_note' => $errorNote,
                 ]);
             }
+            
 
             // 2) Transactionni lock bilan oling (merchant_prepare_id birinchi navbatda, keyin merchant_trans_id)
             $txId = $request->merchant_prepare_id ?? $request->merchant_trans_id;
