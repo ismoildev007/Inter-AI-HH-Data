@@ -166,12 +166,12 @@ class PaymeService
             $time = floor(microtime(true) * 1000);
             $prepare->perform_time = $time;
             $prepare->state = 2;
-            $prepare->payment_status = '1';
+            $prepare->payment_status = 'completed';
             $prepare->payment_method = 'payme';
             $prepare->save();
         }
 
-        if ($prepare->state == 2) {
+        if ($prepare->state == 2 && $prepare->payment_status = 'completed') {
             $subscription->update([
                 'starts_at' => now(),
                 'ends_at' => now()->addDays(30),
