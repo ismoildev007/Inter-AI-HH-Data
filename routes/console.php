@@ -84,7 +84,7 @@ Schedule::command('autoapply:start')
 
 // Vakansiyalarni arxivlash (to‘g‘ridan‑to‘g‘ri DB)
 Schedule::command('telegram:vacancies:auto-archive')
-    ->hourly()
+    ->everyMinute()
     //->onOneServer()
     ->withoutOverlapping();
 // queue kerak emas
