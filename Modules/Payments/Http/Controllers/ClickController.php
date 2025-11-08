@@ -118,7 +118,15 @@ class ClickController extends Controller
             }
 
             // amountni aniqlik bilan taqqoslang (float unsafe)
-            if (abs((float)$transaction->amount - (float)$request->amount) > 0.0001) {
+            // if (abs((float)$transaction->amount - (float)$request->amount) > 0.0001) {
+            //     Log::warning('Amount mismatch on complete', [
+            //         'tx_amount' => (string)$transaction->amount,
+            //         'req_amount' => (string)$request->amount
+            //     ]);
+            //     return response()->json(['error' => -2, 'error_note' => 'Incorrect amount']);
+            // }
+
+            if (bccomp((string)$transaction->amount, (string)$request->amount, 2) !== 0) {
                 Log::warning('Amount mismatch on complete', [
                     'tx_amount' => (string)$transaction->amount,
                     'req_amount' => (string)$request->amount
