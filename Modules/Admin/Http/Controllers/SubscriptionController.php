@@ -47,8 +47,13 @@ class SubscriptionController extends Controller
             });
         }
 
-        if (in_array($status, ['active', 'expired', 'pending', 'cancelled'], true)) {
-            $query->where('status', $status);
+        if (in_array($status, ['completed', 'active', 'expired', 'pending', 'cancelled'], true)) {
+            // Treat 'completed' as the paid/active state. Include legacy 'active' for compatibility.
+            if ($status === 'completed') {
+                $query->whereIn('status', ['completed', 'active']);
+            } else {
+                $query->where('status', $status);
+            }
         }
 
         if ($planId > 0) {
@@ -59,7 +64,7 @@ class SubscriptionController extends Controller
 
         $stats = [
             'total' => Subscription::count(),
-            'active' => Subscription::where('status', 'active')->count(),
+            'completed' => Subscription::whereIn('status', ['completed', 'active'])->count(),
             'expired' => Subscription::where('status', 'expired')->count(),
             'pending' => Subscription::where('status', 'pending')->count(),
         ];

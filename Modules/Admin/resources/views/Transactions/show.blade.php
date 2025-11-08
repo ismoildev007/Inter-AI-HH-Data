@@ -26,7 +26,7 @@
                         <!-- <h2 class="transaction-summary__title mt-3 mb-2">{{ $transaction->transaction_id ?? 'Internal ID #'.$transaction->id }}</h2> -->
                         @php
                             $raw = strtolower($transaction->payment_status ?? '');
-                            $norm = in_array($raw, ['active','success']) ? 'active'
+                            $norm = in_array($raw, ['completed','success','active']) ? 'completed'
                                 : ($raw === 'pending' ? 'pending'
                                 : ($raw === 'cancelled' ? 'cancelled' : 'expired'));
                         @endphp
@@ -67,7 +67,8 @@
                         <span class="label">Subscription</span>
                         <span class="value">
                             @if($subscription)
-                                {{ $subscription->id }} ({{ ucfirst($subscription->status ?? 'unknown') }})
+                                @php $subStatus = strtolower($subscription->status ?? 'unknown'); if ($subStatus === 'active') { $subStatus = 'completed'; } @endphp
+                                {{ $subscription->id }} ({{ ucfirst($subStatus) }})
                             @else
                                 —
                             @endif

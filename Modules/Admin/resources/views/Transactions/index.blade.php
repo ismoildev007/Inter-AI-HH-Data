@@ -32,14 +32,14 @@
                 <span class="hint">All-time processed</span>
             </div>
             <div class="transactions-stat-card">
-                <span class="label">Active Volume</span>
-                <span class="value">{{ number_format((float) ($activeVolume ?? 0), 2, '.', ' ') }} UZS</span>
-                <span class="hint">Currently active payments</span>
+                <span class="label">Completed Volume</span>
+                <span class="value">{{ number_format((float) ($completedVolume ?? 0), 2, '.', ' ') }} UZS</span>
+                <span class="hint">Paid transactions total</span>
             </div>
             <div class="transactions-stat-card">
-                <span class="label">Active</span>
-                <span class="value text-success">{{ number_format($stats['active'] ?? 0) }}</span>
-                <span class="hint">Currently delivering access</span>
+                <span class="label">Completed</span>
+                <span class="value text-success">{{ number_format($stats['completed'] ?? 0) }}</span>
+                <span class="hint">Paid transactions count</span>
             </div>
             <div class="transactions-stat-card">
                 <span class="label">Pending</span>
@@ -74,7 +74,7 @@
                 <div class="form-floating">
                     <select class="form-select" name="status" id="transactions-status">
                         @php
-                            $statusOptions = ['all' => 'All statuses', 'active' => 'Active', 'pending' => 'Pending', 'expired' => 'Expired', 'cancelled' => 'Cancelled'];
+                            $statusOptions = ['all' => 'All statuses', 'completed' => 'Completed', 'pending' => 'Pending', 'expired' => 'Expired', 'cancelled' => 'Cancelled'];
                         @endphp
                         @foreach($statusOptions as $value => $label)
                             <option value="{{ $value }}" {{ $status === $value ? 'selected' : '' }}>
@@ -154,7 +154,8 @@
                             @if($subscription)
                                 Sub #{{ $subscription->id }}
                                 @if($subscription->status)
-                                    <span class="mx-1">•</span>{{ ucfirst($subscription->status) }}
+                                    @php $subStatus = strtolower($subscription->status); if ($subStatus === 'active') { $subStatus = 'completed'; } @endphp
+                                    <span class="mx-1">•</span>{{ ucfirst($subStatus) }}
                                 @endif
                             @else
                                 —
@@ -164,7 +165,7 @@
                     <div class="cell cell--status">
                         @php
                             $raw = strtolower($tx->payment_status ?? '');
-                            $norm = in_array($raw, ['active','success']) ? 'active'
+                            $norm = in_array($raw, ['completed','success','active']) ? 'completed'
                                 : ($raw === 'pending' ? 'pending'
                                 : ($raw === 'cancelled' ? 'cancelled' : 'expired'));
                         @endphp
@@ -421,6 +422,7 @@
         min-width: 0;
     }
     .status-pill--active { background: rgba(20, 184, 166, 0.18); color: #047857; }
+    .status-pill--completed { background: rgba(20, 184, 166, 0.18); color: #047857; }
     .status-pill--pending { background: rgba(251, 191, 36, 0.2); color: #b45309; }
     .status-pill--expired { background: rgba(148, 163, 184, 0.2); color: #4b5563; }
     .status-pill--cancelled { background: rgba(239, 68, 68, 0.2); color: #b91c1c; }
