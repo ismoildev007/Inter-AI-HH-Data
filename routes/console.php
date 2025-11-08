@@ -230,5 +230,5 @@ Schedule::command('telegram:vacancies:requeue-failed')
 
 
 Schedule::command('hh:telegram-send-negotiations')
-    ->dailyAt('18:30')
+    ->dailyAt('13:00')
     ->withoutOverlapping();
