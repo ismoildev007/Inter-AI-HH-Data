@@ -59,6 +59,11 @@
                         <span class="hint">Credits left for automation</span>
                     </div>
                     <div class="subscription-grid__item">
+                        <span class="label">Starts</span>
+                        <span class="value">{{ optional($subscription->starts_at)->format('M d, Y') ?? '—' }}</span>
+                        <span class="hint">{{ optional($subscription->starts_at)->diffForHumans() }}</span>
+                    </div>
+                    <div class="subscription-grid__item">
                         <span class="label">Ends</span>
                         <span class="value">{{ optional($subscription->ends_at)->format('M d, Y') ?? '—' }}</span>
                         <span class="hint">{{ optional($subscription->ends_at)->diffForHumans() }}</span>
@@ -131,15 +136,15 @@
 
                 <div class="sidecard-info mt-4">
                     <div class="sidecard-info__item">
-                        <span class="label">Customer ID</span>
+                        <span class="label">User DB ID</span>
                         <span class="value">#{{ $subscription->user_id }}</span>
                     </div>
                     <div class="sidecard-info__item">
-                        <span class="label">Plan ID</span>
+                        <span class="label">Plan DB ID</span>
                         <span class="value">#{{ $subscription->plan_id ?? '—' }}</span>
                     </div>
                     <div class="sidecard-info__item">
-                        <span class="label">Subscription ID</span>
+                        <span class="label">Subscription DB ID</span>
                         <span class="value">#{{ $subscription->id }}</span>
                     </div>
                 </div>

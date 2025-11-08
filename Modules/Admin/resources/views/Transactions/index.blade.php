@@ -34,17 +34,17 @@
             <div class="transactions-stat-card">
                 <span class="label">Active</span>
                 <span class="value text-success">{{ number_format($stats['active'] ?? 0) }}</span>
-                <span class="hint">Payment status active</span>
+                <span class="hint">Currently delivering access</span>
             </div>
             <div class="transactions-stat-card">
                 <span class="label">Pending</span>
                 <span class="value text-warning">{{ number_format($stats['pending'] ?? 0) }}</span>
-                <span class="hint">Awaiting completion</span>
+                <span class="hint">Awaiting confirmation</span>
             </div>
             <div class="transactions-stat-card">
-                <span class="label">Failed</span>
-                <span class="value text-danger">{{ number_format($stats['failed'] ?? 0) }}</span>
-                <span class="hint">Require follow-up</span>
+                <span class="label">Expired</span>
+                <span class="value text-muted">{{ number_format($stats['expired'] ?? 0) }}</span>
+                <span class="hint">Failed or lapsed</span>
             </div>
         </div>
     </div>
@@ -69,7 +69,7 @@
                 <div class="form-floating">
                     <select class="form-select" name="status" id="transactions-status">
                         @php
-                            $statusOptions = ['all' => 'All statuses', 'success' => 'Success', 'pending' => 'Pending', 'failed' => 'Failed', 'cancelled' => 'Cancelled'];
+                            $statusOptions = ['all' => 'All statuses', 'active' => 'Active', 'pending' => 'Pending', 'expired' => 'Expired', 'cancelled' => 'Cancelled'];
                         @endphp
                         @foreach($statusOptions as $value => $label)
                             <option value="{{ $value }}" {{ $status === $value ? 'selected' : '' }}>
@@ -157,7 +157,13 @@
                         </span>
                     </div>
                     <div class="cell cell--status">
-                        <span class="txn-status-pill txn-status-pill--{{ $tx->payment_status ?? 'unknown' }}">{{ ucfirst($tx->payment_status ?? 'unknown') }}</span>
+                        @php
+                            $raw = strtolower($tx->payment_status ?? '');
+                            $norm = in_array($raw, ['active','success']) ? 'active'
+                                : ($raw === 'pending' ? 'pending'
+                                : ($raw === 'cancelled' ? 'cancelled' : 'expired'));
+                        @endphp
+                        <span class="status-pill status-pill--{{ $norm }}">{{ ucfirst($norm) }}</span>
                     </div>
                     <div class="cell">
                         <span class="method">{{ ucfirst($tx->payment_method ?? '—') }}</span>
@@ -393,25 +399,26 @@
         font-weight: 600;
         color: #2563eb;
     }
-    .txn-status-pill {
+    /* Align status pill styles with Subscriptions */
+    .status-pill {
         display: inline-flex;
         align-items: center;
         justify-content: center;
         padding: 4px 12px;
         border-radius: 999px;
         font-size: 0.7rem;
-        text-transform: uppercase;
         font-weight: 600;
+        text-transform: uppercase;
         letter-spacing: 0.14em;
-        background: rgba(148, 163, 184, 0.22);
         color: #0f172a;
+        background: rgba(148, 163, 184, 0.2);
         max-width: 160px;
         min-width: 0;
     }
-    .txn-status-pill--success { background: rgba(20, 184, 166, 0.2); color: #047857; }
-    .txn-status-pill--pending { background: rgba(251, 191, 36, 0.25); color: #b45309; }
-    .txn-status-pill--failed { background: rgba(239, 68, 68, 0.22); color: #b91c1c; }
-    .txn-status-pill--cancelled { background: rgba(148, 163, 184, 0.22); color: #475569; }
+    .status-pill--active { background: rgba(20, 184, 166, 0.18); color: #047857; }
+    .status-pill--pending { background: rgba(251, 191, 36, 0.2); color: #b45309; }
+    .status-pill--expired { background: rgba(148, 163, 184, 0.2); color: #4b5563; }
+    .status-pill--cancelled { background: rgba(239, 68, 68, 0.2); color: #b91c1c; }
     .amount {
         font-weight: 600;
         color: #0f172a;

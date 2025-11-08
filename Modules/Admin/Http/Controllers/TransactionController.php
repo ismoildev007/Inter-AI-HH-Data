@@ -56,7 +56,18 @@ class TransactionController extends Controller
         }
 
         if ($status !== 'all' && $status !== '') {
-            $query->whereRaw('LOWER(COALESCE(payment_status, \'\')) = ?', [$status]);
+            // Align filtering with subscription-like statuses
+            if ($status === 'active') {
+                $query->whereIn('payment_status', ['active', 'success']);
+            } elseif ($status === 'expired') {
+                $query->whereIn('payment_status', ['expired', 'failed']);
+            } elseif ($status === 'cancelled') {
+                $query->where('payment_status', 'cancelled');
+            } elseif ($status === 'pending') {
+                $query->where('payment_status', 'pending');
+            } else {
+                $query->whereRaw('LOWER(COALESCE(payment_status, \'\')) = ?', [$status]);
+            }
         }
 
         if ($method !== 'all' && $method !== '') {
@@ -96,9 +107,10 @@ class TransactionController extends Controller
 
         $stats = [
             'total' => (clone $baseAggregate)->count(),
-            'active' => (clone $baseAggregate)->where('payment_status', 'active')->count(),
+            'active' => (clone $baseAggregate)->whereIn('payment_status', ['active', 'success'])->count(),
             'pending' => (clone $baseAggregate)->where('payment_status', 'pending')->count(),
-            'failed' => (clone $baseAggregate)->where('payment_status', 'failed')->count(),
+            'expired' => (clone $baseAggregate)->whereIn('payment_status', ['expired', 'failed'])->count(),
+            'cancelled' => (clone $baseAggregate)->where('payment_status', 'cancelled')->count(),
         ];
 
         $totalVolume = (clone $baseAggregate)->sum('amount');

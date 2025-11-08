@@ -24,8 +24,14 @@
                     <div>
                         <span class="badge bg-soft-primary text-primary text-uppercase fw-semibold">Payment overview</span>
                         <!-- <h2 class="transaction-summary__title mt-3 mb-2">{{ $transaction->transaction_id ?? 'Internal ID #'.$transaction->id }}</h2> -->
+                        @php
+                            $raw = strtolower($transaction->payment_status ?? '');
+                            $norm = in_array($raw, ['active','success']) ? 'active'
+                                : ($raw === 'pending' ? 'pending'
+                                : ($raw === 'cancelled' ? 'cancelled' : 'expired'));
+                        @endphp
                         <p class="transaction-summary__subtitle mb-0">
-                            {{ ucfirst($transaction->payment_status ?? 'unknown') }} • {{ optional($transaction->create_time)->format('M d, Y • H:i') ?? 'N/A' }}
+                            {{ ucfirst($norm) }} • {{ optional($transaction->create_time)->format('M d, Y • H:i') ?? 'N/A' }}
                         </p>
                     </div>
                     <div class="transaction-summary__amount">
