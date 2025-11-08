@@ -55,7 +55,7 @@ jobs:
             php artisan route:cache
             php artisan optimize:clear
 
-            sudo apt install php-bcmath
+            # sudo apt install php-bcmath
 
             sudo systemctl restart php8.3-fpm
             sudo systemctl restart nginx
@@ -93,7 +93,7 @@ jobs:
             php artisan route:cache
             php artisan optimize:clear
 
-            sudo apt install php-bcmath
+            # sudo apt install php-bcmath
 
             sudo systemctl restart php8.3-fpm
             sudo systemctl restart nginx
