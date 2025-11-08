@@ -178,7 +178,7 @@
                         <span class="amount">{{ number_format((float) $tx->amount, 2, '.', ' ') }} {{ strtoupper($tx->currency ?? 'UZS') }}</span>
                     </div>
                     <div class="cell text-end">
-                        <span class="date">{{ optional($tx->create_time)->format('M d, Y • H:i') ?? '—' }}</span>
+                        <span class="date">{{ optional($tx->created_at)->format('M d, Y • H:i') ?? '—' }}</span>
                     </div>
                 </a>
             @empty

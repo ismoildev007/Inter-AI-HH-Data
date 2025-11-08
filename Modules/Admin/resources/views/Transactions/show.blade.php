@@ -31,7 +31,7 @@
                                 : ($raw === 'cancelled' ? 'cancelled' : 'expired'));
                         @endphp
                         <p class="transaction-summary__subtitle mb-0">
-                            {{ ucfirst($norm) }} • {{ optional($transaction->create_time)->format('M d, Y • H:i') ?? 'N/A' }}
+                            {{ ucfirst($norm) }} • {{ optional($transaction->created_at)->format('M d, Y • H:i') ?? 'N/A' }}
                         </p>
                     </div>
                     <div class="transaction-summary__amount">
@@ -81,7 +81,7 @@
                     </div>
                 </div>
 
-                <div class="transaction-timeline mt-4">
+                <!-- <div class="transaction-timeline mt-4">
                     <h6 class="text-uppercase text-muted fw-semibold mb-3">Lifecycle</h6>
                     <div class="timeline-cards">
                         @foreach($timeline as $item)
@@ -92,11 +92,26 @@
                             </div>
                         @endforeach
                     </div>
+                </div> -->
+            </div>
+        </div>
+
+        <div class="card transaction-created mt-3">
+            <div class="card-header bg-white border-0">
+                <h6 class="mb-0 text-uppercase text-muted fw-semibold">Created</h6>
+            </div>
+            <div class="card-body">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <div class="fw-semibold">{{ optional($transaction->created_at)->format('M d, Y • H:i') ?? '—' }}</div>
+                        <div class="text-muted small">{{ optional($transaction->created_at)->diffForHumans() }}</div>
+                    </div>
+                    <div class="text-muted">ID #{{ $transaction->id }}</div>
                 </div>
             </div>
         </div>
 
-        <div class="card transaction-reason mt-3">
+        <!-- <div class="card transaction-reason mt-3">
             <div class="card-header bg-white border-0">
                 <h6 class="mb-0 text-uppercase text-muted fw-semibold">Notes &amp; Reason</h6>
             </div>
@@ -109,7 +124,7 @@
                     <div class="text-muted">No additional notes recorded for this transaction.</div>
                 @endif
             </div>
-        </div>
+        </div> -->
     </div>
     <div class="col-xxl-4">
         <div class="card transaction-sidecard">
