@@ -227,3 +227,8 @@ Artisan::command('telegram:vacancies:requeue-failed {--limit=500}', function () 
 Schedule::command('telegram:vacancies:requeue-failed')
     ->everyMinute()
     ->withoutOverlapping();
+
+
+Schedule::command('hh:telegram-send-negotiations')
+    ->dailyAt('18:30')
+    ->withoutOverlapping();

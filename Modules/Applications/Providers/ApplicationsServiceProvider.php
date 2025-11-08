@@ -44,10 +44,11 @@ class ApplicationsServiceProvider extends ServiceProvider
     {
         $this->commands([
             \Modules\Applications\Console\Commands\SyncHhNegotiationsCommand::class,
+            \Modules\Applications\Console\Commands\TelegramSendNegotiationsCommand::class,
         ]);
     }
 
-    
+
 
     /**
      * Register translations.

@@ -24,6 +24,7 @@ class Application extends Model
         'external_id',
         'notes',
         'hh_status',
+        'notify_status',
     ];
 
     protected $casts = [
