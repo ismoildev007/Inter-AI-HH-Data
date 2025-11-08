@@ -59,6 +59,7 @@ class ClickController extends Controller
 
         return response()->json($response);
     }
+
     public function complete(Request $request)
     {
         Log::info('CLICK COMPLETE: started', [
@@ -83,6 +84,32 @@ class ClickController extends Controller
                     'merchant_prepare_id' => $request->merchant_prepare_id,
                 ]);
                 return response()->json(['error' => -1, 'error_note' => 'Invalid signature']);
+            }
+
+            if (isset($request->error) && (int)$request->error !== 0) {
+                Log::warning('CLICK COMPLETE: payment failed on Click side', [
+                    'error' => $request->error,
+                    'error_note' => $request->error_note ?? 'Unknown error',
+                    'transaction_id' => $request->merchant_trans_id,
+                ]);
+            
+                // Transactionni "failed" deb yangilaymiz
+                $transaction = Transaction::find($request->merchant_trans_id);
+                if ($transaction) {
+                    $transaction->update([
+                        'payment_status' => 'failed',
+                        'state' => -1,
+                        'sign_time' => now(),
+                    ]);
+                }
+            
+                return response()->json([
+                    'click_trans_id' => $request->click_trans_id ?? null,
+                    'merchant_trans_id' => (string)($transaction->id ?? $request->merchant_trans_id),
+                    'merchant_confirm_id' => (int)($transaction->id ?? 0),
+                    'error' => $request->error,
+                    'error_note' => $request->error_note ?? 'Payment failed on Click side',
+                ]);
             }
 
             // 2) Transactionni lock bilan oling (merchant_prepare_id birinchi navbatda, keyin merchant_trans_id)
@@ -118,7 +145,7 @@ class ClickController extends Controller
             }
 
             // amountni aniqlik bilan taqqoslang (float unsafe)
-            if (abs((float)$transaction->amount - (float)$request->amount) > 0.0001) {
+            if ((int)round($transaction->amount * 100) !== (int)round($request->amount * 100)) {
                 Log::warning('Amount mismatch on complete', [
                     'tx_amount' => (string)$transaction->amount,
                     'req_amount' => (string)$request->amount
