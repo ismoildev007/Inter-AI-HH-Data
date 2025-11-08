@@ -141,10 +141,10 @@
                         </span>
                     </div>
                     <div class="cell">
-                        <span class="date">{{ optional($subscription->starts_at)->format('M d, Y') ?? '—' }}</span>
+                        <span class="date">{{ !empty($subscription->starts_at) ? \Carbon\Carbon::parse($subscription->starts_at)->format('M d, Y') : '—' }}</span>
                     </div>
                     <div class="cell">
-                        <span class="date">{{ optional($subscription->ends_at)->format('M d, Y') ?? '—' }}</span>
+                        <span class="date">{{ !empty($subscription->ends_at) ? \Carbon\Carbon::parse($subscription->ends_at)->format('M d, Y') : '—' }}</span>
                     </div>
                     <div class="cell text-end">
                         <span class="credits">{{ number_format((int) $subscription->remaining_auto_responses) }}</span>

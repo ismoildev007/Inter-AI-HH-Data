@@ -26,7 +26,7 @@
                         <h2 class="subscription-summary__title mt-3 mb-2">{{ $subscription->plan?->name ?? 'No plan' }}</h2>
                         <p class="subscription-summary__subtitle mb-0">
                             {{ ucfirst($subscription->status ?? 'unknown') }} •
-                            Started {{ optional($subscription->starts_at)->format('M d, Y') ?? '—' }}
+                            Started {{ optional($startsAt)->format('M d, Y') ?? '—' }}
                         </p>
                     </div>
                     <div class="subscription-summary__status">
@@ -60,13 +60,13 @@
                     </div>
                     <div class="subscription-grid__item">
                         <span class="label">Starts</span>
-                        <span class="value">{{ optional($subscription->starts_at)->format('M d, Y') ?? '—' }}</span>
-                        <span class="hint">{{ optional($subscription->starts_at)->diffForHumans() }}</span>
+                        <span class="value">{{ optional($startsAt)->format('M d, Y') ?? '—' }}</span>
+                        <span class="hint">{{ optional($startsAt)->diffForHumans() }}</span>
                     </div>
                     <div class="subscription-grid__item">
                         <span class="label">Ends</span>
-                        <span class="value">{{ optional($subscription->ends_at)->format('M d, Y') ?? '—' }}</span>
-                        <span class="hint">{{ optional($subscription->ends_at)->diffForHumans() }}</span>
+                        <span class="value">{{ optional($endsAt)->format('M d, Y') ?? '—' }}</span>
+                        <span class="hint">{{ optional($endsAt)->diffForHumans() }}</span>
                     </div>
                 </div>
 

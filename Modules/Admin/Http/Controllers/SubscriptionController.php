@@ -85,11 +85,15 @@ class SubscriptionController extends Controller
             $query->latest();
         }]);
 
+        // Parse dates without relying on model casts
+        $startsAt = !empty($subscription->starts_at) ? Carbon::parse($subscription->starts_at) : null;
+        $endsAt = !empty($subscription->ends_at) ? Carbon::parse($subscription->ends_at) : null;
+
         $timeline = collect([
-            'Starts' => optional($subscription->starts_at)->format('M d, Y'),
-            'Ends' => optional($subscription->ends_at)->format('M d, Y'),
-            'Renewal in' => $subscription->ends_at
-                ? Carbon::now()->diffForHumans($subscription->ends_at, ['parts' => 2, 'short' => true, 'syntax' => Carbon::DIFF_ABSOLUTE])
+            'Starts' => $startsAt?->format('M d, Y'),
+            'Ends' => $endsAt?->format('M d, Y'),
+            'Renewal in' => $endsAt
+                ? Carbon::now()->diffForHumans($endsAt, ['parts' => 2, 'short' => true, 'syntax' => Carbon::DIFF_ABSOLUTE])
                 : '—',
         ]);
 
@@ -102,7 +106,8 @@ class SubscriptionController extends Controller
             'subscription' => $subscription,
             'timeline' => $timeline,
             'autoResponseUtilization' => $autoResponseUtilization,
+            'startsAt' => $startsAt,
+            'endsAt' => $endsAt,
         ]);
     }
 }
-
