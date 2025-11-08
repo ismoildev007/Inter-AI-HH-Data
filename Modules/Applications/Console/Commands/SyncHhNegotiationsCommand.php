@@ -126,12 +126,8 @@ class SyncHhNegotiationsCommand extends Command
                                 $vacancyTitle = trim($vacancy->title ?? 'Vacancy');
                                 $lang = $user->language ?? 'ru';
 
-                                // Determine if it's rejection or offer/invitation
                                 $rejectionStates = ['discard', 'rejected', 'discarded', 'declined', 'refusal'];
-                                $offerStates = ['offer', 'invitation', 'invited', 'interview', 'interview_scheduled'];
-
                                 $isRejection = in_array(strtolower($stateId), $rejectionStates, true);
-                                $isOffer = in_array(strtolower($stateId), $offerStates, true);
 
                                 if ($isRejection) {
                                     $text = match ($lang) {
@@ -139,26 +135,11 @@ class SyncHhNegotiationsCommand extends Command
                                         'ru' => "❌ Получен отказ по вакансии *{$vacancyTitle}*!\n\nПосмотреть детали в приложении👇",
                                         default => "❌ You received a rejection for *{$vacancyTitle}*!\n\nOpen the app for details👇",
                                     };
-                                } elseif ($isOffer) {
+                                } else {
                                     $text = match ($lang) {
                                         'uz' => "✅ *{$vacancyTitle}* vakansiyasi bo'yicha taklif oldingiz!\n\nBatafsil ma'lumotni ilovada ko'rishingiz mumkin👇",
                                         'ru' => "✅ Получено предложение по вакансии *{$vacancyTitle}*!\n\nПосмотреть детали в приложении👇",
                                         default => "✅ You received an offer for *{$vacancyTitle}*!\n\nOpen the app for details👇",
-                                    };
-                                } else {
-                                    $statusLabel = match (strtolower($stateId)) {
-                                        'interview', 'interview_scheduled' => 'Interview',
-                                        'invitation', 'invited'            => 'Invitation',
-                                        'offer'                             => 'Offer',
-                                        'hired'                             => 'Hired',
-                                        'assessments', 'assessment', 'test'=> 'Assessment',
-                                        default                             => ucfirst($stateId),
-                                    };
-
-                                    $text = match ($lang) {
-                                        'uz' => "📣 *HH yangilanishi*\n\nSizning *\"{$vacancyTitle}\"* vakansiyasidagi holatingiz yangilandi.\n\nBatafsil ma'lumotni ilovada ko'rishingiz mumkin👇",
-                                        'ru' => "📣 *Обновление HH*\n\nВаш статус по вакансии *«{$vacancyTitle}»* изменился на:\n*{$statusLabel}*\n\nПосмотреть детали в приложении👇",
-                                        default => "📣 *HH Update*\n\nYour status for *\"{$vacancyTitle}\"* changed to:\n*{$statusLabel}*\n\nOpen the app for details👇",
                                     };
                                 }
 
@@ -193,7 +174,7 @@ class SyncHhNegotiationsCommand extends Command
                                     'chat_id'   => $chatId,
                                     'vacancy'   => $vacancyTitle,
                                     'new_state' => $stateId,
-                                    'type'      => $isRejection ? 'rejection' : ($isOffer ? 'offer' : 'general'),
+                                    'type'      => $isRejection ? 'rejection' : 'offer',
                                 ]);
 
                             } catch (\Throwable $e) {
