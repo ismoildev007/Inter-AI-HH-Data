@@ -15,8 +15,9 @@ class BillingDashboardController extends Controller
 {
     public function index()
     {
-        $successfulTransactions = Transaction::query()
-            ->where('payment_status', 'success');
+        // Treat both 'success' and 'active' as paid/active transactions
+        $paidTransactions = Transaction::query()
+            ->whereIn('payment_status', ['success', 'active']);
 
         $totalPlans = Plan::count();
 
@@ -30,7 +31,7 @@ class BillingDashboardController extends Controller
             ->get()
             ->keyBy('plan_id');
 
-        $planRevenueAggregates = (clone $successfulTransactions)
+        $planRevenueAggregates = (clone $paidTransactions)
             ->join('subscriptions', 'transactions.subscription_id', '=', 'subscriptions.id')
             ->whereNotNull('subscriptions.plan_id')
             ->select([
@@ -41,7 +42,7 @@ class BillingDashboardController extends Controller
             ->get()
             ->keyBy('plan_id');
 
-        $planUserSpendAggregates = (clone $successfulTransactions)
+        $planUserSpendAggregates = (clone $paidTransactions)
             ->join('subscriptions', 'transactions.subscription_id', '=', 'subscriptions.id')
             ->whereNotNull('subscriptions.plan_id')
             ->select([
@@ -53,12 +54,25 @@ class BillingDashboardController extends Controller
             ->groupBy('subscriptions.plan_id', 'transactions.user_id')
             ->get();
 
+        // Only active purchases per plan (status in ['success','active'])
+        $planPurchaseAggregates = (clone $paidTransactions)
+            ->join('subscriptions', 'transactions.subscription_id', '=', 'subscriptions.id')
+            ->whereNotNull('subscriptions.plan_id')
+            ->select([
+                'subscriptions.plan_id as plan_id',
+                DB::raw('COUNT(*) as purchases_count'),
+                DB::raw('COUNT(DISTINCT transactions.user_id) as unique_users_count'),
+            ])
+            ->groupBy('subscriptions.plan_id')
+            ->get()
+            ->keyBy('plan_id');
+
         $totalPayingUsers = $planUserSpendAggregates->pluck('user_id')->unique()->count();
         $totalSubscriptions = $planSubscriptionAggregates->sum('subscriptions_count');
         $overallRevenue = $planRevenueAggregates->sum('total_amount');
 
         $plans = Plan::all()->keyBy('id');
-        $planIds = $planSubscriptionAggregates->keys()
+        $planIds = $planPurchaseAggregates->keys()
             ->merge($planRevenueAggregates->keys())
             ->unique()
             ->filter()
@@ -66,7 +80,7 @@ class BillingDashboardController extends Controller
 
         $userIds = $planUserSpendAggregates->pluck('user_id')->unique();
 
-        $topMonthlyPayers = (clone $successfulTransactions)
+        $topMonthlyPayers = (clone $paidTransactions)
             ->select([
                 'user_id',
                 DB::raw('SUM(amount) as total_amount'),
@@ -79,7 +93,7 @@ class BillingDashboardController extends Controller
             ->limit(6)
             ->get();
 
-        $topLifetimePayers = (clone $successfulTransactions)
+        $topLifetimePayers = (clone $paidTransactions)
             ->select([
                 'user_id',
                 DB::raw('SUM(amount) as total_amount'),
@@ -103,9 +117,9 @@ class BillingDashboardController extends Controller
             ->get()
             ->keyBy('id');
 
-        $planOverview = $planIds->map(function ($planId) use ($plans, $planSubscriptionAggregates, $planRevenueAggregates) {
+        $planOverview = $planIds->map(function ($planId) use ($plans, $planPurchaseAggregates, $planRevenueAggregates) {
             $plan = $plans->get($planId);
-            $subscriptionData = $planSubscriptionAggregates->get($planId);
+            $purchaseData = $planPurchaseAggregates->get($planId);
             $revenueData = $planRevenueAggregates->get($planId);
 
             return [
@@ -113,8 +127,9 @@ class BillingDashboardController extends Controller
                 'name' => $plan?->name ?? 'Unknown Plan',
                 'price' => (float) ($plan?->price ?? 0),
                 'fake_price' => (float) ($plan?->fake_price ?? 0),
-                'subscriptions' => (int) ($subscriptionData->subscriptions_count ?? 0),
-                'unique_users' => (int) ($subscriptionData->unique_users_count ?? 0),
+                // Use only active purchases for counts shown in the card
+                'subscriptions' => (int) ($purchaseData->purchases_count ?? 0),
+                'unique_users' => (int) ($purchaseData->unique_users_count ?? 0),
                 'revenue' => (float) ($revenueData->total_amount ?? 0),
             ];
         })->values();
