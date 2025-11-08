@@ -158,9 +158,10 @@
             font-size: 0.85rem;
         }
 
-        .app-show-stat-pill.approved { background: rgba(60, 214, 133, 0.12); color: #25a566; }
-        .app-show-stat-pill.rejected { background: rgba(248, 112, 112, 0.14); color: #d65454; }
-        .app-show-stat-pill.pending { background: rgba(249, 188, 63, 0.16); color: #ba7c0d; }
+        /* Darker, high-contrast status backgrounds with white text */
+        .app-show-stat-pill.approved { background: rgba(34, 197, 94, 0.85); color: #fff; }
+        .app-show-stat-pill.rejected { background: rgba(239, 68, 68, 0.85); color: #fff; }
+        .app-show-stat-pill.pending  { background: rgba(245, 158, 11, 0.85); color: #fff; }
 
         .app-show-sections {
             margin: 1.5rem 1.5rem 2rem;
