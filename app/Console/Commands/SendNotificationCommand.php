@@ -122,19 +122,25 @@ class SendNotificationCommand extends Command
 
                 try {
                     $langCode = $user->language ?? 'ru';
-                    $vacancyCount = Vacancy::count();
 
-                    if ($user->language === 'uz') {
-                        $message = "Siz uchun hozirda *{$vacancyCount}* ta faol ish o‘rni mavjud 💼\n\nIlovaga kirib, sizga mos yangi takliflarni kuzatib boring — imkonni boy bermang! 🚀👇";
-                        $buttonText = "Dasturga Kirish";
-                    } elseif ($user->language === 'ru') {
-                        $message = "В системе сейчас доступно *{$vacancyCount}* активных вакансий 💼\n\nОткройте приложение и следите за новыми предложениями — не упустите свой шанс! 🚀👇";
-                        $buttonText = "Войти в программу";
-                    } else {
-                        $message = "There are currently *{$vacancyCount}* active job openings available 💼\n\nOpen the app and stay tuned for new opportunities that match your profile! 🚀👇";
-                        $buttonText = "Sign in";
+                    // Foydalanuvchining barcha rezyumelari uchun mos vakansiyalar sonini hisoblash
+                    $relevantVacancyCount = 0;
+                    foreach ($user->resumes as $resume) {
+                        $relevantVacancyCount += MatchResult::where('resume_id', $resume->id)
+                            ->distinct('vacancy_id')
+                            ->count('vacancy_id');
                     }
 
+                    if ($user->language === 'uz') {
+                        $message = "Sizning profilingiz uchun *{$relevantVacancyCount}* ta mos ish o'rni mavjud 💼\n\nIlovaga kirib, sizga mos yangi takliflarni kuzatib boring — imkonni boy bermang! 🚀👇";
+                        $buttonText = "Dasturga Kirish";
+                    } elseif ($user->language === 'ru') {
+                        $message = "Для вашего профиля доступно *{$relevantVacancyCount}* подходящих вакансий 💼\n\nОткройте приложение и следите за новыми предложениями — не упустите свой шанс! 🚀👇";
+                        $buttonText = "Войти в программу";
+                    } else {
+                        $message = "There are *{$relevantVacancyCount}* job openings that match your profile 💼\n\nOpen the app and stay tuned for new opportunities! 🚀👇";
+                        $buttonText = "Sign in";
+                    }
 
                     $user->tokens()->delete();
                     $token = $user->createToken('api_token', ['*'], now()->addDays(30))->plainTextToken;
@@ -156,7 +162,7 @@ class SendNotificationCommand extends Command
                         'reply_markup' => $inlineKeyboard,
                     ]);
 
-                    Log::info("📩 No-match info sent to user {$user->id} ({$vacancyCount} vacancies in system)");
+                    Log::info("📩 No-match info sent to user {$user->id} ({$relevantVacancyCount} relevant vacancies)");
                 } catch (\Throwable $e) {
                     Log::error("❌ Telegram send (no matches) failed for user {$user->id}: " . $e->getMessage());
                 }
