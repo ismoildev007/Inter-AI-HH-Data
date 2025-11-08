@@ -35,7 +35,7 @@ class VacancyMatchingController extends Controller
             })
             ->whereIn('match_results.resume_id', $resumeIds)
             ->orderByRaw('CASE WHEN applications.id IS NULL THEN 0 ELSE 1 END ASC')
-            ->orderByDesc('match_results.score_percent')
+            ->orderByDesc('vacancies.created_at')
             ->select('match_results.*')
             ->get();
 
@@ -54,7 +54,7 @@ class VacancyMatchingController extends Controller
                     })
                     ->whereIn('match_results.resume_id', $resumeIds)
                     ->orderByRaw('CASE WHEN applications.id IS NULL THEN 0 ELSE 1 END ASC')
-                    ->orderByDesc('match_results.score_percent')
+                    ->orderByDesc('vacancies.created_at')
                     ->select('match_results.*')
                     ->get();
             }
@@ -99,7 +99,7 @@ class VacancyMatchingController extends Controller
             })
             ->whereIn('match_results.resume_id', $resumeIds)
             ->orderByRaw('CASE WHEN applications.id IS NULL THEN 0 ELSE 1 END ASC')
-            ->orderByDesc('match_results.score_percent')
+            ->orderByDesc('vacancies.created_at')
             ->select('match_results.*')
             ->get();
 
