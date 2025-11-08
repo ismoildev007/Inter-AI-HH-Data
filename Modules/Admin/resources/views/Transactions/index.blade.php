@@ -32,6 +32,11 @@
                 <span class="hint">All-time processed</span>
             </div>
             <div class="transactions-stat-card">
+                <span class="label">Active Volume</span>
+                <span class="value">{{ number_format((float) ($activeVolume ?? 0), 2, '.', ' ') }} UZS</span>
+                <span class="hint">Currently active payments</span>
+            </div>
+            <div class="transactions-stat-card">
                 <span class="label">Active</span>
                 <span class="value text-success">{{ number_format($stats['active'] ?? 0) }}</span>
                 <span class="hint">Currently delivering access</span>

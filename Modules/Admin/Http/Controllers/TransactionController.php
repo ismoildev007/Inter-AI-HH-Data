@@ -114,6 +114,7 @@ class TransactionController extends Controller
         ];
 
         $totalVolume = (clone $baseAggregate)->sum('amount');
+        $activeVolume = (clone $baseAggregate)->whereIn('payment_status', ['active', 'success'])->sum('amount');
 
         $methods = Transaction::query()
             ->selectRaw('LOWER(payment_method) as method')
@@ -134,6 +135,7 @@ class TransactionController extends Controller
             'to' => $toDate?->format('Y-m-d') ?? '',
             'stats' => $stats,
             'totalVolume' => $totalVolume,
+            'activeVolume' => $activeVolume,
             'methods' => $methods,
         ]);
     }
