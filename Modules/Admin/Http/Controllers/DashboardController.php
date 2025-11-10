@@ -449,14 +449,14 @@ class DashboardController extends Controller
             ->limit(6)
             ->get();
 
-        $socialRadarLabels = ['TG Vacancies', 'HH Vacancies', 'TG Archived', 'HH Archived', 'Users', 'Resumes'];
+        $socialRadarLabels = ['TG Vacancies', 'HH Vacancies', 'TG Archived', 'HH Archived'];
         $socialRadarRaw = [
             (int) $telegramVacanciesCount,
             (int) $hhVacanciesCount,
             (int) $telegramArchiveVacanciesCount,
             (int) $hhArchiveVacanciesCount,
-            (int) $usersCount,
-            (int) $resumesCount,
+            
+            
         ];
 
         $socialRadar = [
