@@ -18,7 +18,7 @@ class AuthRepository
 
         return DB::transaction(function () use ($data) {
             $trialStart = now();
-            $trialEnd = $trialStart->copy()->addDays(3);
+            $trialEnd = $trialStart->copy()->addDays(30);
             //            if (User::where('email', $data['email'])->exists()) {
             //                return [
             //                    'status'  => 'error',
@@ -86,7 +86,7 @@ class AuthRepository
 
             // Initial credit balance
             $user->credit()->create([
-                'balance' => 100,
+                'balance' => 1000,
             ]);
 
 
