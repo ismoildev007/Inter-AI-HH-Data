@@ -837,16 +837,14 @@
                             
                             <td class="text-capitalize fw-semibold text-dark" data-label="Category">{{ $row->category ?: 'other' }}</td>
                             <td class="text-end fw-semibold" data-label="Vacancies">
-                                @if($currentFilter === 'all')
+                                @if($currentFilter === 'archived')
+                                    <span class="count-total">{{ number_format($row->archived ?? 0) }}</span>
+                                @else
                                     <span class="count-total">{{ number_format($row->total ?? $row->count) }}</span>
                                     <span class="text-muted">/</span>
                                     <span class="count-publish">{{ number_format($row->published ?? 0) }}</span>
                                     <span class="text-muted">/</span>
                                     <span class="count-archive">{{ number_format($row->archived ?? 0) }}</span>
-                                @elseif(in_array($currentFilter, ['telegram','hh'], true))
-                                    <span class="count-total">{{ number_format($row->published ?? 0) }}</span>
-                                @else
-                                    <span class="count-total">{{ number_format($row->archived ?? 0) }}</span>
                                 @endif
                             </td>
                         </tr>
