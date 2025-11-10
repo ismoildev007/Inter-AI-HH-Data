@@ -726,6 +726,13 @@
                         <span class="value value-archive">{{ number_format($archivedCount ?? 0) }}</span>
                         <span class="hint">Status = archive</span>
                     </div>
+                    @if(in_array($currentFilter, ['telegram','hh'], true))
+                        <div class="categories-stat-card">
+                            <span class="label">Barcha vakansiyalar</span>
+                            <span class="value">{{ number_format(($publishedCount ?? 0) + ($archivedCount ?? 0)) }}</span>
+                            <span class="hint">Publish + archive</span>
+                        </div>
+                    @endif
                 @endif
             </div>
         </div>
