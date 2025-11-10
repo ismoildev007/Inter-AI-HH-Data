@@ -115,7 +115,11 @@ class TransactionController extends Controller
         ];
 
         $totalVolume = (clone $baseAggregate)->sum('amount');
-        $completedVolume = (clone $baseAggregate)->whereIn('payment_status', ['completed', 'success', 'active'])->sum('amount');
+        // Completed Volume: include only transactions with payment_status=completed AND state=2
+        $completedVolume = (clone $baseAggregate)
+            ->where('payment_status', 'completed')
+            ->where('state', 2)
+            ->sum('amount');
 
         $methods = Transaction::query()
             ->selectRaw('LOWER(payment_method) as method')
