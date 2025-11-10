@@ -175,6 +175,18 @@
             color: #94a3b8;
         }
 
+        /* Status indicators */
+        .status-dot {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+        .status-dot.publish { background-color: #16a34a; }
+        .status-dot.archive { background-color: #dc2626; }
+
         .category-vacancies-card {
             margin: 1.5rem 1.5rem 2rem;
             border: none;
@@ -565,6 +577,11 @@
                             </td>
                             
                             <td class="fw-semibold text-dark" data-label="Title">
+                                @if(($vacancy->status ?? '') === \App\Models\Vacancy::STATUS_PUBLISH)
+                                    <span class="status-dot publish" title="Published"></span>
+                                @elseif(($vacancy->status ?? '') === \App\Models\Vacancy::STATUS_ARCHIVE)
+                                    <span class="status-dot archive" title="Archived"></span>
+                                @endif
                                 {{ $vacancy->title ?? '—' }}
                                 @if(($vacancy->status ?? '') === \App\Models\Vacancy::STATUS_QUEUED)
                                     <span class="badge bg-warning text-dark ms-2" title="Queued for delivery">queued</span>

@@ -145,6 +145,11 @@
         .categories-stat-card .value.value-publish { color: #16a34a; }
         .categories-stat-card .value.value-archive { color: #dc2626; }
 
+        /* Per-row vacancy counts */
+        .count-total { color: #0f172a; }
+        .count-publish { color: #16a34a; }
+        .count-archive { color: #dc2626; }
+
         .categories-stat-card .hint {
             display: block;
             margin-top: 8px;
@@ -831,7 +836,13 @@
                             </td>
                             
                             <td class="text-capitalize fw-semibold text-dark" data-label="Category">{{ $row->category ?: 'other' }}</td>
-                            <td class="text-end fw-semibold" data-label="Vacancies">{{ number_format($row->count) }}</td>
+                            <td class="text-end fw-semibold" data-label="Vacancies">
+                                <span class="count-total">{{ number_format($row->total ?? $row->count) }}</span>
+                                <span class="text-muted">/</span>
+                                <span class="count-publish">{{ number_format($row->published ?? 0) }}</span>
+                                <span class="text-muted">/</span>
+                                <span class="count-archive">{{ number_format($row->archived ?? 0) }}</span>
+                            </td>
                         </tr>
                     @empty
                         <tr>

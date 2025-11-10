@@ -575,30 +575,32 @@ class DashboardController extends Controller
 
         $categorizer = app(\Modules\TelegramChannel\Services\VacancyCategoryService::class);
         $catExpr = "COALESCE(NULLIF(category, ''), 'Other')";
-        $rowsRaw = DB::table('vacancies')
-            ->selectRaw($catExpr . ' as category, COUNT(*) as c')
+
+        // Base builder with date + source filters (no status filter here)
+        $baseAgg = DB::table('vacancies')
             ->when($dateFrom, function ($query) use ($dateFrom) {
                 $query->where('created_at', '>=', $dateFrom);
             })
             ->when($dateTo, function ($query) use ($dateTo) {
                 $query->where('created_at', '<=', $dateTo);
             })
-            // For Telegram and HH filters, only count published vacancies
-            ->when(in_array($filter, ['telegram', 'hh'], true), function ($query) {
-                $query->where('status', \App\Models\Vacancy::STATUS_PUBLISH);
-            })
             ->when($filter === 'telegram', function ($query) {
                 $query->whereRaw('LOWER(source) LIKE ?', ['telegram%']);
             })
             ->when($filter === 'hh', function ($query) {
                 $query->whereRaw('LOWER(source) LIKE ?', ['hh%']);
-            })
-            ->when($filter === 'archived', function ($query) {
-                $query->where('status', \App\Models\Vacancy::STATUS_ARCHIVE);
-            })
+            });
+
+        // Aggregate per category totals and status breakdown
+        $rowsRaw = (clone $baseAgg)
+            ->selectRaw($catExpr . ' as category')
+            ->selectRaw('COUNT(*) as total')
+            ->selectRaw("SUM(CASE WHEN status = '" . \App\Models\Vacancy::STATUS_PUBLISH . "' THEN 1 ELSE 0 END) as published")
+            ->selectRaw("SUM(CASE WHEN status = '" . \App\Models\Vacancy::STATUS_ARCHIVE . "' THEN 1 ELSE 0 END) as archived")
             ->groupBy(DB::raw($catExpr))
-            ->orderByDesc('c')
             ->get();
+
+        // Map to canonical categories and merge duplicates
         $rows = $rowsRaw
             ->map(function ($row) use ($categorizer) {
                 $canonical = $categorizer->categorize($row->category, null, '', $row->category);
@@ -606,22 +608,35 @@ class DashboardController extends Controller
                 return (object) [
                     'category' => $canonical,
                     'slug' => $slug,
-                    'count' => (int) $row->c,
-                    'c' => (int) $row->c,
+                    'total' => (int) ($row->total ?? 0),
+                    'published' => (int) ($row->published ?? 0),
+                    'archived' => (int) ($row->archived ?? 0),
                 ];
             })
             ->groupBy('category')
-            ->map(function ($group, $category) use ($categorizer) {
-                $total = $group->sum('count');
+            ->map(function ($group, $category) use ($categorizer, $filter) {
+                $total = $group->sum('total');
+                $published = $group->sum('published');
+                $archived = $group->sum('archived');
                 $slug = $categorizer->slugify($category);
+                // Which metric to use for sorting/count based on filter semantics
+                $countForFilter = match ($filter) {
+                    'telegram', 'hh' => $published,
+                    'archived' => $archived,
+                    default => $total,
+                };
                 return (object) [
                     'category' => $category,
                     'slug' => $slug,
-                    'count' => $total,
-                    'c' => $total,
+                    'total' => $total,
+                    'published' => $published,
+                    'archived' => $archived,
+                    'count' => $countForFilter,
                 ];
             })
-            ->sortByDesc('c')
+            // Hide categories with zero relevant count for current filter
+            ->filter(function ($row) { return ($row->count ?? 0) > 0; })
+            ->sortByDesc('count')
             ->values();
 
         if ($normalizedSearch !== null) {
@@ -754,7 +769,7 @@ class DashboardController extends Controller
         $canonical = $categorizer->fromSlug($category) ?? $categorizer->categorize($category, null, '', $category);
         $slug = $categorizer->slugify($canonical);
 
-        $query = Vacancy::query()->select(['id','title','category','created_at'])->orderByDesc('id');
+        $query = Vacancy::query()->select(['id','title','category','created_at','status'])->orderByDesc('id');
 
         if (mb_strtolower($canonical) === 'other') {
             $query->where(function($q){
