@@ -51,7 +51,7 @@
 @endphp
 
 <div class="dashboard-scene">
-    <div class="dashboard-hero">
+    <!-- <div class="dashboard-hero">
         <div class="dashboard-hero__meta">
             <span class="dashboard-hero__badge">
                 <i class="feather-activity"></i>
@@ -74,7 +74,7 @@
             </div>
 
         </div>
-    </div>
+    </div> -->
 
     <div class="dashboard-summary-grid">
         @foreach($summaryCards as $card)
