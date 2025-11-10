@@ -121,7 +121,7 @@ class ResumeService
                     - For example: (PHP Full-Stack Developer, Laravel Developer, Vue.js Developer, PHP, Laravel)
                     - For technical roles: use main languages/frameworks (e.g., PHP, Python, JavaScript, Java, C#, React, Node.js, etc.).
                     - For non-technical roles: use domain skills (e.g., Marketing, SMM, HR, Accounting, Graphic Design, Financial Analysis, Teaching, Project Management, etc.).
-                    - Do NOT include infrastructure/tools such as SQL, Git, CI/CD, Docker, etc.
+                    - Do NOT include infrastructure/tools such as SQL, Git, CI/CD, Docker, HTML, CSS, etc.
                     - Ensure skills are appended in the same comma-separated list, no extra text or brackets.
             - "cover_letter": Write a short, professional cover letter (5–7 sentences) focusing on three key areas that best suit the candidate listed above. Be polite, confident, concise, and literate. Always include the candidate's real name at the end, in a new paragraph, with the caption "Sincerely" and their name. The letter must be in Russian.
             - category:
