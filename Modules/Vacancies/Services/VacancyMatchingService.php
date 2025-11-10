@@ -31,77 +31,78 @@ class VacancyMatchingService
 
     public function matchResume(Resume $resume, $query): array
     {
-
-        Log::info('🚀 Job started', ['resume_id' => $resume->id, 'query' => $query]);
-        $start = microtime(true);
-
-        $latinQuery = TranslitHelper::toLatin($query);
-        $cyrilQuery = TranslitHelper::toCyrillic($query);
-        $translator = new GoogleTranslate();
-        $translator->setSource('auto');
-
-        $translations = [
-            'uz' => fn() => $translator->setTarget('uz')->translate("\"{$query}\""),
-            'ru' => fn() => $translator->setTarget('ru')->translate("\"{$query}\""),
-            'en' => fn() => $translator->setTarget('en')->translate("\"{$query}\""),
-        ];
-
-        $allVariants = collect([$query])
-            ->merge(array_map(fn($f) => $f(), $translations))
-            ->unique()
-            ->filter()
-            ->values();
-
-        $splitByComma = fn($v) => preg_split('/\s*,\s*/u', (string) $v);
-        $cleanText = fn($w) => mb_strtolower(trim(preg_replace('/[\"\'«»“”]/u', '', $w)), 'UTF-8');
-
-        $tokens = $allVariants
-            ->flatMap($splitByComma)
-            ->map($cleanText)
-            ->filter(fn($w) => mb_strlen($w) >= 2)
-            ->unique()
-            ->take(8)
-            ->values();
-
-        Log::info('🧩 Tokens parsed', ['tokens' => $tokens->all()]);
-
-        $phrases = $allVariants
-            ->flatMap($splitByComma)
-            ->map($cleanText)
-            ->filter(fn($s) => mb_strlen($s) >= 3 && str_contains($s, ' '))
-            ->unique()
-            ->take(4)
-            ->values();
-
-        $searchQuery = $latinQuery ?: $cyrilQuery;
-        $tsTerms = [...$phrases, ...$tokens];
-        $mustPair = count($tokens) >= 2 ? ['(' . $tokens[0] . ' ' . $tokens[1] . ')'] : [];
-        $webParts = array_merge($mustPair, $tsTerms);
-        $tsQuery = !empty($webParts)
-            ? implode(' OR ', array_map(fn($t) => str_contains($t, ' ') ? '"' . str_replace('"', '', $t) . '"' : $t, $webParts))
-            : (string) $searchQuery;
-
         try {
-            $guessedCategory = app(VacancyCategoryService::class)
-                ->categorize('', (string) ($resume->title ?? ''), (string) ($resume->description ?? ''), '');
-            $guessedCategory = (is_string($guessedCategory) && !in_array(mb_strtolower($guessedCategory), ['other', ''], true))
-                ? $guessedCategory
-                : null;
-        } catch (\Throwable) {
+            $start = microtime(true);
+
+            $latinQuery = TranslitHelper::toLatin($query);
+            $cyrilQuery = TranslitHelper::toCyrillic($query);
+            $translator = new GoogleTranslate();
+            $translator->setSource('auto');
+
+            $translations = [
+                'uz' => fn() => $translator->setTarget('uz')->translate("\"{$query}\""),
+                'ru' => fn() => $translator->setTarget('ru')->translate("\"{$query}\""),
+                'en' => fn() => $translator->setTarget('en')->translate("\"{$query}\""),
+            ];
+
+            $allVariants = collect([$query])
+                ->merge(array_map(fn($f) => $f(), $translations))
+                ->unique()
+                ->filter()
+                ->values();
+
+            $splitByComma = fn($v) => preg_split('/\s*,\s*/u', (string) $v);
+            $cleanText = fn($w) => mb_strtolower(trim(preg_replace('/[\"\'«»""]/u', '', $w)), 'UTF-8');
+
+            $tokens = $allVariants
+                ->flatMap($splitByComma)
+                ->map($cleanText)
+                ->filter(fn($w) => mb_strlen($w) >= 2)
+                ->unique()
+                ->take(8)
+                ->values();
+
+            $phrases = $allVariants
+                ->flatMap($splitByComma)
+                ->map($cleanText)
+                ->filter(fn($s) => mb_strlen($s) >= 3 && str_contains($s, ' '))
+                ->unique()
+                ->take(4)
+                ->values();
+
+            $searchQuery = $latinQuery ?: $cyrilQuery;
+            $tsTerms = [...$phrases, ...$tokens];
+            $mustPair = count($tokens) >= 2 ? ['(' . $tokens[0] . ' ' . $tokens[1] . ')'] : [];
+            $webParts = array_merge($mustPair, $tsTerms);
+            $tsQuery = !empty($webParts)
+                ? implode(' OR ', array_map(fn($t) => str_contains($t, ' ') ? '"' . str_replace('"', '', $t) . '"' : $t, $webParts))
+                : (string) $searchQuery;
+
             $guessedCategory = null;
-        }
+            try {
+                $guessedCategory = app(VacancyCategoryService::class)
+                    ->categorize('', (string) ($resume->title ?? ''), (string) ($resume->description ?? ''), '');
+                $guessedCategory = (is_string($guessedCategory) && !in_array(mb_strtolower($guessedCategory), ['other', ''], true))
+                    ? $guessedCategory
+                    : null;
+            } catch (\Throwable $e) {
+                Log::error('❌ Error categorizing resume', [
+                    'resume_id' => $resume->id,
+                    'error' => $e->getMessage()
+                ]);
+            }
 
-        $resumeCategory = $resume->category ?? null;
-        $techCategories = [
-            "IT and Software Development",
-            "Data Science and Analytics",
-            "QA and Testing",
-            "DevOps and Cloud Engineering",
-            "UI/UX and Product Design"
-        ];
-        $isTech = in_array($resumeCategory, $techCategories, true);
+            $resumeCategory = $resume->category ?? null;
+            $techCategories = [
+                "IT and Software Development",
+                "Data Science and Analytics",
+                "QA and Testing",
+                "DevOps and Cloud Engineering",
+                "UI/UX and Product Design"
+            ];
+            $isTech = in_array($resumeCategory, $techCategories, true);
 
-        $baseSql = "
+            $baseSql = "
             SELECT
                 v.id, v.title, v.description, v.source, v.external_id, v.category,
                 CASE
@@ -115,31 +116,22 @@ class VacancyMatchingService
               AND v.id NOT IN (SELECT vacancy_id FROM match_results WHERE resume_id = ?)
         ";
 
-        $params = [$tsQuery, $resume->id];
+            $params = [$tsQuery, $resume->id];
 
-        Log::info('🔍 [SEARCH QUERY GENERATED]', [
-            'tsQuery' => $tsQuery,
-            'tokens' => $tokens->all(),
-            'phrases' => $phrases->all(),
-            'query_variants' => $allVariants->all(),
-        ]);
+            if ($isTech) {
+                $titleParts = collect(explode(',', (string) ($resume->title ?? '')))
+                    ->map(fn($t) => trim($t))
+                    ->filter()
+                    ->values();
 
-        if ($isTech) {
-            // 🔧 NEW: title ni vergul bilan bo‘lib olish
-            $titleParts = collect(explode(',', (string) ($resume->title ?? '')))
-                ->map(fn($t) => trim($t))
-                ->filter()
-                ->values();
+                $searchTokens = $tokens->merge($titleParts)->unique()->values();
 
-            // eski tokenlar bilan birga title qismlarini ham qo‘shamiz
-            $searchTokens = $tokens->merge($titleParts)->unique()->values();
+                $titleCondition = $searchTokens
+                    ->map(fn($t) => "LOWER(v.title) LIKE '%" . addslashes(mb_strtolower($t)) . "%'")
+                    ->implode(' OR ');
 
-            $titleCondition = $searchTokens
-                ->map(fn($t) => "LOWER(v.title) LIKE '%" . addslashes(mb_strtolower($t)) . "%'")
-                ->implode(' OR ');
-
-            if ($titleCondition) {
-                $baseSql .= " AND (
+                if ($titleCondition) {
+                    $baseSql .= " AND (
                     (
                         v.category IN ('IT and Software Development', 'Data Science and Analytics', 'QA and Testing', 'DevOps and Cloud Engineering', 'UI/UX and Product Design')
                         AND (
@@ -149,201 +141,163 @@ class VacancyMatchingService
                         )
                     )
                 )";
-                $params[] = $tsQuery;
-
-                Log::info('💻 [TECH MODE] Title va vergul bilan ajratilgan qismlar orqali qidirish ishlatilmoqda', [
-                    'category' => $resumeCategory,
-                    'title_condition' => $titleCondition,
-                    'tsQuery_used' => $tsQuery,
-                ]);
+                    $params[] = $tsQuery;
+                }
             } else {
-                Log::info('💻 [TECH MODE] Tokenlar bo‘sh, title condition yaratilmagan', [
-                    'category' => $resumeCategory,
-                ]);
+                if ($resumeCategory) {
+                    $baseSql .= " AND v.category = ?";
+                    $params[] = $resumeCategory;
+                } elseif ($guessedCategory) {
+                    $baseSql .= " AND v.category = ?";
+                    $params[] = $guessedCategory;
+                }
             }
-        } else {
-            if ($resumeCategory) {
-                $baseSql .= " AND v.category = ?";
-                $params[] = $resumeCategory;
-                Log::info("📊 [CATEGORY FILTER] Resume kategoriyasi ishlatildi", [
-                    'category' => $resumeCategory,
-                    'tsQuery_used' => $tsQuery,
-                ]);
-            } elseif ($guessedCategory) {
-                $baseSql .= " AND v.category = ?";
-                $params[] = $guessedCategory;
-                Log::info("📊 [GUESSED CATEGORY USED] AI taxmin qilgan kategoriya ishlatildi", [
-                    'guessedCategory' => $guessedCategory,
-                    'tsQuery_used' => $tsQuery,
-                ]);
-            } else {
-                Log::info("📊 [CATEGORY FILTER] Hech qanday category filter qo‘llanmagan", [
-                    'tsQuery_used' => $tsQuery,
-                ]);
-            }
-        }
 
-        $baseSql .= " ORDER BY rank DESC, id DESC LIMIT 50";
+            $baseSql .= " ORDER BY rank DESC, id DESC LIMIT 50";
 
-        Log::info('🧾 [FINAL SQL BUILT]', [
-            'sql' => $baseSql,
-            'params' => $params,
-        ]);
+            $promises = [
+                'hh' => \GuzzleHttp\Promise\Create::promiseFor(
+                    cache()->remember(
+                        "hh:search:{$query}:area97",
+                        now()->addMinutes(30),
+                        fn() => $this->hhRepository->search($query, 0, 100, ['area' => 97])
+                    )
+                ),
+                'local' => \GuzzleHttp\Promise\Create::promiseFor(DB::select($baseSql, $params)),
+            ];
 
+            $results = Promise\Utils::unwrap($promises);
+            $hhVacancies = $results['hh'];
+            $localRows = collect($results['local']);
 
-        $promises = [
-            'hh' => \GuzzleHttp\Promise\Create::promiseFor(
-                cache()->remember(
-                    "hh:search:{$query}:area97",
-                    now()->addMinutes(30),
-                    fn() => $this->hhRepository->search($query, 0, 100, ['area' => 97])
-                )
-            ),
-            'local' => \GuzzleHttp\Promise\Create::promiseFor(DB::select($baseSql, $params)),
-        ];
-
-        $results = Promise\Utils::unwrap($promises);
-        $hhVacancies = $results['hh'];
-        $localRows = collect($results['local']);
-
-        $localVacancies = $localRows
-            ->map(function ($v) use ($isTech, $tokens) {
-                if ($isTech && !empty($tokens)) {
-                    foreach (array_slice($tokens->all(), 0, 10) as $t) {
-                        $pattern = mb_strtolower($t);
-                        if (str_contains(mb_strtolower($v->title), $pattern) || str_contains(mb_strtolower($v->description), $pattern)) {
-                            $v->rank += 0.1;
+            $localVacancies = $localRows
+                ->map(function ($v) use ($isTech, $tokens) {
+                    if ($isTech && !empty($tokens)) {
+                        foreach (array_slice($tokens->all(), 0, 10) as $t) {
+                            $pattern = mb_strtolower($t);
+                            if (str_contains(mb_strtolower($v->title), $pattern) || str_contains(mb_strtolower($v->description), $pattern)) {
+                                $v->rank += 0.1;
+                            }
                         }
                     }
+                    return $v;
+                })
+                ->sortByDesc('rank')
+                ->take(50)
+                ->keyBy(fn($v) => $v->source === 'hh' && $v->external_id ? $v->external_id : "local_{$v->id}");
+
+            $vacanciesPayload = [];
+
+            foreach ($localVacancies as $v) {
+                $vacanciesPayload[] = [
+                    'id'   => $v->id,
+                    'vacancy_id'   => $v->id,
+                    'text' => mb_substr(strip_tags($v->description), 0, 2000),
+                ];
+            }
+
+            $hhItems = $hhVacancies['items'] ?? [];
+            $toFetch = collect($hhItems)
+                ->filter(fn($item) => isset($item['id']) && !$localVacancies->has($item['id']))
+                ->take(50);
+
+            foreach ($toFetch as $idx => $item) {
+                $extId = $item['id'] ?? null;
+                if (!$extId || $localVacancies->has($extId)) continue;
+
+                $text = ($item['snippet']['requirement'] ?? '') . "\n" .
+                    ($item['snippet']['responsibility'] ?? '');
+                if (!empty(trim($text))) {
+                    $vacanciesPayload[] = [
+                        'id'          => null,
+                        'text'        => mb_substr(strip_tags($text), 0, 1000),
+                        'external_id' => $extId,
+                        'raw'         => $item,
+                        'vacancy_index' => $idx,
+                    ];
                 }
-                return $v;
-            })
-            ->sortByDesc('rank')
-            ->take(50)
-            ->keyBy(fn($v) => $v->source === 'hh' && $v->external_id ? $v->external_id : "local_{$v->id}");
-
-        Log::info('Data fetch took:' . (microtime(true) - $start) . 's');
-        Log::info('Local vacancies: ' . $localVacancies->count());
-        Log::info('hh vacancies count: ' . count($hhVacancies['items'] ?? []));
-
-        // --- 6. Vacancies prepare
-        $hhItems = $hhVacancies['items'] ?? [];
-        foreach ($hhItems as $idx => $item) {
-            $extId = $item['id'] ?? null;
-            if (!$extId || $localVacancies->has($extId)) continue;
-            $text = ($item['snippet']['requirement'] ?? '') . "\n" . ($item['snippet']['responsibility'] ?? '');
-            if (!empty(trim($text))) {
-                $vacanciesPayload[] = [
-                    'id'          => null,
-                    'text'        => mb_substr(strip_tags($text), 0, 1000),
-                    'external_id' => $extId,
-                    'raw'         => $item,
-                    'source'      => 'hh',
-                ];
             }
-        }
-        $vacanciesPayload = [];
 
-        foreach ($localVacancies as $v) {
-            $vacanciesPayload[] = [
-                'id'   => $v->id,
-                'vacancy_id'   => $v->id,
-                'text' => mb_substr(strip_tags($v->description), 0, 2000),
-            ];
-        }
-
-        $toFetch = collect($hhItems)
-            ->filter(fn($item) => isset($item['id']) && !$localVacancies->has($item['id']))
-            ->take(50);
-
-        foreach ($toFetch as $idx => $item) {
-            $extId = $item['id'] ?? null;
-            if (!$extId || $localVacancies->has($extId)) continue;
-
-            $text = ($item['snippet']['requirement'] ?? '') . "\n" .
-                ($item['snippet']['responsibility'] ?? '');
-            if (!empty(trim($text))) {
-                $vacanciesPayload[] = [
-                    'id'          => null,
-                    'text'        => mb_substr(strip_tags($text), 0, 1000),
-                    'external_id' => $extId,
-                    'raw'         => $item,
-                    'vacancy_index' => $idx,
-                ];
+            if (empty($vacanciesPayload)) {
+                return [];
             }
-        }
 
-        if (empty($vacanciesPayload)) {
-            Log::info('No vacancies to match for resume', ['resume_id' => $resume->id]);
+            $savedData = [];
+            foreach ($vacanciesPayload as $match) {
+                try {
+                    $vac = null;
+                    $vacId = $match['vacancy_id'] ?? null;
+
+                    if ($vacId) {
+                        $vac = Vacancy::withoutGlobalScopes()->find($vacId);
+                    }
+                    if (!$vac && isset($match['external_id'])) {
+                        $vac = Vacancy::where('source', 'hh')
+                            ->where('external_id', $match['external_id'])
+                            ->first();
+
+                        if (!$vac && isset($match['raw'])) {
+                            $vac = $this->vacancyRepository->createFromHH($match['raw'], $resumeCategory);
+                        }
+                    }
+
+                    if (!$vac && !empty($vacId)) {
+                        $savedData[] = [
+                            'resume_id'     => $resume->id,
+                            'vacancy_id'    => $vacId,
+                            'score_percent' => $match['score'] ?? 0,
+                            'explanations'  => json_encode($match),
+                            'updated_at'    => now(),
+                            'created_at'    => now(),
+                        ];
+                        continue;
+                    }
+
+                    if ($vac) {
+                        $savedData[] = [
+                            'resume_id'     => $resume->id,
+                            'vacancy_id'    => $vac->id,
+                            'score_percent' => $match['score'] ?? 0,
+                            'explanations'  => json_encode($match),
+                            'updated_at'    => now(),
+                            'created_at'    => now(),
+                        ];
+                    }
+                } catch (\Throwable $e) {
+                    Log::error('💥 Error while matching vacancy', [
+                        'resume_id' => $resume->id,
+                        'match' => $match,
+                        'error' => $e->getMessage(),
+                        'trace' => $e->getTraceAsString()
+                    ]);
+                }
+            }
+
+            if (!empty($savedData)) {
+                $chunks = array_chunk($savedData, 200);
+                DB::transaction(function () use ($chunks) {
+                    foreach ($chunks as $chunk) {
+                        DB::table('match_results')->upsert(
+                            $chunk,
+                            ['resume_id', 'vacancy_id'],
+                            ['score_percent', 'explanations', 'updated_at']
+                        );
+                    }
+                });
+            }
+
+            return $savedData;
+
+        } catch (\Throwable $e) {
+            Log::error('🚨 Fatal error in matchResume', [
+                'resume_id' => $resume->id,
+                'query' => $query,
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
             return [];
         }
-
-        Log::info('Prepared payload with ' . count($vacanciesPayload) . ' vacancies');
-
-        // --- 7. Save results
-        $savedData = [];
-        foreach ($vacanciesPayload as $match) {
-            try {
-                $vac = null;
-                $vacId = $match['vacancy_id'] ?? null;
-
-                if ($vacId) {
-                    $vac = Vacancy::withoutGlobalScopes()->find($vacId);
-                }
-                if (!$vac && isset($match['external_id'])) {
-                    $vac = Vacancy::where('source', 'hh')
-                        ->where('external_id', $match['external_id'])
-                        ->first();
-
-                    if (!$vac && isset($match['raw'])) {
-                        $vac = $this->vacancyRepository->createFromHH($match['raw'], $resumeCategory);
-                    }
-                }
-
-                if (!$vac && !empty($vacId)) {
-                    $savedData[] = [
-                        'resume_id'     => $resume->id,
-                        'vacancy_id'    => $vacId,
-                        'score_percent' => $match['score'] ?? 0,
-                        'explanations'  => json_encode($match),
-                        'updated_at'    => now(),
-                        'created_at'    => now(),
-                    ];
-                    continue;
-                }
-
-                if ($vac) {
-                    $savedData[] = [
-                        'resume_id'     => $resume->id,
-                        'vacancy_id'    => $vac->id,
-                        'score_percent' => $match['score'] ?? 0,
-                        'explanations'  => json_encode($match),
-                        'updated_at'    => now(),
-                        'created_at'    => now(),
-                    ];
-                }
-            } catch (\Throwable $e) {
-                Log::error('💥 Error while matching vacancy', [
-                    'match' => $match,
-                    'error' => $e->getMessage(),
-                ]);
-            }
-        }
-
-        if (!empty($savedData)) {
-            $chunks = array_chunk($savedData, 200);
-            DB::transaction(function () use ($chunks) {
-                foreach ($chunks as $chunk) {
-                    DB::table('match_results')->upsert(
-                        $chunk,
-                        ['resume_id', 'vacancy_id'],
-                        ['score_percent', 'explanations', 'updated_at']
-                    );
-                }
-            });
-        }
-
-        Log::info('All details finished: ' . (microtime(true) - $start) . 's');
-        return $savedData;
     }
 }

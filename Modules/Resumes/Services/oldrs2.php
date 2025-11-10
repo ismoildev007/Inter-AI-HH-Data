@@ -2,372 +2,343 @@
 
 namespace Modules\Resumes\Services;
 
+use App\Helpers\TranslitHelper;
 use App\Models\Resume;
-use App\Models\ResumeAnalyze;
-use App\Models\UserPreference;
-use Illuminate\Support\Facades\Http;
+use App\Models\Vacancy;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
-use Smalot\PdfParser\Parser as PdfParser;
-use PhpOffice\PhpWord\IOFactory as WordIO;
-use Modules\Resumes\Interfaces\ResumeInterface;
-use Whoops\Run;
+use Modules\TelegramChannel\Services\VacancyCategoryService;
+use Modules\Vacancies\Interfaces\HHVacancyInterface;
+use Modules\Vacancies\Interfaces\VacancyInterface;
+use Stichoza\GoogleTranslate\GoogleTranslate;
 
 class oldrs2
 {
-    protected ResumeInterface $repo;
+    protected VacancyInterface $vacancyRepository;
+    protected HHVacancyInterface $hhRepository;
 
-    public function __construct(ResumeInterface $repo)
-    {
-        $this->repo = $repo;
+    public function __construct(
+        VacancyInterface $vacancyRepository,
+        HHVacancyInterface $hhRepository
+    ) {
+        $this->vacancyRepository = $vacancyRepository;
+        $this->hhRepository = $hhRepository;
     }
-
-    /**
-     * Store a new resume and trigger analysis.
-     */
-    public function create(array $data): Resume
+    public function matchResume(Resume $resume, $query): array
     {
-        if (isset($data['file'])) {
-            $path = $data['file']->store('resumes', 'spaces');
-            $data['file_path'] = $path;
-            $data['file_mime'] = $data['file']->getMimeType();
-            $data['file_size'] = $data['file']->getSize();
 
-            $originalExt = strtolower(pathinfo($data['file']->getClientOriginalName(), PATHINFO_EXTENSION));
-            $tempPath = tempnam(sys_get_temp_dir(), 'resume_') . '.' . $originalExt;
+        Log::info('🚀 Job started', ['resume_id' => $resume->id, 'query' => $query]);
+        $start = microtime(true);
 
-            file_put_contents($tempPath, Storage::disk('spaces')->get($path));
+        $latinQuery = TranslitHelper::toLatin($query);
+        $cyrilQuery = TranslitHelper::toCyrillic($query);
+        $translator = new GoogleTranslate();
+        $translator->setSource('auto');
 
-            $data['parsed_text'] = $this->parseFile($tempPath);
-            unlink($tempPath);
-        }
+        $translations = [
+            'uz' => fn() => $translator->setTarget('uz')->translate("\"{$query}\""),
+            'ru' => fn() => $translator->setTarget('ru')->translate("\"{$query}\""),
+            'en' => fn() => $translator->setTarget('en')->translate("\"{$query}\""),
+        ];
 
+        $allVariants = collect([$query])
+            ->merge(array_map(fn($f) => $f(), $translations))
+            ->unique()
+            ->filter()
+            ->values();
 
-        $resume = $this->repo->store($data);
+        $splitByComma = fn($v) => preg_split('/\s*,\s*/u', (string) $v);
+        $cleanText = fn($w) => mb_strtolower(trim(preg_replace('/[\"\'«»“”]/u', '', $w)), 'UTF-8');
 
-        $this->analyze($resume);
+        $tokens = $allVariants
+            ->flatMap($splitByComma)
+            ->map($cleanText)
+            ->filter(fn($w) => mb_strlen($w) >= 2)
+            ->unique()
+            ->take(8)
+            ->values();
 
-        return $resume;
-    }
+        Log::info('🧩 Tokens parsed', ['tokens' => $tokens->all()]);
 
-    /**
-     * Update an existing resume and re-run analysis.
-     */
-    public function update(Resume $resume, array $data): Resume
-    {
-        if (isset($data['file'])) {
-            $path = $data['file']->store('resumes', 'spaces');
-            $data['file_path'] = $path;
-            $data['file_mime'] = $data['file']->getMimeType();
-            $data['file_size'] = $data['file']->getSize();
-            $data['parsed_text'] = $this->parseFile($data['file']->getPathname());
-        }
+        $phrases = $allVariants
+            ->flatMap($splitByComma)
+            ->map($cleanText)
+            ->filter(fn($s) => mb_strlen($s) >= 3 && str_contains($s, ' '))
+            ->unique()
+            ->take(4)
+            ->values();
 
-        $resume = $this->repo->update($resume, $data);
-
-        $this->analyze($resume);
-
-        return $resume;
-    }
-
-    /**
-     * Call GPT API to analyze resume and store results.
-     */
-    public function analyze(Resume $resume): void
-    {
-        // $prompt = <<<PROMPT
-        //     You are an expert HR assistant AI.
-        //     Analyze the following resume text and return a structured JSON object with the following fields only:
-
-        //     - "skills": A list of the candidate's hard and soft skills (only relevant skills, no duplicates).
-        //     - "strengths": 3–5 short bullet points describing the candidate's main strengths.
-        //     - "weaknesses": 2–4 short bullet points describing areas that might need improvement.
-        //     - "keywords": A list of important keywords or technologies mentioned in the resume (useful for search/matching).
-        //     - "language": Detect the main language of the resume text (e.g., "en", "ru", "uz").
-        //     - "title": From the resume, identify up to three (maximum 3) of the most specific and relevant professional titles that accurately represent the candidate’s main expertise and experience.
-        //         Rules:
-        //         • Each title must be specific and, if applicable, include both the main role and its associated technology or framework
-        //           (e.g., "PHP Backend Developer", "React Frontend Developer", "Java Spring Developer", "Python Fullstack Developer").
-        //         • If a title refers to Backend, Frontend, or Fullstack development, it **must include at least one programming language or framework**
-        //           (e.g., PHP, Java, .NET, React, Vue, Node.js, etc.).
-        //         • Titles such as **"Backend Developer"**, **"Frontend Developer"**, or **"Fullstack Developer"** alone are **strictly forbidden** —
-        //           they cannot appear by themselves **nor as secondary or repeated titles after others.**
-        //         • Do NOT output any title that ends with or contains only the words “Backend Developer”, “Frontend Developer”, or “Fullstack Developer”
-        //           without an attached technology name.
-        //         • Include other relevant non-programming roles (e.g., "Project Manager", "Marketing Specialist", "UI/UX Designer") if they clearly apply.
-        //         • Do not include parentheses, notes, or explanations — only plain text titles separated by commas.
-        //         • Prioritize titles that reflect the most emphasized or most recent experience.
-        //         • Return up to three concise and distinct titles, separated by commas.
-        //         • Additionally, after generating each title, append exactly three relevant skills, separated by commas:
-        //             - For technical/developer roles: use only programming languages or frameworks (e.g., "PHP", "React", "Laravel", "Node.js", "Java", "Python", "Marketing", "HR", ...).
-        //             - For non-technical roles: use general professional skills (e.g., "PR", "Recruitment", "Management", "Analytics", "Leadership", "Communication", ...).
-        //             - Do not output database, infrastructure, or process terms (e.g., "MySQL", "CI/CD", "API") as these skills in this section.
-        //           Example:
-        //             - "PHP Backend Developer, PHP, Laravel, Node.js"
-        //             - "Marketing Specialist, PR, Recruitment, Management"
-        //     - "cover_letter": Write a short, professional cover letter (5–7 sentences) focusing on three key areas that best suit the candidate you listed above. Be polite, confident, concise, and literate.
-        //       Always include the candidate's real name at the end, in a new paragraph, with the caption "Sincerely" and their name. The letter must be in Russian.
-        //     Return only valid JSON. Do not include explanations outside the JSON.
-
-        //     Resume text:
-
-        //     " . ($resume->parsed_text ?? $resume->description) . "
-
-        //     PROMPT;
-
-        $prompt = <<<PROMPT
-        You are an expert HR assistant AI.
-        Analyze the following resume text and return a structured JSON object with the following fields only:
-
-        - "skills": A list of the candidate's hard and soft skills (only relevant skills, no duplicates).
-        - "strengths": 3–5 short bullet points describing the candidate's main strengths.
-        - "weaknesses": 2–4 short bullet points describing areas that might need improvement.
-        - "keywords": A list of important keywords or technologies mentioned in the resume (useful for search/matching).
-        - "language": Detect the main language of the resume text (e.g., "en", "ru", "uz").
-        - "title": From the resume, identify up to three (maximum 3) of the most specific and relevant professional titles that accurately represent the candidate’s main expertise and experience.
-            **Rules for generating "title":**
-            • Each title must be highly specific and reflect both the role and its key technology, framework, or domain focus.
-                - Examples: "PHP Backend Developer", "C# .NET Developer", "ASP.NET Developer", "Java Spring Developer", "Python Fullstack Developer", "React Frontend Developer", "Digital Marketing Specialist", "HR Manager", "Accountant", "Nurse", "Sales Manager", "Teacher".
-            • Titles referring to Backend, Frontend, or Fullstack development **must include at least one programming language or framework** (e.g., PHP, Java, .NET, React, Vue, Node.js, etc.).
-            • **Strictly forbid** vague or generic titles such as: "Backend Developer","Developer", "Software Engineer", "Software Developer", "Engineer", "backend developer", "Frontend Developer", "Programmer", "IT Specialist", "Consultant" — unless they include a clear technology or domain name (e.g., "C# Software Engineer", "Python Developer").
-            • Include **non-technical roles** (e.g., "HR Manager", "Recruitment Specialist", "Project Manager", "Accountant", "Marketing Specialist", "Banking Operations Manager") when relevant.
-            • Do not include parentheses, notes, or explanations — only plain text titles separated by commas.
-            • Prioritize titles that reflect the **most recent or most emphasized** experience.
-            • Return up to three concise and distinct titles, separated by commas.
-            • Each title should include **one main defining technology or domain** — avoid duplication or overlapping meanings.
-            • The output format must look exactly like this:
-                - Example for IT:
-                PHP Backend Developer,
-                C# .NET Developer,
-                React Frontend Developer
-                - Example for non-IT:
-                HR Manager,
-                Recruitment Specialist,
-                Banking Operations Manager
-            • After listing the titles, also append **up to two meaningful core skills** that logically match the main title(s) directly in the same "title" field.
-                - For example: (PHP Full-Stack Developer, Laravel Developer, Vue.js Developer, PHP, Laravel)
-                - If the role is technical (developer, engineer, data scientist), use main programming languages or frameworks (e.g., PHP, Python, JavaScript, Java, C#, React, Node.js, etc.).
-                - If the role is non-technical (marketing, HR, accounting, design, management, etc.), use two clear domain-relevant skills (e.g., Marketing, SMM, HR, Accounting, Graphic Design, Financial Analysis, Teaching, Project Management, etc.).
-                - Do NOT include general tools or infrastructure terms such as SQL, Git, CI/CD, Docker, etc.
-                - Ensure the skills are appended after titles in the same comma-separated list, without any extra text or brackets.
-                - The rest of the prompt and structure must remain unchanged.
-
-        - "cover_letter": Write a short, professional cover letter (5–7 sentences) focusing on three key areas that best suit the candidate you listed above. Be polite, confident, concise, and literate.
-          Always include the candidate's real name at the end, in a new paragraph, with the caption "Sincerely" and their name. The letter must be in Russian.
-        Return only valid JSON. Do not include explanations outside the JSON.
-
-        Resume text:
-
-        " . ($resume->parsed_text ?? $resume->description) . "
-
-        PROMPT;
-
-
-
-
-
-        $response = Http::withToken(env('OPENAI_API_KEY'))
-            ->post('https://api.openai.com/v1/chat/completions', [
-                'model' => env('OPENAI_MODEL', 'gpt-4o-mini'),
-                'messages' => [
-                    ['role' => 'system', 'content' => 'You are a helpful AI for analyzing resumes.'],
-                    ['role' => 'user', 'content' => $prompt],
-                ],
-                'temperature' => 0.2,
-                // 'max_tokens' => 300,
-            ]);
-
-
-
-        if (! $response->successful()) {
-            Log::error("GPT API failed: " . $response->body());
-            return;
-        }
-
-        $content = $response->json('choices.0.message.content');
-
-        $content = trim($content);
-        $content = preg_replace('/^```(json)?/i', '', $content);
-        $content = preg_replace('/```$/', '', $content);
-        $content = trim($content);
-
-        $analysis = json_decode($content, true);
-
-        if (json_last_error() !== JSON_ERROR_NONE || !is_array($analysis)) {
-            Log::info("Invalid GPT response: " . $content);
-            throw new \RuntimeException("Invalid GPT response: " . $content);
-        }
-
-
-        $normalizedTitle = $this->extractTitle($analysis['title'] ?? null);
-        Log::info(['normilize title' => $normalizedTitle]);
-        $resumeAnalyze = ResumeAnalyze::updateOrCreate(
-            ['resume_id' => $resume->id],
-            [
-                'skills'     => $analysis['skills'] ?? null,
-                'strengths'  => $analysis['strengths'] ?? null,
-                'weaknesses' => $analysis['weaknesses'] ?? null,
-                'keywords'   => $analysis['keywords'] ?? null,
-                'language'   => $analysis['language'] ?? 'en',
-                'title'      => $normalizedTitle,
-            ]
-        );
-
-        if ($normalizedTitle !== null) {
-            $resume->update(['title' => $normalizedTitle]);
-        }
-
-        Log::info('Resume analyzed', ['resume_id' => $resume->id, 'analysis_id' => $resumeAnalyze->id, 'data' => $analysis]);
-
-        if (!empty($analysis['cover_letter'])) {
-            UserPreference::updateOrCreate(
-                ['user_id' => $resume->user_id],
-                ['cover_letter' => $analysis['cover_letter']]
-            );
-        }
-    }
-
-    /**
-     * Example: Parse PDF/Docx file into plain text.
-     */
-    protected function extractTitle(null|string|array $rawTitle): ?string
-    {
-        if (empty($rawTitle)) {
-            return null;
-        }
-
-        if (is_array($rawTitle)) {
-            $parts = array_filter(array_map('trim', $rawTitle));
-            if (empty($parts)) {
-                return null;
-            }
-
-            return implode(', ', $parts);
-        }
-
-        $title = trim($rawTitle);
-
-        return $title === '' ? null : $title;
-    }
-
-    protected function parseFile(string $path): ?string
-    {
-        $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+        $searchQuery = $latinQuery ?: $cyrilQuery;
+        $tsTerms = [...$phrases, ...$tokens];
+        $mustPair = count($tokens) >= 2 ? ['(' . $tokens[0] . ' ' . $tokens[1] . ')'] : [];
+        $webParts = array_merge($mustPair, $tsTerms);
+        $tsQuery = !empty($webParts)
+            ? implode(' OR ', array_map(fn($t) => str_contains($t, ' ') ? '"' . str_replace('"', '', $t) . '"' : $t, $webParts))
+            : (string) $searchQuery;
 
         try {
-            switch ($ext) {
-                case 'pdf':
-                    Log::info("Parsing PDF file: " . $path);
-
-                    $parser = new \Smalot\PdfParser\Parser();
-
-                    try {
-                        $pdf = $parser->parseFile($path);
-                        $text = trim($pdf->getText());
-
-                        // Agar Smalot bo‘sh qaytarsa, pdftotext fallback ishlatamiz
-                        if (!$text || strlen($text) < 50) {
-                            Log::warning("Smalot returned empty text, switching to pdftotext fallback...");
-
-                            $tmpTxt = tempnam(sys_get_temp_dir(), 'pdf_') . '.txt';
-                            $cmd = sprintf(
-                                'pdftotext -layout %s %s',
-                                escapeshellarg($path),
-                                escapeshellarg($tmpTxt)
-                            );
-                            exec($cmd, $output, $code);
-
-                            if ($code === 0 && file_exists($tmpTxt)) {
-                                $text = file_get_contents($tmpTxt);
-                                @unlink($tmpTxt);
-                            } else {
-                                Log::error("pdftotext failed [code=$code]: " . implode("\n", $output));
-                                return null;
-                            }
-                        }
-
-                        // ✅ UTF-8 tozalash (ENG MUHIM QISM)
-                        $text = $this->sanitizeText($text);
-
-                        Log::info("Parsed text length: " . strlen($text));
-                        return trim($text);
-                    } catch (\Throwable $e) {
-                        Log::error("PDF parse failed: " . $e->getMessage());
-                        return null;
-                    }
-
-
-                case 'docx':
-                case 'doc':
-                    Log::info("Converting DOCX/DOC file using unoconv: " . $path);
-
-                    $tmpTxt = tempnam(sys_get_temp_dir(), 'resume_') . '.txt';
-                    $loProfile = '/var/www/.config/libreoffice';
-
-                    // ✅ Correct command: no --listener, just convert
-                    $cmd = sprintf(
-                        'HOME=/var/www unoconv -f txt -o %s -env:UserInstallation=file://%s %s 2>&1',
-                        escapeshellarg($tmpTxt),
-                        escapeshellarg($loProfile),
-                        escapeshellarg($path)
-                    );
-
-                    exec($cmd, $output, $code);
-
-                    if ($code !== 0 || !file_exists($tmpTxt)) {
-                        Log::error("unoconv failed [code=$code]: " . implode("\n", $output));
-                        throw new \RuntimeException("unoconv failed with code $code");
-                    }
-
-                    $text = file_get_contents($tmpTxt);
-                    @unlink($tmpTxt);
-
-                    Log::info("Parsed text length: " . strlen($text));
-                    return trim($text);
-
-                case 'txt':
-                    return file_get_contents($path);
-
-                default:
-                    Log::warning("Unsupported resume format: " . $ext);
-                    return null;
-            }
-        } catch (\Throwable $e) {
-            Log::error("Resume parsing failed: " . $e->getMessage());
-            return null;
+            $guessedCategory = app(VacancyCategoryService::class)
+                ->categorize('', (string) ($resume->title ?? ''), (string) ($resume->description ?? ''), '');
+            $guessedCategory = (is_string($guessedCategory) && !in_array(mb_strtolower($guessedCategory), ['other', ''], true))
+                ? $guessedCategory
+                : null;
+        } catch (\Throwable) {
+            $guessedCategory = null;
         }
-    }
 
-    protected function sanitizeText(?string $text): string
-    {
-        if (!$text) return '';
+        $resumeCategory = $resume->category ?? null;
+        $techCategories = [
+            "IT and Software Development",
+            "Data Science and Analytics",
+            "QA and Testing",
+            "DevOps and Cloud Engineering",
+            "UI/UX and Product Design"
+        ];
+        $isTech = in_array($resumeCategory, $techCategories, true);
 
-        // 1️⃣ Noto‘g‘ri baytlarni olib tashlash
-        $text = iconv('UTF-8', 'UTF-8//IGNORE', $text);
+        $baseSql = "
+            SELECT
+                v.id, v.title, v.description, v.source, v.external_id, v.category,
+                CASE
+                    WHEN v.category IN ('IT and Software Development', 'Data Science and Analytics', 'QA and Testing', 'DevOps and Cloud Engineering', 'UI/UX and Product Design')
+                    THEN ts_rank_cd(to_tsvector('simple', coalesce(v.description, '') || ' ' || coalesce(v.title, '')), websearch_to_tsquery('simple', ?))
+                    ELSE 0
+                END AS rank
+            FROM vacancies v
+            WHERE v.status = 'publish'
+              AND v.source = 'telegram'
+              AND v.id NOT IN (SELECT vacancy_id FROM match_results WHERE resume_id = ?)
+        ";
 
-        // 2️⃣ Boshqaruv belgilarini olib tashlash (\x00 - \x1F, \x7F)
-        $text = preg_replace('/[^\P{C}\n]+/u', '', $text);
+        $params = [$tsQuery, $resume->id];
 
-        // 3️⃣ Ba’zi PDF parserlar “hidden unicode” belgilari kiritadi
-        $text = str_replace(["\xEF\xBB\xBF", "\u{FEFF}"], '', $text);
+        Log::info('🔍 [SEARCH QUERY GENERATED]', [
+            'tsQuery' => $tsQuery,
+            'tokens' => $tokens->all(),
+            'phrases' => $phrases->all(),
+            'query_variants' => $allVariants->all(),
+        ]);
 
-        // 4️⃣ Qayta UTF-8 normalizatsiya
-        $text = mb_convert_encoding($text, 'UTF-8', 'UTF-8');
+        if ($isTech) {
+            // 🔧 NEW: title ni vergul bilan bo‘lib olish
+            $titleParts = collect(explode(',', (string) ($resume->title ?? '')))
+                ->map(fn($t) => trim($t))
+                ->filter()
+                ->values();
 
-        return trim($text);
-    }
+            // eski tokenlar bilan birga title qismlarini ham qo‘shamiz
+            $searchTokens = $tokens->merge($titleParts)->unique()->values();
+
+            $titleCondition = $searchTokens
+                ->map(fn($t) => "LOWER(v.title) LIKE '%" . addslashes(mb_strtolower($t)) . "%'")
+                ->implode(' OR ');
+
+            if ($titleCondition) {
+                $baseSql .= " AND (
+                    (
+                        v.category IN ('IT and Software Development', 'Data Science and Analytics', 'QA and Testing', 'DevOps and Cloud Engineering', 'UI/UX and Product Design')
+                        AND (
+                            $titleCondition
+                            OR to_tsvector('simple', coalesce(v.description, '') || ' ' || coalesce(v.title, ''))
+                               @@ websearch_to_tsquery('simple', ?)
+                        )
+                    )
+                )";
+                $params[] = $tsQuery;
+
+                Log::info('💻 [TECH MODE] Title va vergul bilan ajratilgan qismlar orqali qidirish ishlatilmoqda', [
+                    'category' => $resumeCategory,
+                    'title_condition' => $titleCondition,
+                    'tsQuery_used' => $tsQuery,
+                ]);
+            } else {
+                Log::info('💻 [TECH MODE] Tokenlar bo‘sh, title condition yaratilmagan', [
+                    'category' => $resumeCategory,
+                ]);
+            }
+        } else {
+            if ($resumeCategory) {
+                $baseSql .= " AND v.category = ?";
+                $params[] = $resumeCategory;
+                Log::info("📊 [CATEGORY FILTER] Resume kategoriyasi ishlatildi", [
+                    'category' => $resumeCategory,
+                    'tsQuery_used' => $tsQuery,
+                ]);
+            } elseif ($guessedCategory) {
+                $baseSql .= " AND v.category = ?";
+                $params[] = $guessedCategory;
+                Log::info("📊 [GUESSED CATEGORY USED] AI taxmin qilgan kategoriya ishlatildi", [
+                    'guessedCategory' => $guessedCategory,
+                    'tsQuery_used' => $tsQuery,
+                ]);
+            } else {
+                Log::info("📊 [CATEGORY FILTER] Hech qanday category filter qo‘llanmagan", [
+                    'tsQuery_used' => $tsQuery,
+                ]);
+            }
+        }
+
+        $baseSql .= " ORDER BY rank DESC, id DESC LIMIT 50";
+
+        Log::info('🧾 [FINAL SQL BUILT]', [
+            'sql' => $baseSql,
+            'params' => $params,
+        ]);
 
 
+        $promises = [
+            'hh' => \GuzzleHttp\Promise\Create::promiseFor(
+                cache()->remember(
+                    "hh:search:{$query}:area97",
+                    now()->addMinutes(30),
+                    fn() => $this->hhRepository->search($query, 0, 100, ['area' => 97])
+                )
+            ),
+            'local' => \GuzzleHttp\Promise\Create::promiseFor(DB::select($baseSql, $params)),
+        ];
 
-    public function setPrimary(Resume $resume): Resume
-    {
-        // Reset all other resumes for this user
-        Resume::where('user_id', $resume->user_id)
-            ->where('id', '!=', $resume->id)
-            ->update(['is_primary' => false]);
+        $results = Promise\Utils::unwrap($promises);
+        $hhVacancies = $results['hh'];
+        $localRows = collect($results['local']);
 
-        $resume->update(['is_primary' => true]);
+        $localVacancies = $localRows
+            ->map(function ($v) use ($isTech, $tokens) {
+                if ($isTech && !empty($tokens)) {
+                    foreach (array_slice($tokens->all(), 0, 10) as $t) {
+                        $pattern = mb_strtolower($t);
+                        if (str_contains(mb_strtolower($v->title), $pattern) || str_contains(mb_strtolower($v->description), $pattern)) {
+                            $v->rank += 0.1;
+                        }
+                    }
+                }
+                return $v;
+            })
+            ->sortByDesc('rank')
+            ->take(50)
+            ->keyBy(fn($v) => $v->source === 'hh' && $v->external_id ? $v->external_id : "local_{$v->id}");
 
-        return $resume;
+        Log::info('Data fetch took:' . (microtime(true) - $start) . 's');
+        Log::info('Local vacancies: ' . $localVacancies->count());
+        Log::info('hh vacancies count: ' . count($hhVacancies['items'] ?? []));
+
+        // --- 6. Vacancies prepare
+        $hhItems = $hhVacancies['items'] ?? [];
+        foreach ($hhItems as $idx => $item) {
+            $extId = $item['id'] ?? null;
+            if (!$extId || $localVacancies->has($extId)) continue;
+            $text = ($item['snippet']['requirement'] ?? '') . "\n" . ($item['snippet']['responsibility'] ?? '');
+            if (!empty(trim($text))) {
+                $vacanciesPayload[] = [
+                    'id'          => null,
+                    'text'        => mb_substr(strip_tags($text), 0, 1000),
+                    'external_id' => $extId,
+                    'raw'         => $item,
+                    'source'      => 'hh',
+                ];
+            }
+        }
+        $vacanciesPayload = [];
+
+        foreach ($localVacancies as $v) {
+            $vacanciesPayload[] = [
+                'id'   => $v->id,
+                'vacancy_id'   => $v->id,
+                'text' => mb_substr(strip_tags($v->description), 0, 2000),
+            ];
+        }
+
+        $toFetch = collect($hhItems)
+            ->filter(fn($item) => isset($item['id']) && !$localVacancies->has($item['id']))
+            ->take(50);
+
+        foreach ($toFetch as $idx => $item) {
+            $extId = $item['id'] ?? null;
+            if (!$extId || $localVacancies->has($extId)) continue;
+
+            $text = ($item['snippet']['requirement'] ?? '') . "\n" .
+                ($item['snippet']['responsibility'] ?? '');
+            if (!empty(trim($text))) {
+                $vacanciesPayload[] = [
+                    'id'          => null,
+                    'text'        => mb_substr(strip_tags($text), 0, 1000),
+                    'external_id' => $extId,
+                    'raw'         => $item,
+                    'vacancy_index' => $idx,
+                ];
+            }
+        }
+
+        if (empty($vacanciesPayload)) {
+            Log::info('No vacancies to match for resume', ['resume_id' => $resume->id]);
+            return [];
+        }
+
+        Log::info('Prepared payload with ' . count($vacanciesPayload) . ' vacancies');
+
+        // --- 7. Save results
+        $savedData = [];
+        foreach ($vacanciesPayload as $match) {
+            try {
+                $vac = null;
+                $vacId = $match['vacancy_id'] ?? null;
+
+                if ($vacId) {
+                    $vac = Vacancy::withoutGlobalScopes()->find($vacId);
+                }
+                if (!$vac && isset($match['external_id'])) {
+                    $vac = Vacancy::where('source', 'hh')
+                        ->where('external_id', $match['external_id'])
+                        ->first();
+
+                    if (!$vac && isset($match['raw'])) {
+                        $vac = $this->vacancyRepository->createFromHH($match['raw'], $resumeCategory);
+                    }
+                }
+
+                if (!$vac && !empty($vacId)) {
+                    $savedData[] = [
+                        'resume_id'     => $resume->id,
+                        'vacancy_id'    => $vacId,
+                        'score_percent' => $match['score'] ?? 0,
+                        'explanations'  => json_encode($match),
+                        'updated_at'    => now(),
+                        'created_at'    => now(),
+                    ];
+                    continue;
+                }
+
+                if ($vac) {
+                    $savedData[] = [
+                        'resume_id'     => $resume->id,
+                        'vacancy_id'    => $vac->id,
+                        'score_percent' => $match['score'] ?? 0,
+                        'explanations'  => json_encode($match),
+                        'updated_at'    => now(),
+                        'created_at'    => now(),
+                    ];
+                }
+            } catch (\Throwable $e) {
+                Log::error('💥 Error while matching vacancy', [
+                    'match' => $match,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
+
+        if (!empty($savedData)) {
+            $chunks = array_chunk($savedData, 200);
+            DB::transaction(function () use ($chunks) {
+                foreach ($chunks as $chunk) {
+                    DB::table('match_results')->upsert(
+                        $chunk,
+                        ['resume_id', 'vacancy_id'],
+                        ['score_percent', 'explanations', 'updated_at']
+                    );
+                }
+            });
+        }
+
+        Log::info('All details finished: ' . (microtime(true) - $start) . 's');
+        return $savedData;
     }
 }
