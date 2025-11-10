@@ -704,25 +704,25 @@
             </div>
             <div class="categories-stats">
                 <div class="categories-stat-card">
-                    <span class="label">Categories on this page</span>
+                    <span class="label">Kategoryalar soni</span>
                     <span class="value">{{ number_format($pageCount) }}</span>
                     <span class="hint">Filtered list size</span>
                 </div>
                 @if(!in_array($currentFilter, ['telegram','hh'], true))
                     <div class="categories-stat-card">
-                        <span class="label">Vacancies on this page</span>
+                        <span class="label">Barcha Vakansiyalar</span>
                         <span class="value">{{ number_format($totalVacanciesOnPage) }}</span>
                         <span class="hint">Total roles in shown categories</span>
                     </div>
                 @endif
                 @if($currentFilter !== 'archived')
                     <div class="categories-stat-card">
-                        <span class="label">Published vacancies</span>
+                        <span class="label">Faol Vakansiyalar</span>
                         <span class="value value-publish">{{ number_format($publishedCount ?? 0) }}</span>
                         <span class="hint">Status = publish</span>
                     </div>
                     <div class="categories-stat-card">
-                        <span class="label">Archived vacancies</span>
+                        <span class="label">Arxivlangan vakansiyalar</span>
                         <span class="value value-archive">{{ number_format($archivedCount ?? 0) }}</span>
                         <span class="hint">Status = archive</span>
                     </div>
