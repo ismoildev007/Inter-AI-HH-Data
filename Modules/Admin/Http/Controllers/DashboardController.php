@@ -33,6 +33,14 @@ class DashboardController extends Controller
         $hhVacanciesCount = Vacancy::query()
             ->whereRaw('LOWER(source) LIKE ?', ['hh%'])
             ->count();
+        $telegramArchiveVacanciesCount = Vacancy::query()
+            ->whereRaw('LOWER(source) LIKE ?', ['telegram%'])
+            ->where('status', Vacancy::STATUS_ARCHIVE)
+            ->count();
+        $hhArchiveVacanciesCount = Vacancy::query()
+            ->whereRaw('LOWER(source) LIKE ?', ['hh%'])
+            ->where('status', Vacancy::STATUS_ARCHIVE)
+            ->count();
         $tgSourceCount = TelegramChannel::where('is_source', true)->count();
         $tgTargetCount = TelegramChannel::where('is_target', true)->count();
 
@@ -441,10 +449,12 @@ class DashboardController extends Controller
             ->limit(6)
             ->get();
 
-        $socialRadarLabels = ['TG Vacancies', 'HH Vacancies', 'Users', 'Resumes'];
+        $socialRadarLabels = ['TG Vacancies', 'HH Vacancies', 'TG Archived', 'HH Archived', 'Users', 'Resumes'];
         $socialRadarRaw = [
             (int) $telegramVacanciesCount,
             (int) $hhVacanciesCount,
+            (int) $telegramArchiveVacanciesCount,
+            (int) $hhArchiveVacanciesCount,
             (int) $usersCount,
             (int) $resumesCount,
         ];
@@ -458,7 +468,7 @@ class DashboardController extends Controller
                 ],
             ],
             'rawValues' => $socialRadarRaw,
-            'colors' => ['#3454D1', '#41B2C4', '#EA4D4D', '#25B865'],
+            'colors' => ['#3454D1', '#41B2C4', '#F59E0B', '#EA4D4D', '#25B865', '#6B7280'],
         ];
 
         return view('admin::Admin.Dashboard.dashboard', compact(
