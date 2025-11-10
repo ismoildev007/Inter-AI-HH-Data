@@ -40,7 +40,7 @@ class VacancyCategoryService
         'transportation_and_driving'                => 'Transportation and Driving',
         'security_and_protective_services'          => 'Security and Protective Services',
         'customer_support_and_call_center'          => 'Customer Support and Call Center',
-        'hospitality_and_tourism'                   => 'Hospitality and Tourism',
+        'tourism'                                   => 'Tourism',
         'food_and_beverage_service'                 => 'Food and Beverage Service',
         'retail_and_ecommerce'                      => 'Retail and E-commerce',
         'real_estate'                               => 'Real Estate',
