@@ -97,7 +97,40 @@
         @endforeach
     </div>
 
-
+    <div class="dashboard-section">
+        <div class="dashboard-section__body">
+            <div class="dashboard-section__title">
+                <h2>Vacancy throughput</h2>
+                <span class="hint"> watch sourcing flow across channels </span>
+            </div>
+            <div class="row g-3">
+                <div class="col-xxl-3 col-md-6">
+                    <div class="dashboard-tile">
+                        <header><span>Hourly Vacancies</span></header>
+                        <div class="dashboard-tile__body" id="vacancy-hourly"></div>
+                    </div>
+                </div>
+                <div class="col-xxl-3 col-md-6">
+                    <div class="dashboard-tile">
+                        <header><span>Daily Vacancies</span></header>
+                        <div class="dashboard-tile__body" id="vacancy-daily"></div>
+                    </div>
+                </div>
+                <div class="col-xxl-3 col-md-6">
+                    <div class="dashboard-tile">
+                        <header><span>Weekly Vacancies</span></header>
+                        <div class="dashboard-tile__body" id="vacancy-weekly"></div>
+                    </div>
+                </div>
+                <div class="col-xxl-3 col-md-6">
+                    <div class="dashboard-tile">
+                        <header><span>Monthly Vacancies</span></header>
+                        <div class="dashboard-tile__body" id="vacancy-monthly"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
     <div class="dashboard-section">
         <div class="dashboard-section__body">
             <div class="row g-3">
@@ -255,40 +288,7 @@
         </div>
     </div>
 
-    <div class="dashboard-section">
-        <div class="dashboard-section__body">
-            <div class="dashboard-section__title">
-                <h2>Vacancy throughput</h2>
-                <span class="hint"> watch sourcing flow across channels </span>
-            </div>
-            <div class="row g-3">
-                <div class="col-xxl-3 col-md-6">
-                    <div class="dashboard-tile">
-                        <header><span>Hourly Vacancies</span></header>
-                        <div class="dashboard-tile__body" id="vacancy-hourly"></div>
-                    </div>
-                </div>
-                <div class="col-xxl-3 col-md-6">
-                    <div class="dashboard-tile">
-                        <header><span>Daily Vacancies</span></header>
-                        <div class="dashboard-tile__body" id="vacancy-daily"></div>
-                    </div>
-                </div>
-                <div class="col-xxl-3 col-md-6">
-                    <div class="dashboard-tile">
-                        <header><span>Weekly Vacancies</span></header>
-                        <div class="dashboard-tile__body" id="vacancy-weekly"></div>
-                    </div>
-                </div>
-                <div class="col-xxl-3 col-md-6">
-                    <div class="dashboard-tile">
-                        <header><span>Monthly Vacancies</span></header>
-                        <div class="dashboard-tile__body" id="vacancy-monthly"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+
 
     <!-- <div class="dashboard-section">
         <div class="dashboard-section__body">
