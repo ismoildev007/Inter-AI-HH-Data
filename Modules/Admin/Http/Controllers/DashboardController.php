@@ -583,6 +583,10 @@ class DashboardController extends Controller
             ->when($dateTo, function ($query) use ($dateTo) {
                 $query->where('created_at', '<=', $dateTo);
             })
+            // For Telegram and HH filters, only count published vacancies
+            ->when(in_array($filter, ['telegram', 'hh'], true), function ($query) {
+                $query->where('status', \App\Models\Vacancy::STATUS_PUBLISH);
+            })
             ->when($filter === 'telegram', function ($query) {
                 $query->whereRaw('LOWER(source) LIKE ?', ['telegram%']);
             })
@@ -629,6 +633,10 @@ class DashboardController extends Controller
         }
 
         $totalCount = DB::table('vacancies')
+            // Ensure total reflects only published for Telegram/HH filters
+            ->when(in_array($filter, ['telegram', 'hh'], true), function ($query) {
+                $query->where('status', \App\Models\Vacancy::STATUS_PUBLISH);
+            })
             ->when($filter === 'telegram', function ($query) {
                 $query->whereRaw('LOWER(source) LIKE ?', ['telegram%']);
             })
@@ -663,11 +671,31 @@ class DashboardController extends Controller
             ->where('status', \App\Models\Vacancy::STATUS_QUEUED)
             ->count();
 
+        // Published/Archived counts across current source/date filters
+        $base = DB::table('vacancies')
+            ->when($filter === 'telegram', function ($query) {
+                $query->whereRaw('LOWER(source) LIKE ?', ['telegram%']);
+            })
+            ->when($filter === 'hh', function ($query) {
+                $query->whereRaw('LOWER(source) LIKE ?', ['hh%']);
+            })
+            ->when($dateFrom, function ($query) use ($dateFrom) {
+                $query->where('created_at', '>=', $dateFrom);
+            })
+            ->when($dateTo, function ($query) use ($dateTo) {
+                $query->where('created_at', '<=', $dateTo);
+            });
+
+        $publishedCount = (clone $base)->where('status', \App\Models\Vacancy::STATUS_PUBLISH)->count();
+        $archivedCount = (clone $base)->where('status', \App\Models\Vacancy::STATUS_ARCHIVE)->count();
+
 
         return view('admin::Admin.Dashboard.categories', [
             'rows' => $rows,
             'totalCount' => $totalCount,
             'queuedCount' => $queuedCount,
+            'publishedCount' => $publishedCount,
+            'archivedCount' => $archivedCount,
             'filter' => $filter,
             'search' => $search,
             'dateFilter' => [
@@ -737,10 +765,10 @@ class DashboardController extends Controller
             $query->where('category', $canonical);
         }
 
-        $query->when($filter === 'telegram', function ($q) {
-            $q->whereRaw('LOWER(source) LIKE ?', ['telegram%']);
-        })->when($filter === 'hh', function ($q) {
-            $q->whereRaw('LOWER(source) LIKE ?', ['hh%']);
+        $query->when(in_array($filter, ['telegram', 'hh'], true), function ($q) use ($filter) {
+            // For Telegram and HH filters, restrict to published vacancies and by source
+            $q->where('status', \App\Models\Vacancy::STATUS_PUBLISH)
+              ->whereRaw('LOWER(source) LIKE ?', [$filter . '%']);
         })->when($filter === 'archived', function ($q) {
             $q->where('status', \App\Models\Vacancy::STATUS_ARCHIVE);
         })->when($dateFrom, function ($q) use ($dateFrom) {

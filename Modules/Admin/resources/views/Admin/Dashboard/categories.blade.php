@@ -142,6 +142,9 @@
             color: #0f172a;
         }
 
+        .categories-stat-card .value.value-publish { color: #16a34a; }
+        .categories-stat-card .value.value-archive { color: #dc2626; }
+
         .categories-stat-card .hint {
             display: block;
             margin-top: 8px;
@@ -700,11 +703,25 @@
                     <span class="value">{{ number_format($pageCount) }}</span>
                     <span class="hint">Filtered list size</span>
                 </div>
-                <div class="categories-stat-card">
-                    <span class="label">Vacancies on this page</span>
-                    <span class="value">{{ number_format($totalVacanciesOnPage) }}</span>
-                    <span class="hint">Total roles in shown categories</span>
-                </div>
+                @if(!in_array($currentFilter, ['telegram','hh'], true))
+                    <div class="categories-stat-card">
+                        <span class="label">Vacancies on this page</span>
+                        <span class="value">{{ number_format($totalVacanciesOnPage) }}</span>
+                        <span class="hint">Total roles in shown categories</span>
+                    </div>
+                @endif
+                @if($currentFilter !== 'archived')
+                    <div class="categories-stat-card">
+                        <span class="label">Published vacancies</span>
+                        <span class="value value-publish">{{ number_format($publishedCount ?? 0) }}</span>
+                        <span class="hint">Status = publish</span>
+                    </div>
+                    <div class="categories-stat-card">
+                        <span class="label">Archived vacancies</span>
+                        <span class="value value-archive">{{ number_format($archivedCount ?? 0) }}</span>
+                        <span class="hint">Status = archive</span>
+                    </div>
+                @endif
             </div>
         </div>
     </div>
