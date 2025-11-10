@@ -27,11 +27,14 @@ class DashboardController extends Controller
         $resumesCount = Resume::count();
         $applicationsCount = Application::count();
         $telegramChannelsCount = TelegramChannel::count();
+        // Published-only counts for social radar primary metrics
         $telegramVacanciesCount = Vacancy::query()
             ->whereRaw('LOWER(source) LIKE ?', ['telegram%'])
+            ->where('status', Vacancy::STATUS_PUBLISH)
             ->count();
         $hhVacanciesCount = Vacancy::query()
             ->whereRaw('LOWER(source) LIKE ?', ['hh%'])
+            ->where('status', Vacancy::STATUS_PUBLISH)
             ->count();
         $telegramArchiveVacanciesCount = Vacancy::query()
             ->whereRaw('LOWER(source) LIKE ?', ['telegram%'])
