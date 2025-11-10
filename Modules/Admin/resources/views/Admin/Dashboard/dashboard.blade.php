@@ -97,6 +97,73 @@
         @endforeach
     </div>
 
+
+    <div class="dashboard-section">
+        <div class="dashboard-section__body">
+            <div class="row g-3">
+                <div class="col-xxl-4">
+                    <div class="dashboard-card dashboard-card--list">
+                        <div class="dashboard-card__header">
+                            <h3>Top Visitors</h3>
+                            <a class="link" href="{{ route('admin.visits.top_users') }}">View all</a>
+                        </div>
+                        <div class="dashboard-card__body dashboard-card__body--scroll">
+                            @forelse($topUsers as $u)
+                                <div class="dashboard-list-item">
+                                    <span class="avatar">
+                                        <i class="feather-user"></i>
+                                    </span>
+                                    <div class="info">
+                                        <span class="name">{{ trim(($u->first_name ?? '').' '.($u->last_name ?? '')) ?: ($u->email ?? 'User #'.$u->id) }}</span>
+                                        <span class="description">{{ $u->email }}</span>
+                                    </div>
+                                    <span class="value">{{ number_format($u->visits_count) }}</span>
+                                </div>
+                            @empty
+                                <div class="dashboard-empty">No visitor data yet</div>
+                            @endforelse
+                        </div>
+                    </div>
+                </div>
+                <div class="col-xxl-4">
+                    <div class="dashboard-card dashboard-card--list">
+                        <div class="dashboard-card__header">
+                            <h3>Vacancies by Category</h3>
+                            @isset($vacanciesTotal)
+                                <span class="badge total">Total {{ number_format($vacanciesTotal) }}</span>
+                            @endisset
+                            <a class="link" href="{{ route('admin.vacancies.categories') }}">View All</a>
+                        </div>
+                        <div class="dashboard-card__body dashboard-card__body--scroll">
+                            @if(!empty($vacancyCategories) && count($vacancyCategories))
+                                @foreach($vacancyCategories as $row)
+                                    <div class="dashboard-list-item">
+                                        <div class="info">
+                                            <span class="name text-capitalize">{{ $row->category ?: 'other' }}</span>
+                                        </div>
+                                        <span class="value">{{ number_format($row->c) }}</span>
+                                    </div>
+                                @endforeach
+                            @else
+                                <div class="dashboard-empty">No vacancy data yet</div>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+                <div class="col-xxl-4">
+                    <div class="dashboard-card">
+                        <div class="dashboard-card__header">
+                            <h3>Social radar</h3>
+                            <span class="badge timeframe">Channel blend</span>
+                        </div>
+                        <div class="dashboard-card__body chart-lg" id="social-radar-chart"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
     <div class="dashboard-section">
         <div class="dashboard-section__body">
             <div class="dashboard-section__title">
@@ -223,7 +290,7 @@
         </div>
     </div>
 
-    <div class="dashboard-section">
+    <!-- <div class="dashboard-section">
         <div class="dashboard-section__body">
             <div class="row g-3">
                 <div class="col-xxl-4">
@@ -286,7 +353,7 @@
                 </div>
             </div>
         </div>
-    </div>
+    </div> -->
 </div>
 
 <style>
