@@ -255,6 +255,7 @@ Schedule::call(function () {
     }
 })
 ->everyMinute()
+->name('telegram:vacancies:dispatch-queued')
 ->withoutOverlapping();
 
 
