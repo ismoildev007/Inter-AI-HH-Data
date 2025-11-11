@@ -5,6 +5,7 @@ namespace Modules\TelegramChannel\Console\Commands;
 use Illuminate\Console\Command;
 use Modules\TelegramChannel\Jobs\SyncSourceChannelJob;
 use App\Models\TelegramChannel;
+use Illuminate\Support\Facades\Redis;
 
 // class RelayRunCommand extends Command
 // {
@@ -86,6 +87,25 @@ class RelayRunCommand extends Command
         $cfg = (array) config('telegramchannel_relay.dispatch', []);
         $chunkSize = max(1, (int) ($cfg['chunk_size'] ?? 25));
         $offsetKey = (string) ($cfg['offset_cache_key'] ?? 'tg:relay:offset');
+
+        // If deliver backlog exists, optionally skip or minimize sync dispatch
+        $deliverBacklog = 0;
+        try {
+            $deliverBacklog = (int) (Redis::llen('queues:telegram-deliver') ?? 0);
+        } catch (\Throwable $e) {}
+        $backlogThreshold = (int) ($cfg['pause_sync_if_deliver_backlog'] ?? 0);
+        $skipOnBacklog = (bool) ($cfg['skip_sync_on_backlog'] ?? true);
+        $minChunk = max(1, (int) ($cfg['min_chunk_when_backlog'] ?? 1));
+        if ($backlogThreshold > 0 && $deliverBacklog >= $backlogThreshold) {
+            if ($skipOnBacklog) {
+                $this->info(sprintf(
+                    'Skipping sync dispatch due to deliver backlog (backlog=%d, threshold=%d)',
+                    $deliverBacklog, $backlogThreshold
+                ));
+                return self::SUCCESS;
+            }
+            $chunkSize = $minChunk;
+        }
 
         $count = count($peers);
         $offset = (int) (\Cache::get($offsetKey, 0));

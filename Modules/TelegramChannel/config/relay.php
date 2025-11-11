@@ -201,6 +201,10 @@ return [
         // 500 source va 50 chunk => ~10 daqiqada to'liq aylanma
         'chunk_size' => 15,
         'offset_cache_key' => 'tg:relay:offset',
+        // Deliver backlog bo'lsa sync'ni moslash: deliver doim ustun bo'lsin
+        'pause_sync_if_deliver_backlog' => 25,   // deliver navbatida kamida shu qadar job bo'lsa
+        'skip_sync_on_backlog' => true,          // true: sync umuman yuborilmaydi; false: minimal chunk bilan yuboriladi
+        'min_chunk_when_backlog' => 1,           // backlog bo'lsa sync uchun minimal chunk
     ],
     'debug' => [
         // Enable to log memory usage per fetch loop
