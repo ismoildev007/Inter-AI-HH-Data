@@ -254,7 +254,7 @@ Schedule::call(function () {
         \Log::warning('dispatch-queued scheduler error', ['error' => $e->getMessage()]);
     }
 })
-->everyMinute()
+->everyThirtySeconds()
 ->name('telegram:vacancies:dispatch-queued')
 ->withoutOverlapping();
 

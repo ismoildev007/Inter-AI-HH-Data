@@ -26,7 +26,8 @@ class DeliverVacancyJob implements ShouldQueue, ShouldBeUnique
 
     public function uniqueId(): string
     {
-        return 'deliver:vacancy:' . $this->vacancyId;
+        // Bump namespace to bypass stale unique locks from old queue name
+        return 'deliver:v2:vacancy:' . $this->vacancyId;
     }
 
     public function backoff(): array
