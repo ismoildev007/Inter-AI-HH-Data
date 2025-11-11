@@ -82,6 +82,24 @@ class DeliverVacancyJob implements ShouldQueue, ShouldBeUnique
                 return;
             }
 
+            // Global FLOOD_WAIT cool-down: if set, skip early and re-schedule
+            try {
+                $coolKey = (string) (config('telegramchannel_relay.throttle.publish.cooldown_key', 'tg:publish:cooldown_until'));
+                $now = time();
+                $coolUntil = (int) (Cache::get($coolKey, 0));
+                if ($coolUntil > $now) {
+                    $delay = max(1, $coolUntil - $now);
+                    Log::info('DeliverVacancyJob cool-down active, releasing', [
+                        'vacancy_id' => $vac->id,
+                        'delay' => $delay,
+                    ]);
+                    $this->release($delay + 1);
+                    return;
+                }
+            } catch (\Throwable $e) {
+                // ignore cool-down errors
+            }
+
             // Pre-send dedupe guard: if identical content already queued/published, do not send
             try {
                 $sig  = trim((string) ($vac->signature ?? ''));
@@ -268,12 +286,17 @@ class DeliverVacancyJob implements ShouldQueue, ShouldBeUnique
                     return;
                 }
 
-                // Handle FLOOD_WAIT gracefully: re-schedule with Telegram-advised delay
+                // Handle FLOOD_WAIT gracefully: set global cool-down and re-schedule
                 if ($floodDelay > 0) {
                     Log::warning('DeliverVacancyJob FLOOD_WAIT', [
                         'vacancy_id' => $vac->id,
                         'delay' => $floodDelay,
                     ]);
+                    try {
+                        $coolKey = (string) (config('telegramchannel_relay.throttle.publish.cooldown_key', 'tg:publish:cooldown_until'));
+                        $until = time() + (int) $floodDelay;
+                        Cache::put($coolKey, $until, max(1, (int) $floodDelay + 2));
+                    } catch (\Throwable $ie) {}
                     $this->release($floodDelay + 1);
                     return;
                 }

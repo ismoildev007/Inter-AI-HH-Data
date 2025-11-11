@@ -218,11 +218,13 @@ return [
             'key' => 'tg:publish',
             // ruxsat etilgan yuborishlar soni / 60s (ENV talab qilinmaydi)
             // Kerak bo'lsa shu faylda sonni o'zgartiring
-            'allow' => 60, // per minute (config-driven)
+            'allow' => 20, // per minute (realistik xavfsiz chegaraga tushirildi)
             'every' => 60, // seconds
-            'block' => 5,  // acquire up to N seconds per inner attempt
+            'block' => 1,  // acquire up to N seconds per inner attempt (tez qayta urinish)
             // DeliverVacancyJob ichida bir attempt davomida nechta ichki acquire qilish (config-driven)
-            'inner_retries' => 6,
+            'inner_retries' => 3,
+            // Global FLOOD_WAIT cool-down cache key
+            'cooldown_key' => 'tg:publish:cooldown_until',
         ],
     ],
 ];
