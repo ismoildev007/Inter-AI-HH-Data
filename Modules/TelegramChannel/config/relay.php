@@ -222,8 +222,9 @@ return [
             'key' => 'tg:publish',
             // ruxsat etilgan yuborishlar soni / 60s (ENV talab qilinmaydi)
             // Kerak bo'lsa shu faylda sonni o'zgartiring
-            'allow' => 20, // per minute (realistik xavfsiz chegaraga tushirildi)
-            'every' => 60, // seconds
+            // 30 soniyalik oynada 5 ta (≈ 10/min)
+            'allow' => 5,  // per window
+            'every' => 30, // seconds (window size)
             'block' => 1,  // acquire up to N seconds per inner attempt (tez qayta urinish)
             // DeliverVacancyJob ichida bir attempt davomida nechta ichki acquire qilish (config-driven)
             'inner_retries' => 3,
