@@ -48,6 +48,7 @@ use Illuminate\Support\Facades\Schedule;
 use Illuminate\Support\Facades\Cache;
 use App\Models\Vacancy;
 use Modules\TelegramChannel\Jobs\DeliverVacancyJob;
+use Modules\TelegramChannel\Console\Commands\DispatchQueuedVacanciesCommand;
 
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
@@ -227,6 +228,34 @@ Artisan::command('telegram:vacancies:requeue-failed {--limit=500}', function () 
 Schedule::command('telegram:vacancies:requeue-failed')
     ->everyMinute()
     ->withoutOverlapping();
+
+// Queued (status=queued) vakansiyalarni qayta-dispatch qilish (safety net)
+Schedule::call(function () {
+    try {
+        $cfg = (array) config('telegramchannel_relay.dispatch', []);
+        $limit = (int) ($cfg['deliver_batch_size'] ?? 50);
+        if ($limit <= 0) { $limit = 50; }
+        $ids = Vacancy::query()
+            ->where('status', Vacancy::STATUS_QUEUED)
+            ->orderBy('id')
+            ->limit($limit)
+            ->pluck('id')
+            ->all();
+        foreach ($ids as $id) {
+            $lock = Cache::lock('tg:dispatch:v'.$id, 10);
+            if (!$lock->get()) { continue; }
+            try {
+                \Modules\TelegramChannel\Jobs\DeliverVacancyJob::dispatch($id)->onQueue('telegram-deliver');
+            } finally {
+                optional($lock)->release();
+            }
+        }
+    } catch (\Throwable $e) {
+        \Log::warning('dispatch-queued scheduler error', ['error' => $e->getMessage()]);
+    }
+})
+->everyMinute()
+->withoutOverlapping();
 
 
 Schedule::command('hh:telegram-send-negotiations')

@@ -205,6 +205,8 @@ return [
         'pause_sync_if_deliver_backlog' => 25,   // deliver navbatida kamida shu qadar job bo'lsa
         'skip_sync_on_backlog' => true,          // true: sync umuman yuborilmaydi; false: minimal chunk bilan yuboriladi
         'min_chunk_when_backlog' => 1,           // backlog bo'lsa sync uchun minimal chunk
+        // Manual dispatcher: how many queued records to (re)dispatch per run
+        'deliver_batch_size' => 50,
     ],
     'debug' => [
         // Enable to log memory usage per fetch loop
