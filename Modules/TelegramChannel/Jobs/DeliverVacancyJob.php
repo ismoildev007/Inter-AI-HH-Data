@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Cache;
 use App\Models\Vacancy;
 use App\Models\TelegramChannel;
-use Modules\TelegramChannel\Services\Telegram\MadelineClient;
+use Modules\TelegramChannel\Exceptions\SessionLockBusyException;
 
 class DeliverVacancyJob implements ShouldQueue, ShouldBeUnique
 {
@@ -34,7 +34,7 @@ class DeliverVacancyJob implements ShouldQueue, ShouldBeUnique
         return [5, 20, 60];
     }
 
-    public function handle(MadelineClient $tg): void
+    public function handle(): void
     {
         $vac = null;
         try {
@@ -64,6 +64,21 @@ class DeliverVacancyJob implements ShouldQueue, ShouldBeUnique
                 } else {
                     $this->release(30);
                 }
+                return;
+            }
+
+            // Lazily resolve Madeline client to avoid constructor DI failures during session lock
+            try {
+                /** @var \Modules\TelegramChannel\Services\Telegram\MadelineClient $tg */
+                $tg = app(\Modules\TelegramChannel\Services\Telegram\MadelineClient::class);
+            } catch (SessionLockBusyException $e) {
+                $retry = (int) config('telegramchannel_relay.locks.session_retry', 20);
+                Log::warning('DeliverVacancyJob session busy, releasing', [
+                    'vacancy_id' => $vac->id,
+                    'retry' => $retry,
+                    'attempt' => $this->attempts(),
+                ]);
+                $this->release(max(1, $retry));
                 return;
             }
 

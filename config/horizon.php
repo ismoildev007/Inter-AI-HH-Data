@@ -198,10 +198,10 @@ return [
             'timeout' => 60,
             'nice' => 0,
         ],
-        // Telegram relay supervisors (dedicated queue)
+        // Telegram supervisors (deliver gets priority over sync)
         'telegram-relay' => [
             'connection' => 'redis',
-            'queue' => ['telegram-relay'],
+            'queue' => ['telegram-deliver', 'telegram-sync'],
             'balance' => 'auto',
             'autoScalingStrategy' => 'time',
             // One process per Telegram session for stability
@@ -237,7 +237,7 @@ return [
             ],
             'telegram-relay' => [
                 'connection' => 'redis',
-                'queue' => ['telegram-relay'],
+                'queue' => ['telegram-deliver', 'telegram-sync'],
                 'balance' => 'simple',
                 'processes' => 1,
                 'maxProcesses' => 1,

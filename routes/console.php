@@ -212,7 +212,7 @@ Artisan::command('telegram:vacancies:requeue-failed {--limit=500}', function () 
                 ->where('status', Vacancy::STATUS_FAILED)
                 ->update(['status' => Vacancy::STATUS_QUEUED]);
             if ($updated) {
-                DeliverVacancyJob::dispatch($id)->onQueue('telegram-relay');
+                DeliverVacancyJob::dispatch($id)->onQueue('telegram-deliver');
                 $count++;
             }
         }

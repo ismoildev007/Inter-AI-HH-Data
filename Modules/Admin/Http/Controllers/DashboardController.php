@@ -963,7 +963,7 @@ class DashboardController extends Controller
         $vacancy->save();
 
         // Dispatch delivery job immediately
-        DeliverVacancyJob::dispatch($vacancy->id)->onQueue('telegram-relay');
+        DeliverVacancyJob::dispatch($vacancy->id)->onQueue('telegram-deliver');
 
         return redirect()->back()->with('status', 'Vacancy re-queued for delivery.');
     }
@@ -991,7 +991,7 @@ class DashboardController extends Controller
             if (empty($ids)) return false;
             Vacancy::whereIn('id', $ids)->update(['status' => Vacancy::STATUS_QUEUED]);
             foreach ($ids as $id) {
-                DeliverVacancyJob::dispatch($id)->onQueue('telegram-relay');
+                DeliverVacancyJob::dispatch($id)->onQueue('telegram-deliver');
             }
             $count += count($ids);
         });

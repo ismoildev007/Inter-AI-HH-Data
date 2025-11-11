@@ -103,7 +103,7 @@ class RelayRunCommand extends Command
         }
 
         foreach ($slice as $peer) {
-            SyncSourceChannelJob::dispatch($peer)->onQueue('telegram-relay');
+            SyncSourceChannelJob::dispatch($peer)->onQueue('telegram-sync');
         }
         $this->info(sprintf(
             'Dispatched sync chunk: count=%d offset=%d total=%d',

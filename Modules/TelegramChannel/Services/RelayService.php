@@ -615,7 +615,7 @@ class RelayService
                         Log::error('Failed to save queued Vacancy', ['err' => $e->getMessage()]);
                     }
                     if ($vac) {
-                        \Modules\TelegramChannel\Jobs\DeliverVacancyJob::dispatch($vac->id)->onQueue('telegram-relay');
+                        \Modules\TelegramChannel\Jobs\DeliverVacancyJob::dispatch($vac->id)->onQueue('telegram-deliver');
                         // Treat as delivered for last_id progression in decoupled mode
                         if ($id > $maxDeliveredId) { $maxDeliveredId = $id; }
                     }
