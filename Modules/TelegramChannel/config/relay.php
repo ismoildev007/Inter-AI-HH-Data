@@ -199,7 +199,7 @@ return [
     'dispatch' => [
         // Nechta source har daqiqada ishga tushsin (round-robin)
         // 500 source va 50 chunk => ~10 daqiqada to'liq aylanma
-        'chunk_size' => 10,
+        'chunk_size' => 15,
         'offset_cache_key' => 'tg:relay:offset',
     ],
     'debug' => [
