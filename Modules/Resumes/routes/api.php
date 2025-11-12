@@ -11,6 +11,7 @@ Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
     Route::patch('resumes/{id}/primary', [ResumesController::class, 'setPrimary'])->name('resumes.setPrimary');
 
     Route::get('hh-resumes/my', [HhResumeController::class, 'myHhResumes'])->name('hh-resumes.my');
+    Route::get('hh-resumes/published', [HhResumeController::class, 'myPublishedHhResumes'])->name('hh-resumes.published');
 
     Route::post('hh-resumes/{resumeId}/set-primary' , [HhResumeController::class, 'saveAsPrimary'])->name('hh-resumes.setAsPrimary');
 });
