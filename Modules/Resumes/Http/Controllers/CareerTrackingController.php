@@ -15,7 +15,6 @@ class CareerTrackingController extends Controller
         $careerTrackingInfo = DB::table('career_tracking_pdfs')
             ->where('resume_id', $resume->id)
             ->first();
-        dd($careerTrackingInfo, $resume, $user);
 
         return response()->json([
             'success' => true,
