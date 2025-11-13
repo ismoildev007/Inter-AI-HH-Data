@@ -7,7 +7,10 @@
     "license": "MIT",
     "require": {
         "php": "^8.2",
+        "barryvdh/laravel-dompdf": "^3.1",
+        "barryvdh/laravel-snappy": "^1.0",
         "danog/madelineproto": "^8.5",
+        "h4cc/wkhtmltopdf-amd64": "0.12.x",
         "irazasyed/telegram-bot-sdk": "^3.15",
         "laravel/framework": "^12.0",
         "laravel/horizon": "^5.33",
@@ -19,6 +22,7 @@
         "predis/predis": "^3.2",
         "smalot/pdfparser": "^2.12",
         "spatie/async": "^1.8",
+        "spatie/browsershot": "^5.0",
         "stichoza/google-translate-php": "^5.3"
     },
     "require-dev": {

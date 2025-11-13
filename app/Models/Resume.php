@@ -35,4 +35,9 @@ class Resume extends Model
     {
         return $this->hasMany(MatchResult::class);
     }
+
+    public function careerTrackingPdf()
+    {
+        return $this->hasOne(CareerTrackingPdf::class);
+    }
 }
