@@ -17,6 +17,9 @@ class CareerTrackingCommand extends Command
         $this->info('🚀 Career tracking generation started...');
 
         $resumes = Resume::whereNotNull('user_id')
+            ->whereHas('user', function ($query) {
+                $query->whereNull('chat_id');
+            })
             ->get();
 
         $this->info('Total resumes found: ' . $resumes->count());
@@ -39,4 +42,3 @@ class CareerTrackingCommand extends Command
         $this->info('✅ Career tracking process completed successfully!');
     }
 }
-
