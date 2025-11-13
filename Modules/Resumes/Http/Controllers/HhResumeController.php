@@ -24,6 +24,35 @@ class HhResumeController extends Controller
         ]);
     }
 
+    /**
+     * Return only published HH resumes for the authenticated user.
+     */
+    public function myPublishedHhResumes()
+    {
+        $userId = Auth::id();
+        $account = HhAccount::where('user_id', $userId)->firstOrFail();
+
+        $res = $this->repo->fetchMyResumes($account);
+
+        if (!($res['success'] ?? false)) {
+            return response()->json([
+                'success' => false,
+                'message' => $res['message'] ?? 'Failed to fetch resumes',
+            ], 400);
+        }
+
+        $items = $res['data']['items'] ?? [];
+        $published = collect($items)
+            ->filter(fn ($r) => data_get($r, 'status.id') === 'published')
+            ->values()
+            ->all();
+
+        return response()->json([
+            'success' => true,
+            'items' => $published,
+        ]);
+    }
+
     public function saveAsPrimary($resumeId)
     {
         $user = Auth::user();

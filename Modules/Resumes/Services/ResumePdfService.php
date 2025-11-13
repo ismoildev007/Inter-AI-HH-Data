@@ -1,0 +1,335 @@
+<?php
+
+namespace Modules\Resumes\Services;
+
+use App\Models\CareerTrackingPdf;
+use App\Models\Resume;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
+use Barryvdh\Snappy\Facades\SnappyPdf;
+use Spatie\Browsershot\Browsershot;
+
+class ResumePdfService
+{
+    public function pdf(Resume $resume): void
+    {
+        try {
+            $resumeText = (string) ($resume->parsed_text ?? $resume->description);
+
+            $prompt = <<<PROMPT
+                You are an expert AI assistant that analyzes resumes of software engineers and returns a structured JSON object with career insights.
+                ❗️Important:
+                - Return only **valid JSON**, without explanations, markdown, or comments.
+                - JSON field names (keys) must stay in English.
+                - All JSON values (strings, text, summaries, descriptions) must be written **in Uzbek language**.
+                - Do not use Russian or English inside the values.
+                - Always include "contact" field with email and phone
+                - Always include "career_forecast" field with senior_readiness, hard_skills, potential_level
+
+                    Based on this example, I thoroughly researched the person in this resume and developed a career path based on this example:
+                    "
+                   🧠 Общий профиль
+                    Имя: Пулатов Шахбоз Фарход угли
+                    Возраст: 25 лет
+                    Город: Ташкент
+                    Позиция: Vue.js Frontend Developer
+                    Опыт: 4 года 8 месяцев
+                    Компании:
+
+                    🏢 Asialuxe — Vue.js Frontend Developer (текущая позиция, более 2 лет)
+
+                    💼 Zakiy IT Company — Full-stack Developer (Vue + Node.js, управление командой)
+
+                    👨‍💻 Serius Team, BA Tech Academy, UIC Group — фронтенд-разработка на Vue.js
+                    Образование:
+
+                    Tashkent University of Information Technology, Software Engineering
+                    Языки: 🇺🇿 Узбекский — Родной 🇬🇧 Английский — B2 🇷🇺 Русский — A2
+
+                    ⚙️ Карьерная диагностика (точка A)
+                    Параметр  Оценка
+                    🧭 Уровень  Middle+/Senior Frontend Developer
+                    💻 Технологии  Vue.js, Nuxt.js, TypeScript, Tailwind, GraphQL, Pinia, Node.js
+                    🧩 Архитектура  Уверенно владеет компонентной архитектурой, оптимизацией UI
+                    ☁️ Full-stack понимание  Есть опыт Node.js + Prisma + PostgreSQL
+                    🧠 Сильные стороны  Опыт управления командой, больше 30 продакшн-проектов
+                    ⚠️ Зоны роста  Архитектура Frontend-приложений (Design Patterns), тестирование, CI/CD
+                    💬 Soft Skills  Уверенная коммуникация, самостоятельность, зрелое мышление
+                    💡 Вывод
+
+                    Шахбоз — сильный middle+/пред-сеньорный фронтенд-инженер, у которого есть опыт end-to-end разработки, лидерства и работы в продакшн-командах.
+                    Он обладает технической зрелостью и опытом масштабных B2B-проектов (Asialuxe, CRM, корпоративные панели).
+
+                    Следующий этап — переход от “feature developer” к frontend-архитектору / team lead, с упором на проектирование, DevOps и code quality culture.
+
+                    📊 Навыковая оценка (по 10-балльной шкале)
+                    Навык  Уровень  Комментарий
+                    Vue.js / Nuxt.js  8.5 / 10  Глубокие знания, опыт крупных SPA-приложений
+                    TypeScript  7.5 / 10  Хорошая база, стоит глубже использовать типизацию компонентов
+                    State Management (Vuex / Pinia)  8 / 10  Отличный контроль состояния, можно усилить через архитектурные шаблоны
+                    GraphQL / REST API  7.5 / 10  Реальный опыт интеграций, стоит освоить caching стратегии
+                    Node.js / Backend  6.5 / 10  Базовый уровень, пригоден для full-stack задач
+                    Testing (Jest, Cypress)  5 / 10  Мало упоминаний — нуждается в практике unit и e2e тестов
+                    Performance / Optimization  7 / 10  Хорошо владеет оптимизацией UI, стоит изучить SSR и lazy hydration
+                    Leadership / Teamwork  8 / 10  Руководил фронтенд-командой, опыт управления задачами
+                    🧭 Карьерный трек (12 месяцев развития)
+                    🎯 Цель:
+
+                    Перейти из Middle+/Pre-Senior → Senior Frontend Architect / Lead Developer
+                    с доходом $2500+ (remote или крупная компания) в течение года.
+
+                    🔹 Месяцы 1–3 — “Архитектура и качество”
+
+                    Цель: выйти за рамки “фичей” и проектировать системы.
+
+                    Освоить Vue 3 Composition API patterns (Scoped slots, Composables).
+
+                    Применить SOLID и DRY принципы во фронтенде.
+
+                    Начать писать unit-тесты (Jest) и e2e (Cypress).
+
+                    Изучить архитектуру Nuxt 3 SSR + API routes.
+
+                    📈 Результат: системное мышление и чистый архитектурный подход.
+
+                    🔹 Месяцы 4–6 — “Техническое лидерство”
+
+                    Цель: развить ответственность за команду и продукт.
+
+                    Настроить CI/CD pipeline (GitHub Actions).
+
+                    Создать frontend architecture guide для команды (структура, именование, code review).
+
+                    Провести внутренние воркшопы “Code quality” и “Vue performance”.
+
+                    Начать pet-проект с open-source архитектурой.
+
+                    📈 Результат: лидерский статус в команде и осознанная архитектура.
+
+                    🔹 Месяцы 7–9 — “Fullstack гибкость и DevOps”
+
+                    Цель: увеличить независимость как инженера.
+
+                    Изучить Docker, Nginx, basic AWS (S3, EC2).
+
+                    Реализовать pet-проект: Vue + Node.js + Prisma + PostgreSQL.
+
+                    Добавить GraphQL caching и SSR оптимизацию.
+
+                    📈 Результат: готовность к ролям “Lead Frontend” и “Fullstack Architect”.
+
+                    🔹 Месяцы 10–12 — “Senior / Lead позиционирование”
+
+                    Цель: построить публичный имидж специалиста.
+
+                    Создать портфолио на GitHub/LinkedIn (3 топовых проекта).
+
+                    Написать 2 статьи:
+
+                    “Vue3 Enterprise Architecture Guide”
+
+                    “Optimizing Nuxt Apps for Performance and SEO”
+
+                    Подготовиться к AI-интервью уровня Senior в inter-ai.
+
+                    📈 Результат: готовность к руководящей позиции и международным проектам.
+
+                    💬 Рекомендации AI
+
+                    💎 Сфокусируйся на Frontend Architecture & Testing — это твой путь к Senior.
+
+                    🧠 Изучи design patterns во Vue/Nuxt и SSR-нагрузку.
+
+                    Baxrom aka, [11/11/25 1:42 PM]
+                    🧩 Настрой CI/CD и Docker окружение для всех своих pet-проектов.
+
+                    📘 Развивай навык code review и наставничество в команде.
+
+                    🌍 Продолжай повышать английский до C1 — для remote и лид-ролей.
+
+                    💰 Прогноз и потенциал
+                    Метрика  Значение
+                    Текущий уровень  Middle+
+                    Потенциал роста  9.5 / 10
+                    Hard Skills  8.4 / 10
+                    Soft Skills  8.0 / 10
+                    Senior Readiness  75 %
+                    Время до Senior  9–12 месяцев
+                    Целевая роль  Senior Frontend Architect / Lead Developer
+                    Целевая зарплата  $2500–3000+ (Remote / GCC / EU)
+                    🧩 Tech Focus для интернациональных проектов
+                    Направление  Ключевые навыки
+                    Frontend Core  Vue3, Nuxt3, TypeScript, SSR
+                    State Mgmt  Pinia, Composition API, GraphQL cache
+                    Architecture  Modular UI, Atomic Design, Clean Frontend
+                    DevOps  Docker, GitHub Actions, CI/CD
+                    Testing  Jest, Cypress, Vitest
+                    Performance  Code-splitting, hydration, lazy loading
+                    🧭 Итог
+
+                    Шахбоз — зрелый middle+/пред-сеньорный фронтенд-инженер, способный вести команду,
+                    строить сложные интерфейсы и держать высокий уровень кода.
+                    При развитии архитектурных навыков и внедрении DevOps-стека,
+                    он может стать Frontend Lead / Architect уровня international remote к середине 2026 года.
+                "
+
+                Analyze the following resume text and produce a structured JSON with the following fields:
+                {
+                  "general_profile": {
+                    "full_name": "string",
+                    "age": "number",
+                    "location": "string",
+                    "position": "string",
+                    "total_experience_years": "number",
+                    "technologies": ["string", "string", ...],
+                    "languages": {
+                      "uzbek": "level",
+                      "english": "level",
+                      "russian": "level"
+                    }
+                  },
+                  "contact": {
+                    "email": "string",
+                    "phone": "string"
+                  },
+                  "experience_summary": [
+                    {
+                      "company": "string",
+                      "position": "string",
+                      "duration": "string",
+                      "responsibilities": ["string", "string", ...],
+                      "tech_stack": ["string", "string", ...]
+                    }
+                  ],
+                  "education": {
+                    "university": "string",
+                    "degree": "string",
+                    "year": "string"
+                  },
+                  "skills": {
+                    "frontend": ["Vue.js", "Nuxt.js", "TypeScript", ...],
+                    "backend": ["Node.js", "Express", "NestJS", ...],
+                    "databases": ["MongoDB", "PostgreSQL", ...],
+                    "tools": ["Docker", "Git", "CI/CD", ...]
+                  },
+                  "career_diagnosis": {
+                    "level": "Junior | Middle | Middle+ | Senior",
+                    "strengths": ["string", "string", ...],
+                    "growth_areas": ["string", "string", ...],
+                    "soft_skills": ["string", "string", ...],
+                    "summary": "Short paragraph summarizing current career status and direction."
+                  },
+                  "career_forecast": {
+                    "senior_readiness": "number (0-100)",
+                    "hard_skills": "number (0-10)",
+                    "potential_level": "number (0-10)"
+                  },
+                  "development_plan": {
+                    "goal": "string",
+                    "period_months": "number",
+                    "plan_by_quarters": {
+                      "Q1": ["string", "string","string", "string"],
+                      "Q2": ["string", "string","string", "string"],
+                      "Q3": ["string", "string","string", "string"],
+                      "Q4": ["string", "string","string", "string"]
+                    },
+                    "target_position": "string",
+                    "target_salary_usd": "number"
+                  },
+                  "projects": [
+                    {
+                      "name": "string",
+                      "url": "string",
+                      "description": "string"
+                    }
+                  ]
+                }
+                Resume text:
+                {$resumeText}
+                PROMPT;
+
+            $model = env('OPENAI_MODEL', 'gpt-4.1-nano');
+
+            $response = Http::withToken(env('OPENAI_API_KEY'))
+                ->timeout(120)
+                ->post('https://api.openai.com/v1/chat/completions', [
+                    'model' => $model,
+                    'messages' => [
+                        ['role' => 'system', 'content' => 'You are a helpful AI for analyzing resumes.'],
+                        ['role' => 'user', 'content' => $prompt],
+                    ],
+                ]);
+            Log::info('Response yo umuman', json_decode($response->body(), true));
+
+            $result = $response->json();
+            $jsonOutput = $result['choices'][0]['message']['content'] ?? null;
+
+            // JSON ni tozalash
+            $jsonOutput = preg_replace('/```json\s*|\s*```/', '', $jsonOutput);
+            $decoded = json_decode($jsonOutput, true);
+
+            if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+
+                // Default qiymatlar qo'shish
+                if (!isset($decoded['contact'])) {
+                    $decoded['contact'] = ['email' => '---', 'phone' => '---'];
+                }
+                if (!isset($decoded['career_forecast'])) {
+                    $decoded['career_forecast'] = [
+                        'senior_readiness' => 0,
+                        'hard_skills' => 0,
+                        'potential_level' => 0
+                    ];
+                }
+
+                $pdfFileName = 'career_report_' . $resume->id . '_' . time() . '.pdf';
+                $pdfPath = 'career_reports/' . $pdfFileName;
+                $imagePath = public_path('tracking/assets/Logo.svg');
+
+                $imageData = base64_encode(file_get_contents($imagePath));
+                $imageSrc = 'data:image/svg+xml;base64,' . $imageData;
+//                $pdf = SnappyPdf::loadView('careerTracking.tracking', [
+//                    'data' => $decoded,
+//                    'logo' => $imageSrc,
+//                ])->setOption('enable-local-file-access', true)
+//                    ->setOption('margin-top', 0)
+//                    ->setOption('margin-right', 0)
+//                    ->setOption('margin-bottom', 0)
+//                    ->setOption('margin-left', 0)
+//                    ->setOption('page-size', 'A4')
+//                    ->setOption('encoding', 'UTF-8');
+                $pdfBinary = Browsershot::html(
+                    view('careerTracking.tracking', [
+                        'data' => $decoded,
+                        'logo' => $imageSrc,
+                    ])->render()
+                )
+                    ->format('A4')
+                    ->margins(0, 0, 0, 0)
+                    ->noSandbox() // Linux serverlarda kerak bo‘ladi
+                    ->waitUntilNetworkIdle() // rasmlar to‘liq yuklansin
+                    ->pdf(); // ❗️ pdf() bu binary qaytaradi
+
+// PDF faylni storage/public ichiga yozamiz
+                Storage::disk('public')->put($pdfPath, $pdfBinary);
+
+                CareerTrackingPdf::updateOrCreate(
+                    ['resume_id' => $resume->id],
+                    [
+                        'json' => json_encode($decoded, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE),
+                        'pdf' => $pdfPath,
+                    ]
+                );
+            } else {
+                Log::error('Invalid JSON from OpenAI for resume ID: '.$resume->id, [
+                    'response' => $jsonOutput,
+                ]);
+            }
+        } catch (\Throwable $e) {
+            Log::error('Error generating career PDF for resume ID: '.$resume->id, [
+                'message' => $e->getMessage(),
+            ]);
+        }
+    }
+}

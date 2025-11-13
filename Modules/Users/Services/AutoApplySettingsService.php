@@ -19,6 +19,9 @@ class AutoApplySettingsService
             'auto_apply_enabled' => (bool)($data['auto_apply_enabled'] ?? false),
             'auto_apply_limit'   => (int)($data['auto_apply_limit'] ?? 0),
         ];
+        if (array_key_exists('resume_id', $data)) {
+            $payload['resume_id'] = $data['resume_id']; // HH resume ID for auto-apply
+        }
 
         if ($setting) {
             $setting->update($payload);
@@ -76,6 +79,10 @@ class AutoApplySettingsService
             }
 
             $payload['auto_apply_limit'] = $newLimit;
+        }
+
+        if (array_key_exists('resume_id', $data)) {
+            $payload['resume_id'] = $data['resume_id']; // update auto-apply resume choice
         }
 
         if (!empty($payload)) {

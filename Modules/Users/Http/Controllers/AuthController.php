@@ -182,6 +182,7 @@ class AuthController extends Controller
         $validated = $request->validate([
             'auto_apply_enabled' => 'required|boolean',
             'auto_apply_limit'   => 'required|integer|min:0',
+            'resume_id'          => 'sometimes|nullable|string', // HH resume ID tanlovi
         ]);
 
         $setting = $this->autoApplySettingsService->create($user, $validated);
@@ -200,6 +201,7 @@ class AuthController extends Controller
         $validated = $request->validate([
             'auto_apply_enabled' => 'sometimes|boolean',
             'auto_apply_limit'   => 'sometimes|integer|min:0',
+            'resume_id'          => 'sometimes|nullable|string', // HH resume ID tanlovi
         ]);
 
         if (empty($validated)) {

@@ -134,27 +134,8 @@ class HhAccountRepository implements HhAccountRepositoryInterface
             ]
         );
 
-        $url = 'https://api.hh.ru/resumes/mine';
-
-        $resumesResp = Http::withHeaders([
-            'Authorization' => 'Bearer ' . $accessToken,
-            'User-Agent' => 'InterAi/1.0 (+support@inter-ai.uz',
-        ])->get($url);
-        Log::info(['resume' => $resumesResp->json()]);
-
-        if ($resumesResp->ok()) {
-            $resumes = $resumesResp->json()['items'] ?? [];
-
-            // find active resume
-            $activeResume = collect($resumes)->firstWhere('status.id', 'published');
-            Log::info(['active resume' => $activeResume]);
-            if ($activeResume) {
-                UserSetting::updateOrCreate(
-                    ['user_id' => $oauth['user_id']],
-                    ['resume_id' => $activeResume['id']]
-                );
-            }
-        }
+        // Do not auto-select any HH resume during OAuth callback.
+        // The user must explicitly choose a resume when applying or via settings.
 
         Cache::forget('hh:oauth:state:' . $state);
         return $account ;

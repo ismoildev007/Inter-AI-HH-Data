@@ -51,7 +51,9 @@ class ResumesServiceProvider extends ServiceProvider
      */
     protected function registerCommands(): void
     {
-        // $this->commands([]);
+        $this->commands([
+            \Modules\Resumes\Console\Commands\CareerTrackingCommand::class,
+        ]);
     }
 
     /**

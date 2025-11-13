@@ -95,18 +95,14 @@ class HHVacancyController extends Controller
         ]);
     }
 
-    public function apply($id)
+    public function apply(Request $request, $id)
     {
-        // $coverLetter = $request->input('cover_letter', null);
         $user = auth()->user();
-
-        $resumeId = $user->settings->resume_id;
-        if (!$resumeId) {
-            return response()->json([
-                'success' => false,
-                'message' => 'No primary resume set. Please set a primary resume in your settings.',
-            ], 200);
-        }
+        $validated = $request->validate([
+            'resume_id' => ['required', 'string'], // HH resume ID (external)
+        ]);
+        // HH resume to use for this application (from request)
+        $resumeId = $validated['resume_id'];
 
         $vacancy = Vacancy::where('external_id', $id)->firstOrFail();
 
@@ -119,6 +115,9 @@ class HHVacancyController extends Controller
             ->first();
 
         $coverLetter = $user->preference?->cover_letter ?? null;
+
+        // Qo'lda apply qilinayotgan bo'lsa, user tanlovini settingsga majburan yozmaymiz.
+        // Auto-apply uchun user alohida tanlov qiladi (settings orqali).
 
         return DB::transaction(function () use ($user, $vacancy, $resumeId, $coverLetter, $matchResult, $userResume) {
             $existing = Application::where('user_id', $user->id)
