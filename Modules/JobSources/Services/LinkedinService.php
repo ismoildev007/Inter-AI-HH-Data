@@ -175,7 +175,7 @@ class LinkedinService
             $allJobs = [];
 
             // Paginate quickly across 3 pages (0–75 results)
-            for ($start = 0; $start <= 1000; $start += 25) {
+            for ($start = 0; $start <= 500; $start += 25) {
 
                 $url = "https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search" .
                     "?keywords=" . urlencode($keyword) .
@@ -281,13 +281,13 @@ class LinkedinService
                     'external_id' => $externalId,
                     'apply_url'        => $job['link'],
                     'status'      => 'publish',
-                    'raw_data'    => $job,
+                    'raw_data'    => json_encode($job),
                 ]);
                 $saved++;
             } else {
                 $vac->update([
                     'title'       => $job['title'] ?? $vac->title,
-                    'raw_data'    => $job,
+                    'raw_data'    => json_encode($job),
                     'description' => implode("\n", array_filter([
                         $job['company'] ?? '',
                         $job['location'] ?? '',

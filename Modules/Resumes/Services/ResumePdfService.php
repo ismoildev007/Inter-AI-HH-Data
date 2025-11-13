@@ -12,20 +12,80 @@ use Spatie\Browsershot\Browsershot;
 
 class ResumePdfService
 {
-    public function pdf(Resume $resume): void
-    {
-        try {
-            $resumeText = (string) ($resume->parsed_text ?? $resume->description);
+  public function pdf(Resume $resume): void
+  {
+    try {
+      $existing = CareerTrackingPdf::where('resume_id', $resume->id)->first();
+      if ($existing) {
+        Log::info("⚠️ Career tracking already exists for resume ID {$resume->id}, skipping...");
+        return;
+      }
 
-            $prompt = <<<PROMPT
-                You are an expert AI assistant that analyzes resumes of software engineers and returns a structured JSON object with career insights.
-                ❗️Important:
-                - Return only **valid JSON**, without explanations, markdown, or comments.
-                - JSON field names (keys) must stay in English.
-                - All JSON values (strings, text, summaries, descriptions) must be written **in Uzbek language**.
-                - Do not use Russian or English inside the values.
-                - Always include "contact" field with email and phone
-                - Always include "career_forecast" field with senior_readiness, hard_skills, potential_level
+      $resumeText = (string) ($resume->parsed_text ?? $resume->description);
+
+      $prompt = <<<PROMPT
+                You are a senior career analyst specialized in interpreting resumes and generating structured career diagnostics.
+
+                Your task:  
+                Given a resume, you must deeply analyze it and reconstruct a full 8-section career report with maximum accuracy.
+
+                IMPORTANT — You must understand the resume as follows:
+                - Work experience determines technical level (Junior/Middle/Senior).
+                - Responsibilities, not years, define level.
+                - Keywords such as “CI/CD”, “RBAC”, “testing”, “architecture”, “database design” signal Middle-level maturity.
+                - Missing fields must be inferred logically from context, not left empty.
+                - All explanations, descriptions, comments, roadmap goals must be detailed and expanded logically.
+                - You must preserve narrative parts (long sentences and conclusions) inside JSON fields.
+                - information should be in uzbek language of all times.
+
+                Output MUST be valid JSON only.
+
+                ----------------------------------------------------
+                ANALYSIS INSTRUCTIONS (HOW YOU MUST THINK):
+
+                1. **General Profile**
+                  - Extract name, age, location, languages.
+                  - Extract companies AND describe each role’s essence (what person *actually did*).
+                  
+                2. **Career Diagnostics**
+                  - Determine level (Junior / Middle / Senior) based on:
+                      * autonomy
+                      * complexity of tasks
+                      * DevOps responsibility
+                      * architecture knowledge
+                      * CI/CD usage
+                      * testing experience
+                  - Explain strengths and growth points in full sentences.
+
+                3. **Hard Skills**
+                  - Score 1–10 based on:
+                      * real production usage
+                      * seniority of tasks
+                      * maturity
+                      * coverage depth
+                  - Add clear comments.
+
+                4. **Roadmap (12 months)**
+                  - Every block (1–3, 4–6, 7–9, 10–12) MUST contain:
+                      * goal (big objective)
+                      * 4–8 detailed tasks
+                      * expected outcome (1 paragraph)
+
+                5. **AI Recommendations**
+                  - Provide 5–10 clear actionable recommendations.
+
+                6. **Career Potential**
+                  - Predict:
+                      * readiness for Middle/Senior
+                      * time to reach next level
+                      * target salary
+                      * target market roles
+
+                7. **International Tech Focus**
+                  - Extract technologies relevant to EU/GCC/Remote market.
+
+                8. **Final Summary**
+                  - A long professional conclusion (~5–8 sentences).
 
                     Based on this example, I thoroughly researched the person in this resume and developed a career path based on this example:
                     "
@@ -177,159 +237,174 @@ class ResumePdfService
                 Analyze the following resume text and produce a structured JSON with the following fields:
                 {
                   "general_profile": {
-                    "full_name": "string",
-                    "age": "number",
-                    "location": "string",
-                    "position": "string",
-                    "total_experience_years": "number",
-                    "technologies": ["string", "string", ...],
-                    "languages": {
-                      "uzbek": "level",
-                      "english": "level",
-                      "russian": "level"
-                    }
+                    "name": "",
+                    "age": "",
+                    "city": "",
+                    "position": "",
+                    "experience_text": "",
+                    "companies": [],
+                    "education": "",
+                    "languages": []
                   },
-                  "contact": {
-                    "email": "string",
-                    "phone": "string"
+
+                  "career_diagnostics": {
+                    "level": { "level": "", "comment": "" },
+                    "technologies": { "technology": "", "comment": "" },
+                    "architecture_score": { "score": "", "comment": "" },
+                    "architecture_comment": { "score": "", "comment": "" },
+                    "fullstack_score": { "score": "", "comment": "" },
+                    "fullstack_comment": "",
+                    "strengths": [],
+                    "growth_zones": [],
+                    "soft_skills_score": { "score": "", "comment": "" },
+                    "portrait_summary": ""
                   },
-                  "experience_summary": [
-                    {
-                      "company": "string",
-                      "position": "string",
-                      "duration": "string",
-                      "responsibilities": ["string", "string", ...],
-                      "tech_stack": ["string", "string", ...]
-                    }
-                  ],
-                  "education": {
-                    "university": "string",
-                    "degree": "string",
-                    "year": "string"
+                  "next_level": "",
+
+                  "hard_skills_rating": {
+                    "php_laravel": { "score": "", "comment": "" },
+                    "mysql_postgresql": { "score": "", "comment": "" },
+                    "rest_api": { "score": "", "comment": "" },
+                    "testing": { "score": "", "comment": "" },
+                    "ci_cd": { "score": "", "comment": "" },
+                    "linux_ssh": { "score": "", "comment": "" },
+                    "architecture_patterns": { "score": "", "comment": "" },
+                    "devops_basics": { "score": "", "comment": "" },
+                    "soft_skills": { "score": "", "comment": "" }
                   },
-                  "skills": {
-                    "frontend": ["Vue.js", "Nuxt.js", "TypeScript", ...],
-                    "backend": ["Node.js", "Express", "NestJS", ...],
-                    "databases": ["MongoDB", "PostgreSQL", ...],
-                    "tools": ["Docker", "Git", "CI/CD", ...]
-                  },
-                  "career_diagnosis": {
-                    "level": "Junior | Middle | Middle+ | Senior",
-                    "strengths": ["string", "string", ...],
-                    "growth_areas": ["string", "string", ...],
-                    "soft_skills": ["string", "string", ...],
-                    "summary": "Short paragraph summarizing current career status and direction."
-                  },
-                  "career_forecast": {
-                    "senior_readiness": "number (0-100)",
-                    "hard_skills": "number (0-10)",
-                    "potential_level": "number (0-10)"
-                  },
-                  "development_plan": {
-                    "goal": "string",
-                    "period_months": "number",
-                    "plan_by_quarters": {
-                      "Q1": ["string", "string","string", "string"],
-                      "Q2": ["string", "string","string", "string"],
-                      "Q3": ["string", "string","string", "string"],
-                      "Q4": ["string", "string","string", "string"]
+
+                  "growth_roadmap_12_months": {
+                    "months_1_3": {
+                      "goal": "",
+                      "tasks": [],
+                      "result": ""
                     },
-                    "target_position": "string",
-                    "target_salary_usd": "number"
-                  },
-                  "projects": [
-                    {
-                      "name": "string",
-                      "url": "string",
-                      "description": "string"
+                    "months_4_6": {
+                      "goal": "",
+                      "tasks": [],
+                      "result": ""
+                    },
+                    "months_7_9": {
+                      "goal": "",
+                      "tasks": [],
+                      "result": ""
+                    },
+                    "months_10_12": {
+                      "goal": "",
+                      "tasks": [],
+                      "result": ""
                     }
-                  ]
+                  },
+
+                  "ai_recommendations": [],
+
+                  "career_potential": {
+                    "current_level": "",
+                    "growth_potential_score": "",
+                    "hard_skill_average": "",
+                    "soft_skill_average": "",
+                    "middle_readiness_percent": "",
+                    "time_to_middle_months": "",
+                    "target_role": "",
+                    "salary_local": "",
+                    "salary_remote": ""
+                  },
+
+                  "international_tech_focus": [],
+
+                  "final_summary": ""
                 }
-                Resume text:
+                Here is the resume:
+                <<<RESUME_START>>>
                 {$resumeText}
+                <<<RESUME_END>>>
+                ONLY RETURN JSON. 
+                NO TEXT OUTSIDE JSON.
+                NO MARKDOWN.
+
                 PROMPT;
 
-            $model = env('OPENAI_MODEL', 'gpt-4.1-nano');
+      $model = env('OPENAI_MODEL', 'gpt-5-nano');
 
-            $response = Http::withToken(env('OPENAI_API_KEY'))
-                ->timeout(120)
-                ->post('https://api.openai.com/v1/chat/completions', [
-                    'model' => $model,
-                    'messages' => [
-                        ['role' => 'system', 'content' => 'You are a helpful AI for analyzing resumes.'],
-                        ['role' => 'user', 'content' => $prompt],
-                    ],
-                ]);
-            Log::info('Response yo umuman', json_decode($response->body(), true));
+      $response = Http::withToken(env('OPENAI_API_KEY'))
+        ->timeout(120)
+        ->post('https://api.openai.com/v1/chat/completions', [
+          'model' => $model,
+          'messages' => [
+            ['role' => 'system', 'content' => 'You are a helpful AI for analyzing resumes.'],
+            ['role' => 'user', 'content' => $prompt],
+          ],
+        ]);
+      Log::info('Response yo umuman', json_decode($response->body(), true));
 
-            $result = $response->json();
-            $jsonOutput = $result['choices'][0]['message']['content'] ?? null;
+      $result = $response->json();
+      $jsonOutput = $result['choices'][0]['message']['content'] ?? null;
 
-            // JSON ni tozalash
-            $jsonOutput = preg_replace('/```json\s*|\s*```/', '', $jsonOutput);
-            $decoded = json_decode($jsonOutput, true);
+      // JSON ni tozalash
+      $jsonOutput = preg_replace('/```json\s*|\s*```/', '', $jsonOutput);
+      $decoded = json_decode($jsonOutput, true);
 
-            if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+      if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
 
-                // Default qiymatlar qo'shish
-                if (!isset($decoded['contact'])) {
-                    $decoded['contact'] = ['email' => '---', 'phone' => '---'];
-                }
-                if (!isset($decoded['career_forecast'])) {
-                    $decoded['career_forecast'] = [
-                        'senior_readiness' => 0,
-                        'hard_skills' => 0,
-                        'potential_level' => 0
-                    ];
-                }
-
-                $pdfFileName = 'career_report_' . $resume->id . '_' . time() . '.pdf';
-                $pdfPath = 'career_reports/' . $pdfFileName;
-                $imagePath = public_path('tracking/assets/Logo.svg');
-
-                $imageData = base64_encode(file_get_contents($imagePath));
-                $imageSrc = 'data:image/svg+xml;base64,' . $imageData;
-//                $pdf = SnappyPdf::loadView('careerTracking.tracking', [
-//                    'data' => $decoded,
-//                    'logo' => $imageSrc,
-//                ])->setOption('enable-local-file-access', true)
-//                    ->setOption('margin-top', 0)
-//                    ->setOption('margin-right', 0)
-//                    ->setOption('margin-bottom', 0)
-//                    ->setOption('margin-left', 0)
-//                    ->setOption('page-size', 'A4')
-//                    ->setOption('encoding', 'UTF-8');
-                $pdfBinary = Browsershot::html(
-                    view('careerTracking.tracking', [
-                        'data' => $decoded,
-                        'logo' => $imageSrc,
-                    ])->render()
-                )
-                    ->format('A4')
-                    ->margins(0, 0, 0, 0)
-                    ->noSandbox() // Linux serverlarda kerak bo‘ladi
-                    ->waitUntilNetworkIdle() // rasmlar to‘liq yuklansin
-                    ->pdf(); // ❗️ pdf() bu binary qaytaradi
-
-// PDF faylni storage/public ichiga yozamiz
-                Storage::disk('public')->put($pdfPath, $pdfBinary);
-
-                CareerTrackingPdf::updateOrCreate(
-                    ['resume_id' => $resume->id],
-                    [
-                        'json' => json_encode($decoded, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE),
-                        'pdf' => $pdfPath,
-                    ]
-                );
-            } else {
-                Log::error('Invalid JSON from OpenAI for resume ID: '.$resume->id, [
-                    'response' => $jsonOutput,
-                ]);
-            }
-        } catch (\Throwable $e) {
-            Log::error('Error generating career PDF for resume ID: '.$resume->id, [
-                'message' => $e->getMessage(),
-            ]);
+        // Default qiymatlar qo'shish
+        if (!isset($decoded['contact'])) {
+          $decoded['contact'] = ['email' => '---', 'phone' => '---'];
         }
+        if (!isset($decoded['career_forecast'])) {
+          $decoded['career_forecast'] = [
+            'senior_readiness' => 0,
+            'hard_skills' => 0,
+            'potential_level' => 0
+          ];
+        }
+
+        // $pdfFileName = 'career_report_' . $resume->id . '_' . time() . '.pdf';
+        // $pdfPath = 'career_reports/' . $pdfFileName;
+        // $imagePath = public_path('tracking/assets/Logo.svg');
+
+        // $imageData = base64_encode(file_get_contents($imagePath));
+        // $imageSrc = 'data:image/svg+xml;base64,' . $imageData;
+        // //                $pdf = SnappyPdf::loadView('careerTracking.tracking', [
+        // //                    'data' => $decoded,
+        // //                    'logo' => $imageSrc,
+        // //                ])->setOption('enable-local-file-access', true)
+        // //                    ->setOption('margin-top', 0)
+        // //                    ->setOption('margin-right', 0)
+        // //                    ->setOption('margin-bottom', 0)
+        // //                    ->setOption('margin-left', 0)
+        // //                    ->setOption('page-size', 'A4')
+        // //                    ->setOption('encoding', 'UTF-8');
+        // $pdfBinary = Browsershot::html(
+        //   view('careerTracking.tracking', [
+        //     'data' => $decoded,
+        //     'logo' => $imageSrc,
+        //   ])->render()
+        // )
+        //   ->format('A4')
+        //   ->margins(0, 0, 0, 0)
+        //   ->noSandbox() // Linux serverlarda kerak bo‘ladi
+        //   ->waitUntilNetworkIdle() // rasmlar to‘liq yuklansin
+        //   ->pdf(); // ❗️ pdf() bu binary qaytaradi
+
+        // // PDF faylni storage/public ichiga yozamiz
+        // Storage::disk('public')->put($pdfPath, $pdfBinary);
+
+        CareerTrackingPdf::updateOrCreate(
+          ['resume_id' => $resume->id],
+          [
+            'json' => json_encode($decoded, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE),
+            // 'pdf' => $pdfPath,
+          ]
+        );
+      } else {
+        Log::error('Invalid JSON from OpenAI for resume ID: ' . $resume->id, [
+          'response' => $jsonOutput,
+        ]);
+      }
+    } catch (\Throwable $e) {
+      Log::error('Error generating career PDF for resume ID: ' . $resume->id, [
+        'message' => $e->getMessage(),
+      ]);
     }
+  }
 }
