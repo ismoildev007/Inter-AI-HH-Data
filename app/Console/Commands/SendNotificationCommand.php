@@ -89,6 +89,7 @@ class SendNotificationCommand extends Command
                     $user->tokens()->delete();
 
                     $token = $user->createToken('api_token', ['*'], now()->addDays(30))->plainTextToken;
+                    Log::info("✅ Created new API token for user {$user->id} {$token}");
                     $webAppUrl = "https://vacancies.inter-ai.uz/#?chat_id={$user->chat_id}&token={$token}&locale={$langCode}";
 
                     $inlineKeyboard = Keyboard::make()

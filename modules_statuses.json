@@ -9,5 +9,6 @@
     "Admin": true,
     "TelegramChannel": true,
     "TelegramBot": true,
-    "DemoResume": true
+    "DemoResume": true,
+    "JobSources": true
 }

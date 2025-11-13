@@ -19,6 +19,7 @@
         "predis/predis": "^3.2",
         "smalot/pdfparser": "^2.12",
         "spatie/async": "^1.8",
+        "spatie/browsershot": "^5.0",
         "stichoza/google-translate-php": "^5.3"
     },
     "require-dev": {

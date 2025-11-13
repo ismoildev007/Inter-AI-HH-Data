@@ -26,8 +26,7 @@ class NotificationMatchingService
     public function __construct(
         VacancyInterface   $vacancyRepository,
         HHVacancyInterface $hhRepository
-    )
-    {
+    ) {
         $this->vacancyRepository = $vacancyRepository;
         $this->hhRepository = $hhRepository;
     }
@@ -36,6 +35,65 @@ class NotificationMatchingService
     {
         Log::info('🚀 Job started', ['resume_id' => $resume->id, 'query' => $query]);
         $start = microtime(true);
+
+        // $linkedinTitle = explode(',', $resume->title ?? '')[0] ?? '';
+        // $linkedinQuery = !empty($linkedinTitle) ? $linkedinTitle : $query;
+        $resumeCategory = $resume->category ?? null;
+
+        // $linkedinVacanciesForUser = collect();
+
+        // try {
+        //     $linkedinService = app(\Modules\JobSources\Services\LinkedinService::class);
+        //     $linkedinResponse = $linkedinService->fetchLinkedinJobs($linkedinQuery, '91000000');
+        //     $linkedinJobs = collect($linkedinResponse['data'] ?? []);
+
+        //     $saveStats = $linkedinService->saveToDatabase($linkedinJobs->all());
+
+        //     $allExternalIds = $linkedinJobs
+        //         ->map(fn($job) => $linkedinService->extractExternalId($job['link'] ?? ''))
+        //         ->filter()
+        //         ->values();
+
+        //     $allVacancies = Vacancy::where('source', 'linkedin')
+        //         ->whereIn('external_id', $allExternalIds)
+        //         ->get()
+        //         ->keyBy('external_id');
+
+        //     $alreadyGiven = DB::table('match_results as mr')
+        //         ->join('vacancies as v', 'v.id', '=', 'mr.vacancy_id')
+        //         ->where('mr.resume_id', $resume->id)
+        //         ->where('v.source', 'linkedin')
+        //         ->pluck('v.external_id')
+        //         ->toArray();
+
+        //     $onlyNew = $allExternalIds
+        //         ->reject(fn($id) => in_array($id, $alreadyGiven))
+        //         ->map(fn($id) => $allVacancies->get($id))
+        //         ->filter()
+        //         ->values();
+
+        //     $linkedinVacanciesForUser = $onlyNew->take(10);
+
+        //     if ($linkedinVacanciesForUser->count() < 10) {
+        //         $needed = 10 - $linkedinVacanciesForUser->count();
+
+        //         $fallback = $allExternalIds
+        //             ->map(fn($id) => $allVacancies->get($id))
+        //             ->filter()
+        //             ->reject(fn($vac) => in_array($vac->external_id, $alreadyGiven))
+        //             ->skip(10) 
+        //             ->take($needed);
+
+        //         $linkedinVacanciesForUser = $linkedinVacanciesForUser
+        //             ->merge($fallback)
+        //             ->take(10);
+        //     }
+
+        //     Log::info("LinkedIn final count for user: " . $linkedinVacanciesForUser->count());
+        // } catch (\Throwable $e) {
+        //     Log::error("LinkedIn error: " . $e->getMessage());
+        // }
+
 
         // Translation va token generation
         $latinQuery = TranslitHelper::toLatin($query);
@@ -78,7 +136,7 @@ class NotificationMatchingService
             ->take(4)
             ->values();
 
-// TS Query generation
+        // TS Query generation
         $searchQuery = $latinQuery ?: $cyrilQuery;
         $tsTerms = [...$phrases, ...$tokens];
         $mustPair = count($tokens) >= 2 ? ['(' . $tokens[0] . ' ' . $tokens[1] . ')'] : [];
@@ -88,7 +146,7 @@ class NotificationMatchingService
             ? implode(' OR ', array_map(fn($t) => str_contains($t, ' ') ? '"' . str_replace('"', '', $t) . '"' : $t, $webParts))
             : (string) $searchQuery;
 
-// Category guessing
+        // Category guessing
         try {
             $guessedCategory = app(VacancyCategoryService::class)
                 ->categorize('', (string) ($resume->title ?? ''), (string) ($resume->description ?? ''), '');
@@ -99,14 +157,14 @@ class NotificationMatchingService
             $guessedCategory = null;
         }
 
-// HH vacancies caching (synchronous)
+        // HH vacancies caching (synchronous)
         $hhVacancies = cache()->remember(
             "hh:search:{$query}:area97",
             now()->addMinutes(30),
             fn() => $this->hhRepository->search($query, 0, 100, ['area' => 97])
         );
 
-// Local vacancies builder
+        // Local vacancies builder
         $buildLocal = function () use ($resume, $tsQuery, $tokens, $guessedCategory) {
             $techCategories = [
                 "IT and Software Development",
@@ -182,7 +240,12 @@ class NotificationMatchingService
                         }
                     })
                     ->select(
-                        'id', 'title', 'description', 'source', 'external_id', 'category',
+                        'id',
+                        'title',
+                        'description',
+                        'source',
+                        'external_id',
+                        'category',
                         DB::raw("ts_rank_cd($tsVectorSql, websearch_to_tsquery('simple', ?)) as rank")
                     )
                     ->addBinding($tsQuery, 'select');
@@ -191,7 +254,6 @@ class NotificationMatchingService
                     'categories' => $categoriesForSearch,
                     'tokens' => $tokens->all(),
                 ]);
-
             } else {
                 // Non-Tech: Broader search with category preference
                 $qb->select('id', 'title', 'description', 'source', 'external_id', 'category', DB::raw('0 as rank'))
@@ -231,7 +293,7 @@ class NotificationMatchingService
             return $qb->orderByDesc('rank')->orderByDesc('id');
         };
 
-// Execute query (synchronous, no promises)
+        // Execute query (synchronous, no promises)
         $localVacancies = collect($buildLocal()->limit(10)->get())
             ->take(10)
             ->keyBy(fn($v) => $v->source === 'hh' && $v->external_id ? $v->external_id : "local_{$v->id}");
@@ -280,6 +342,16 @@ class NotificationMatchingService
                 'text' => mb_substr(strip_tags($v->description), 0, 2000),
             ];
         }
+
+        // foreach ($linkedinVacanciesForUser as $v) {
+        //     $vacanciesPayload[] = [
+        //         'id'          => $v->id,
+        //         'vacancy_id'  => $v->id,
+        //         'text'        => mb_substr(strip_tags($v->description), 0, 2000),
+        //         'source'      => 'linkedin'
+        //     ];
+        // }
+
         $toFetch = collect($hhItems)
             ->filter(fn($item) => isset($item['id'])
                 && !$localVacancies->has($item['id'])
@@ -327,7 +399,7 @@ class NotificationMatchingService
                         ->first();
 
                     if (!$vac && isset($match['raw'])) {
-                        $vac = $this->vacancyRepository->createFromHH($match['raw']);
+                        $vac = $this->vacancyRepository->createFromHH($match['raw'], $resumeCategory);
                     }
                 }
 

@@ -45,6 +45,8 @@ class VacancyMatchResource extends JsonResource
                 ? Carbon::parse($raw['published_at'])->format('Y-m-d H:i:s')
                 : null,
             'detail_api'  => $detailApi,
+            // 'apply_url'   => $vacancy?->apply_url ?? null,
+            // 'raw_data'   => $vacancy?->raw_data ? json_decode($vacancy->raw_data, true) : null,
         ];
 
         if ($vacancy?->source === 'telegram') {
