@@ -26,7 +26,7 @@ class ResumePdfService
       $prompt = <<<PROMPT
                 You are a senior career analyst specialized in interpreting resumes and generating structured career diagnostics.
 
-                Your task:  
+                Your task:
                 Given a resume, deeply analyze it and reconstruct a full 8-section career report with maximum accuracy using the EXACT JSON STRUCTURE provided below.
 
                 STRICT RULES:
@@ -41,35 +41,35 @@ class ResumePdfService
                 ----------------------------------------------------
                 ANALYSIS LOGIC YOU MUST FOLLOW:
 
-                1. General Profile  
-                  Extract name, age, city, position, experience, languages, email.  
+                1. General Profile
+                  Extract name, age, city, position, experience, languages, email.
                   Describe companies and what the person actually did in each role.
 
-                2. Career Diagnostics  
-                  Determine the level (Junior / Middle / Middle+ / Senior) using:  
-                  autonomy, architecture, CI/CD, testing, full-stack exposure, communication.  
+                2. Career Diagnostics
+                  Determine the level (Junior / Middle / Middle+ / Senior) using:
+                  autonomy, architecture, CI/CD, testing, full-stack exposure, communication.
                   Provide detailed Uzbek explanations for strengths and growth zones.
 
-                3. Hard Skills  
-                  Score 1–10 based on depth, real usage, maturity, production experience.  
+                3. Hard Skills
+                  Score 1–10 based on depth, real usage, maturity, production experience.
                   Include detailed comments.
 
-                4. Roadmap (12 months)  
+                4. Roadmap (12 months)
                   For each block (1–3, 4–6, 7–9, 10–12):
-                  - Write a goal  
-                  - Add 4–8 actionable tasks  
+                  - Write a goal
+                  - Add 4–8 actionable tasks
                   - Provide a rich result paragraph in Uzbek
 
-                5. AI Recommendations  
+                5. AI Recommendations
                   Provide 5–10 concrete professional recommendations.
 
-                6. Career Potential  
+                6. Career Potential
                   Predict readiness for next level, growth speed, salary expectations.
 
-                7. International Tech Focus  
+                7. International Tech Focus
                   Extract skills relevant for EU / GCC / remote market.
 
-                8. Final Summary  
+                8. Final Summary
                   5–8 sentence career conclusion in Uzbek.
 
                 in general_profile.level language should be in english like Junior, Middle, Senior etc.
@@ -99,8 +99,7 @@ class ResumePdfService
                         "Mentored junior developers, resulting in a more skilled team."
                       ],
                       "tech_stack": ["JavaScript", "React.js", "HTML", "CSS"]
-                    }, 
-              
+                    },
 
                 Analyze the following resume text and produce a structured JSON with the following fields:
                 {
@@ -419,7 +418,7 @@ class ResumePdfService
                 <<<RESUME_START>>>
                 {$resumeText}
                 <<<RESUME_END>>>
-                ONLY RETURN JSON. 
+                ONLY RETURN JSON.
                 NO TEXT OUTSIDE JSON.
                 NO MARKDOWN.
 
