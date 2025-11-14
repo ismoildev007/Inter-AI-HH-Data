@@ -103,6 +103,17 @@ class ResumePdfService
 
                 experience_years like this version: 4 yil 8 oy
 
+                ADDITIONAL COMPLETENESS AND THINKING REQUIREMENTS:
+                    - No field in JSON should be empty: do not use empty strings (""), empty arrays ([]) or empty objects ({}).
+                    - Even if the resume does not contain specific information, make a reasonable and logical guess based on the context and write a meaningful explanation (for example: "Not clearly stated in the resume, but based on experience, it is estimated as Middle level").
+                    - Do not use common empty values ​​​​such as "null", "N/A", "-"; write meaningful, explanatory text for each field.
+                    - Think carefully before forming each section, do not rush, deeply analyze the profile and give consistent, logical and coherent answers.
+                    - All numerical assessments, percentages and points should also be logically based, consistent with the content of the resume.
+
+                target_position.format must be like this: remote, on-site, hybrid.
+
+                do not write percentage symbol in any part.
+
                 Analyze the following resume text and produce a structured JSON with the following fields:
                 {
                   "general_profile": {

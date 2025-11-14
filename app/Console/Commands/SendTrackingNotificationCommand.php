@@ -62,19 +62,19 @@ class SendTrackingNotificationCommand extends Command
 
                 // 🌐 Telegram message text
                 if ($lang === 'uz') {
-                    $message = "Sizning karyera diagnostikangiz tayyor! 📊\n\n"
-                        . "Uni hoziroq oching va AI tomonidan yaratilgan to‘liq hisobotni ko‘ring 👇";
-                    $button = "Karyera Tracking Sahifa";
+                    $message = "Siz uchun ishlab chiqilgan karyera tahlilingiz tayyor! 📊\n\n"
+                        . "Uni hoziroq oching va to‘liq hisobotni ko‘ring 👇";
+                    $button = "Karyera tahlilini ko’rish";
                 }
                 elseif ($lang === 'ru') {
-                    $message = "Ваш карьерный анализ готов! 📊\n\n"
-                        . "Откройте страницу отслеживания и посмотрите отчёт AI 👇";
-                    $button = "Открыть Tracking";
+                    $message = "Ваш персональный карьерный анализ готов! 📊\n\n"
+                        . "Откройте его прямо сейчас и посмотрите полный отчёт 👇";
+                    $button = "Посмотреть карьерный анализ";
                 }
                 else {
-                    $message = "Your career tracking report is ready! 📊\n\n"
-                        . "Open your AI-generated tracking page 👇";
-                    $button = "Open Tracking Page";
+                    $message = "Your personalized career analysis is ready! 📊\n\n"
+                        . "Open it now and view your full report 👇";
+                    $button = "View Career Analysis";
                 }
 
                 // 🟦 Telegram button
