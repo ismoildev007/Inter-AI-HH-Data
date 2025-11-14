@@ -443,7 +443,11 @@ class ResumePdfService
       $jsonOutput = $result['choices'][0]['message']['content'] ?? null;
 
       // JSON ni tozalash
-      $jsonOutput = preg_replace('/```json\s*|\s*```/', '', $jsonOutput);
+      // $jsonOutput = preg_replace('/```json\s*|\s*```/', '', $jsonOutput);
+      $jsonOutput = preg_replace('/```[\s\S]*?```/', '', $jsonOutput);
+      $jsonOutput = trim($jsonOutput);
+
+
       $decoded = json_decode($jsonOutput, true);
 
       if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
