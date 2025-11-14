@@ -15,11 +15,11 @@ class ResumePdfService
   public function pdf(Resume $resume): void
   {
     try {
-      // $existing = CareerTrackingPdf::where('resume_id', $resume->id)->first();
-      // if ($existing) {
-      //   Log::info("⚠️ Career tracking already exists for resume ID {$resume->id}, skipping...");
-      //   return;
-      // }
+      $existing = CareerTrackingPdf::where('resume_id', $resume->id)->first();
+      if ($existing) {
+        Log::info("⚠️ Career tracking already exists for resume ID {$resume->id}, skipping...");
+        return;
+      }
 
       $resumeText = (string) ($resume->parsed_text ?? $resume->description);
 

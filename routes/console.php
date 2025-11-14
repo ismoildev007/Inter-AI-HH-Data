@@ -233,3 +233,7 @@ Schedule::call(function () {
 Schedule::command('hh:telegram-send-negotiations')
     ->dailyAt('13:00')
     ->withoutOverlapping();
+
+Schedule::command('app:career-tracking')
+    ->dailyAt('21:00')
+    ->withoutOverlapping();
