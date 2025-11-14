@@ -18,7 +18,7 @@ class CareerTrackingCommand extends Command
 
         $resumes = Resume::whereNotNull('user_id')
             ->whereHas('user', function ($query) {
-                $query->where('id', '985');
+                $query->whereIn('id', ['769', '868', '778']);
             })
             ->get();
 

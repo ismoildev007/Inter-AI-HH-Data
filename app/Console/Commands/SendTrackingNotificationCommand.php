@@ -55,7 +55,7 @@ class SendTrackingNotificationCommand extends Command
                 $lang = $user->language ?? 'uz';
 
                 // 🔗 Tracking page URL
-                $trackingUrl = "https://vacancies.inter-ai.uz/tracking?"
+                $trackingUrl = "https://vacancies.inter-ai.uz/#/career?"
                     . "resume_id={$resume->id}"
                     . "&token={$token}"
                     . "&locale={$lang}";
