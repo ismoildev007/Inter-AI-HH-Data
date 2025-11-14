@@ -101,6 +101,8 @@ class ResumePdfService
                       "tech_stack": ["JavaScript", "React.js", "HTML", "CSS"]
                     },
 
+                experience_years like this version: 4 yil 8 oy
+
                 Analyze the following resume text and produce a structured JSON with the following fields:
                 {
                   "general_profile": {
@@ -109,6 +111,7 @@ class ResumePdfService
                     "city": "",
                     "position": "",
                     "level": "",
+                    "experience_years": "",
                     "experience_text": "",
                     "email": "",
                     "languages": []
