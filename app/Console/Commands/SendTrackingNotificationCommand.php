@@ -62,9 +62,9 @@ class SendTrackingNotificationCommand extends Command
 
                 // 🌐 Telegram message text
                 if ($lang === 'uz') {
-                    $message = "Sizning karera diagnostikangiz tayyor! 📊\n\n"
+                    $message = "Sizning karyera diagnostikangiz tayyor! 📊\n\n"
                         . "Uni hoziroq oching va AI tomonidan yaratilgan to‘liq hisobotni ko‘ring 👇";
-                    $button = "Karera Tracking Sahifa";
+                    $button = "Karyera Tracking Sahifa";
                 }
                 elseif ($lang === 'ru') {
                     $message = "Ваш карьерный анализ готов! 📊\n\n"
