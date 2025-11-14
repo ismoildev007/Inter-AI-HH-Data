@@ -496,6 +496,7 @@ class ResumePdfService
             // 'pdf' => $pdfPath,
           ]
         );
+        Log::info('✅ Career PDF generated for resume ID: ' . $resume->id);
       } else {
         Log::error('Invalid JSON from OpenAI for resume ID: ' . $resume->id, [
           'response' => $jsonOutput,
