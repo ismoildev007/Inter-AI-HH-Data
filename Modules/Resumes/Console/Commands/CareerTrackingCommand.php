@@ -14,6 +14,7 @@ class CareerTrackingCommand extends Command
 
     public function handle(ResumePdfService $pdfService)
     {
+        Log::info("📄 Career Tracking Generation Command Started");
         $this->info('🚀 Career tracking generation started...');
 
         $resumes = Resume::whereNotNull('user_id')
