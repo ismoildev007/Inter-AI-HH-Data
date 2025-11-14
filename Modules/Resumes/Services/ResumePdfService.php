@@ -110,6 +110,10 @@ class ResumePdfService
                     - Think carefully before forming each section, do not rush, deeply analyze the profile and give consistent, logical and coherent answers.
                     - All numerical assessments, percentages and points should also be logically based, consistent with the content of the resume.
 
+                target_position.format should be like this: remote, on-site, hybrid.
+
+                do not write percentage symbol in any part.
+
                 Analyze the following resume text and produce a structured JSON with the following fields:
                 {
                   "general_profile": {
