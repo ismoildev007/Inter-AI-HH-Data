@@ -15,11 +15,11 @@ class ResumePdfService
   public function pdf(Resume $resume): void
   {
     try {
-      $existing = CareerTrackingPdf::where('resume_id', $resume->id)->first();
-      if ($existing) {
-        Log::info("⚠️ Career tracking already exists for resume ID {$resume->id}, skipping...");
-        return;
-      }
+      // $existing = CareerTrackingPdf::where('resume_id', $resume->id)->first();
+      // if ($existing) {
+      //   Log::info("⚠️ Career tracking already exists for resume ID {$resume->id}, skipping...");
+      //   return;
+      // }
 
       $resumeText = (string) ($resume->parsed_text ?? $resume->description);
 
@@ -27,212 +27,80 @@ class ResumePdfService
                 You are a senior career analyst specialized in interpreting resumes and generating structured career diagnostics.
 
                 Your task:  
-                Given a resume, you must deeply analyze it and reconstruct a full 8-section career report with maximum accuracy.
+                Given a resume, deeply analyze it and reconstruct a full 8-section career report with maximum accuracy using the EXACT JSON STRUCTURE provided below.
 
-                IMPORTANT — You must understand the resume as follows:
-                - Work experience determines technical level (Junior/Middle/Senior).
-                - Responsibilities, not years, define level.
-                - Keywords such as “CI/CD”, “RBAC”, “testing”, “architecture”, “database design” signal Middle-level maturity.
-                - Missing fields must be inferred logically from context, not left empty.
-                - All explanations, descriptions, comments, roadmap goals must be detailed and expanded logically.
-                - You must preserve narrative parts (long sentences and conclusions) inside JSON fields.
+                STRICT RULES:
+                - You MUST NOT change the JSON structure, key names, key order, or nesting.
+                - All values must be generated based on the resume, but keys must stay exactly identical.
+                - All narrative descriptions, comments, diagnostics, summaries, strengths, roadmap texts MUST be written in Uzbek.
+                - Missing information must be logically inferred from context.
+                - Output MUST be valid JSON only — no extra text, no markdown, no explanations.
                 - information should be in uzbek language of all times.
 
-                Output MUST be valid JSON only.
 
                 ----------------------------------------------------
-                ANALYSIS INSTRUCTIONS (HOW YOU MUST THINK):
+                ANALYSIS LOGIC YOU MUST FOLLOW:
 
-                1. **General Profile**
-                  - Extract name, age, location, languages.
-                  - Extract companies AND describe each role’s essence (what person *actually did*).
-                  
-                2. **Career Diagnostics**
-                  - Determine level (Junior / Middle / Senior) based on:
-                      * autonomy
-                      * complexity of tasks
-                      * DevOps responsibility
-                      * architecture knowledge
-                      * CI/CD usage
-                      * testing experience
-                  - Explain strengths and growth points in full sentences.
+                1. General Profile  
+                  Extract name, age, city, position, experience, languages, email.  
+                  Describe companies and what the person actually did in each role.
 
-                3. **Hard Skills**
-                  - Score 1–10 based on:
-                      * real production usage
-                      * seniority of tasks
-                      * maturity
-                      * coverage depth
-                  - Add clear comments.
+                2. Career Diagnostics  
+                  Determine the level (Junior / Middle / Middle+ / Senior) using:  
+                  autonomy, architecture, CI/CD, testing, full-stack exposure, communication.  
+                  Provide detailed Uzbek explanations for strengths and growth zones.
 
-                4. **Roadmap (12 months)**
-                  - Every block (1–3, 4–6, 7–9, 10–12) MUST contain:
-                      * goal (big objective)
-                      * 4–8 detailed tasks
-                      * expected outcome (1 paragraph)
+                3. Hard Skills  
+                  Score 1–10 based on depth, real usage, maturity, production experience.  
+                  Include detailed comments.
 
-                5. **AI Recommendations**
-                  - Provide 5–10 clear actionable recommendations.
+                4. Roadmap (12 months)  
+                  For each block (1–3, 4–6, 7–9, 10–12):
+                  - Write a goal  
+                  - Add 4–8 actionable tasks  
+                  - Provide a rich result paragraph in Uzbek
 
-                6. **Career Potential**
-                  - Predict:
-                      * readiness for Middle/Senior
-                      * time to reach next level
-                      * target salary
-                      * target market roles
+                5. AI Recommendations  
+                  Provide 5–10 concrete professional recommendations.
 
-                7. **International Tech Focus**
-                  - Extract technologies relevant to EU/GCC/Remote market.
+                6. Career Potential  
+                  Predict readiness for next level, growth speed, salary expectations.
 
-                8. **Final Summary**
-                  - A long professional conclusion (~5–8 sentences).
+                7. International Tech Focus  
+                  Extract skills relevant for EU / GCC / remote market.
 
-                    Based on this example, I thoroughly researched the person in this resume and developed a career path based on this example:
-                    "
-                   🧠 Общий профиль
-                    Имя: Пулатов Шахбоз Фарход угли
-                    Возраст: 25 лет
-                    Город: Ташкент
-                    Позиция: Vue.js Frontend Developer
-                    Опыт: 4 года 8 месяцев
-                    Компании:
+                8. Final Summary  
+                  5–8 sentence career conclusion in Uzbek.
 
-                    🏢 Asialuxe — Vue.js Frontend Developer (текущая позиция, более 2 лет)
+                in general_profile.level language should be in english like Junior, Middle, Senior etc.
+                in some part if level giving you should give in enlish language only.
 
-                    💼 Zakiy IT Company — Full-stack Developer (Vue + Node.js, управление командой)
-
-                    👨‍💻 Serius Team, BA Tech Academy, UIC Group — фронтенд-разработка на Vue.js
-                    Образование:
-
-                    Tashkent University of Information Technology, Software Engineering
-                    Языки: 🇺🇿 Узбекский — Родной 🇬🇧 Английский — B2 🇷🇺 Русский — A2
-
-                    ⚙️ Карьерная диагностика (точка A)
-                    Параметр  Оценка
-                    🧭 Уровень  Middle+/Senior Frontend Developer
-                    💻 Технологии  Vue.js, Nuxt.js, TypeScript, Tailwind, GraphQL, Pinia, Node.js
-                    🧩 Архитектура  Уверенно владеет компонентной архитектурой, оптимизацией UI
-                    ☁️ Full-stack понимание  Есть опыт Node.js + Prisma + PostgreSQL
-                    🧠 Сильные стороны  Опыт управления командой, больше 30 продакшн-проектов
-                    ⚠️ Зоны роста  Архитектура Frontend-приложений (Design Patterns), тестирование, CI/CD
-                    💬 Soft Skills  Уверенная коммуникация, самостоятельность, зрелое мышление
-                    💡 Вывод
-
-                    Шахбоз — сильный middle+/пред-сеньорный фронтенд-инженер, у которого есть опыт end-to-end разработки, лидерства и работы в продакшн-командах.
-                    Он обладает технической зрелостью и опытом масштабных B2B-проектов (Asialuxe, CRM, корпоративные панели).
-
-                    Следующий этап — переход от “feature developer” к frontend-архитектору / team lead, с упором на проектирование, DevOps и code quality culture.
-
-                    📊 Навыковая оценка (по 10-балльной шкале)
-                    Навык  Уровень  Комментарий
-                    Vue.js / Nuxt.js  8.5 / 10  Глубокие знания, опыт крупных SPA-приложений
-                    TypeScript  7.5 / 10  Хорошая база, стоит глубже использовать типизацию компонентов
-                    State Management (Vuex / Pinia)  8 / 10  Отличный контроль состояния, можно усилить через архитектурные шаблоны
-                    GraphQL / REST API  7.5 / 10  Реальный опыт интеграций, стоит освоить caching стратегии
-                    Node.js / Backend  6.5 / 10  Базовый уровень, пригоден для full-stack задач
-                    Testing (Jest, Cypress)  5 / 10  Мало упоминаний — нуждается в практике unit и e2e тестов
-                    Performance / Optimization  7 / 10  Хорошо владеет оптимизацией UI, стоит изучить SSR и lazy hydration
-                    Leadership / Teamwork  8 / 10  Руководил фронтенд-командой, опыт управления задачами
-                    🧭 Карьерный трек (12 месяцев развития)
-                    🎯 Цель:
-
-                    Перейти из Middle+/Pre-Senior → Senior Frontend Architect / Lead Developer
-                    с доходом $2500+ (remote или крупная компания) в течение года.
-
-                    🔹 Месяцы 1–3 — “Архитектура и качество”
-
-                    Цель: выйти за рамки “фичей” и проектировать системы.
-
-                    Освоить Vue 3 Composition API patterns (Scoped slots, Composables).
-
-                    Применить SOLID и DRY принципы во фронтенде.
-
-                    Начать писать unit-тесты (Jest) и e2e (Cypress).
-
-                    Изучить архитектуру Nuxt 3 SSR + API routes.
-
-                    📈 Результат: системное мышление и чистый архитектурный подход.
-
-                    🔹 Месяцы 4–6 — “Техническое лидерство”
-
-                    Цель: развить ответственность за команду и продукт.
-
-                    Настроить CI/CD pipeline (GitHub Actions).
-
-                    Создать frontend architecture guide для команды (структура, именование, code review).
-
-                    Провести внутренние воркшопы “Code quality” и “Vue performance”.
-
-                    Начать pet-проект с open-source архитектурой.
-
-                    📈 Результат: лидерский статус в команде и осознанная архитектура.
-
-                    🔹 Месяцы 7–9 — “Fullstack гибкость и DevOps”
-
-                    Цель: увеличить независимость как инженера.
-
-                    Изучить Docker, Nginx, basic AWS (S3, EC2).
-
-                    Реализовать pet-проект: Vue + Node.js + Prisma + PostgreSQL.
-
-                    Добавить GraphQL caching и SSR оптимизацию.
-
-                    📈 Результат: готовность к ролям “Lead Frontend” и “Fullstack Architect”.
-
-                    🔹 Месяцы 10–12 — “Senior / Lead позиционирование”
-
-                    Цель: построить публичный имидж специалиста.
-
-                    Создать портфолио на GitHub/LinkedIn (3 топовых проекта).
-
-                    Написать 2 статьи:
-
-                    “Vue3 Enterprise Architecture Guide”
-
-                    “Optimizing Nuxt Apps for Performance and SEO”
-
-                    Подготовиться к AI-интервью уровня Senior в inter-ai.
-
-                    📈 Результат: готовность к руководящей позиции и международным проектам.
-
-                    💬 Рекомендации AI
-
-                    💎 Сфокусируйся на Frontend Architecture & Testing — это твой путь к Senior.
-
-                    🧠 Изучи design patterns во Vue/Nuxt и SSR-нагрузку.
-
-                    Baxrom aka, [11/11/25 1:42 PM]
-                    🧩 Настрой CI/CD и Docker окружение для всех своих pet-проектов.
-
-                    📘 Развивай навык code review и наставничество в команде.
-
-                    🌍 Продолжай повышать английский до C1 — для remote и лид-ролей.
-
-                    💰 Прогноз и потенциал
-                    Метрика  Значение
-                    Текущий уровень  Middle+
-                    Потенциал роста  9.5 / 10
-                    Hard Skills  8.4 / 10
-                    Soft Skills  8.0 / 10
-                    Senior Readiness  75 %
-                    Время до Senior  9–12 месяцев
-                    Целевая роль  Senior Frontend Architect / Lead Developer
-                    Целевая зарплата  $2500–3000+ (Remote / GCC / EU)
-                    🧩 Tech Focus для интернациональных проектов
-                    Направление  Ключевые навыки
-                    Frontend Core  Vue3, Nuxt3, TypeScript, SSR
-                    State Mgmt  Pinia, Composition API, GraphQL cache
-                    Architecture  Modular UI, Atomic Design, Clean Frontend
-                    DevOps  Docker, GitHub Actions, CI/CD
-                    Testing  Jest, Cypress, Vitest
-                    Performance  Code-splitting, hydration, lazy loading
-                    🧭 Итог
-
-                    Шахбоз — зрелый middle+/пред-сеньорный фронтенд-инженер, способный вести команду,
-                    строить сложные интерфейсы и держать высокий уровень кода.
-                    При развитии архитектурных навыков и внедрении DevOps-стека,
-                    он может стать Frontend Lead / Architect уровня international remote к середине 2026 года.
-                "
+                in skill_radar.competencies, provide scores for like this:
+                  "Frontend Development" : "80,
+                  "Backend Development" : "75",
+                in gap_analysis.skills, provide like this:
+                      {
+                        "name": "JavaScript",
+                        "current": "80",
+                        "target": "70",
+                        "gap": "50"
+                      },
+                in career_path, may be more than 3 or less remove it if less than 3 if it empty, if more add. provide like this:
+                    {
+                      "position": "Frontend Developer",
+                      "company": "Tech Solutions",
+                      "period": "Jan 2020 - Dec 2022",
+                      "experience": "3 years",
+                      "status": "Full-time",
+                      "description": "Developed user interfaces using React.js and collaborated with designers to enhance UX.",
+                      "achievements": [
+                        "Led the migration to React.js, improving load times by 30%.",
+                        "Implemented a component library that reduced development time by 20%.",
+                        "Mentored junior developers, resulting in a more skilled team."
+                      ],
+                      "tech_stack": ["JavaScript", "React.js", "HTML", "CSS"]
+                    }, 
+              
 
                 Analyze the following resume text and produce a structured JSON with the following fields:
                 {
@@ -241,10 +109,17 @@ class ResumePdfService
                     "age": "",
                     "city": "",
                     "position": "",
+                    "level": "",
                     "experience_text": "",
-                    "companies": [],
-                    "education": "",
+                    "email": "",
                     "languages": []
+                  },
+
+                  "top_metrics": {
+                    "hard_skills_score": "",
+                    "senior_ready_percent": "",
+                    "potential_score": "",
+                    "projects_in_production": ""
                   },
 
                   "career_diagnostics": {
@@ -259,61 +134,287 @@ class ResumePdfService
                     "soft_skills_score": { "score": "", "comment": "" },
                     "portrait_summary": ""
                   },
-                  "next_level": "",
 
-                  "hard_skills_rating": {
-                    "php_laravel": { "score": "", "comment": "" },
-                    "mysql_postgresql": { "score": "", "comment": "" },
-                    "rest_api": { "score": "", "comment": "" },
-                    "testing": { "score": "", "comment": "" },
-                    "ci_cd": { "score": "", "comment": "" },
-                    "linux_ssh": { "score": "", "comment": "" },
-                    "architecture_patterns": { "score": "", "comment": "" },
-                    "devops_basics": { "score": "", "comment": "" },
-                    "soft_skills": { "score": "", "comment": "" }
+                  "profile_statistics": {
+                    "current_level": {
+                      "level": "",
+                      "comment": ""
+                    },
+                    "target_salary": {
+                      "amount": "",
+                      "period": ""
+                    },
+                    "soft_skills": {
+                      "score": "",
+                      "comment": ""
+                    },
+                    "companies_count": {
+                      "count": "",
+                      "companies": []
+                    },
+                    "main_stack": {
+                      "stack": "",
+                      "details": []
+                    },
+                    "teamlead_experience": {
+                      "status": "",
+                      "comment": ""
+                    },
+                    "education": {
+                      "university": "",
+                      "program": ""
+                    },
+                    "goal": {
+                      "position": "",
+                      "direction": ""
+                    }
+                  },
+
+                  "skills_radar": {
+                    "competencies": {},
+                    "advice": ""
+                  },
+
+                  "detailed_skills": {
+                    "items": [
+                      {
+                        "name": "",
+                        "score": "",
+                        "level": ""
+                      },
+                      {
+                        "name": "",
+                        "score": "",
+                        "level": ""
+                      },
+                      {
+                        "name": "",
+                        "score": "",
+                        "level": ""
+                      },
+                      {
+                        "name": "",
+                        "score": "",
+                        "level": ""
+                      },
+                      {
+                        "name": "",
+                        "score": "",
+                        "level": ""
+                      },
+                      {
+                        "name": "",
+                        "score": "",
+                        "level": ""
+                      },
+                      {
+                        "name": "",
+                        "score": "",
+                        "level": ""
+                      }
+                    ],
+                    "average_score": "",
+                    "senior_progress": "",
+                    "senior_progress_percent": ""
+                  },
+
+                  "strengths_and_growth": {
+                    "strengths": [
+                      {
+                        "title": "",
+                        "impact": "",
+                        "description": ""
+                      },
+                      {
+                        "title": "",
+                        "impact": "",
+                        "description": ""
+                      },
+                      {
+                        "title": "",
+                        "impact": "",
+                        "description": ""
+                      },
+                      {
+                        "title": "",
+                        "impact": "",
+                        "description": ""
+                      },
+                      {
+                        "title": "",
+                        "impact": "",
+                        "description": ""
+                      }
+                    ],
+
+                    "growth_zones": [
+                      {
+                        "title": "",
+                        "priority": "",
+                        "duration": "",
+                        "description": ""
+                      },
+                      {
+                        "title": "",
+                        "priority": "",
+                        "duration": "",
+                        "description": ""
+                      },
+                      {
+                        "title": "",
+                        "priority": "",
+                        "duration": "",
+                        "description": ""
+                      }
+                    ],
+
+                    "overall_evaluation": {
+                      "title": "",
+                      "comment": ""
+                    },
+
+                    "action_plan": {
+                      "duration": "",
+                      "focus": ""
+                    }
+                  },
+
+                  "career_path": [
+                    {
+                      "position": "",
+                      "company": "",
+                      "period": "",
+                      "experience": "",
+                      "status": "",
+                      "description": "",
+                      "achievements": [
+                        "",
+                        "",
+                        ""
+                      ],
+                      "tech_stack": []
+                    },
+                    {
+                      "position": "",
+                      "company": "",
+                      "period": "",
+                      "experience": "",
+                      "status": "",
+                      "description": "",
+                      "achievements": [
+                        "",
+                        "",
+                        ""
+                      ],
+                      "tech_stack": []
+                    },
+                    {
+                      "position": "",
+                      "company": "",
+                      "period": "",
+                      "experience": "",
+                      "status": "",
+                      "description": "",
+                      "achievements": [
+                        "",
+                        "",
+                        ""
+                      ],
+                      "tech_stack": []
+                    }
+                  ],
+
+                  "career_path_summary": {
+                    "experience_total": "",
+                    "companies": "",
+                    "growth": ""
                   },
 
                   "growth_roadmap_12_months": {
                     "months_1_3": {
-                      "goal": "",
+                      "title": "",
                       "tasks": [],
                       "result": ""
                     },
                     "months_4_6": {
-                      "goal": "",
+                      "title": "",
                       "tasks": [],
                       "result": ""
                     },
                     "months_7_9": {
-                      "goal": "",
+                      "title": "",
                       "tasks": [],
                       "result": ""
                     },
                     "months_10_12": {
-                      "goal": "",
+                      "title": "",
                       "tasks": [],
                       "result": ""
+                    },
+                    "forecast": {
+                      "current_position": "",
+                      "expected_after_12_months": "",
+                      "probability": ""
                     }
                   },
 
-                  "ai_recommendations": [],
-
-                  "career_potential": {
-                    "current_level": "",
-                    "growth_potential_score": "",
-                    "hard_skill_average": "",
-                    "soft_skill_average": "",
-                    "middle_readiness_percent": "",
-                    "time_to_middle_months": "",
-                    "target_role": "",
-                    "salary_local": "",
-                    "salary_remote": ""
+                  "target_position": {
+                    "title": "",
+                    "alternative": "",
+                    "salary": "",
+                    "format": "",
+                    "team_size": "",
+                    "role_note": "",
+                    "tech_stack": []
                   },
 
-                  "international_tech_focus": [],
-
-                  "final_summary": ""
+                  "gap_analysis": {
+                    "skills": [
+                      {
+                        "name": "",
+                        "current": "",
+                        "target": "",
+                        "gap": ""
+                      },
+                      {
+                        "name": "",
+                        "current": "",
+                        "target": "",
+                        "gap": ""
+                      },
+                      {
+                        "name": "",
+                        "current": "",
+                        "target": "",
+                        "gap": ""
+                      },
+                      {
+                        "name": "",
+                        "current": "",
+                        "target": "",
+                        "gap": ""
+                      },
+                      {
+                        "name": "",
+                        "current": "",
+                        "target": "",
+                        "gap": ""
+                      },
+                      {
+                        "name": "",
+                        "current": "",
+                        "target": "",
+                        "gap": ""
+                      }
+                    ],
+                    "overall_readiness": {
+                      "value": "",
+                      "status": "",
+                      "comment": ""
+                    }
+                  }
                 }
+
                 Here is the resume:
                 <<<RESUME_START>>>
                 {$resumeText}
@@ -327,7 +428,7 @@ class ResumePdfService
       $model = env('OPENAI_MODEL', 'gpt-5-nano');
 
       $response = Http::withToken(env('OPENAI_API_KEY'))
-        ->timeout(120)
+        ->timeout(300)
         ->post('https://api.openai.com/v1/chat/completions', [
           'model' => $model,
           'messages' => [
@@ -335,7 +436,6 @@ class ResumePdfService
             ['role' => 'user', 'content' => $prompt],
           ],
         ]);
-      Log::info('Response yo umuman', json_decode($response->body(), true));
 
       $result = $response->json();
       $jsonOutput = $result['choices'][0]['message']['content'] ?? null;
