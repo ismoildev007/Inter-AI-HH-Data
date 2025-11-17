@@ -108,6 +108,8 @@ class ResumeService
                 • Prioritize titles that reflect the most recent or most emphasized experience.
                 • Return up to three concise and distinct titles, separated by commas.
                 • Each title should include one main defining technology or domain — avoid duplication or overlapping meanings.
+                • If the resume indicates that the candidate is a Go developer (e.g., “Go developer”, “Go engineer”, “Go backend developer”, “Go programmer”, “Go dasturchi”, etc.), then the professional title must always be returned as “Golang Developer”.
+                  – If skills are added, “Golang” must be included as one of the primary skills in all cases.
                 • The output format must look exactly like this:
                     - Example for IT:
                     PHP Backend Developer,
