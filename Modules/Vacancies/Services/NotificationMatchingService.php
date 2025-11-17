@@ -163,6 +163,8 @@ class NotificationMatchingService
             now()->addMinutes(30),
             fn() => $this->hhRepository->search($query, 0, 100, ['area' => 97])
         );
+        $resumeCategory = $resume->category ?? null;
+        Log::info("Guessed category notification: " . ($guessedCategory ?? 'none'));
 
         // Local vacancies builder
         $buildLocal = function () use ($resume, $tsQuery, $tokens, $guessedCategory) {
@@ -397,6 +399,8 @@ class NotificationMatchingService
                     $vac = Vacancy::where('source', 'hh')
                         ->where('external_id', $match['external_id'])
                         ->first();
+
+                    Log::info("resume category notification: " . $resumeCategory);
 
                     if (!$vac && isset($match['raw'])) {
                         $vac = $this->vacancyRepository->createFromHH($match['raw'], $resumeCategory);
