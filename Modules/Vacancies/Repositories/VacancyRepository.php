@@ -175,6 +175,7 @@ class VacancyRepository implements VacancyInterface
     {
         $now = now();
         Log::info('repository is coming');
+        Log::info("category for creating vacancy hh: " . $category);
 
         // Employer
         $employerId = null;

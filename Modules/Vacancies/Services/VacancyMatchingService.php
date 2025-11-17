@@ -93,6 +93,7 @@ class VacancyMatchingService
             }
 
             $resumeCategory = $resume->category ?? null;
+            Log::info("🔍 Matching resume #{$resume->id} using query: {$query}, category: {$resumeCategory}, guessed category: {$guessedCategory}");
             $techCategories = [
                 "IT and Software Development",
                 "Data Science and Analytics",
@@ -235,7 +236,7 @@ class VacancyMatchingService
                         $vac = Vacancy::where('source', 'hh')
                             ->where('external_id', $match['external_id'])
                             ->first();
-
+                        Log::info("resume category: " . $resumeCategory);
                         if (!$vac && isset($match['raw'])) {
                             $vac = $this->vacancyRepository->createFromHH($match['raw'], $resumeCategory);
                         }
