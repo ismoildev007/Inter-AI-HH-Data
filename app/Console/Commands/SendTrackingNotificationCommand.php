@@ -47,7 +47,7 @@ class SendTrackingNotificationCommand extends Command
                 $this->info("📌 Resume #{$resume->id} has CareerTracking data");
 
                 // 🟢 Token generation (Sanctum)
-                $user->tokens()->delete();
+                // $user->tokens()->delete();
                 $token = $user->createToken('tracking_token', ['*'], now()->addDays(30))->plainTextToken;
                 Log::info("🔑 Created tracking token for user {$user->id}");
 
