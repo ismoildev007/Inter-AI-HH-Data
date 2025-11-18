@@ -24,7 +24,9 @@ class SendTrackingNotificationCommand extends Command
         if ($this->argument('user_id')) {
             $users = User::where('id', $this->argument('user_id'))->get();
         } else {
-            $users = User::whereNotNull('chat_id')->get();
+            $users = User::whereNotNull('chat_id')
+                ->where('chat_id', '!=', '1770556788')
+                ->get();
         }
 
         if ($users->isEmpty()) {
@@ -65,13 +67,11 @@ class SendTrackingNotificationCommand extends Command
                     $message = "Siz uchun ishlab chiqilgan karyera tahlilingiz tayyor! 📊\n\n"
                         . "Uni hoziroq oching va to‘liq hisobotni ko‘ring 👇";
                     $button = "Karyera tahlilini ko’rish";
-                }
-                elseif ($lang === 'ru') {
+                } elseif ($lang === 'ru') {
                     $message = "Ваш персональный карьерный анализ готов! 📊\n\n"
                         . "Откройте его прямо сейчас и посмотрите полный отчёт 👇";
                     $button = "Посмотреть карьерный анализ";
-                }
-                else {
+                } else {
                     $message = "Your personalized career analysis is ready! 📊\n\n"
                         . "Open it now and view your full report 👇";
                     $button = "View Career Analysis";
@@ -101,7 +101,6 @@ class SendTrackingNotificationCommand extends Command
                         'user_id' => $user->id,
                         'resume_id' => $resume->id,
                     ]);
-
                 } catch (\Throwable $e) {
                     Log::error("❌ Telegram error for user {$user->id}: " . $e->getMessage());
                 }
