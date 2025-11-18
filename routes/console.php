@@ -237,3 +237,8 @@ Schedule::command('hh:telegram-send-negotiations')
 Schedule::command('career-tracking')
     ->dailyAt('22:10')
     ->withoutOverlapping();
+
+// Database: har kuni soat kechgi payt soat 12 da ishga tushadi
+Schedule::command('db:backup')
+    ->dailyAt('00:00')
+    ->withoutOverlapping();

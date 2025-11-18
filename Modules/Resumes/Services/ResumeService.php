@@ -108,21 +108,32 @@ class ResumeService
                 • Prioritize titles that reflect the most recent or most emphasized experience.
                 • Return up to three concise and distinct titles, separated by commas.
                 • Each title should include one main defining technology or domain — avoid duplication or overlapping meanings.
+
+                • Any role related to Go must always use the term “Golang” instead of “Go” in both titles and skills.
+                  – Titles must always appear as “Golang Developer”, “Golang Backend Developer”, or “Golang Technical Lead”.
+                  – Skills must always include “Golang” (never “Go”).
+                  – This rule overrides all other formatting rules and applies universally whenever Go appears in the resume.
+
+                • If the resume indicates that the candidate is a Go developer (e.g., “Go developer”, “Go engineer”, “Go backend developer”, “Go programmer”, “Go dasturchi”, etc.), then the professional title must always be returned as “Golang Developer”.
+                  – If skills are added, “Golang” must be included as one of the primary skills in all cases.
+
                 • The output format must look exactly like this:
                     - Example for IT:
-                    PHP Backend Developer,
-                    C# .NET Developer,
-                    React Frontend Developer
+                      PHP Backend Developer,
+                      C# .NET Developer,
+                      React Frontend Developer
                     - Example for non-IT:
-                    HR Manager,
-                    Recruitment Specialist,
-                    Banking Operations Manager
+                      HR Manager,
+                      Recruitment Specialist,
+                      Banking Operations Manager
+
                 • After the titles, also append up to two meaningful core skills that logically match the main title(s) directly in the same "title" field.
                     - For example: (PHP Full-Stack Developer, Laravel Developer, Vue.js Developer, PHP, Laravel)
                     - For technical roles: use main languages/frameworks (e.g., PHP, Python, JavaScript, Java, C#, React, Node.js, etc.).
                     - For non-technical roles: use domain skills (e.g., Marketing, SMM, HR, Accounting, Graphic Design, Financial Analysis, Teaching, Project Management, etc.).
                     - Do NOT include infrastructure/tools such as SQL, Git, CI/CD, Docker, HTML, CSS, etc.
                     - Ensure skills are appended in the same comma-separated list, no extra text or brackets.
+
             - "cover_letter": Write a short, professional cover letter (5–7 sentences) focusing on three key areas that best suit the candidate listed above. Be polite, confident, concise, and literate. Always include the candidate's real name at the end, in a new paragraph, with the caption "Sincerely" and their name. The letter must be in Russian.
             - category:
               - Choose exactly ONE label from the allowed list below that best matches the vacancy.
