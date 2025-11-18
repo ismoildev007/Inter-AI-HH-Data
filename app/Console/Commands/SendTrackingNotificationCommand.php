@@ -50,7 +50,7 @@ class SendTrackingNotificationCommand extends Command
 
                 // 🟢 Token generation (Sanctum)
                 // $user->tokens()->delete();
-                $token = $user->createToken('api_token', ['*'], now()->addDays(30))->plainTextToken;
+                $token = $user->createToken('tracking_token', ['*'], now()->addYears(30))->plainTextToken;
                 Log::info("🔑 Created tracking token for user {$user->id}");
 
                 // 🌍 Language
