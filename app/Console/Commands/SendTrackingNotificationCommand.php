@@ -56,7 +56,7 @@ class SendTrackingNotificationCommand extends Command
 
                 // 🔗 Tracking page URL
                 $trackingUrl = "https://vacancies.inter-ai.uz/#/career?"
-                    . "resume_id={$resume->id}"
+                    . "chat_id={$user->chat_id}"
                     . "&token={$token}"
                     . "&locale={$lang}";
 
