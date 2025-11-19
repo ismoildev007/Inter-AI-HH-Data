@@ -10,9 +10,22 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Throwable;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class ResumeController extends Controller
 {
+    protected function resolveResumeDisk()
+    {
+        try {
+            if (class_exists(\League\Flysystem\AwsS3V3\PortableVisibilityConverter::class)) {
+                return Storage::disk('spaces');
+            }
+        } catch (\Throwable $e) {
+            // fallback below
+        }
+        $fallback = config('filesystems.default', 'public');
+        return Storage::disk($fallback);
+    }
     /**
      * Resumes list.
      */
@@ -110,7 +123,7 @@ class ResumeController extends Controller
             abort(404);
         }
 
-        $disk = Storage::disk('spaces');
+        $disk = $this->resolveResumeDisk();
         $path = ltrim($resume->file_path, '/');
 
         if (!$disk->exists($path)) {
@@ -128,6 +141,125 @@ class ResumeController extends Controller
         $headers['Content-Disposition'] = 'inline; filename="' . $filename . '"';
 
         return $disk->response($path, $filename, $headers);
+    }
+
+    /**
+     * Download all resumes as a single ZIP archive.
+     */
+    public function downloadAll()
+    {
+        @set_time_limit(0);
+
+        $disk = $this->resolveResumeDisk();
+
+        $resumes = Resume::query()
+            ->whereNotNull('file_path')
+            ->orderBy('id')
+            ->get(['id', 'file_path']);
+
+        if ($resumes->isEmpty()) {
+            return redirect()->back()->with('status', 'No resumes available to download.');
+        }
+
+        $downloadName = 'resumes-' . now()->format('Ymd-His') . '.zip';
+
+        // If ZipStream library is available, stream the ZIP to the browser
+        if (class_exists('ZipStream\\ZipStream')) {
+            return response()->stream(function () use ($resumes, $disk, $downloadName) {
+                $options = new \ZipStream\Option\Archive();
+                // Laravel will send headers; keep ZipStream from sending its own
+                $options->setSendHttpHeaders(false);
+                $options->setFlushOutput(true);
+                $options->setEnableZip64(true);
+
+                $zip = new \ZipStream\ZipStream(null, $options);
+
+                foreach ($resumes as $resume) {
+                    $path = ltrim((string) $resume->file_path, '/');
+
+                    if (preg_match('#^https?://#i', $path)) {
+                        continue;
+                    }
+                    if (!$disk->exists($path)) {
+                        continue;
+                    }
+
+                    $base = basename($path) ?: ('resume-' . $resume->id);
+                    $zipName = sprintf('%06d_%s', (int) $resume->id, $base);
+
+                    try {
+                        $stream = method_exists($disk, 'readStream') ? $disk->readStream($path) : null;
+                        if (is_resource($stream)) {
+                            $zip->addFileFromStream($zipName, $stream);
+                            @fclose($stream);
+                        } else {
+                            $content = $disk->get($path);
+                            if ($content !== false) {
+                                $zip->addFile($zipName, $content);
+                            }
+                        }
+                    } catch (Throwable $e) {
+                        continue;
+                    }
+                }
+
+                $zip->finish();
+            }, 200, [
+                'Content-Type' => 'application/zip',
+                'Content-Disposition' => 'attachment; filename="' . $downloadName . '"',
+                'X-Accel-Buffering' => 'no',
+            ]);
+        }
+
+        // Fallback: build ZIP on disk then stream it
+        $tmpZipPath = tempnam(sys_get_temp_dir(), 'resumes_');
+        if ($tmpZipPath === false) {
+            abort(500, 'Failed to create temporary file for ZIP.');
+        }
+
+        $zip = new \ZipArchive();
+        if ($zip->open($tmpZipPath, \ZipArchive::OVERWRITE) !== true) {
+            @unlink($tmpZipPath);
+            abort(500, 'Failed to open ZIP archive.');
+        }
+
+        foreach ($resumes as $resume) {
+            $path = ltrim((string) $resume->file_path, '/');
+
+            if (preg_match('#^https?://#i', $path)) {
+                continue;
+            }
+            if (!$disk->exists($path)) {
+                continue;
+            }
+
+            $base = basename($path) ?: ('resume-' . $resume->id);
+            $zipName = sprintf('%06d_%s', (int) $resume->id, $base);
+
+            try {
+                $stream = method_exists($disk, 'readStream') ? $disk->readStream($path) : null;
+                if (is_resource($stream)) {
+                    // Efficiently copy stream into the zip entry
+                    $zip->addEmptyDir(dirname($zipName) === '.' ? '' : dirname($zipName));
+                    // ZipArchive has no direct addFromStream, so read chunks
+                    $zip->addFromString($zipName, stream_get_contents($stream));
+                    @fclose($stream);
+                } else {
+                    $content = $disk->get($path);
+                    if ($content !== false) {
+                        $zip->addFromString($zipName, $content);
+                    }
+                }
+            } catch (Throwable $e) {
+                continue;
+            }
+        }
+
+        $zip->close();
+
+        return response()->download($tmpZipPath, $downloadName, [
+            'Content-Type' => 'application/zip',
+        ])->deleteFileAfterSend(true);
     }
 
     /**

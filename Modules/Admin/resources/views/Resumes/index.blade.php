@@ -597,9 +597,15 @@
                     <h6 class="mb-1">Search &amp; filter</h6>
                     <p class="mb-0">Search resume titles to quickly locate specific candidate profiles.</p>
                 </div>
-                @if($searchTerm)
-                    <div class="text-muted small">Showing results for “{{ $searchTerm }}”</div>
-                @endif
+                <div style="display:flex;gap:12px;align-items:center;">
+                    @if($searchTerm)
+                        <div class="text-muted small">Showing results for “{{ $searchTerm }}”</div>
+                    @endif
+                    <a href="{{ route('admin.resumes.download_all') }}" class="btn btn-outline-primary shadow-sm">
+                        <i class="feather-download-cloud"></i>
+                        Download All (ZIP)
+                    </a>
+                </div>
             </div>
             <form method="GET" class="resumes-search-form">
                 <div class="input-group">
