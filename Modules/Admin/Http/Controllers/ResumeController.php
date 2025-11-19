@@ -163,11 +163,17 @@ class ResumeController extends Controller
 
         $downloadName = 'resumes-' . now()->format('Ymd-His') . '.zip';
 
-        // If ZipStream library is available, stream the ZIP to the browser
-        if (class_exists('ZipStream\\ZipStream')) {
-            return response()->stream(function () use ($resumes, $disk, $downloadName) {
+        // If ZipStream library is available and enabled, stream the ZIP to the browser
+        if (class_exists('ZipStream\\ZipStream') && (bool) env('ZIP_STREAM_ENABLED', true)) {
+            return response()->streamDownload(function () use ($resumes, $disk) {
+                ignore_user_abort(true);
+                // Clear any previously buffered output to avoid corrupting the ZIP stream
+                while (ob_get_level() > 0) {
+                    @ob_end_clean();
+                }
+
                 $options = new \ZipStream\Option\Archive();
-                // Laravel will send headers; keep ZipStream from sending its own
+                // Laravel sends headers for streamDownload; keep ZipStream from sending its own
                 $options->setSendHttpHeaders(false);
                 $options->setFlushOutput(true);
                 $options->setEnableZip64(true);
@@ -176,7 +182,6 @@ class ResumeController extends Controller
 
                 foreach ($resumes as $resume) {
                     $path = ltrim((string) $resume->file_path, '/');
-
                     if (preg_match('#^https?://#i', $path)) {
                         continue;
                     }
@@ -204,10 +209,10 @@ class ResumeController extends Controller
                 }
 
                 $zip->finish();
-            }, 200, [
+            }, $downloadName, [
                 'Content-Type' => 'application/zip',
-                'Content-Disposition' => 'attachment; filename="' . $downloadName . '"',
                 'X-Accel-Buffering' => 'no',
+                'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
             ]);
         }
 
@@ -223,6 +228,7 @@ class ResumeController extends Controller
             abort(500, 'Failed to open ZIP archive.');
         }
 
+        $tempFiles = [];
         foreach ($resumes as $resume) {
             $path = ltrim((string) $resume->file_path, '/');
 
@@ -237,18 +243,29 @@ class ResumeController extends Controller
             $zipName = sprintf('%06d_%s', (int) $resume->id, $base);
 
             try {
-                $stream = method_exists($disk, 'readStream') ? $disk->readStream($path) : null;
-                if (is_resource($stream)) {
-                    // Efficiently copy stream into the zip entry
-                    $zip->addEmptyDir(dirname($zipName) === '.' ? '' : dirname($zipName));
-                    // ZipArchive has no direct addFromStream, so read chunks
-                    $zip->addFromString($zipName, stream_get_contents($stream));
-                    @fclose($stream);
+                // ZipArchive lacks addFromStream, so copy to a temp file to keep memory low
+                $tmpFile = tempnam(sys_get_temp_dir(), 'rs_');
+                if ($tmpFile === false) {
+                    continue;
+                }
+                $in = method_exists($disk, 'readStream') ? $disk->readStream($path) : null;
+                if (is_resource($in)) {
+                    $out = fopen($tmpFile, 'wb');
+                    if ($out) {
+                        stream_copy_to_stream($in, $out);
+                        fclose($out);
+                    }
+                    @fclose($in);
                 } else {
                     $content = $disk->get($path);
                     if ($content !== false) {
-                        $zip->addFromString($zipName, $content);
+                        file_put_contents($tmpFile, $content);
                     }
+                }
+                if (is_file($tmpFile)) {
+                    $zip->addFile($tmpFile, $zipName);
+                    // Remember to clean up later, after zip->close()
+                    $tempFiles[] = $tmpFile;
                 }
             } catch (Throwable $e) {
                 continue;
@@ -256,6 +273,11 @@ class ResumeController extends Controller
         }
 
         $zip->close();
+
+        // Cleanup temp files
+        foreach ($tempFiles as $f) {
+            @unlink($f);
+        }
 
         return response()->download($tmpZipPath, $downloadName, [
             'Content-Type' => 'application/zip',
@@ -300,7 +322,7 @@ class ResumeController extends Controller
             try {
                 $path = $resume->file_path ? ltrim($resume->file_path, '/') : null;
                 if ($path && !preg_match('#^https?://#i', $resume->file_path)) {
-                    $disk = Storage::disk('spaces');
+                    $disk = $this->resolveResumeDisk();
                     if ($disk->exists($path)) {
                         $disk->delete($path);
                     }
