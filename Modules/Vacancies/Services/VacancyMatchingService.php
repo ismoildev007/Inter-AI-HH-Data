@@ -279,7 +279,8 @@ class VacancyMatchingService
                             ->first();
                         Log::info("resume category: " . $resumeCategory);
                         if (!$vac && isset($match['raw'])) {
-                            $vac = $this->vacancyRepository->createFromHH($match['raw'], $resumeCategory);
+                            // Use HH bulk categorization (rule-based) instead of forcing resume category
+                            $vac = $this->vacancyRepository->firstOrCreateFromHH($match['raw']);
                         }
                     }
 

@@ -403,7 +403,8 @@ class NotificationMatchingService
                     Log::info("resume category notification: " . $resumeCategory);
 
                     if (!$vac && isset($match['raw'])) {
-                        $vac = $this->vacancyRepository->createFromHH($match['raw'], $resumeCategory);
+                        // Use bulk HH categorization logic (rule-based) instead of forcing resume category
+                        $vac = $this->vacancyRepository->firstOrCreateFromHH($match['raw']);
                     }
                 }
 
