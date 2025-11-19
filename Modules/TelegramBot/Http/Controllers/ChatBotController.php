@@ -3,6 +3,7 @@
 namespace Modules\TelegramBot\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Models\User;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
 use App\Models\SupportMessage;
@@ -81,9 +82,13 @@ class ChatBotController extends Controller
                     'status'       => 'pending',
                 ]);
 
+                // Bazadagi foydalanuvchini chat_id orqali aniqlash
+                $appUser = User::where('chat_id', (string) $chatId)->first();
+
                 $response = $telegram->sendMessage([
                     'chat_id' => env('TELEGRAM_ADMIN_GROUP_ID'),
                     'text'    => "📩 Yangi murojaat\n\n"
+                        .($appUser ? "🆔 User ID (DB): {$appUser->id}\n" : '')
                         ."👤 Foydalanuvchi: {$fullName}\n"
                         .($username ? "🔗 Telegram: @{$username}\n" : '')
                         ."💬 Xabar: {$text}",
