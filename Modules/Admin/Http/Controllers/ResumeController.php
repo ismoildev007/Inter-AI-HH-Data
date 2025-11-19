@@ -164,7 +164,7 @@ class ResumeController extends Controller
         $downloadName = 'resumes-' . now()->format('Ymd-His') . '.zip';
 
         // If ZipStream library is available and enabled, stream the ZIP to the browser
-        if (class_exists('ZipStream\\ZipStream') && (bool) env('ZIP_STREAM_ENABLED', true)) {
+        if (class_exists('ZipStream\\ZipStream') && (bool) env('ZIP_STREAM_ENABLED', false)) {
             return response()->streamDownload(function () use ($resumes, $disk) {
                 ignore_user_abort(true);
                 // Clear any previously buffered output to avoid corrupting the ZIP stream
