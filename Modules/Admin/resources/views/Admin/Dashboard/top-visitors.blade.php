@@ -10,6 +10,9 @@
         $topVisit = $collection->max('visits_count');
         $currentFilter = $filter ?? request('filter', 'all');
         if (!in_array($currentFilter, ['all','most','last'], true)) { $currentFilter = 'all'; }
+        $dateFilter = $dateFilter ?? ['from' => request('from', ''), 'to' => request('to', '')];
+        $dateRangeFrom = $dateFilter['from'] ?? '';
+        $dateRangeTo = $dateFilter['to'] ?? '';
     @endphp
 
     <style>
@@ -310,6 +313,64 @@
             text-transform: uppercase;
             letter-spacing: 0.08em;
         }
+        /* Range filter header (adapted from categories) */
+        .visitors-card .card-header {
+            padding: 26px 32px;
+            border-bottom: 1px solid rgba(15, 35, 87, 0.06);
+            background: transparent;
+        }
+        .visitors-card .filters {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 18px;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .visitors-results-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .visitors-range-summary {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 12px;
+            border-radius: 999px;
+            background: linear-gradient(135deg, rgba(79, 107, 255, 0.16), rgba(38, 91, 255, 0.18));
+            color: #1a2f70;
+            font-size: 0.85rem;
+            font-weight: 600;
+            box-shadow: 0 12px 24px rgba(38, 91, 255, 0.18);
+        }
+        .visitors-range-summary i { color: #4f6bff; font-size: 0.95rem; }
+        .visitors-range-filter {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            flex-wrap: wrap;
+        }
+        .visitors-range-filter .range-field {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            background: #f5f7ff;
+            border-radius: 14px;
+            padding: 8px 12px;
+            border: 1px solid rgba(79, 107, 255, 0.1);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+        }
+        .visitors-range-filter .range-field i { color: #4f6bff; font-size: 1rem; }
+        .visitors-range-filter .divider { color: #8a96b8; font-weight: 600; }
+        .visitors-clear-btn {
+            color: #8a96b8;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.88rem;
+            text-decoration: none;
+        }
+        .visitors-clear-btn:hover { color: #1f3cfd; }
 
         @media (max-width: 991px) {
             .visitors-hero {
@@ -322,6 +383,7 @@
                 margin: 1.5rem 1rem 2rem;
                 padding: 24px 20px 26px;
             }
+            .visitors-filter-card { margin: 1.5rem 1rem 1rem; }
 
             .visitors-card .table-responsive {
                 padding: 0;
@@ -345,6 +407,10 @@
                 box-shadow: 0 16px 32px rgba(15, 23, 42, 0.08);
                 transform: none !important;
             }
+
+            .visitors-card .card-header { padding: 20px; }
+            .visitors-results-meta { flex-direction: column; align-items: flex-start; gap: 10px; }
+            .visitors-range-summary { width: 100%; justify-content: flex-start; }
 
             .visitors-card .table tbody td {
                 display: flex;
@@ -515,6 +581,8 @@
                         $isActive = $currentFilter === $card['value'];
                         $params = [];
                         if ($card['value'] !== 'all') { $params['filter'] = $card['value']; }
+                        if (!empty($dateRangeFrom)) { $params['from'] = $dateRangeFrom; }
+                        if (!empty($dateRangeTo)) { $params['to'] = $dateRangeTo; }
                     @endphp
                     <div class="visitors-filter-card-item {{ $isActive ? 'active' : '' }}">
                         <div class="content">
@@ -531,6 +599,44 @@
     </div>
 
     <div class="card visitors-card">
+        @php
+            $rangeClearParams = array_filter([
+                'filter' => $currentFilter !== 'all' ? $currentFilter : null,
+            ], static fn ($value) => !is_null($value) && $value !== '');
+            $rangeActive = ($dateRangeFrom !== '') || ($dateRangeTo !== '');
+        @endphp
+        <div class="card-header">
+            <div class="filters">
+                <div class="visitors-results-meta">
+                    <h6 class="mb-0">Results</h6>
+                    <span class="visitors-range-summary">
+                        <i class="feather-bar-chart-2"></i>
+                        <span>Filtered visitors: {{ number_format($totalVisitors) }}</span>
+                    </span>
+                </div>
+                <form method="GET" action="{{ route('admin.visits.top_users') }}" class="visitors-range-filter">
+                    @if($currentFilter !== 'all')
+                        <input type="hidden" name="filter" value="{{ $currentFilter }}">
+                    @endif
+                    <div class="range-field">
+                        <i class="feather-calendar"></i>
+                        <input type="date" name="from" value="{{ $dateRangeFrom }}" aria-label="From date">
+                    </div>
+                    <span class="divider">to</span>
+                    <div class="range-field">
+                        <i class="feather-calendar"></i>
+                        <input type="date" name="to" value="{{ $dateRangeTo }}" aria-label="To date">
+                    </div>
+                    <button type="submit" class="btn btn-primary shadow-sm">Apply</button>
+                    @if($rangeActive)
+                        <a href="{{ route('admin.visits.top_users', $rangeClearParams) }}" class="visitors-clear-btn">
+                            <i class="feather-x-circle"></i>
+                            Clear
+                        </a>
+                    @endif
+                </form>
+            </div>
+        </div>
         <div class="table-responsive">
             <table class="table align-middle mb-0">
                 <thead>

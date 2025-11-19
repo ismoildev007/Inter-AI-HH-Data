@@ -512,10 +512,47 @@ class DashboardController extends Controller
             $filter = 'all';
         }
 
+        // Optional date range
+        $dateFromRaw = $request->query('from', '');
+        $dateToRaw = $request->query('to', '');
+        $dateFrom = null;
+        $dateTo = null;
+        $dateFromDisplay = '';
+        $dateToDisplay = '';
+
+        if ($dateFromRaw !== '') {
+            $dateFromDisplay = (string) $dateFromRaw;
+            try {
+                $parsed = Carbon::parse($dateFromDisplay);
+                $dateFrom = (clone $parsed)->startOfDay();
+                $dateFromDisplay = $parsed->toDateString();
+            } catch (\Throwable $e) {
+                $dateFromDisplay = '';
+            }
+        }
+
+        if ($dateToRaw !== '') {
+            $dateToDisplay = (string) $dateToRaw;
+            try {
+                $parsed = Carbon::parse($dateToDisplay);
+                $dateTo = (clone $parsed)->endOfDay();
+                $dateToDisplay = $parsed->toDateString();
+            } catch (\Throwable $e) {
+                $dateToDisplay = '';
+            }
+        }
+
+        if ($dateFrom && $dateTo && $dateFrom->gt($dateTo)) {
+            $dateTo = null;
+            $dateToDisplay = '';
+        }
+
         $query = DB::table('visits')
             ->leftJoin('users', 'users.id', '=', 'visits.user_id')
             ->whereNotNull('visits.user_id')
             ->when($sourceFilter !== 'all', function ($q) use ($sourceFilter) { $q->where('visits.source', $sourceFilter); })
+            ->when($dateFrom, function ($q) use ($dateFrom) { $q->where('visits.visited_at', '>=', $dateFrom); })
+            ->when($dateTo, function ($q) use ($dateTo) { $q->where('visits.visited_at', '<=', $dateTo); })
             ->selectRaw('COALESCE(users.id, visits.user_id) as id')
             ->selectRaw('users.first_name, users.last_name, users.email')
             ->selectRaw('users.is_trial_active')
@@ -551,6 +588,10 @@ class DashboardController extends Controller
             'totalVisits' => $totalVisits,
             'avgPerUser' => $avgPerUser,
             'filter' => $filter,
+            'dateFilter' => [
+                'from' => $dateFromDisplay,
+                'to' => $dateToDisplay,
+            ],
         ]);
     }
 
