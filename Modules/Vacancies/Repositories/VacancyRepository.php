@@ -98,6 +98,7 @@ class VacancyRepository implements VacancyInterface
             }
         });
 
+        
         $employerMap   = Employer::whereIn('external_id', array_keys($employers))->pluck('id', 'external_id');
         $areaMap       = Area::whereIn('external_id', array_keys($areas))->pluck('id', 'external_id');
         $scheduleMap   = HhSchedule::whereIn('external_id', array_keys($schedules))->pluck('id', 'external_id');
