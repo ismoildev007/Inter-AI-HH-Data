@@ -502,10 +502,17 @@ class DashboardController extends Controller
     /**
      * Full listing of users ordered by total visits.
      */
-    public function topVisitors()
+    public function topVisitors(\Illuminate\Http\Request $request)
     {
         $sourceFilter = config('analytics.visits_source', 'api'); // 'api' | 'web' | 'all'
-        $rows = DB::table('visits')
+
+        // Sorting filter: all | most | last
+        $filter = strtolower($request->query('filter', 'all'));
+        if (!in_array($filter, ['all', 'most', 'last'], true)) {
+            $filter = 'all';
+        }
+
+        $query = DB::table('visits')
             ->leftJoin('users', 'users.id', '=', 'visits.user_id')
             ->whereNotNull('visits.user_id')
             ->when($sourceFilter !== 'all', function ($q) use ($sourceFilter) { $q->where('visits.source', $sourceFilter); })
@@ -514,9 +521,15 @@ class DashboardController extends Controller
             ->selectRaw('users.is_trial_active')
             ->selectRaw('MAX(visits.visited_at) as last_visited_at')
             ->selectRaw('COUNT(*) as visits_count')
-            ->groupBy(DB::raw('COALESCE(users.id, visits.user_id)'), 'users.first_name', 'users.last_name', 'users.email', 'users.is_trial_active')
-            ->orderByDesc('visits_count')
-            ->paginate(100);
+            ->groupBy(DB::raw('COALESCE(users.id, visits.user_id)'), 'users.first_name', 'users.last_name', 'users.email', 'users.is_trial_active');
+
+        if ($filter === 'last') {
+            $query->orderByDesc('last_visited_at');
+        } else { // 'all' and 'most' default to most visits
+            $query->orderByDesc('visits_count');
+        }
+
+        $rows = $query->paginate(100)->withQueryString();
 
         // Global totals for average calculation across entire dataset
         $totalUsers = DB::table('visits')
@@ -537,6 +550,7 @@ class DashboardController extends Controller
             'totalUsers' => $totalUsers,
             'totalVisits' => $totalVisits,
             'avgPerUser' => $avgPerUser,
+            'filter' => $filter,
         ]);
     }
 

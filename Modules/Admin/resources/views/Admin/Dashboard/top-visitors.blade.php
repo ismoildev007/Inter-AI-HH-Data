@@ -8,6 +8,8 @@
         $pageVisitors = $collection->count();
         $pageVisits = $collection->sum('visits_count');
         $topVisit = $collection->max('visits_count');
+        $currentFilter = $filter ?? request('filter', 'all');
+        if (!in_array($currentFilter, ['all','most','last'], true)) { $currentFilter = 'all'; }
     @endphp
 
     <style>
@@ -400,6 +402,60 @@
                 font-size: 0.75rem;
             }
         }
+        /* Filters (design adapted from categories) */
+        .visitors-filter-card {
+            margin: 1.5rem 1.5rem 2rem;
+            border: none;
+            border-radius: 24px;
+            box-shadow: 0 24px 50px rgba(21, 37, 97, 0.12);
+            overflow: hidden;
+        }
+        .visitors-filter-card .card-body { padding: 26px 32px; }
+        .visitors-filter-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 18px;
+        }
+        .visitors-filter-card-item {
+            padding: 18px 22px;
+            border-radius: 18px;
+            background: linear-gradient(135deg, rgba(230, 236, 255, 0.78), rgba(207, 220, 255, 0.82));
+            box-shadow: 0 12px 30px rgba(26, 44, 104, 0.18);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+        .visitors-filter-card-item.active {
+            background: linear-gradient(135deg, #4a76ff, #265bff);
+            color: #fff;
+            box-shadow: 0 14px 32px rgba(38, 91, 255, 0.3);
+        }
+        .visitors-filter-card-item .content { display: grid; gap: 4px; }
+        .visitors-filter-card-item .label {
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: rgba(17, 38, 96, 0.65);
+        }
+        .visitors-filter-card-item.active .label { color: rgba(255, 255, 255, 0.78); }
+        .visitors-filter-card-item .value { font-weight: 600; font-size: 1.05rem; color: #172655; }
+        .visitors-filter-card-item.active .value { color: #fff; }
+        .visitors-filter-card-item .btn {
+            border-radius: 999px;
+            padding: 6px 16px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            border: none;
+            background: rgba(255, 255, 255, 0.8);
+            color: #1a2f70;
+        }
+        .visitors-filter-card-item.active .btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            color: #fff;
+        }
     </style>
 
     <div class="page-header">
@@ -444,6 +500,33 @@
                         <span class="hint">{{ isset($totalVisits,$totalUsers) ? number_format($totalVisits).' / '.number_format($totalUsers) : 'All users' }}</span>
                     </div>
                 </div>
+        </div>
+    </div>
+
+    <div class="card visitors-filter-card">
+        <div class="card-body">
+            <div class="visitors-filter-grid">
+                @foreach([
+                    ['value' => 'all', 'label' => 'All', 'description' => 'All visitors'],
+                    ['value' => 'most', 'label' => "Visits", 'description' => "Eng ko'p kirganlar"],
+                    ['value' => 'last', 'label' => 'Last visit', 'description' => 'Oxirgi kirganlar'],
+                ] as $card)
+                    @php
+                        $isActive = $currentFilter === $card['value'];
+                        $params = [];
+                        if ($card['value'] !== 'all') { $params['filter'] = $card['value']; }
+                    @endphp
+                    <div class="visitors-filter-card-item {{ $isActive ? 'active' : '' }}">
+                        <div class="content">
+                            <span class="label">{{ strtoupper($card['label']) }}</span>
+                            <span class="value">{{ $card['description'] }}</span>
+                        </div>
+                        <a href="{{ route('admin.visits.top_users', $params) }}" class="btn">
+                            {{ $isActive ? 'Selected' : 'View' }}
+                        </a>
+                    </div>
+                @endforeach
+            </div>
         </div>
     </div>
 
