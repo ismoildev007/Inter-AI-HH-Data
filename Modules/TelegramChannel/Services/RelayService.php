@@ -288,6 +288,18 @@ class RelayService
                     Log::warning('Skipping message: cannot build source link', ['peer' => $peer, 'message_id' => $id]);
                     continue;
                 }
+
+                // Explicit skip by full source link (per-channel/per-message exception)
+                $skipSourceLinks = (array) config('telegramchannel_relay.filtering.skip_source_links', []);
+                if ($sourceLink && !empty($skipSourceLinks) && in_array($sourceLink, $skipSourceLinks, true)) {
+                    Log::info('Relay skip: source_link in skip_source_links', [
+                        'peer'        => $peer,
+                        'message_id'  => $id,
+                        'source_link' => $sourceLink,
+                    ]);
+                    continue;
+                }
+
                 $existsByLink = Vacancy::where('source_id', $sourceId)
                     ->where('source_message_id', $sourceLink)
                     ->exists();

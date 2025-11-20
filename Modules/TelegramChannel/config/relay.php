@@ -34,6 +34,11 @@ return [
         'use_channel_rules' => true,
         'classification_threshold' => 0.8,
         'require_contact' => true,
+        // Explicit per-post skips by source link (https://t.me/{username}/{message_id} or /c/{internalId}/{message_id})
+        'skip_source_links' => [
+            // Digital Jobster: skip message 5318 from being relayed
+            'https://t.me/digital_jobster/5318',
+        ],
         // Agar matn quyidagi iboralar bilan boshlansa — darhol SKIP (job seeker/rezyume postlari)
         // Case-insensitive, boshlanishiga mos kelish sinovi qilinadi
         'banned_phrases' => [
