@@ -26,7 +26,7 @@
     $descSafe = $esc($description);
 @endphp
 
-<b>Yangi bo'sh ish o'rni e'lon qilindi!</b><br>
+<b>Yangi bo'sh ish o'rni e'lon qilindi!</b>
 💼 <b>Lavozim:</b> {!! $titleSafe !!}<br>
 🏢 <b>Kompaniya:</b> {!! $companySafe !!}
 📞 <b>Bog’lanish:</b> {{ $contactLine }}
@@ -36,14 +36,14 @@
         // Public channel: show @username anchor; otherwise generic label
         $anchor = $plainSource ? ('   ' . $plainSource . '   ') : 'post linkiga borish';
     @endphp
-    🔗 <b>Manba:</b> <a href="{{ $sourceLink }}">{{ $anchor }}</a><br>
+    🔗 <b>Manba:</b> <a href="{{ $sourceLink }}">{{ $anchor }}</a>
 @endif
 
 @if($applyUrl)
     @php
         $host = parse_url($applyUrl, PHP_URL_HOST);
     @endphp
-    🔗 <b>Manba2:</b> <a href="{{ $applyUrl }}">{{ $host ?: 'tashqi manba' }}</a><br>
+    🔗 <b>Manba2:</b> <a href="{{ $applyUrl }}">{{ $host ?: 'tashqi manba' }}</a>
 @endif
 @if($targetLink && $targetUsername)
 ✅ <b>Bizning kanal:</b> <a href="{{ $targetLink }}">{{ '@'.ltrim($targetUsername, '@') }}</a>
