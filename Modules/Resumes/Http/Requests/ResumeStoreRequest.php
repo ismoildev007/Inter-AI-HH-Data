@@ -14,10 +14,9 @@ class ResumeStoreRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'title' => 'nullable|string|max:255',
-            'chat_id' => 'nullable',
-            'file'        => 'nullable|file|mimes:pdf,doc,docx|max:4048',
+            'title'    => 'required|string|max:255',
+            'category' => 'required|string|max:255',
+            'file'     => 'nullable|file|mimes:pdf,doc,docx|max:4048',
         ];
-
     }
 }
