@@ -51,6 +51,9 @@ jobs:
             php artisan route:cache
             php artisan optimize:clear
 
+            echo "🛠 Setting Laravel file permissions..."
+            sudo chown -R www-data:www-data /var/www/app/storage /var/www/app/bootstrap/cache
+            sudo chmod -R 775 /var/www/app/storage /var/www/app/bootstrap/cache
 
             sudo systemctl restart php8.3-fpm
             sudo systemctl restart nginx
