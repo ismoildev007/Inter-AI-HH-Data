@@ -19,19 +19,15 @@ jobs:
           php-version: '8.3'
           extensions: mbstring, pdo, bcmath, zip, curl, intl, gd, xml
 
-      # - name: Build Admin assets
-      #   run: |
-      #     npm install
-      #     npm run build
-      # Deploy to Server 1
-      - name: Deploy to Server 1
+      
+      - name: Deploy to Server 3
         uses: appleboy/ssh-action@v1.0.0
         with:
-          host: ${{ secrets.SERVER_IP_1 }}
-          username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SERVER_SSH_KEY_1 }}
+          host: ${{ secrets.SERVER_IP_3 }}
+          username: ${{ secrets.SERVER_USER_3 }}
+          key: ${{ secrets.SERVER_SSH_KEY_3 }}
           script: |
-            echo "🚀 Deploying to Server 1..."
+            echo "🚀 Deploying to Server 3..."
             mkdir -p ~/.ssh
             ssh-keyscan github.com >> ~/.ssh/known_hosts
 
@@ -58,44 +54,44 @@ jobs:
 
             sudo systemctl restart php8.3-fpm
             sudo systemctl restart nginx
-            echo "✅ Server 1 deployment completed."
+            echo "✅ Server 3 deployment completed."
 
       # Deploy to Server 2
-      - name: Deploy to Server 2
-        uses: appleboy/ssh-action@v1.0.0
-        with:
-          host: ${{ secrets.SERVER_IP_2 }}
-          username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SERVER_SSH_KEY_2 }}
-          script: |
-            echo "🚀 Deploying to Server 2..."
-            mkdir -p ~/.ssh
-            ssh-keyscan github.com >> ~/.ssh/known_hosts
-            git config --global --add safe.directory /var/www/app
+      # - name: Deploy to Server 2
+      #   uses: appleboy/ssh-action@v1.0.0
+      #   with:
+      #     host: ${{ secrets.SERVER_IP_2 }}
+      #     username: ${{ secrets.SERVER_USER }}
+      #     key: ${{ secrets.SERVER_SSH_KEY_2 }}
+      #     script: |
+      #       echo "🚀 Deploying to Server 2..."
+      #       mkdir -p ~/.ssh
+      #       ssh-keyscan github.com >> ~/.ssh/known_hosts
+      #       git config --global --add safe.directory /var/www/app
 
-            if [ ! -d /var/www/app/.git ]; then
-              sudo mkdir -p /var/www/app
-              sudo chown -R $USER:$USER /var/www/app
-              git clone git@github.com:QuvonchbekJalilov/Inter-AI-Job.git /var/www/app
-            else
-              echo "pulling"
-              cd /var/www/app
-              git reset --hard
-              git pull origin main
-            fi
+      #       if [ ! -d /var/www/app/.git ]; then
+      #         sudo mkdir -p /var/www/app
+      #         sudo chown -R $USER:$USER /var/www/app
+      #         git clone git@github.com:QuvonchbekJalilov/Inter-AI-Job.git /var/www/app
+      #       else
+      #         echo "pulling"
+      #         cd /var/www/app
+      #         git reset --hard
+      #         git pull origin main
+      #       fi
 
-            cd /var/www/app
-            composer install --no-interaction --prefer-dist --optimize-autoloader
-            php artisan config:clear
-            php artisan cache:clear
-            php artisan config:cache
-            php artisan route:cache
-            php artisan optimize:clear
+      #       cd /var/www/app
+      #       composer install --no-interaction --prefer-dist --optimize-autoloader
+      #       php artisan config:clear
+      #       php artisan cache:clear
+      #       php artisan config:cache
+      #       php artisan route:cache
+      #       php artisan optimize:clear
 
 
-            sudo systemctl restart php8.3-fpm
-            sudo systemctl restart nginx
-            echo "✅ Server 2 deployment completed."
+      #       sudo systemctl restart php8.3-fpm
+      #       sudo systemctl restart nginx
+      #       echo "✅ Server 2 deployment completed."
 
 # name: Deploy Backend to App Servers
 
