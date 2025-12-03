@@ -9,6 +9,8 @@ use App\Models\UserPreference;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Modules\TelegramChannel\Services\VacancyCategoryService;
+use Modules\Users\Http\Controllers\UsersController;
 use Smalot\PdfParser\Parser as PdfParser;
 use PhpOffice\PhpWord\IOFactory as WordIO;
 use Modules\Resumes\Interfaces\ResumeInterface;
@@ -75,20 +77,24 @@ class OldResumeService
      */
     public function analyze(Resume $resume): void
     {
-        // Build allowed categories list (labels only, excluding "Other") for classification
         $categoryService = app(VacancyCategoryService::class);
         $allowedCategoryLabels = $categoryService->getLabelsExceptOther();
         $allowedCategoriesJson = json_encode($allowedCategoryLabels, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         $resumeText = (string) ($resume->parsed_text ?? $resume->description);
+        if (empty(trim($resumeText))) {
+            Log::info("Skip analyze: resume text is empty for resume ID {$resume->id}");
+            $user = $resume->user;
+
+            if ($user && !$user->resumes()->exists()) {
+                app(UsersController::class)->destroyIfNoResumes(request());
+            }
+            $resume->delete();
+            return;
+        }
 
         $prompt = <<<PROMPT
             You are an expert HR assistant AI.
             Analyze the following resume text and return a structured JSON object with the following fields only:
-
-            - "skills": A list of the candidate's hard and soft skills (only relevant skills, no duplicates).
-            - "strengths": 3–5 short bullet points describing the candidate's main strengths.
-            - "weaknesses": 2–4 short bullet points describing areas that might need improvement.
-            - "keywords": A list of important keywords or technologies mentioned in the resume (useful for search/matching).
             - "language": Detect the main language of the resume text (e.g., "en", "ru", "uz").
             - "title": From the resume, identify up to three (maximum 3) of the most specific and relevant professional titles that accurately represent the candidate’s main expertise and experience.
                 Rules for generating "title":
@@ -101,94 +107,129 @@ class OldResumeService
                 • Prioritize titles that reflect the most recent or most emphasized experience.
                 • Return up to three concise and distinct titles, separated by commas.
                 • Each title should include one main defining technology or domain — avoid duplication or overlapping meanings.
+
+                • Any role related to Go must always use the term “Golang” instead of “Go” in both titles and skills.
+                  – Titles must always appear as “Golang Developer”, “Golang Backend Developer”, or “Golang Technical Lead”.
+                  – Skills must always include “Golang” (never “Go”).
+                  – This rule overrides all other formatting rules and applies universally whenever Go appears in the resume.
+
+                • If the resume indicates that the candidate is a Go developer (e.g., “Go developer”, “Go engineer”, “Go backend developer”, “Go programmer”, “Go dasturchi”, etc.), then the professional title must always be returned as “Golang Developer”.
+                  – If skills are added, “Golang” must be included as one of the primary skills in all cases.
+
                 • The output format must look exactly like this:
                     - Example for IT:
-                    PHP Backend Developer,
-                    C# .NET Developer,
-                    React Frontend Developer
+                      PHP Backend Developer,
+                      C# .NET Developer,
+                      React Frontend Developer
                     - Example for non-IT:
-                    HR Manager,
-                    Recruitment Specialist,
-                    Banking Operations Manager
+                      HR Manager,
+                      Recruitment Specialist,
+                      Banking Operations Manager
+
                 • After the titles, also append up to two meaningful core skills that logically match the main title(s) directly in the same "title" field.
                     - For example: (PHP Full-Stack Developer, Laravel Developer, Vue.js Developer, PHP, Laravel)
                     - For technical roles: use main languages/frameworks (e.g., PHP, Python, JavaScript, Java, C#, React, Node.js, etc.).
                     - For non-technical roles: use domain skills (e.g., Marketing, SMM, HR, Accounting, Graphic Design, Financial Analysis, Teaching, Project Management, etc.).
-                    - Do NOT include infrastructure/tools such as SQL, Git, CI/CD, Docker, etc.
+                    - Do NOT include infrastructure/tools such as SQL, Git, CI/CD, Docker, HTML, CSS, etc.
                     - Ensure skills are appended in the same comma-separated list, no extra text or brackets.
 
             - "cover_letter": Write a short, professional cover letter (5–7 sentences) focusing on three key areas that best suit the candidate listed above. Be polite, confident, concise, and literate. Always include the candidate's real name at the end, in a new paragraph, with the caption "Sincerely" and their name. The letter must be in Russian.
+            - category:
+              - Choose exactly ONE label from the allowed list below that best matches the vacancy.
+              - Do NOT translate the category label; output it exactly as written in the allowed list.
+              - Output the category as an EXACT string from the list — do not invent new labels. If none of the labels clearly fits, choose "Other".
+              - Allowed categories (labels): {$allowedCategoriesJson}
 
-            - "category": Choose exactly one category from the allowed list below that best matches this resume. Output the category label as an exact string match from the list. Do not invent new labels. Do not choose "Other".
-              Allowed categories (labels): {$allowedCategoriesJson}
 
             Return only valid JSON. Do not include explanations outside the JSON.
-
             Resume text:
             {$resumeText}
             PROMPT;
 
+        $mainModel = env('OPENAI_MAIN_MODEL', 'gpt-4o-mini');
+        $categoryModel = env('OPENAI_CATEGORY_MODEL', 'gpt-4.1-nano');
 
-        $response = Http::timeout(120)
-            ->withToken(env('OPENAI_API_KEY'))
-            ->post('https://api.openai.com/v1/chat/completions', [
-                'model' => env('OPENAI_MODEL', 'gpt-4o-mini'),
-                'messages' => [
-                    ['role' => 'system', 'content' => 'You are a helpful AI for analyzing resumes.'],
-                    ['role' => 'user', 'content' => $prompt],
-                ],
-                'temperature' => 0.2,
-            ]);
+        $responses = Http::pool(function ($pool) use ($prompt, $mainModel, $categoryModel) {
+            return [
+                // Asosiy model
+                'main' => $pool->as('main')
+                    ->withToken(env('OPENAI_API_KEY'))
+                    ->timeout(120)
+                    ->post('https://api.openai.com/v1/chat/completions', [
+                        'model' => $mainModel,
+                        'messages' => [
+                            ['role' => 'system', 'content' => 'You are a helpful AI for analyzing resumes.'],
+                            ['role' => 'user', 'content' => $prompt],
+                        ],
+                        'temperature' => 0.2,
+                    ]),
 
+                // Category modeli
+                'category' => $pool->as('category')
+                    ->withToken(env('OPENAI_API_KEY'))
+                    ->timeout(120)
+                    ->post('https://api.openai.com/v1/chat/completions', [
+                        'model' => $categoryModel,
+                        'messages' => [
+                            ['role' => 'system', 'content' => 'You are a helpful AI for analyzing resumes.'],
+                            ['role' => 'user', 'content' => $prompt],
+                        ],
+                    ]),
+            ];
+        });
 
+        $responseMain = $responses['main'];
+        $responseCategory = $responses['category'];
 
-
-        if (! $response->successful()) {
-            Log::error("GPT API failed: " . $response->body());
+        if (!$responseMain->successful() || !$responseCategory->successful()) {
+            Log::error("GPT API failed: MAIN=" . $responseMain->body() . " CATEGORY=" . $responseCategory->body());
             return;
         }
 
-        $content = $response->json('choices.0.message.content');
+        $parseResponse = function ($resp) {
+            $content = $resp->json('choices.0.message.content');
+            $content = trim(preg_replace(['/^```(json)?/i', '/```$/'], '', trim($content)));
+            $json = json_decode($content, true);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                if (preg_match('/\{.*\}/s', $content, $m)) {
+                    $json = json_decode($m[0], true);
+                }
+            }
+            return (json_last_error() === JSON_ERROR_NONE && is_array($json)) ? $json : null;
+        };
 
-        $content = trim($content);
-        $content = preg_replace('/^```(json)?/i', '', $content);
-        $content = preg_replace('/```$/', '', $content);
-        $content = trim($content);
+        $analysisMain = $parseResponse($responseMain);
+        $analysisCategory = $parseResponse($responseCategory);
 
-        $analysis = json_decode($content, true);
-
-        if (json_last_error() !== JSON_ERROR_NONE || !is_array($analysis)) {
-            Log::info("Invalid GPT response: " . $content);
-            throw new \RuntimeException("Invalid GPT response: " . $content);
+        if (!$analysisMain && !$analysisCategory) {
+            Log::info("Invalid GPT responses: main or category invalid");
+            return;
         }
+
+        // --- Birlashtirish
+        $analysis = [
+            'language' => $analysisMain['language'] ?? null,
+            'title' => $analysisMain['title'] ?? null,
+            'cover_letter' => $analysisMain['cover_letter'] ?? null,
+            'category' => $analysisCategory['category']
+                ?? $analysisMain['category']
+                    ?? null,
+        ];
 
 
         $normalizedTitle = $this->extractTitle($analysis['title'] ?? null);
-        Log::info(['normilize title' => $normalizedTitle]);
-//        $resumeAnalyze = ResumeAnalyze::updateOrCreate(
-//            ['resume_id' => $resume->id],
-//            [
-//                'skills'     => $analysis['skills'] ?? null,
-//                'strengths'  => $analysis['strengths'] ?? null,
-//                'weaknesses' => $analysis['weaknesses'] ?? null,
-//                'keywords'   => $analysis['keywords'] ?? null,
-//                'language'   => $analysis['language'] ?? 'en',
-//                'title'      => $normalizedTitle,
-//            ]
-//        );
 
         if ($normalizedTitle !== null) {
             $resume->update(['title' => $normalizedTitle]);
         }
 
-        // Persist category if returned and valid
         $categoryFromAi = isset($analysis['category']) && is_string($analysis['category'])
             ? trim($analysis['category'])
             : null;
 
         $finalCategory = null;
         if ($categoryFromAi !== null && $categoryFromAi !== '') {
-            // Accept exact label match (case-insensitive)
+            // Exact label match (case-insensitive) against allowed labels
             foreach ($allowedCategoryLabels as $label) {
                 if (mb_strtolower($label, 'UTF-8') === mb_strtolower($categoryFromAi, 'UTF-8')) {
                     $finalCategory = $label;
@@ -196,7 +237,7 @@ class OldResumeService
                 }
             }
 
-            // If AI returned a slug-like value, try mapping to label
+            // Try to interpret as slug or alternate form
             if ($finalCategory === null) {
                 $maybeLabel = $categoryService->fromSlug($categoryFromAi);
                 if ($maybeLabel && in_array($maybeLabel, $allowedCategoryLabels, true)) {
@@ -205,7 +246,7 @@ class OldResumeService
             }
         }
 
-        // Optional fallback categorization from text if AI did not provide a valid label
+        // Fallback: infer from title/description if AI value invalid or missing
         if ($finalCategory === null) {
             $inferred = $categoryService->categorize(null, $normalizedTitle, $resumeText);
             if ($inferred && in_array($inferred, $allowedCategoryLabels, true)) {
@@ -213,10 +254,10 @@ class OldResumeService
             }
         }
 
+        // Persist the category if determined
         if ($finalCategory !== null) {
             $resume->update(['category' => $finalCategory]);
         }
-
         if (!empty($analysis['cover_letter'])) {
             UserPreference::updateOrCreate(
                 ['user_id' => $resume->user_id],
@@ -258,41 +299,124 @@ class OldResumeService
                     Log::info("Parsing PDF file: " . $path);
 
                     $parser = new \Smalot\PdfParser\Parser();
+                    $text = null;
 
                     try {
                         $pdf = $parser->parseFile($path);
                         $text = trim($pdf->getText());
+                    } catch (\Throwable $e) {
+                        Log::warning("Smalot PDF parser failed: {$e->getMessage()} — switching to pdftotext...");
+                    }
 
-                        // Agar Smalot bo‘sh qaytarsa, pdftotext fallback ishlatamiz
-                        if (!$text || strlen($text) < 50) {
-                            Log::warning("Smalot returned empty text, switching to pdftotext fallback...");
+                    // 🔹 1. pdftotext fallback
+                    if (!$text || strlen($text) < 50) {
+                        $tmpTxt = tempnam(sys_get_temp_dir(), 'pdf_') . '.txt';
+                        $cmd = sprintf(
+                            'pdftotext -layout %s %s',
+                            escapeshellarg($path),
+                            escapeshellarg($tmpTxt)
+                        );
+                        exec($cmd, $output, $code);
 
-                            $tmpTxt = tempnam(sys_get_temp_dir(), 'pdf_') . '.txt';
-                            $cmd = sprintf(
-                                'pdftotext -layout %s %s',
-                                escapeshellarg($path),
-                                escapeshellarg($tmpTxt)
+                        if ($code === 0 && file_exists($tmpTxt)) {
+                            $text = file_get_contents($tmpTxt);
+                            @unlink($tmpTxt);
+                        } else {
+                            Log::warning("pdftotext failed [code=$code]: " . implode("\n", $output));
+                            $text = null;
+                        }
+                    }
+
+                    // 🔹 2. OCR fallback (agar hali ham matn yo‘q)
+                    if (!$text || strlen($text) < 50) {
+                        Log::info("No text layer detected — running OCR via Tesseract...");
+
+                        $tmpDir = sys_get_temp_dir() . '/ocr_' . uniqid();
+                        @mkdir($tmpDir);
+
+                        // 1️⃣ Convert PDF pages to images (PNG)
+                        $cmdConvert = sprintf(
+                            'gs -dNOPAUSE -dBATCH -sDEVICE=png16m -r300 -sOutputFile=%s/page_%%03d.png %s',
+                            escapeshellarg($tmpDir),
+                            escapeshellarg($path)
+                        );
+                        exec($cmdConvert, $gsOutput, $gsCode);
+
+                        if ($gsCode !== 0) {
+                            Log::error("Ghostscript conversion failed [code=$gsCode]: " . implode("\n", $gsOutput));
+                            return null;
+                        }
+
+                        // 2️⃣ OCR each image
+                        $text = '';
+                        foreach (glob("$tmpDir/page_*.png") as $imgPath) {
+                            $tmpTxt = tempnam(sys_get_temp_dir(), 'ocr_') . '.txt';
+                            $cmdOcr = sprintf(
+                                'tesseract %s %s -l eng',
+                                escapeshellarg($imgPath),
+                                escapeshellarg(str_replace('.txt', '', $tmpTxt))
                             );
-                            exec($cmd, $output, $code);
+                            exec($cmdOcr, $ocrOutput, $ocrCode);
 
-                            if ($code === 0 && file_exists($tmpTxt)) {
-                                $text = file_get_contents($tmpTxt);
+                            if ($ocrCode === 0 && file_exists($tmpTxt)) {
+                                $text .= file_get_contents($tmpTxt) . "\n";
                                 @unlink($tmpTxt);
                             } else {
-                                Log::error("pdftotext failed [code=$code]: " . implode("\n", $output));
-                                return null;
+                                Log::warning("Tesseract failed on page {$imgPath} [code=$ocrCode]: " . implode("\n", $ocrOutput));
                             }
                         }
 
-                        // ✅ UTF-8 tozalash (ENG MUHIM QISM)
-                        $text = $this->sanitizeText($text);
+                        // 3️⃣ Cleanup
+                        exec("rm -rf " . escapeshellarg($tmpDir));
 
-                        Log::info("Parsed text length: " . strlen($text));
-                        return trim($text);
-                    } catch (\Throwable $e) {
-                        Log::error("PDF parse failed: " . $e->getMessage());
-                        return null;
+                        if (strlen(trim($text)) < 50) {
+                            Log::error("OCR produced too little text, skipping file.");
+                            return null;
+                        }
                     }
+
+
+                    // 🔹 UTF-8 sanitizatsiya
+                    $text = $this->sanitizeText($text);
+
+                    Log::info("Parsed text length: " . strlen($text));
+                    return trim($text);
+                // $parser = new \Smalot\PdfParser\Parser();
+
+                // try {
+                //     $pdf = $parser->parseFile($path);
+                //     $text = trim($pdf->getText());
+
+                //     // Agar Smalot bo‘sh qaytarsa, pdftotext fallback ishlatamiz
+                //     if (!$text || strlen($text) < 50) {
+                //         Log::warning("Smalot returned empty text, switching to pdftotext fallback...");
+
+                //         $tmpTxt = tempnam(sys_get_temp_dir(), 'pdf_') . '.txt';
+                //         $cmd = sprintf(
+                //             'pdftotext -layout %s %s',
+                //             escapeshellarg($path),
+                //             escapeshellarg($tmpTxt)
+                //         );
+                //         exec($cmd, $output, $code);
+
+                //         if ($code === 0 && file_exists($tmpTxt)) {
+                //             $text = file_get_contents($tmpTxt);
+                //             @unlink($tmpTxt);
+                //         } else {
+                //             Log::error("pdftotext failed [code=$code]: " . implode("\n", $output));
+                //             return null;
+                //         }
+                //     }
+
+                //     // ✅ UTF-8 tozalash (ENG MUHIM QISM)
+                //     $text = $this->sanitizeText($text);
+
+                //     Log::info("Parsed text length: " . strlen($text));
+                //     return trim($text);
+                // } catch (\Throwable $e) {
+                //     Log::error("PDF parse failed: " . $e->getMessage());
+                //     return null;
+                // }
 
 
                 case 'docx':
