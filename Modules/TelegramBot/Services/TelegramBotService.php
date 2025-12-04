@@ -14,7 +14,7 @@ class TelegramBotService
     public function sendWelcomeMessage($chatId)
     {
         $text = "Assalomu alaykum! inter-AI vakansiyalari botiga xush kelibsiz!";
-        Log::info("sendWelcomeMessage => chatId: {$chatId}, text: {$text}");
+       // Log::info("sendWelcomeMessage => chatId: {$chatId}, text: {$text}");
 
         Telegram::bot('mybot')->sendMessage([
             'chat_id' => $chatId,
@@ -25,7 +25,7 @@ class TelegramBotService
     public function sendLanguageSelection($chatId)
     {
         $text = "Iltimos, tilni tanlang / Пожалуйста, выберите язык / Please select a language:";
-        Log::info("sendLanguageSelection => chatId: {$chatId}");
+     //   Log::info("sendLanguageSelection => chatId: {$chatId}");
 
         $keyboard = Keyboard::make()
             ->inline()
@@ -45,7 +45,7 @@ class TelegramBotService
     public function handleLanguageSelection($chatId, $language)
     {
         Cache::put("lang_{$chatId}", $language, now()->addHours(24));
-        Log::info("handleLanguageSelection => chatId: {$chatId}, lang: {$language}");
+     //   Log::info("handleLanguageSelection => chatId: {$chatId}, lang: {$language}");
 
         $texts = [
             'uz' => 'Platformamizdan foydalanish uchun "Dasturga kirish" tugmasini bosing!',
@@ -82,7 +82,7 @@ class TelegramBotService
                 'reply_markup' => $inlineKeyboard,
             ]);
 
-            Log::info("handleLanguageSelection => message sent successfully!");
+           // Log::info("handleLanguageSelection => message sent successfully!");
         } catch (\Exception $e) {
             Log::error("handleLanguageSelection ERROR: " . $e->getMessage());
         }
@@ -100,7 +100,7 @@ class TelegramBotService
             'commands' => $commands,
         ]);
 
-        Log::info("Bot commands set successfully!");
+     //   Log::info("Bot commands set successfully!");
     }
 
 

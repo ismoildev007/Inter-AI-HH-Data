@@ -33,7 +33,7 @@ class NotificationMatchingService
 
     public function matchResume(Resume $resume, $query): array
     {
-        Log::info('🚀 Job started', ['resume_id' => $resume->id, 'query' => $query]);
+        //Log::info('🚀 Job started', ['resume_id' => $resume->id, 'query' => $query]);
         $start = microtime(true);
 
         // $linkedinTitle = explode(',', $resume->title ?? '')[0] ?? '';
@@ -128,7 +128,7 @@ class NotificationMatchingService
             ->take(8)
             ->values();
 
-        Log::info('🧩 Tokens parsed', ['tokens' => $tokens->all()]);
+       // Log::info('🧩 Tokens parsed', ['tokens' => $tokens->all()]);
 
         $phrases = $cleaned
             ->filter(fn($s) => mb_strlen($s) >= 3 && str_contains($s, ' '))
@@ -164,7 +164,7 @@ class NotificationMatchingService
             fn() => $this->hhRepository->search($query, 0, 100, ['area' => 97])
         );
         $resumeCategory = $resume->category ?? null;
-        Log::info("Guessed category notification: " . ($guessedCategory ?? 'none'));
+        //Log::info("Guessed category notification: " . ($guessedCategory ?? 'none'));
 
         // Local vacancies builder
         $buildLocal = function () use ($resume, $tsQuery, $tokens, $guessedCategory) {
@@ -238,7 +238,7 @@ class NotificationMatchingService
                             $q->orWhere(function ($sub) use ($extraSkills, $addLikeConditions) {
                                 $addLikeConditions($sub, $extraSkills);
                             });
-                            Log::info('🧠 [TECH SKILL SEARCH]', ['skills' => $extraSkills->all()]);
+                           // Log::info('🧠 [TECH SKILL SEARCH]', ['skills' => $extraSkills->all()]);
                         }
                     })
                     ->select(
@@ -252,10 +252,10 @@ class NotificationMatchingService
                     )
                     ->addBinding($tsQuery, 'select');
 
-                Log::info("💡 [TECH SEARCH]", [
-                    'categories' => $categoriesForSearch,
-                    'tokens' => $tokens->all(),
-                ]);
+                // Log::info("💡 [TECH SEARCH]", [
+                //     'categories' => $categoriesForSearch,
+                //     'tokens' => $tokens->all(),
+                // ]);
             } else {
                 // Non-Tech: Broader search with category preference
                 $qb->select('id', 'title', 'description', 'source', 'external_id', 'category', DB::raw('0 as rank'))
@@ -264,7 +264,7 @@ class NotificationMatchingService
                         // 1) Category match (if exists)
                         if (!empty($resumeCategory)) {
                             $main->orWhere('category', $resumeCategory);
-                            Log::info("📂 [NON-TECH CATEGORY] {$resumeCategory}");
+                           // Log::info("📂 [NON-TECH CATEGORY] {$resumeCategory}");
                         }
 
                         // 2) Full-text search on description
@@ -277,7 +277,7 @@ class NotificationMatchingService
                             $main->orWhere(function ($q) use ($tokens, $addLikeConditions) {
                                 $addLikeConditions($q, $tokens);
                             });
-                            Log::info('🔎 [NON-TECH TOKEN SEARCH]', ['tokens' => $tokens->all()]);
+                           // Log::info('🔎 [NON-TECH TOKEN SEARCH]', ['tokens' => $tokens->all()]);
                         }
 
                         // 4) Skill-based search (from resume title)
@@ -285,11 +285,11 @@ class NotificationMatchingService
                             $main->orWhere(function ($q) use ($extraSkills, $addLikeConditions) {
                                 $addLikeConditions($q, $extraSkills);
                             });
-                            Log::info('🧠 [NON-TECH SKILL SEARCH]', ['skills' => $extraSkills->all()]);
+                           // Log::info('🧠 [NON-TECH SKILL SEARCH]', ['skills' => $extraSkills->all()]);
                         }
                     });
 
-                Log::info("✅ [NON-TECH SEARCH] Resume {$resume->id}");
+              //  Log::info("✅ [NON-TECH SEARCH] Resume {$resume->id}");
             }
 
             return $qb->orderByDesc('rank')->orderByDesc('id');
@@ -300,16 +300,16 @@ class NotificationMatchingService
             ->take(10)
             ->keyBy(fn($v) => $v->source === 'hh' && $v->external_id ? $v->external_id : "local_{$v->id}");
 
-        Log::info('✅ [SEARCH COMPLETED]', [
-            'hh_count' => count($hhVacancies),
-            'local_count' => $localVacancies->count(),
-            'resume_id' => $resume->id,
-        ]);
+        // Log::info('✅ [SEARCH COMPLETED]', [
+        //     'hh_count' => count($hhVacancies),
+        //     'local_count' => $localVacancies->count(),
+        //     'resume_id' => $resume->id,
+        // ]);
 
 
-        Log::info('Data fetch took:' . (microtime(true) - $start) . 's');
-        Log::info('Local vacancies: ' . $localVacancies->count());
-        Log::info('hh vacancies count: ' . count($hhVacancies['items'] ?? []));
+        // Log::info('Data fetch took:' . (microtime(true) - $start) . 's');
+        // Log::info('Local vacancies: ' . $localVacancies->count());
+        // Log::info('hh vacancies count: ' . count($hhVacancies['items'] ?? []));
 
         $hhItems = $hhVacancies['items'] ?? [];
 
@@ -379,10 +379,10 @@ class NotificationMatchingService
             }
         }
         if (empty($vacanciesPayload)) {
-            Log::info('No vacancies to match for resume', ['resume_id' => $resume->id]);
+            //('No vacancies to match for resume', ['resume_id' => $resume->id]);
             return [];
         }
-        Log::info('Prepared payload with ' . count($vacanciesPayload) . ' vacancies');
+       // Log::info('Prepared payload with ' . count($vacanciesPayload) . ' vacancies');
         $vacancyMap = collect($vacanciesPayload)->keyBy(fn($v, $k) => $v['id'] ?? "new_{$k}");
 
         $savedData = [];
@@ -400,7 +400,7 @@ class NotificationMatchingService
                         ->where('external_id', $match['external_id'])
                         ->first();
 
-                    Log::info("resume category notification: " . $resumeCategory);
+                    //Log::info("resume category notification: " . $resumeCategory);
 
                     if (!$vac && isset($match['raw'])) {
                         // Use bulk HH categorization logic (rule-based) instead of forcing resume category
@@ -409,9 +409,9 @@ class NotificationMatchingService
                 }
 
                 if (!$vac && !empty($vacId)) {
-                    Log::info('⚙️ Local vacancy not found via model, saving manually', [
-                        'vacancy_id' => $vacId,
-                    ]);
+                    // Log::info('⚙️ Local vacancy not found via model, saving manually', [
+                    //     'vacancy_id' => $vacId,
+                    // ]);
 
                     $savedData[] = [
                         'resume_id'     => $resume->id,
@@ -459,9 +459,9 @@ class NotificationMatchingService
             });
         }
 
-        Log::info('All details took finished: ' . (microtime(true) - $start) . 's');
+        // Log::info('All details took finished: ' . (microtime(true) - $start) . 's');
 
-        Log::info('Matching finished', ['resume_id' => $resume->id]);
+        // Log::info('Matching finished', ['resume_id' => $resume->id]);
 
         return $savedData;
     }

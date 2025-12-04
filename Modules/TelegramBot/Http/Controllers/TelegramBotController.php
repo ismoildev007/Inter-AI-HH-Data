@@ -20,7 +20,7 @@ class TelegramBotController extends Controller
     public function handleWebhook(Request $request)
     {
         $update = Telegram::getWebhookUpdate();
-        Log::info("Webhook received", $update->toArray());
+       // Log::info("Webhook received", $update->toArray());
 
         if (isset($update['message'])) {
             $message = $update['message'];

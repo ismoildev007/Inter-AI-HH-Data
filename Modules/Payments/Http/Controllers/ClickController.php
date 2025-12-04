@@ -14,7 +14,7 @@ class ClickController extends Controller
 {
     public function prepare(Request $request)
     {
-        Log::info('🟡 CLICK PREPARE: started', $request->all());
+        //Log::info('🟡 CLICK PREPARE: started', $request->all());
 
         if (!$this->checkSignature($request)) {
             Log::warning('Invalid signature in prepare', $request->all());
@@ -45,7 +45,7 @@ class ClickController extends Controller
             'sign_time' => $request->sign_time,
         ]);
 
-        Log::info('Transaction updated to prepared', ['transaction_id' => $transaction->id]);
+      //  Log::info('Transaction updated to prepared', ['transaction_id' => $transaction->id]);
 
         $response = [
             'click_trans_id' => $request->click_trans_id,
@@ -55,18 +55,18 @@ class ClickController extends Controller
             'error_note' => 'Success',
         ];
 
-        Log::info('Transaction prepared response', $response);
+       // Log::info('Transaction prepared response', $response);
 
         return response()->json($response);
     }
 
     public function complete(Request $request)
     {
-        Log::info('CLICK COMPLETE: started', [
-            'click_trans_id' => $request->click_trans_id ?? null,
-            'merchant_trans_id' => $request->merchant_trans_id ?? null,
-            'merchant_prepare_id' => $request->merchant_prepare_id ?? null,
-        ]);
+        // Log::info('CLICK COMPLETE: started', [
+        //     'click_trans_id' => $request->click_trans_id ?? null,
+        //     'merchant_trans_id' => $request->merchant_trans_id ?? null,
+        //     'merchant_prepare_id' => $request->merchant_prepare_id ?? null,
+        // ]);
 
         try {
             // 1) Asosiy validatsiya — zarur maydonlar
@@ -133,7 +133,7 @@ class ClickController extends Controller
 
             // 3) Agar allaqachon completed bo'lsa idempotent javob
             if ((int)$transaction->state >= 2) {
-                Log::info('Transaction already completed (idempotent)', ['transaction_id' => $transaction->id]);
+               // Log::info('Transaction already completed (idempotent)', ['transaction_id' => $transaction->id]);
                 return response()->json([
                     'click_trans_id' => $request->click_trans_id,
                     'merchant_trans_id' => (string)$transaction->id,
@@ -192,7 +192,7 @@ class ClickController extends Controller
                     'transaction_id' => $request->click_trans_id, // saqlashni yangilash
                     'sign_time' => now(),
                 ]);
-                Log::info('Transaction marked completed', ['transaction_id' => $transaction->id]);
+               // Log::info('Transaction marked completed', ['transaction_id' => $transaction->id]);
 
                 // subscription yaratish yoki yangilash
                 $subscription = Subscription::find($transaction->subscription_id);
@@ -204,7 +204,7 @@ class ClickController extends Controller
                         'remaining_auto_responses' => $plan->auto_response_limit ?? 0,
                         'status' => 'active',
                     ]);
-                    Log::info('Subscription updated to active', ['subscription_id' => $subscription->id]);
+                   // Log::info('Subscription updated to active', ['subscription_id' => $subscription->id]);
                 } else {
                     $subscription = Subscription::create([
                         'user_id' => $transaction->user_id,
@@ -219,10 +219,10 @@ class ClickController extends Controller
                 }
             });
 
-            Log::info('CLICK COMPLETE: finished successfully', [
-                'transaction_id' => $transaction->id,
-                'subscription_id' => $subscription->id ?? null
-            ]);
+            // Log::info('CLICK COMPLETE: finished successfully', [
+            //     'transaction_id' => $transaction->id,
+            //     'subscription_id' => $subscription->id ?? null
+            // ]);
 
             return response()->json([
                 'click_trans_id' => $request->click_trans_id,
@@ -348,9 +348,9 @@ class ClickController extends Controller
                 'string' => $string,
             ]);
         } else {
-            Log::info('✅ Signature verified successfully', [
-                'sign_string' => $expectedSign
-            ]);
+            // Log::info('✅ Signature verified successfully', [
+            //     'sign_string' => $expectedSign
+            // ]);
         }
 
         return $isValid;
@@ -359,7 +359,7 @@ class ClickController extends Controller
     public function booking(Request $request)
     {
         $user = Auth::user();
-        Log::info('CLICK BOOKING STARTED', ['user_id' => $user->id, 'plan_id' => $request->plan_id]);
+        //Log::info('CLICK BOOKING STARTED', ['user_id' => $user->id, 'plan_id' => $request->plan_id]);
 
         $plan = Plan::find($request->plan_id);
         if (!$plan) {
@@ -375,7 +375,7 @@ class ClickController extends Controller
             'remaining_auto_responses' => $plan->remaining_auto_responses ?? 0,
             'status' => 'pending'
         ]);
-        Log::info('Subscription created', ['subscription_id' => $subscription->id]);
+        //Log::info('Subscription created', ['subscription_id' => $subscription->id]);
 
         $transaction = Transaction::create([
             'user_id' => $user->id,
@@ -387,10 +387,10 @@ class ClickController extends Controller
             'amount' => $plan->price,
             'sign_time' => null,
         ]);
-        Log::info('Transaction created', [
-            'transaction_id' => $transaction->id,
-            'subscription_id' => $subscription->id
-        ]);
+        // Log::info('Transaction created', [
+        //     'transaction_id' => $transaction->id,
+        //     'subscription_id' => $subscription->id
+        // ]);
 
         $merchantId = env('CLICK_MERCHANT_ID');
         $serviceId = env('CLICK_SERVICE_ID');
@@ -398,7 +398,7 @@ class ClickController extends Controller
         $transactionId = $transaction->id;
 
         $clickUrl = "https://my.click.uz/services/pay?service_id={$serviceId}&merchant_id={$merchantId}&amount={$amount}&transaction_param={$transactionId}";
-        Log::info('CLICK payment URL generated', ['url' => $clickUrl]);
+      //  Log::info('CLICK payment URL generated', ['url' => $clickUrl]);
 
         return response()->json([
             'success' => true,

@@ -33,8 +33,8 @@ class MatchResumeJob implements ShouldQueue
 
     public function handle(VacancyInterface $vacancyRepository, HHVacancyInterface $hhRepository): void
     {
-        Log::info(['resume info' => $this->query]);
-        Log::info('Job started for resume', ['resume_id' => $this->resume->id]);
+       // Log::info(['resume info' => $this->query]);
+      //  Log::info('Job started for resume', ['resume_id' => $this->resume->id]);
 
         // --- Fetch from HH ---
         $cacheKey = "hh:search:{$this->query}:area97";
@@ -44,7 +44,7 @@ class MatchResumeJob implements ShouldQueue
 
         $hhItems = $hhVacancies['items'] ?? [];
         if (empty($hhItems)) {
-            Log::info('No HH vacancies found', ['query' => $this->query]);
+          //  Log::info('No HH vacancies found', ['query' => $this->query]);
         }
 
         // --- Fetch from local DB (own vacancies) ---
@@ -100,7 +100,7 @@ class MatchResumeJob implements ShouldQueue
         }
 
         if (empty($vacanciesPayload)) {
-            Log::info('No vacancies to match for resume', ['resume_id' => $this->resume->id]);
+         //   Log::info('No vacancies to match for resume', ['resume_id' => $this->resume->id]);
             return;
         }
 
@@ -167,6 +167,6 @@ class MatchResumeJob implements ShouldQueue
             );
         }
 
-        Log::info('Job finished for resume', ['resume_id' => $this->resume->id]);
+        //Log::info('Job finished for resume', ['resume_id' => $this->resume->id]);
     }
 }

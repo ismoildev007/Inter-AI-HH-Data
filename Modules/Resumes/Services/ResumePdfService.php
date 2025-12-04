@@ -17,7 +17,7 @@ class ResumePdfService
     try {
       $existing = CareerTrackingPdf::where('resume_id', $resume->id)->first();
       if ($existing) {
-        Log::info("⚠️ Career tracking already exists for resume ID {$resume->id}, skipping...");
+      //  Log::info("⚠️ Career tracking already exists for resume ID {$resume->id}, skipping...");
         return;
       }
 
@@ -513,7 +513,7 @@ class ResumePdfService
             // 'pdf' => $pdfPath,
           ]
         );
-        Log::info('✅ Career PDF generated for resume ID: ' . $resume->id);
+       // Log::info('✅ Career PDF generated for resume ID: ' . $resume->id);
       } else {
         Log::error('Invalid JSON from OpenAI for resume ID: ' . $resume->id, [
           'response' => $jsonOutput,

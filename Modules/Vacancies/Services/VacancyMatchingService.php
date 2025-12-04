@@ -93,7 +93,7 @@ class VacancyMatchingService
             }
 
             $resumeCategory = $resume->category ?? null;
-            Log::info("🔍 Matching resume #{$resume->id} using query: {$query}, category: {$resumeCategory}, guessed category: {$guessedCategory}");
+           // Log::info("🔍 Matching resume #{$resume->id} using query: {$query}, category: {$resumeCategory}, guessed category: {$guessedCategory}");
             $techCategories = [
                 "IT and Software Development"
             ];
@@ -168,29 +168,29 @@ class VacancyMatchingService
             $localRows = collect($results['local']);
 
             // HeadHunter natijalarini log qilish
-            Log::info("🔍 HeadHunter search natijalari", [
-                'resume_id' => $resume->id,
-                'query' => $query,
-                'total_found' => $hhVacancies['found'] ?? 0,
-                'items_count' => count($hhVacancies['items'] ?? []),
-                'pages' => $hhVacancies['pages'] ?? 0,
-                'per_page' => $hhVacancies['per_page'] ?? 0,
-                'raw_response_keys' => array_keys($hhVacancies),
-            ]);
+            // Log::info("🔍 HeadHunter search natijalari", [
+            //     'resume_id' => $resume->id,
+            //     'query' => $query,
+            //     'total_found' => $hhVacancies['found'] ?? 0,
+            //     'items_count' => count($hhVacancies['items'] ?? []),
+            //     'pages' => $hhVacancies['pages'] ?? 0,
+            //     'per_page' => $hhVacancies['per_page'] ?? 0,
+            //     'raw_response_keys' => array_keys($hhVacancies),
+            // ]);
 
             // Agar vacansiyalar bo'lsa, birinchi 3tasini ko'rsatish
             if (!empty($hhVacancies['items'])) {
-                Log::info("📋 HeadHunter dan topilgan vacansiyalar (birinchi 3ta)", [
-                    'resume_id' => $resume->id,
-                    'sample_vacancies' => array_map(function($item) {
-                        return [
-                            'id' => $item['id'] ?? null,
-                            'name' => $item['name'] ?? null,
-                            'employer' => $item['employer']['name'] ?? null,
-                            'area' => $item['area']['name'] ?? null,
-                        ];
-                    }, array_slice($hhVacancies['items'], 0, 3))
-                ]);
+                // Log::info("📋 HeadHunter dan topilgan vacansiyalar (birinchi 3ta)", [
+                //     'resume_id' => $resume->id,
+                //     'sample_vacancies' => array_map(function($item) {
+                //         return [
+                //             'id' => $item['id'] ?? null,
+                //             'name' => $item['name'] ?? null,
+                //             'employer' => $item['employer']['name'] ?? null,
+                //             'area' => $item['area']['name'] ?? null,
+                //         ];
+                //     }, array_slice($hhVacancies['items'], 0, 3))
+                // ]);
             } else {
                 Log::warning("⚠️ HeadHunter dan vacansiya topilmadi", [
                     'resume_id' => $resume->id,
@@ -214,10 +214,10 @@ class VacancyMatchingService
                 ->take(50)
                 ->keyBy(fn($v) => $v->source === 'hh' && $v->external_id ? $v->external_id : "local_{$v->id}");
             // Local vacansiyalar sonini ham log qilish
-            Log::info("💾 Local database dan topilgan vacansiyalar", [
-                'resume_id' => $resume->id,
-                'count' => $localVacancies->count(),
-            ]);
+            // Log::info("💾 Local database dan topilgan vacansiyalar", [
+            //     'resume_id' => $resume->id,
+            //     'count' => $localVacancies->count(),
+            // ]);
 
             $vacanciesPayload = [];
 
@@ -234,10 +234,10 @@ class VacancyMatchingService
                 ->filter(fn($item) => isset($item['id']) && !$localVacancies->has($item['id']))
                 ->take(50);
             // Local vacansiyalar sonini ham log qilish
-            Log::info("💾 HeadHunter dan topilgan vacansiyalar", [
-                'resume_id' => $resume->id,
-                'count' => $toFetch->count(),
-            ]);
+            // Log::info("💾 HeadHunter dan topilgan vacansiyalar", [
+            //     'resume_id' => $resume->id,
+            //     'count' => $toFetch->count(),
+            // ]);
 
             foreach ($toFetch as $idx => $item) {
                 $extId = $item['id'] ?? null;
@@ -273,7 +273,7 @@ class VacancyMatchingService
                         $vac = Vacancy::where('source', 'hh')
                             ->where('external_id', $match['external_id'])
                             ->first();
-                        Log::info("resume category: " . $resumeCategory);
+                       // Log::info("resume category: " . $resumeCategory);
                         if (!$vac && isset($match['raw'])) {
                             // Use HH bulk categorization (rule-based) instead of forcing resume category
                             $vac = $this->vacancyRepository->firstOrCreateFromHH($match['raw']);
