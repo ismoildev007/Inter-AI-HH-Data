@@ -219,11 +219,11 @@ class HHVacancyRepository implements HHVacancyInterface
             ->values()
             ->all();
 
-        Log::info('HH search completed', [
-            'original_query' => $query,
-            'search_terms'   => $searchTerms,
-            'total_items'    => count($mergedItems),
-        ]);
+        // Log::info('HH search completed', [
+        //     'original_query' => $query,
+        //     'search_terms'   => $searchTerms,
+        //     'total_items'    => count($mergedItems),
+        // ]);
 
         return ['items' => $mergedItems];
     }
@@ -278,14 +278,14 @@ class HHVacancyRepository implements HHVacancyInterface
         ])->asMultipart()->post("{$this->baseUrl}/negotiations", $multipart);
 
         if ($response->failed()) {
-            Log::info('HH API apply failed', ['response' => $response->body()]);
+            //Log::info('HH API apply failed', ['response' => $response->body()]);
             return [
                 'success' => false,
                 'message' => 'HH API apply failed: ' . $response->body(),
             ];
         }
 
-        Log::info('HH API apply succeeded', ['response' => $response->body()]);
+       // Log::info('HH API apply succeeded', ['response' => $response->body()]);
 
         return [
             'success' => true,
@@ -329,10 +329,10 @@ class HHVacancyRepository implements HHVacancyInterface
         }
 
         if ($response->failed()) {
-            Log::info('HH API negotiations fetch failed', [
-                'status' => $response->status(),
-                'body' => $response->body(),
-            ]);
+            // Log::info('HH API negotiations fetch failed', [
+            //     'status' => $response->status(),
+            //     'body' => $response->body(),
+            // ]);
             return [
                 'success' => false,
                 'message' => 'HH API negotiations failed: ' . $response->status(),

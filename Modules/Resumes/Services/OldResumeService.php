@@ -82,7 +82,7 @@ class OldResumeService
         $allowedCategoriesJson = json_encode($allowedCategoryLabels, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         $resumeText = (string) ($resume->parsed_text ?? $resume->description);
         if (empty(trim($resumeText))) {
-            Log::info("Skip analyze: resume text is empty for resume ID {$resume->id}");
+           // Log::info("Skip analyze: resume text is empty for resume ID {$resume->id}");
             $user = $resume->user;
 
             if ($user && !$user->resumes()->exists()) {
@@ -202,7 +202,7 @@ class OldResumeService
         $analysisCategory = $parseResponse($responseCategory);
 
         if (!$analysisMain && !$analysisCategory) {
-            Log::info("Invalid GPT responses: main or category invalid");
+         //   Log::info("Invalid GPT responses: main or category invalid");
             return;
         }
 
@@ -296,7 +296,7 @@ class OldResumeService
         try {
             switch ($ext) {
                 case 'pdf':
-                    Log::info("Parsing PDF file: " . $path);
+             //       Log::info("Parsing PDF file: " . $path);
 
                     $parser = new \Smalot\PdfParser\Parser();
                     $text = null;
@@ -329,7 +329,7 @@ class OldResumeService
 
                     // 🔹 2. OCR fallback (agar hali ham matn yo‘q)
                     if (!$text || strlen($text) < 50) {
-                        Log::info("No text layer detected — running OCR via Tesseract...");
+                      //  Log::info("No text layer detected — running OCR via Tesseract...");
 
                         $tmpDir = sys_get_temp_dir() . '/ocr_' . uniqid();
                         @mkdir($tmpDir);
@@ -379,7 +379,7 @@ class OldResumeService
                     // 🔹 UTF-8 sanitizatsiya
                     $text = $this->sanitizeText($text);
 
-                    Log::info("Parsed text length: " . strlen($text));
+                   // Log::info("Parsed text length: " . strlen($text));
                     return trim($text);
                 // $parser = new \Smalot\PdfParser\Parser();
 
@@ -421,7 +421,7 @@ class OldResumeService
 
                 case 'docx':
                 case 'doc':
-                    Log::info("Converting DOCX/DOC file using unoconv: " . $path);
+                 //   Log::info("Converting DOCX/DOC file using unoconv: " . $path);
 
                     $tmpTxt = tempnam(sys_get_temp_dir(), 'resume_') . '.txt';
                     $loProfile = '/var/www/.config/libreoffice';
@@ -444,7 +444,7 @@ class OldResumeService
                     $text = file_get_contents($tmpTxt);
                     @unlink($tmpTxt);
 
-                    Log::info("Parsed text length: " . strlen($text));
+               //     Log::info("Parsed text length: " . strlen($text));
                     return trim($text);
 
                 case 'txt':

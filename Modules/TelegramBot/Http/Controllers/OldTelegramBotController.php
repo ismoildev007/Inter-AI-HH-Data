@@ -20,14 +20,14 @@ class OldTelegramBotController extends Controller
     public function handleWebhook(Request $request)
     {
         $update = Telegram::getWebhookUpdate();
-        Log::info("Webhook received", $update->toArray());
+      //  Log::info("Webhook received", $update->toArray());
 
         if (isset($update['message'])) {
             $message = $update['message'];
             $chatId  = $message['chat']['id'];
             $text    = $message['text'] ?? null;
 
-            Log::info("Message received => chatId: {$chatId}, text: {$text}");
+          //  Log::info("Message received => chatId: {$chatId}, text: {$text}");
 
 //            if ($text === '/start') {
 //                $firstName = $message['from']['first_name'] ?? '';
