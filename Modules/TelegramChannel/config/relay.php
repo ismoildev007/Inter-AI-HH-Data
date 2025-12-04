@@ -1,5 +1,6 @@
 <?php
 
+
 return [
     // Caching for GPT operations used by RelayService
     'cache' => [

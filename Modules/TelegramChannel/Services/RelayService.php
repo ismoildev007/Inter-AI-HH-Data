@@ -164,6 +164,7 @@ class RelayService
             }
             if (empty($messages)) {
                 if ((bool) config('telegramchannel_relay.debug.log_empty_peers', true)) {
+                    
                     // Log::debug('Relay loop EMPTY', [
                     //     'peer' => $peer,
                     //     'loop' => $loops,
