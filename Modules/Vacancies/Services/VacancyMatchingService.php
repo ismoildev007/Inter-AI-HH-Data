@@ -95,11 +95,7 @@ class VacancyMatchingService
             $resumeCategory = $resume->category ?? null;
             Log::info("🔍 Matching resume #{$resume->id} using query: {$query}, category: {$resumeCategory}, guessed category: {$guessedCategory}");
             $techCategories = [
-                "IT and Software Development",
-                "Data Science and Analytics",
-                "QA and Testing",
-                "DevOps and Cloud Engineering",
-                "UI/UX and Product Design"
+                "IT and Software Development"
             ];
             $isTech = in_array($resumeCategory, $techCategories, true);
 
@@ -107,7 +103,7 @@ class VacancyMatchingService
                 SELECT
                     v.id, v.title, v.description, v.source, v.external_id, v.category,
                     CASE
-                        WHEN v.category IN ('IT and Software Development', 'Data Science and Analytics', 'QA and Testing', 'DevOps and Cloud Engineering', 'UI/UX and Product Design')
+                        WHEN v.category IN ('IT and Software Development')
                         THEN ts_rank_cd(to_tsvector('simple', coalesce(v.description, '') || ' ' || coalesce(v.title, '')), websearch_to_tsquery('simple', ?))
                         ELSE 0
                     END AS rank
@@ -134,7 +130,7 @@ class VacancyMatchingService
                 if ($titleCondition) {
                     $baseSql .= " AND (
                     (
-                        v.category IN ('IT and Software Development', 'Data Science and Analytics', 'QA and Testing', 'DevOps and Cloud Engineering', 'UI/UX and Product Design')
+                        v.category IN ('IT and Software Development')
                         AND (
                             $titleCondition
                             OR to_tsvector('simple', coalesce(v.description, '') || ' ' || coalesce(v.title, ''))
