@@ -164,11 +164,11 @@ class RelayService
             }
             if (empty($messages)) {
                 if ((bool) config('telegramchannel_relay.debug.log_empty_peers', true)) {
-                    Log::debug('Relay loop EMPTY', [
-                        'peer' => $peer,
-                        'loop' => $loops,
-                        'messages' => 0,
-                    ]);
+                    // Log::debug('Relay loop EMPTY', [
+                    //     'peer' => $peer,
+                    //     'loop' => $loops,
+                    //     'messages' => 0,
+                    // ]);
                 }
                 break;
             }
@@ -177,13 +177,13 @@ class RelayService
             if ((bool) config('telegramchannel_relay.debug.log_memory', false)) {
                 $usage = round(memory_get_usage(true) / 1048576, 1);
                 $peak  = round(memory_get_peak_usage(true) / 1048576, 1);
-                Log::debug('Relay loop memory', [
-                    'peer' => $peer,
-                    'loop' => $loops,
-                    'messages' => count($messages),
-                    'usage_mb' => $usage,
-                    'peak_mb'  => $peak,
-                ]);
+                // Log::debug('Relay loop memory', [
+                //     'peer' => $peer,
+                //     'loop' => $loops,
+                //     'messages' => count($messages),
+                //     'usage_mb' => $usage,
+                //     'peak_mb'  => $peak,
+                // ]);
             }
 
             // gpt apiga sorov jonatiladi 
@@ -591,7 +591,7 @@ class RelayService
                 $lock = Cache::lock($lockKey, 600);
                 if (!$lock->get()) {
                     if ((bool) config('telegramchannel_relay.debug.log_memory', false)) {
-                        Log::debug('Dedup: message lock busy, skipping queue', ['peer' => $peer, 'id' => $id, 'lock' => $lockKey]);
+                       // Log::debug('Dedup: message lock busy, skipping queue', ['peer' => $peer, 'id' => $id, 'lock' => $lockKey]);
                     }
                     continue;
                 }
@@ -663,7 +663,7 @@ class RelayService
                         $lock = Cache::lock($lockKey, 600);
                         if (!$lock->get()) {
                             if ((bool) config('telegramchannel_relay.debug.log_memory', false)) {
-                                Log::debug('Dedup: message lock busy, skipping send', ['peer' => $peer, 'id' => $id, 'lock' => $lockKey]);
+                               // Log::debug('Dedup: message lock busy, skipping send', ['peer' => $peer, 'id' => $id, 'lock' => $lockKey]);
                             }
                             // Another worker is processing the same message
                             continue;
@@ -675,7 +675,7 @@ class RelayService
                                 $sigLock = Cache::lock('tg:sig:'. $signature, 600);
                                 if (!$sigLock->get()) {
                                     if ((bool) config('telegramchannel_relay.debug.log_memory', false)) {
-                                        Log::debug('Dedup: signature lock busy, skipping send', ['peer' => $peer, 'id' => $id, 'sig' => $signature]);
+                                       // Log::debug('Dedup: signature lock busy, skipping send', ['peer' => $peer, 'id' => $id, 'sig' => $signature]);
                                     }
                                     continue; // another worker is handling this signature
                                 }
@@ -782,7 +782,7 @@ class RelayService
                                 if ($id > $maxDeliveredId) { $maxDeliveredId = $id; }
                             } else {
                                 if ((bool) config('telegramchannel_relay.debug.log_memory', false)) {
-                                    Log::debug('Skip save: send not successful', ['peer' => $ruleKey ?? null, 'id' => $id ?? null]);
+                                  //  Log::debug('Skip save: send not successful', ['peer' => $ruleKey ?? null, 'id' => $id ?? null]);
                                 }
                             }
                         } finally {
