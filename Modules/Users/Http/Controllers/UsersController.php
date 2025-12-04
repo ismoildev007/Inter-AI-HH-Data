@@ -117,13 +117,16 @@ class UsersController extends Controller
         $user = $request->user();
 
         [$responseTotal, $applicationTotal] = $this->notificationTotals($user);
+        $rejectionTotal = $this->rejectionTotal($user);
 
         $responseUnread = max($responseTotal - (int) $user->responce_notification, 0);
         $applicationUnread = max($applicationTotal - (int) $user->application_notification, 0);
+        $rejectionUnread = max($rejectionTotal - (int) $user->rejection_notification, 0);
 
         return response()->json([
             'responce_notification' => $responseUnread,
             'application_notification' => $applicationUnread,
+            'rejection_notification' => $rejectionUnread,
         ]);
     }
 
@@ -132,12 +135,13 @@ class UsersController extends Controller
         $user = $request->user();
 
         $validated = $request->validate([
-            'type' => 'nullable|string|in:responce,response,application,all',
+            'type' => 'nullable|string|in:responce,response,application,rejection,all',
         ]);
 
         $type = $validated['type'] ?? 'all';
 
         [$responseTotal, $applicationTotal] = $this->notificationTotals($user);
+        $rejectionTotal = $this->rejectionTotal($user);
 
         $updates = [];
 
@@ -149,6 +153,10 @@ class UsersController extends Controller
             $updates['application_notification'] = $applicationTotal;
         }
 
+        if (in_array($type, ['rejection', 'all'], true)) {
+            $updates['rejection_notification'] = $rejectionTotal;
+        }
+
         if ($updates !== []) {
             $user->forceFill($updates)->save();
         }
@@ -157,6 +165,7 @@ class UsersController extends Controller
             'message' => 'Notifications marked as read.',
             'responce_notification' => max($responseTotal - (int) $user->responce_notification, 0),
             'application_notification' => max($applicationTotal - (int) $user->application_notification, 0),
+            'rejection_notification' => max($rejectionTotal - (int) $user->rejection_notification, 0),
         ]);
     }
 
