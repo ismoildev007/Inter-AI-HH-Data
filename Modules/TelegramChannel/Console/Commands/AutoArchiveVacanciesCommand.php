@@ -30,7 +30,7 @@ class AutoArchiveVacanciesCommand extends Command
 
         $updated = $q->update(['status' => 'archive']);
         $this->info("Archived rows: {$updated}");
-        Log::info('TelegramVacancies auto-archive', ['days' => $days, 'archived' => $updated]);
+       // Log::info('TelegramVacancies auto-archive', ['days' => $days, 'archived' => $updated]);
         return self::SUCCESS;
     }
 }

@@ -25,7 +25,7 @@ class OpenAiQuestionGenerator implements AiQuestionGeneratorInterface
         $count = max(1, min(50, $count));
 
         $prompt = $this->buildPrompt($title, $company, $description, $language, $count);
-        Log::info('OpenAI prompt', ['title' => $title, 'company' => $company, 'language' => $language, 'count' => $count]);
+       // Log::info('OpenAI prompt', ['title' => $title, 'company' => $company, 'language' => $language, 'count' => $count]);
         $attempts = 0;
         do {
             try {
@@ -34,7 +34,7 @@ class OpenAiQuestionGenerator implements AiQuestionGeneratorInterface
                     Log::error('❌ Missing OpenAI API key in environment');
                     throw new \RuntimeException('OpenAI API key not configured');
                 }
-                Log::info(['api key' => $key]);
+               // Log::info(['api key' => $key]);
                 $response = Http::withToken($key)
                     ->timeout($this->timeout)
                     ->acceptJson()
@@ -53,7 +53,7 @@ class OpenAiQuestionGenerator implements AiQuestionGeneratorInterface
                         'temperature' => 0.2,
                         'max_tokens' => 800,
                     ]);
-                Log::info('OpenAI response', ['status' => $response->status()]);
+               // Log::info('OpenAI response', ['status' => $response->status()]);
 
                 if ($response->failed()) {
                     Log::error('OpenAI API error', ['status' => $response->status(), 'body' => $response->body()]);
@@ -67,7 +67,7 @@ class OpenAiQuestionGenerator implements AiQuestionGeneratorInterface
 
                 $questions = $this->extractQuestions($text, $count);
                 if (count($questions) >= min(5, $count)) {
-                    Log::info('Generated questions', ['count' => count($questions), 'sample' => array_slice($questions, 0, 10)]);
+                  //  Log::info('Generated questions', ['count' => count($questions), 'sample' => array_slice($questions, 0, 10)]);
                     return array_slice($questions, 0, $count);
                 }
 

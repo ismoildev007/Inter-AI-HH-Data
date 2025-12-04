@@ -22,7 +22,7 @@ class HhApiService
      */
     public function apply(Application $application)
     {
-        Log::info("Starting HH application for Application ID: {$application->id}");
+       // Log::info("Starting HH application for Application ID: {$application->id}");
         $hhAccount   = $application->user->hhAccount;
         $coverLetter = optional($application->user->preference)->cover_letter;
 
@@ -58,11 +58,11 @@ class HhApiService
             ];
         }
 
-        Log::info('HH apply payload', [
-            'vacancy_id'   => $vacancy->external_id,
-            'resume_id'    => $application->hh_resume_id,
-            'cover_letter' => $coverLetter,
-        ]);
+        // Log::info('HH apply payload', [
+        //     'vacancy_id'   => $vacancy->external_id,
+        //     'resume_id'    => $application->hh_resume_id,
+        //     'cover_letter' => $coverLetter,
+        // ]);
 
         // Send to HH API
         $response = Http::withHeaders([

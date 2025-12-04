@@ -21,12 +21,12 @@ class RunMatchingSequential extends Command
         $tsQuery = $this->argument('tsQuery');
         $guessedCategory = $this->argument('guessedCategory');
 
-        Log::info('🚀 [RunMatchingSequential] Started', [
-            'resume_id' => $resumeId,
-            'query' => $query,
-            'tsQuery' => $tsQuery,
-            'guessedCategory' => $guessedCategory,
-        ]);
+        // Log::info('🚀 [RunMatchingSequential] Started', [
+        //     'resume_id' => $resumeId,
+        //     'query' => $query,
+        //     'tsQuery' => $tsQuery,
+        //     'guessedCategory' => $guessedCategory,
+        // ]);
 
         /** @var HHVacancyInterface $hhRepo */
         $hhRepo = app(HHVacancyInterface::class);
@@ -44,13 +44,13 @@ class RunMatchingSequential extends Command
 
         // 🧩 1. HH Vacancies
         try {
-            Log::info('[SEQ] Fetching HH vacancies...');
+           // Log::info('[SEQ] Fetching HH vacancies...');
             $hhResult = Cache::remember("hh:search:{$query}:area97", now()->addHour(), function () use ($hhRepo, $query) {
                 return $hhRepo->search($query, 0, 100, ['area' => 97]);
             });
 
             $hhCount = isset($hhResult['items']) ? count($hhResult['items']) : 0;
-            Log::info("[SEQ] HH vacancies found: {$hhCount}");
+           // Log::info("[SEQ] HH vacancies found: {$hhCount}");
         } catch (Throwable $e) {
             Log::error('[SEQ] HH fetch error: ' . $e->getMessage());
             $hhResult = ['error' => $e->getMessage()];
@@ -58,7 +58,7 @@ class RunMatchingSequential extends Command
 
         // 🧩 2. Local Vacancies
         try {
-            Log::info('[SEQ] Fetching Local vacancies...');
+            // Log::info('[SEQ] Fetching Local vacancies...');
             $resume = DB::table('resumes')->where('id', $resumeId)->first();
             if (!$resume) {
                 Log::warning("[SEQ] Resume not found: {$resumeId}");
@@ -86,7 +86,7 @@ class RunMatchingSequential extends Command
                 }
 
                 $localResult = $qb->orderByDesc('id')->limit(50)->get();
-                Log::info('[SEQ] Local vacancies found: ' . count($localResult));
+               // Log::info('[SEQ] Local vacancies found: ' . count($localResult));
             }
         } catch (Throwable $e) {
             Log::error('[SEQ] Local fetch error: ' . $e->getMessage());
@@ -102,13 +102,13 @@ class RunMatchingSequential extends Command
         $hhCount = isset($hhResult['items']) ? count($hhResult['items']) : 0;
         $localCount = is_countable($localResult) ? count($localResult) : 0;
 
-        Log::info('✅ [RunMatchingSequential] Finished', [
-            'resume_id' => $resumeId,
-            'hh_result_count' => $hhCount,
-            'local_result_count' => $localCount,
-            'hh_error' => $hhResult['error'] ?? null,
-            'local_error' => $localResult['error'] ?? null,
-        ]);
+        // Log::info('✅ [RunMatchingSequential] Finished', [
+        //     'resume_id' => $resumeId,
+        //     'hh_result_count' => $hhCount,
+        //     'local_result_count' => $localCount,
+        //     'hh_error' => $hhResult['error'] ?? null,
+        //     'local_error' => $localResult['error'] ?? null,
+        // ]);
 
         $this->line(json_encode($response));
 

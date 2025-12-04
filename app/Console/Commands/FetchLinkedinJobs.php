@@ -17,12 +17,12 @@ class FetchLinkedinJobs extends Command
         $geoId   = $this->argument('geoId');
 
         $this->info("Fetching LinkedIn jobs: {$keyword}");
-        Log::info("Starting LinkedIn job fetch for keyword='{$keyword}', geoId='{$geoId}'");
+        //Log::info("Starting LinkedIn job fetch for keyword='{$keyword}', geoId='{$geoId}'");
 
         $result = $linkedinService->fetchLinkedinJobs($keyword, $geoId);
 
         $this->info("Done");
-        Log::info('Done');
+       // Log::info('Done');
         return 0;
     }
 }

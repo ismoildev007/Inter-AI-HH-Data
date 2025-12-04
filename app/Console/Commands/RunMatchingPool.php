@@ -22,12 +22,12 @@ class RunMatchingPool extends Command
         $tsQuery = $this->argument('tsQuery');
         $guessedCategory = $this->argument('guessedCategory');
 
-        Log::info('🚀 [RunMatchingPool] Started', [
-            'resume' => $resumeId,
-            'query' => $query,
-            'tsQuery' => $tsQuery,
-            'guessedCategory' => $guessedCategory,
-        ]);
+        // Log::info('🚀 [RunMatchingPool] Started', [
+        //     'resume' => $resumeId,
+        //     'query' => $query,
+        //     'tsQuery' => $tsQuery,
+        //     'guessedCategory' => $guessedCategory,
+        // ]);
 
         /** @var HHVacancyInterface $hhRepo */
         $hhRepo = app(HHVacancyInterface::class);
@@ -58,11 +58,11 @@ class RunMatchingPool extends Command
 
             $resumeCategory = $resume->category ?? null;
 
-            Log::info("🔍 [BUILD_LOCAL] Started building query for resume {$resume->id}", [
-                'resume_category' => $resumeCategory,
-                'guessed_category' => $guessedCategory,
-                'tsQuery' => $tsQuery,
-            ]);
+            // Log::info("🔍 [BUILD_LOCAL] Started building query for resume {$resume->id}", [
+            //     'resume_category' => $resumeCategory,
+            //     'guessed_category' => $guessedCategory,
+            //     'tsQuery' => $tsQuery,
+            // ]);
 
             $qb = DB::table('vacancies')
                 ->where('status', 'publish')
@@ -74,7 +74,7 @@ class RunMatchingPool extends Command
                 });
 
             if ($resumeCategory && in_array($resumeCategory, $techCategories, true)) {
-                Log::info("🧠 [TECH BRANCH ENTERED] Resume [{$resume->id}] '{$resumeCategory}' → TECH");
+               // Log::info("🧠 [TECH BRANCH ENTERED] Resume [{$resume->id}] '{$resumeCategory}' → TECH");
                 $qb->where(function ($query) use ($tsQuery, $tokenArr) {
                     $query->whereRaw("
                         to_tsvector('simple', coalesce(description, ''))
@@ -116,19 +116,19 @@ class RunMatchingPool extends Command
                     ->where('source', 'telegram')
                     ->where('category', $resumeCategory)
                     ->count();
-                Log::info("📊 [CATEGORY FILTER] '{$resumeCategory}' → {$countSameCategory} vacancies");
+               // Log::info("📊 [CATEGORY FILTER] '{$resumeCategory}' → {$countSameCategory} vacancies");
                 $qb->where('category', $resumeCategory);
             } elseif ($guessedCategory) {
-                Log::info("📊 [GUESSED CATEGORY USED] '{$guessedCategory}' used for filtering.");
+              //  Log::info("📊 [GUESSED CATEGORY USED] '{$guessedCategory}' used for filtering.");
                 $qb->where('category', $guessedCategory);
             } else {
-                Log::warning("⚠️ [NO CATEGORY FOUND] No category filter applied!");
+               // Log::warning("⚠️ [NO CATEGORY FOUND] No category filter applied!");
             }
 
             $qb->orderByDesc('rank')->orderByDesc('id');
             $result = $qb->limit(50)->get();
 
-            Log::info("✅ [BUILD_LOCAL] Finished → Found " . count($result));
+           // Log::info("✅ [BUILD_LOCAL] Finished → Found " . count($result));
             return $result;
         })->catch(fn(Throwable $e) => ['error' => $e->getMessage()]);
 
@@ -137,13 +137,13 @@ class RunMatchingPool extends Command
         $hhResult = $results[0] ?? [];
         $localResult = $results[1] ?? [];
 
-        Log::info('✅ [RunMatchingPool] Finished', [
-            'resume_id' => $resumeId,
-            'hh_result_count' => isset($hhResult['items']) ? count($hhResult['items']) : 0,
-            'local_result_count' => is_countable($localResult) ? count($localResult) : 0,
-            'hh_error' => $hhResult['error'] ?? null,
-            'local_error' => $localResult['error'] ?? null,
-        ]);
+        // Log::info('✅ [RunMatchingPool] Finished', [
+        //     'resume_id' => $resumeId,
+        //     'hh_result_count' => isset($hhResult['items']) ? count($hhResult['items']) : 0,
+        //     'local_result_count' => is_countable($localResult) ? count($localResult) : 0,
+        //     'hh_error' => $hhResult['error'] ?? null,
+        //     'local_error' => $localResult['error'] ?? null,
+        // ]);
 
         $response = [
             'hh' => $hhResult,

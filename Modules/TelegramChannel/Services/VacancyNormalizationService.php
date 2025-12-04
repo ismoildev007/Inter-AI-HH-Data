@@ -41,7 +41,6 @@ Rules:
 - Do NOT translate. Keep the same language as in the input.
 - Do NOT drop any job-related information.
 - Remove stickers, ads, hashtags, channel signatures, unrelated links.
- - Remove stickers, ads, hashtags, channel signatures, unrelated links.
 
 Schema:
 {
@@ -56,28 +55,48 @@ Schema:
 }
 
 Field rules:
-- title: must be only the role/position. No generic words like "Vakansiya" or "Xodim kerak". If not explicit, infer from stack/skills.
-- company: use company/brand name if written, else "".
+- title:
+  - Must be only the role/position (e.g. "Frontend Developer", "Sales Manager").
+  - Remove generic words like "Vakansiya", "Ish kerak", "Xodim kerak".
+  - If title is not explicit, infer from stack/skills in the text.
+- company:
+  - Use company/brand name if written, else "".
 - contact:
-  - phones: extract all phone numbers, normalize by removing spaces/dashes/() only. Keep leading "+" if present. Deduplicate.
-  - telegram_usernames: extract all "@user" and "t.me/user" → "@user". Lowercase. Deduplicate.
+  - phones: extract all phone numbers; normalize by removing spaces, dashes, parentheses only; keep leading "+" if present; deduplicate.
+  - telegram_usernames: extract all "@user" and "t.me/user" → "@user"; lowercase; deduplicate.
 - description:
   - Put ALL remaining vacancy information (responsibilities, requirements, skills, salary, currency, bonuses, schedule, shift, format, contract, trial period, experience, location, deadlines, how to apply, preferred contact method/time, languages, start date, etc.).
   - Preserve numbers and currency exactly as in text.
   - Write neatly with proper punctuation, commas, spaces, and line breaks.
 
-- category:
-  - Choose exactly ONE label from the allowed list below that best matches the vacancy.
-  - Do NOT translate the category label; output it exactly as written in the allowed list.
-  - Output the category as an EXACT string from the list — do not invent new labels. If none of the labels clearly fits, choose "Other".
-  - Allowed categories (labels): {$allowedCategoriesJson}
+- category (CRITICAL – follow strictly):
+  - First read the full title, then read the full description.
+  - Decide the category mainly from the title; use the description only to confirm or slightly adjust it.
+  - Choose EXACTLY ONE label from the allowed list. Never invent new labels.
 
+  - Map roles to categories as follows. If any of these roles/keywords appears in the title or clearly dominates the description, ALWAYS choose the specified label and NEVER choose "Other" for these cases:
+    - "IT and Software Development" → developer, programmer, software engineer, frontend, backend, full‑stack, mobile developer, iOS, Android, web developer, QA, tester, SDET, DevOps, SRE, data engineer, data scientist, ML engineer, IT specialist, software architect, game developer.
+    - "Marketing and Advertising" → marketing, marketer, SMM, social media, PR, public relations, brand manager, digital marketing, performance marketing, media buying, SEO, PPC, targetolog.
+    - "Sales and Customer Relations" → sales, sotuvchi, sales manager, account manager, client manager, менеджер по работе с клиентами, business development, bizdev, commercial manager, customer success, relationship manager.
+    - "Customer Support and Call Center" → call center, contact center, support specialist, support agent, helpdesk, service desk, operator, dispatcher.
+    - "Finance and Accounting" → accountant, accounting, buxgalter, finance manager, financial analyst, auditor, controller, tax specialist, treasury.
+    - "Human Resources and Recruitment" → HR, human resources, recruiter, talent acquisition, HR manager, HR generalist, HRBP, people partner.
+    - "Administration and Office Support" → office manager, administrator, office administrator, assistant, executive assistant, personal assistant, secretary, receptionist.
+    - "Logistics and Supply Chain" → logistics, logistician, warehouse, sklad, supply chain, procurement, purchasing, delivery, courier, transport, driver, shipping, customs, freight.
+    - "Product and Project Management" → product manager, product owner, product lead, project manager, PM, scrum master.
+
+  - If several labels seem possible, choose the most specific one based on the title (do NOT choose "Other").
+  - Use "Other" ONLY IF, after reading the entire title and description, you cannot reasonably assign the vacancy to ANY of the categories above.
+  - The category value MUST be exactly one of the labels from the allowed list (case-insensitive match, but output must match exactly).
+
+Allowed categories (labels):
+{$allowedCategoriesJson}
 Input text:
 """
 {$rawText}
 """
-
 Context (do not include in output): source_username={$sourceUsername} message_id={$messageId}
+
 PROMPT;
 
     $maxConf  = (int) config('telegramchannel_relay.openai.normalization_max_tokens', 9000);
@@ -108,19 +127,19 @@ PROMPT;
       try {
         $usage = (array) $response->json('usage', []);
         $finish = (string) $response->json('choices.0.finish_reason', '');
-        Log::info('OpenAI usage (relay)', [
-          'op' => 'normalization',
-          'model' => $model,
-          'prompt_tokens' => (int) ($usage['prompt_tokens'] ?? 0),
-          'completion_tokens' => (int) ($usage['completion_tokens'] ?? 0),
-          'total_tokens' => (int) ($usage['total_tokens'] ?? 0),
-          'max_tokens' => $maxTokens,
-          'finish' => $finish,
-          'hash' => ContentFingerprint::raw($rawText),
-          'source' => $sourceUsername,
-          'message_id' => $messageId,
-          'minute' => date('Y-m-d H:i'),
-        ]);
+        // Log::info('OpenAI usage (relay)', [
+        //   'op' => 'normalization',
+        //   'model' => $model,
+        //   'prompt_tokens' => (int) ($usage['prompt_tokens'] ?? 0),
+        //   'completion_tokens' => (int) ($usage['completion_tokens'] ?? 0),
+        //   'total_tokens' => (int) ($usage['total_tokens'] ?? 0),
+        //   'max_tokens' => $maxTokens,
+        //   'finish' => $finish,
+        //   'hash' => ContentFingerprint::raw($rawText),
+        //   'source' => $sourceUsername,
+        //   'message_id' => $messageId,
+        //   'minute' => date('Y-m-d H:i'),
+        // ]);
       } catch (\Throwable $e) {
         // best-effort only
       }

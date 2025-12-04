@@ -171,7 +171,7 @@ class LinkedinService
     public function fetchLinkedinJobs(string $keyword = 'Laravel Developer', ?string $geoId = '91000000')
     {
         try {
-            Log::info("Fetching LinkedIn jobs for keyword='{$keyword}', geoId='{$geoId}'");
+          //  Log::info("Fetching LinkedIn jobs for keyword='{$keyword}', geoId='{$geoId}'");
             $allJobs = [];
 
             // Paginate quickly across 3 pages (0–75 results)
@@ -217,7 +217,7 @@ class LinkedinService
             }
 
             $uniqueJobs = collect($allJobs)->unique('link')->values();
-            Log::info("Fetched " . $uniqueJobs->count() . " unique jobs from LinkedIn.");
+           // Log::info("Fetched " . $uniqueJobs->count() . " unique jobs from LinkedIn.");
 
             // return response()->json([
             //     'status' => 'success',
@@ -257,8 +257,8 @@ class LinkedinService
     {
         $saved = 0;
         $updated = 0;
-        Log::info("Saving " . count($jobs) . " LinkedIn jobs to database.");
-        Log::info("Sample job: " . json_encode($jobs[0] ?? []));
+        // Log::info("Saving " . count($jobs) . " LinkedIn jobs to database.");
+        // Log::info("Sample job: " . json_encode($jobs[0] ?? []));
         foreach ($jobs as $job) {
 
             $externalId = $this->extractExternalId($job['link'] ?? '');

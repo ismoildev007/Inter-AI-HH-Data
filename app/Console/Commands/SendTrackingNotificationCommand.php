@@ -16,7 +16,7 @@ class SendTrackingNotificationCommand extends Command
 
     public function handle()
     {
-        Log::info("📄 Career Tracking Notification Started");
+      //  Log::info("📄 Career Tracking Notification Started");
 
         $telegram = new Api('8086335636:AAGGAWtnPfbDGUviunLMwk7S7y2yNPUkl4Q');
 
@@ -51,7 +51,7 @@ class SendTrackingNotificationCommand extends Command
 //                // 🟢 Token generation (Sanctum)
 //                $user->tokens()->delete();
                 $token = $user->createToken('tracking_token', ['*'], now()->addDays(30))->plainTextToken;
-                Log::info("🔑 Created tracking token for user {$user->id}");
+              //  Log::info("🔑 Created tracking token for user {$user->id}");
 
                 // 🌍 Language
                 $lang = $user->language ?? 'uz';
@@ -97,17 +97,17 @@ class SendTrackingNotificationCommand extends Command
                     ]);
 
                     $this->info("✅ Tracking button sent to user {$user->id}");
-                    Log::info("📨 Tracking message sent", [
-                        'user_id' => $user->id,
-                        'resume_id' => $resume->id,
-                    ]);
+                    // Log::info("📨 Tracking message sent", [
+                    //     'user_id' => $user->id,
+                    //     'resume_id' => $resume->id,
+                    // ]);
                 } catch (\Throwable $e) {
                     Log::error("❌ Telegram error for user {$user->id}: " . $e->getMessage());
                 }
             }
         }
 
-        Log::info("🎉 Career Tracking Notification Completed");
+      //  Log::info("🎉 Career Tracking Notification Completed");
         $this->info("🎉 Completed.");
     }
 }

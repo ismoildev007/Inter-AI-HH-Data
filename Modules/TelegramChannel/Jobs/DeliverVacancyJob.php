@@ -44,11 +44,11 @@ class DeliverVacancyJob implements ShouldQueue, ShouldBeUnique
                 return;
             }
 
-            Log::info('DeliverVacancyJob start', [
-                'vacancy_id' => $vac->id,
-                'attempt' => $this->attempts(),
-                'status' => (string) $vac->status,
-            ]);
+            // Log::info('DeliverVacancyJob start', [
+            //     'vacancy_id' => $vac->id,
+            //     'attempt' => $this->attempts(),
+            //     'status' => (string) $vac->status,
+            // ]);
 
             // Skip if already delivered or archived
             if (in_array((string) $vac->status, [Vacancy::STATUS_PUBLISH, Vacancy::STATUS_ARCHIVE], true)) {
@@ -90,10 +90,10 @@ class DeliverVacancyJob implements ShouldQueue, ShouldBeUnique
                 $coolUntil = (int) (Cache::get($coolKey, 0));
                 if ($coolUntil > $now) {
                     $delay = max(1, $coolUntil - $now);
-                    Log::info('DeliverVacancyJob cool-down active, releasing', [
-                        'vacancy_id' => $vac->id,
-                        'delay' => $delay,
-                    ]);
+                    // Log::info('DeliverVacancyJob cool-down active, releasing', [
+                    //     'vacancy_id' => $vac->id,
+                    //     'delay' => $delay,
+                    // ]);
                     $this->release($delay + 1);
                     return;
                 }
@@ -125,7 +125,7 @@ class DeliverVacancyJob implements ShouldQueue, ShouldBeUnique
                 if ($hasPublishedDup) {
                     $vac->status = Vacancy::STATUS_ARCHIVE;
                     $vac->save();
-                    Log::info('DeliverVacancyJob dedupe: published exists, archived current', ['vacancy_id' => $vac->id]);
+                   // Log::info('DeliverVacancyJob dedupe: published exists, archived current', ['vacancy_id' => $vac->id]);
                     return;
                 }
 
@@ -138,7 +138,7 @@ class DeliverVacancyJob implements ShouldQueue, ShouldBeUnique
                 if (is_numeric($minQueuedDupId) && (int)$minQueuedDupId > 0 && (int)$minQueuedDupId < (int)$vac->id) {
                     $vac->status = Vacancy::STATUS_ARCHIVE;
                     $vac->save();
-                    Log::info('DeliverVacancyJob dedupe: smaller queued exists, archived current', ['vacancy_id' => $vac->id, 'winner_id' => (int)$minQueuedDupId]);
+                  //  Log::info('DeliverVacancyJob dedupe: smaller queued exists, archived current', ['vacancy_id' => $vac->id, 'winner_id' => (int)$minQueuedDupId]);
                     return;
                 }
             } catch (\Throwable $e) {

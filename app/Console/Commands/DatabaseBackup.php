@@ -78,11 +78,11 @@ class DatabaseBackup extends Command
                 $this->info("✅ Backup muvaffaqiyatli yaratildi: {$filename}");
                 $this->info("📦 Fayl hajmi: " . $this->formatBytes($fileSize));
 
-                Log::info('✅ Database backup muvaffaqiyatli yaratildi', [
-                    'filename' => $filename,
-                    'size' => $fileSize,
-                    'path' => $fullPath
-                ]);
+                // Log::info('✅ Database backup muvaffaqiyatli yaratildi', [
+                //     'filename' => $filename,
+                //     'size' => $fileSize,
+                //     'path' => $fullPath
+                // ]);
 
                 // Eski backuplarni o'chirish (30 kundan eski)
                 $this->cleanOldBackups($backupPath);
@@ -128,7 +128,7 @@ class DatabaseBackup extends Command
 
         if ($deletedCount > 0) {
             $this->info("🗑️  {$deletedCount} ta eski backup o'chirildi");
-            Log::info("🗑️  Eski backuplar o'chirildi", ['count' => $deletedCount]);
+            //Log::info("🗑️  Eski backuplar o'chirildi", ['count' => $deletedCount]);
         }
     }
 

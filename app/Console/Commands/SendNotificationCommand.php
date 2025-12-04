@@ -29,7 +29,7 @@ class SendNotificationCommand extends Command
      */
     public function handle()
     {
-        Log::info('🚀 Matching and notification started.');
+     //   Log::info('🚀 Matching and notification started.');
 
         $token = '8086335636:AAGGAWtnPfbDGUviunLMwk7S7y2yNPUkl4Q';
         $telegram = new Api($token);
@@ -89,7 +89,7 @@ class SendNotificationCommand extends Command
 //                    $user->tokens()->delete();
 
                     $token = $user->createToken('api_token', ['*'], now()->addDays(30))->plainTextToken;
-                    Log::info("✅ Created new API token for user {$user->id} {$token}");
+                 //   Log::info("✅ Created new API token for user {$user->id} {$token}");
                     $webAppUrl = "https://vacancies.inter-ai.uz/#?chat_id={$user->chat_id}&token={$token}&locale={$langCode}";
 
                     $inlineKeyboard = Keyboard::make()
@@ -109,12 +109,12 @@ class SendNotificationCommand extends Command
                             'reply_markup' => $inlineKeyboard,
                         ]);
 
-                        Log::info("✅ Dashboard button sent to user {$user->id}");
+                      //  Log::info("✅ Dashboard button sent to user {$user->id}");
                     } catch (\Throwable $e) {
                         Log::error("❌ Telegram send failed for user {$user->id}: " . $e->getMessage());
                     }
                     $this->info("✅ Sent message to {$user->email} ({$totalNewMatches} matches)");
-                    Log::info("✅ Notification sent to user {$user->id}");
+                   // Log::info("✅ Notification sent to user {$user->id}");
                 } catch (\Throwable $e) {
                     Log::error("❌ Telegram send failed for user {$user->id}: " . $e->getMessage());
                 }
@@ -163,13 +163,13 @@ class SendNotificationCommand extends Command
                         'reply_markup' => $inlineKeyboard,
                     ]);
 
-                    Log::info("📩 No-match info sent to user {$user->id} ({$relevantVacancyCount} relevant vacancies)");
+                   // Log::info("📩 No-match info sent to user {$user->id} ({$relevantVacancyCount} relevant vacancies)");
                 } catch (\Throwable $e) {
                     Log::error("❌ Telegram send (no matches) failed for user {$user->id}: " . $e->getMessage());
                 }
             }
         }
-        Log::info('✅ Matching and notifications completed.');
+       // Log::info('✅ Matching and notifications completed.');
     }
 
     // private function cleanTitle(string $text): string

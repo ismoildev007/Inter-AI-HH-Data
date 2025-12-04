@@ -82,7 +82,7 @@ class RelayService
                 switch ($etype) {
                     case 'SIGTERM':
                     case 'SIGINT':
-                        Log::info('Telegram relay: getHistory interrupted by signal', ['peer' => $peer, 'phase' => 'initial', 'signal' => $etype]);
+                      //  Log::info('Telegram relay: getHistory interrupted by signal', ['peer' => $peer, 'phase' => 'initial', 'signal' => $etype]);
                         return 0;
                     case 'PEER_DB_MISS':
                         Log::warning('Telegram relay: PEER_DB_MISS on initial getHistory', ['peer' => $peer, 'error' => $e->getMessage()]);
@@ -138,7 +138,7 @@ class RelayService
                 switch ($etype) {
                     case 'SIGTERM':
                     case 'SIGINT':
-                        Log::info('Telegram relay: getHistory interrupted by signal', ['peer' => $peer, 'phase' => 'loop', 'signal' => $etype]);
+                       // Log::info('Telegram relay: getHistory interrupted by signal', ['peer' => $peer, 'phase' => 'loop', 'signal' => $etype]);
                         break;
                     case 'CANCELLED':
                         Log::warning('Telegram relay: OPERATION_CANCELLED on getHistory', ['peer' => $peer]);
@@ -292,11 +292,11 @@ class RelayService
                 // Explicit skip by full source link (per-channel/per-message exception)
                 $skipSourceLinks = (array) config('telegramchannel_relay.filtering.skip_source_links', []);
                 if ($sourceLink && !empty($skipSourceLinks) && in_array($sourceLink, $skipSourceLinks, true)) {
-                    Log::info('Relay skip: source_link in skip_source_links', [
-                        'peer'        => $peer,
-                        'message_id'  => $id,
-                        'source_link' => $sourceLink,
-                    ]);
+                    // Log::info('Relay skip: source_link in skip_source_links', [
+                    //     'peer'        => $peer,
+                    //     'message_id'  => $id,
+                    //     'source_link' => $sourceLink,
+                    // ]);
                     continue;
                 }
 
@@ -870,9 +870,9 @@ class RelayService
         if ($cnt >= $threshold) {
             try {
                 $this->tg->softReset();
-                \Log::info('Telegram relay: auto-heal soft reset executed', ['type' => $type, 'count' => $cnt]);
+                //Log::info('Telegram relay: auto-heal soft reset executed', ['type' => $type, 'count' => $cnt]);
             } catch (\Throwable $e) {
-                \Log::warning('Telegram relay: auto-heal soft reset failed', ['error' => $e->getMessage()]);
+                Log::warning('Telegram relay: auto-heal soft reset failed', ['error' => $e->getMessage()]);
             } finally {
                 \Cache::put($cool, 1, 300); // 5 minutes cooldown
                 \Cache::forget($key);

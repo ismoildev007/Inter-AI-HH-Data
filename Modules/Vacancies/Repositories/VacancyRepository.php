@@ -175,8 +175,8 @@ class VacancyRepository implements VacancyInterface
     public function createFromHH(array $hhVacancy, $category): Vacancy
     {
         $now = now();
-        Log::info('repository is coming');
-        Log::info("category for creating vacancy hh: " . $category);
+        // Log::info('repository is coming');
+        // Log::info("category for creating vacancy hh: " . $category);
 
         // Employer
         $employerId = null;

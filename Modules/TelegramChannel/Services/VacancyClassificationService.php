@@ -72,17 +72,17 @@ PROMPT;
             try {
                 $usage = (array) $response->json('usage', []);
                 $finish = (string) $response->json('choices.0.finish_reason', '');
-                Log::info('OpenAI usage (relay)', [
-                    'op' => 'classification',
-                    'model' => $model,
-                    'prompt_tokens' => (int) ($usage['prompt_tokens'] ?? 0),
-                    'completion_tokens' => (int) ($usage['completion_tokens'] ?? 0),
-                    'total_tokens' => (int) ($usage['total_tokens'] ?? 0),
-                    'max_tokens' => $maxTokens,
-                    'finish' => $finish,
-                    'hash' => ContentFingerprint::raw($rawText),
-                    'minute' => date('Y-m-d H:i'),
-                ]);
+                // Log::info('OpenAI usage (relay)', [
+                //     'op' => 'classification',
+                //     'model' => $model,
+                //     'prompt_tokens' => (int) ($usage['prompt_tokens'] ?? 0),
+                //     'completion_tokens' => (int) ($usage['completion_tokens'] ?? 0),
+                //     'total_tokens' => (int) ($usage['total_tokens'] ?? 0),
+                //     'max_tokens' => $maxTokens,
+                //     'finish' => $finish,
+                //     'hash' => ContentFingerprint::raw($rawText),
+                //     'minute' => date('Y-m-d H:i'),
+                // ]);
             } catch (\Throwable $e) {
                 // best-effort only
             }

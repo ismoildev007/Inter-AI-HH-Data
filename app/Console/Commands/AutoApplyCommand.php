@@ -19,7 +19,7 @@ class AutoApplyCommand extends Command
     public function handle()
     {
         $this->info('Starting auto-apply process...');
-        Log::info('auto apply');
+        //Log::info('auto apply');
         $settings = UserSetting::where('auto_apply_enabled', true)
             ->with(['user.credit', 'user.hhAccount', 'user.resumes.matchResults.vacancy'])
             ->get()
@@ -59,7 +59,7 @@ class AutoApplyCommand extends Command
                 ->filter(function ($match) {
                     return optional($match->vacancy)->source === 'hh';
                 });
-            Log::info(['User ' . $user->id]);
+            //Log::info(['User ' . $user->id]);
             foreach ($matches as $match) {
                 if ($remaining <= 0) {
                     break;

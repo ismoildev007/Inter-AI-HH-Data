@@ -92,13 +92,13 @@ class SyncHhNegotiationsCommand extends Command
                             continue;
                         }
 
-                        Log::info('Matching negotiation found', [
-                            'application_id' => $app->id,
-                            'vacancy_id' => $vacancy->id,
-                            'vacancy_external_id' => $vacancyExternalId,
-                            'current_hh_status' => $app->hh_status,
-                            'new_hh_status' => $stateId,
-                        ]);
+                        // Log::info('Matching negotiation found', [
+                        //     'application_id' => $app->id,
+                        //     'vacancy_id' => $vacancy->id,
+                        //     'vacancy_external_id' => $vacancyExternalId,
+                        //     'current_hh_status' => $app->hh_status,
+                        //     'new_hh_status' => $stateId,
+                        // ]);
 
                         $this->line(" - Application ID {$app->id}: HH status {$app->hh_status} -> {$stateId}");
 
@@ -125,7 +125,7 @@ class SyncHhNegotiationsCommand extends Command
         });
 
         $this->info("Negotiations scanned: {$scannedCount}, applications updated: {$updatedCount}");
-        Log::info('HH negotiations sync done', ['scanned' => $scannedCount, 'updated' => $updatedCount]);
+       // Log::info('HH negotiations sync done', ['scanned' => $scannedCount, 'updated' => $updatedCount]);
         return self::SUCCESS;
     }
 }
