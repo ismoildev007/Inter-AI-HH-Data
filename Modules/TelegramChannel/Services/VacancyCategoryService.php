@@ -19,7 +19,7 @@ class VacancyCategoryService
         'logistics_and_supply_chain'                => 'Logistics and Supply Chain',
         'customer_support_and_call_center'          => 'Customer Support and Call Center',
         'sales_and_customer_relations'              => 'Sales and Customer Relations',
-        'other' => 'Other',
+        'other'                                     => 'Other',
     ];
 
     private array $commentcategory =[
