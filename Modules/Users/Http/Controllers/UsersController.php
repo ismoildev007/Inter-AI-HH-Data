@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Modules\Applications\Services\RejectionService;
 
 class UsersController extends Controller
 {
@@ -171,5 +172,19 @@ class UsersController extends Controller
             ->count();
 
         return [$responseTotal, $applicationTotal];
+    }
+
+    /**
+     * Kelajakda otkazlar bo'yicha notification count uchun yordamchi.
+     *
+     * Hozircha bu metod HTTP API javoblarida ishlatilmaydi, faqat
+     * backend logikasi tayyor bo'lishi uchun mavjud.
+     */
+    private function rejectionTotal(User $user): int
+    {
+        /** @var RejectionService $service */
+        $service = app(RejectionService::class);
+
+        return $service->countForUser($user);
     }
 }

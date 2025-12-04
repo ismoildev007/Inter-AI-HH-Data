@@ -46,6 +46,7 @@ class User extends Authenticatable
         'admin_check_status',
         'responce_notification',
         'application_notification',
+        // rejection_notification ataylab fillable emas, forceFill orqali boshqariladi
     ];
 
     /**
@@ -74,6 +75,7 @@ class User extends Authenticatable
             'admin_check_status' => 'boolean',
             'responce_notification' => 'integer',
             'application_notification' => 'integer',
+            'rejection_notification' => 'integer',
         ];
     }
 
