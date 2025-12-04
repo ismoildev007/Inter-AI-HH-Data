@@ -12,8 +12,18 @@ class VacancyCategoryService
     private array $categories = [
         'marketing_and_advertising'                 => 'Marketing and Advertising',
         'it_and_software_development'               => 'IT and Software Development',
-//        'data_science_and_analytics'                => 'Data Science and Analytics',
         'product_and_project_management'            => 'Product and Project Management',
+        'human_resources_and_recruitment'           => 'Human Resources and Recruitment',
+        'finance_and_accounting'                    => 'Finance and Accounting',
+        'administration_and_office_support'         => 'Administration and Office Support',
+        'logistics_and_supply_chain'                => 'Logistics and Supply Chain',
+        'customer_support_and_call_center'          => 'Customer Support and Call Center',
+        'sales_and_customer_relations'              => 'Sales and Customer Relations',
+        'other' => 'Other',
+    ];
+
+    private array $commentcategory =[
+//        'data_science_and_analytics'                => 'Data Science and Analytics',
 //        'qa_and_testing'                            => 'QA and Testing',
 //        'devops_and_cloud_engineering'              => 'DevOps and Cloud Engineering',
 //        'cybersecurity'                             => 'Cybersecurity',
@@ -21,11 +31,8 @@ class VacancyCategoryService
 //        'content_and_copywriting'                   => 'Content and Copywriting',
 //        'video_and_multimedia_production'           => 'Video and Multimedia Production',
 //        'photography'                               => 'Photography',
-        'human_resources_and_recruitment'           => 'Human Resources and Recruitment',
-        'finance_and_accounting'                    => 'Finance and Accounting',
 //        'banking_and_insurance'                     => 'Banking and Insurance',
 //        'legal_and_compliance'                      => 'Legal and Compliance',
-        'administration_and_office_support'         => 'Administration and Office Support',
 //        'education_and_training'                    => 'Education and Training',
 //        'healthcare_and_medicine'                   => 'Healthcare and Medicine',
 //        'pharmacy'                                  => 'Pharmacy',
@@ -35,11 +42,9 @@ class VacancyCategoryService
 //        'mechanical_and_maintenance_engineering'    => 'Mechanical and Maintenance Engineering',
 //        'electrical_and_electronics_engineering'    => 'Electrical and Electronics Engineering',
 //        'construction_and_architecture'             => 'Construction and Architecture',
-        'logistics_and_supply_chain'                => 'Logistics and Supply Chain',
 //        'warehouse_and_procurement'                 => 'Warehouse and Procurement',
 //        'transportation_and_driving'                => 'Transportation and Driving',
 //        'security_and_protective_services'          => 'Security and Protective Services',
-        'customer_support_and_call_center'          => 'Customer Support and Call Center',
 //        'tourism'                                   => 'Tourism',
 //        'food_and_beverage_service'                 => 'Food and Beverage Service',
 //        'retail_and_ecommerce'                      => 'Retail and E-commerce',
@@ -48,8 +53,6 @@ class VacancyCategoryService
 //        'beauty_and_personal_care'                  => 'Beauty and Personal Care',
 //        'sports_and_fitness'                        => 'Sports and Fitness',
 //        'agriculture_and_farming'                   => 'Agriculture and Farming',
-        'sales_and_customer_relations'              => 'Sales and Customer Relations',
-        'other' => 'Other',
     ];
 
     /**
