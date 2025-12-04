@@ -175,36 +175,36 @@ Route::get('/stress/parallel', function () {
 });
 
 
-Route::get('/stress/db-insert', function () {
-    $start = microtime(true);
+// Route::get('/stress/db-insert', function () {
+//     $start = microtime(true);
 
-    $records = 10000;
-    $data = [];
+//     $records = 10000;
+//     $data = [];
 
-    for ($i = 0; i < $records; $i++) {
-        $data[] = [
-            'title' => "Test Vacancy $i",
-            'description' => Str::random(500),
-            'source' => 'stress_test',
-            'status' => Vacancy::STATUS_PUBLISH,
-            'salary_from' => rand(100, 1000),
-            'salary_to' => rand(1000, 5000),
-            'raw_data' => Str::random(5000),
-            'created_at' => now(),
-            'updated_at' => now(),
-        ];
-    }
+//     for ($i = 0; i < $records; $i++) {
+//         $data[] = [
+//             'title' => "Test Vacancy $i",
+//             'description' => Str::random(500),
+//             'source' => 'stress_test',
+//             'status' => Vacancy::STATUS_PUBLISH,
+//             'salary_from' => rand(100, 1000),
+//             'salary_to' => rand(1000, 5000),
+//             'raw_data' => Str::random(5000),
+//             'created_at' => now(),
+//             'updated_at' => now(),
+//         ];
+//     }
 
-    Vacancy::insert($data);
+//     Vacancy::insert($data);
 
-    $time = round(microtime(true) - $start, 2);
+//     $time = round(microtime(true) - $start, 2);
 
-    return [
-        'type' => 'DB Insert',
-        'records' => $records,
-        'time' => $time . 's'
-    ];
-});
+//     return [
+//         'type' => 'DB Insert',
+//         'records' => $records,
+//         'time' => $time . 's'
+//     ];
+// });
 
 
 Route::get('/stress/db-read', function () {
