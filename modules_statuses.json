@@ -10,5 +10,6 @@
     "TelegramChannel": true,
     "TelegramBot": true,
     "DemoResume": true,
-    "JobSources": true
+    "JobSources": true,
+    "ResumeCreate": true
 }
