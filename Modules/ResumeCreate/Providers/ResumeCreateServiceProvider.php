@@ -7,6 +7,8 @@ use Illuminate\Support\ServiceProvider;
 use Nwidart\Modules\Traits\PathNamespace;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
+use Modules\ResumeCreate\Interfaces\ResumeCreateInterface;
+use Modules\ResumeCreate\Repositories\ResumeCreateRepository;
 
 class ResumeCreateServiceProvider extends ServiceProvider
 {
@@ -38,8 +40,8 @@ class ResumeCreateServiceProvider extends ServiceProvider
         $this->app->register(RouteServiceProvider::class);
 
         $this->app->bind(
-            \Modules\ResumeCreate\Interfaces\ResumeCreateInterface::class,
-            \Modules\ResumeCreate\Repositories\ResumeCreateRepository::class
+            ResumeCreateInterface::class,
+            ResumeCreateRepository::class
         );
     }
 
@@ -157,4 +159,3 @@ class ResumeCreateServiceProvider extends ServiceProvider
         return $paths;
     }
 }
-

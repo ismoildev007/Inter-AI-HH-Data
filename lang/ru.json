@@ -37,5 +37,14 @@
     "admin.sidebar.hints.pricing_blueprints": "Планы цен",
     "admin.sidebar.hints.revenue_stream": "Поток доходов",
     "admin.sidebar.hints.payments_ledger": "Журнал платежей",
-    "elnurbek": "Elnurbek ru"
+    "elnurbek": "Elnurbek ru",
+
+    "resume.pdf.professional_summary": "ПРОФЕССИОНАЛЬНОЕ РЕЗЮМЕ",
+    "resume.pdf.work_experience": "ОПЫТ РАБОТЫ",
+    "resume.pdf.education": "ОБРАЗОВАНИЕ",
+    "resume.pdf.skills": "НАВЫКИ",
+    "resume.pdf.preferences": "ПРЕДПОЧТЕНИЯ ПО РАБОТЕ",
+    "resume.pdf.languages": "ЯЗЫКИ",
+    "resume.pdf.certifications": "СЕРТИФИКАТЫ И ЛИЦЕНЗИИ",
+    "resume.pdf.present": "По настоящее время"
 }

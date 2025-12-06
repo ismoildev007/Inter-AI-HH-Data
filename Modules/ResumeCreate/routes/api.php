@@ -6,7 +6,13 @@ use Modules\ResumeCreate\Http\Controllers\ResumeCreateController;
 Route::middleware(['auth:sanctum'])
     ->prefix('v1')
     ->group(function () {
-        // ResumeCreate API endpoints will be defined here based on Figma design
         Route::get('resume-create/ping', [ResumeCreateController::class, 'ping'])->name('resumecreate.ping');
-    });
 
+        Route::get('resume-create', [ResumeCreateController::class, 'show'])->name('resumecreate.show');
+        Route::post('resume-create', [ResumeCreateController::class, 'store'])->name('resumecreate.store');
+
+        Route::post('resume-create/photo', [ResumeCreateController::class, 'uploadPhoto'])->name('resumecreate.photo.upload');
+        Route::delete('resume-create/photo', [ResumeCreateController::class, 'deletePhoto'])->name('resumecreate.photo.delete');
+
+        Route::get('resume-create/pdf', [ResumeCreateController::class, 'downloadPdf'])->name('resumecreate.pdf');
+    });

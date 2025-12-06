@@ -6,11 +6,7 @@ use App\Models\Resume;
 
 interface ResumeCreateInterface
 {
-    /**
-     * Create a new resume record based on builder data.
-     *
-     * The concrete shape of $data will be finalised from the Figma design.
-     */
-    public function create(array $data): Resume;
-}
+    public function saveForUser(int $userId, array $data): Resume;
 
+    public function getForUser(int $userId): ?Resume;
+}

@@ -3,6 +3,8 @@
 namespace Modules\ResumeCreate\Services;
 
 use App\Models\Resume;
+use Illuminate\Support\Facades\Auth;
+use Modules\ResumeCreate\Jobs\GenerateResumeTranslationsJob;
 use Modules\ResumeCreate\Interfaces\ResumeCreateInterface;
 
 class ResumeCreateService
@@ -12,14 +14,29 @@ class ResumeCreateService
     ) {
     }
 
-    /**
-     * High-level entry point for creating a resume via the builder.
-     *
-     * The DTO/array structure will follow the Figma design.
-     */
-    public function create(array $data): Resume
+    public function saveForCurrentUser(array $data): Resume
     {
-        return $this->repository->create($data);
+        $userId = Auth::id();
+
+        if (! $userId) {
+            throw new \RuntimeException('Unauthenticated user cannot create a resume.');
+        }
+
+        $resume = $this->repository->saveForUser($userId, $data);
+
+        GenerateResumeTranslationsJob::dispatch($resume->id);
+
+        return $resume;
+    }
+
+    public function getForCurrentUser(): ?Resume
+    {
+        $userId = Auth::id();
+
+        if (! $userId) {
+            return null;
+        }
+
+        return $this->repository->getForUser($userId);
     }
 }
-
