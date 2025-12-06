@@ -143,7 +143,7 @@ class VacancyMatchingController extends Controller
                         'language'          => $item['language'] ?? null,
                         'signature'         => null,
                         'source_id'         => $item['id'] ?? null,
-                        'raw_hash'          => md5($item),
+                        'raw_hash'          => md5(json_encode($item)),
                         'normalized_hash'   => null,
 
                         // employer_id — alohida method orqali
