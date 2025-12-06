@@ -125,8 +125,8 @@ class VacancyMatchingController extends Controller
                         'category'          => $item['professional_roles'][0]['name']
                             ?? null,
                         'area_id'           => $item['area']['id'] ?? null,
-                        'schedule_id'       => $item['schedule']['id'] ?? null,
-                        'employment_id'     => $item['employment']['id'] ?? null,
+//                        'schedule_id'       => $item['schedule']['id'] ?? null,
+//                        'employment_id'     => $item['employment']['id'] ?? null,
                         'salary_from'       => $item['salary']['from'] ?? null,
                         'salary_to'         => $item['salary']['to'] ?? null,
                         'salary_currency'   => $item['salary']['currency'] ?? null,
@@ -143,7 +143,7 @@ class VacancyMatchingController extends Controller
                         'language'          => $item['language'] ?? null,
                         'signature'         => null,
                         'source_id'         => $item['id'] ?? null,
-                        'raw_hash'          => md5(json_encode($item)),
+                        'raw_hash'          => md5($item),
                         'normalized_hash'   => null,
 
                         // employer_id — alohida method orqali
