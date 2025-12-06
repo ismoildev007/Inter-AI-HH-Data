@@ -101,6 +101,7 @@ class VacancyMatchingController extends Controller
     {
         // 1️⃣ HH dan qidiruv
         $hhResults = $this->hhRepository->search($query, 0, 100, ['area' => 97]);
+        Log::info('HH vacancies found result', ['Result' => count($hhResults['items'])]);
 
         // 2️⃣ HH natijalarini DB ga saqlash (bulkUpsertFromHH ishlatamiz)
         $hhVacancies = [];
@@ -118,31 +119,35 @@ class VacancyMatchingController extends Controller
             ->get();
 
         // 4️⃣ Ikkalasini birlashtirish
-        $allVacancies = collect($hhVacancies)->merge($localResults)->unique('id');
+        $allVacancies = collect($hhVacancies)
+            ->merge($localResults)
+            ->unique('id');
+
+        // 5️⃣ Vacancy obyektlarini MatchResult formatiga o'tkazish
+        $results = $allVacancies->map(function ($vacancy) use ($user) {
+            // Agar allaqachon MatchResult bo'lsa, o'zini qaytaradi
+            if ($vacancy instanceof \App\Models\MatchResult) {
+                return $vacancy;
+            }
+
+            // Agar Vacancy bo'lsa, MatchResult formatiga o'giramiz
+            $matchResult = new \App\Models\MatchResult();
+            $matchResult->id = null; // Yangi obyekt
+            $matchResult->vacancy_id = $vacancy->id;
+            $matchResult->resume_id = $user->resumes()->where('is_primary', true)->first()->id ?? null;
+            $matchResult->score_percent = 0;
+            $matchResult->explanations = json_encode(['text' => 'Search result']);
+            $matchResult->setRelation('vacancy', $vacancy); // Relation o'rnatish
+            $matchResult->exists = false; // DB da mavjud emas
+
+            return $matchResult;
+        });
 
         return response()->json([
             'status'  => 'success',
             'message' => 'Search completed.',
-            'data'    => VacancyMatchResource::collection($allVacancies),
+            'data'    => VacancyMatchResource::collection($results),
         ]);
-    }
-
-    protected function getOrCreateEmployer(array $employerData)
-    {
-        if (empty($employerData['id'])) {
-            return null;
-        }
-
-        $employer = \App\Models\Employer::firstOrCreate(
-            ['external_id' => $employerData['id']],
-            [
-                'name' => $employerData['name'] ?? 'Unknown',
-                'logo_url' => $employerData['logo_urls']['240'] ?? null,
-                'url' => $employerData['alternate_url'] ?? null,
-            ]
-        );
-
-        return $employer->id;
     }
 
     public function match(VacancyMatchRequest $request, VacancyMatchingService $service)
