@@ -103,8 +103,7 @@ class VacancyMatchingController extends Controller
         $localResults = \App\Models\Vacancy::with('employer')
             ->where(function ($q) use ($query) {
                 $q->where('title', 'LIKE', "%{$query}%")
-                  ->orWhere('description', 'LIKE', "%{$query}%")
-                  ->orWhere('key_skills', 'LIKE', "%{$query}%");
+                  ->orWhere('description', 'LIKE', "%{$query}%");
             })
             ->orderByDesc('created_at')
             ->get();
@@ -113,17 +112,42 @@ class VacancyMatchingController extends Controller
         if (!empty($hhResults['items'])) {
             foreach ($hhResults['items'] as $item) {
                 $vacancy = \App\Models\Vacancy::updateOrCreate(
-                    ['external_id' => $item['id']],
                     [
-                        'title' => $item['natitleme'] ?? 'N/A',
-                        'description' => $item['snippet']['requirement'] ?? '',
-                        'salary_from' => $item['salary']['from'] ?? null,
-                        'salary_to' => $item['salary']['to'] ?? null,
-                        'salary_currency' => $item['salary']['currency'] ?? null,
-                        'area' => $item['area']['name'] ?? null,
-                        'employer_id' => $this->getOrCreateEmployer($item['employer'] ?? []),
-                        'published_at' => $item['published_at'] ?? now(),
-                        'source' => 'headhunter',
+                        'external_id' => $item['id'], // asosiy identifikator
+                        'source'      => 'hh',
+                    ],
+                    [
+                        'source'            => 'hh',
+                        'external_id'       => $item['id'],
+                        'title'             => $item['name'] ?? 'N/A',
+                        'description'       => $item['snippet']['responsibility']
+                            . "\n" . ($item['snippet']['requirement'] ?? ''),
+                        'category'          => $item['professional_roles'][0]['name']
+                            ?? null,
+                        'area_id'           => $item['area']['id'] ?? null,
+                        'schedule_id'       => $item['schedule']['id'] ?? null,
+                        'employment_id'     => $item['employment']['id'] ?? null,
+                        'salary_from'       => $item['salary']['from'] ?? null,
+                        'salary_to'         => $item['salary']['to'] ?? null,
+                        'salary_currency'   => $item['salary']['currency'] ?? null,
+                        'salary_gross'      => $item['salary']['gross'] ?? null,
+                        'published_at'      => $item['published_at'] ?? now(),
+                        'expires_at'        => $item['expires_at'] ?? null,
+                        'status'            => $item['archived'] ? 'archived' : 'active',
+                        'apply_url'         => $item['apply_alternate_url'] ?? null,
+                        'views_count'       => $item['counters']['views'] ?? 0,
+                        'responses_count'   => $item['counters']['responses'] ?? 0,
+                        'raw_data'          => json_encode($item, JSON_UNESCAPED_UNICODE),
+                        'company'           => $item['employer']['name'] ?? null,
+                        'contact'           => $item['contacts']['email'] ?? null,
+                        'language'          => $item['language'] ?? null,
+                        'signature'         => null,
+                        'source_id'         => $item['id'] ?? null,
+                        'raw_hash'          => md5(json_encode($item)),
+                        'normalized_hash'   => null,
+
+                        // employer_id — alohida method orqali
+                        'employer_id'       => $this->getOrCreateEmployer($item['employer'] ?? []),
                     ]
                 );
 
