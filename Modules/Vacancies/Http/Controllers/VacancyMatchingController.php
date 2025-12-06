@@ -12,6 +12,7 @@ use Modules\Vacancies\Http\Requests\VacancyMatchRequest;
 use Modules\Vacancies\Http\Resources\VacancyMatchResource;
 use Modules\Vacancies\Interfaces\HHVacancyInterface;
 use Modules\Vacancies\Jobs\MatchResumeJob;
+use Modules\Vacancies\Repositories\VacancyRepository;
 use Modules\Vacancies\Services\VacancyMatchingService;
 use Illuminate\Http\Request;
 
@@ -21,11 +22,13 @@ class VacancyMatchingController extends Controller
 {
     protected VacancyMatchingService $service;
     protected HHVacancyInterface $hhRepository;
+    protected VacancyRepository $vacancyRepository;
 
-    public function __construct(VacancyMatchingService $service, HHVacancyInterface $hhRepository)
+    public function __construct(VacancyMatchingService $service, HHVacancyInterface $hhRepository, VacancyRepository $vacancyRepository)
     {
         $this->service = $service;
         $this->hhRepository = $hhRepository;
+        $this->vacancyRepository = $vacancyRepository;
     }
 
     public function myMatches(Request $request, VacancyMatchingService $service)
@@ -33,7 +36,6 @@ class VacancyMatchingController extends Controller
         $user = Auth::user();
         $searchQuery = $request->input('search'); // Frontend dan kelgan search parametri
 
-        // 🔹 Agar search mavjud bo'lsa, HeadHunter + local DB dan qidirish
         if (!empty($searchQuery)) {
             return $this->searchVacancies($searchQuery, $user);
         }
@@ -97,75 +99,26 @@ class VacancyMatchingController extends Controller
 
     protected function searchVacancies(string $query, $user)
     {
+        // 1️⃣ HH dan qidiruv
         $hhResults = $this->hhRepository->search($query, 0, 100, ['area' => 97]);
 
-        // 2️⃣ Local vacancies table dan qidirish
+        // 2️⃣ HH natijalarini DB ga saqlash (bulkUpsertFromHH ishlatamiz)
+        $hhVacancies = [];
+        if (!empty($hhResults['items'])) {
+            $hhVacancies = $this->vacancyRepository->bulkUpsertFromHH($hhResults['items']);
+        }
+
+        // 3️⃣ Local DB dan qidiruv
         $localResults = \App\Models\Vacancy::with('employer')
             ->where(function ($q) use ($query) {
                 $q->where('title', 'LIKE', "%{$query}%")
-                  ->orWhere('description', 'LIKE', "%{$query}%");
+                    ->orWhere('description', 'LIKE', "%{$query}%");
             })
             ->orderByDesc('created_at')
             ->get();
 
-        $hhVacancyIds = [];
-        if (!empty($hhResults['items'])) {
-            foreach ($hhResults['items'] as $item) {
-                $vacancy = \App\Models\Vacancy::updateOrCreate(
-                    [
-                        'external_id' => $item['id'], // asosiy identifikator
-                        'source'      => 'hh',
-                    ],
-                    [
-                        'source'            => 'hh',
-                        'external_id'       => $item['id'],
-                        'title'             => $item['name'] ?? 'N/A',
-                        'description'       => $item['snippet']['responsibility']
-                            . "\n" . ($item['snippet']['requirement'] ?? ''),
-                        'category'          => $item['professional_roles'][0]['name']
-                            ?? null,
-                        'area_id'           => $item['area']['id'] ?? null,
-//                        'schedule_id'       => $item['schedule']['id'] ?? null,
-//                        'employment_id'     => $item['employment']['id'] ?? null,
-                        'salary_from'       => $item['salary']['from'] ?? null,
-                        'salary_to'         => $item['salary']['to'] ?? null,
-                        'salary_currency'   => $item['salary']['currency'] ?? null,
-                        'salary_gross'      => $item['salary']['gross'] ?? null,
-                        'published_at'      => $item['published_at'] ?? now(),
-                        'expires_at'        => $item['expires_at'] ?? null,
-                        'status'            => $item['archived'] ? 'archived' : 'active',
-                        'apply_url'         => $item['apply_alternate_url'] ?? null,
-                        'views_count'       => $item['counters']['views'] ?? 0,
-                        'responses_count'   => $item['counters']['responses'] ?? 0,
-                        'raw_data'          => json_encode($item, JSON_UNESCAPED_UNICODE),
-                        'company'           => $item['employer']['name'] ?? null,
-                        'contact'           => $item['contacts']['email'] ?? null,
-                        'language'          => $item['language'] ?? null,
-                        'signature'         => null,
-                        'source_id'         => $item['id'] ?? null,
-                        'raw_hash'          => md5(json_encode($item)),
-                        'normalized_hash'   => null,
-
-                        // employer_id — alohida method orqali
-                        'employer_id'       => $this->getOrCreateEmployer($item['employer'] ?? []),
-                    ]
-                );
-
-                $hhVacancyIds[] = $vacancy->id;
-            }
-        }
-
-        // 4️⃣ HeadHunter va local natijalarini birlashtirish
-        $allVacancies = \App\Models\Vacancy::with('employer')
-            ->whereIn('id', array_merge($hhVacancyIds, $localResults->pluck('id')->toArray()))
-            ->leftJoin('applications', function ($join) use ($user) {
-                $join->on('applications.vacancy_id', '=', 'vacancies.id')
-                    ->where('applications.user_id', $user->id);
-            })
-            ->orderByRaw('CASE WHEN applications.id IS NULL THEN 0 ELSE 1 END ASC')
-            ->orderByDesc('vacancies.created_at')
-            ->select('vacancies.*')
-            ->get();
+        // 4️⃣ Ikkalasini birlashtirish
+        $allVacancies = collect($hhVacancies)->merge($localResults)->unique('id');
 
         return response()->json([
             'status'  => 'success',
