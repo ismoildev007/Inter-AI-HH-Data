@@ -102,7 +102,7 @@ class VacancyMatchingController extends Controller
         // 2️⃣ Local vacancies table dan qidirish
         $localResults = \App\Models\Vacancy::with('employer')
             ->where(function ($q) use ($query) {
-                $q->where('name', 'LIKE', "%{$query}%")
+                $q->where('title', 'LIKE', "%{$query}%")
                   ->orWhere('description', 'LIKE', "%{$query}%")
                   ->orWhere('key_skills', 'LIKE', "%{$query}%");
             })
@@ -115,7 +115,7 @@ class VacancyMatchingController extends Controller
                 $vacancy = \App\Models\Vacancy::updateOrCreate(
                     ['external_id' => $item['id']],
                     [
-                        'name' => $item['name'] ?? 'N/A',
+                        'title' => $item['natitleme'] ?? 'N/A',
                         'description' => $item['snippet']['requirement'] ?? '',
                         'salary_from' => $item['salary']['from'] ?? null,
                         'salary_to' => $item['salary']['to'] ?? null,
