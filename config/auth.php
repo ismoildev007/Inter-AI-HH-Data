@@ -45,6 +45,12 @@ return [
             'driver' => 'sanctum',
             'provider' => 'users',
         ],
+
+        // Explicit Sanctum guard for auth:sanctum middleware
+        'sanctum' => [
+            'driver' => 'sanctum',
+            'provider' => 'users',
+        ],
     ],
 
     /*
