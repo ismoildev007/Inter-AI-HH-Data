@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use Modules\ResumeCreate\Http\Controllers\ResumeCreateController;
 
+// Authenticated API for wizard
 Route::middleware(['query.token', 'auth:sanctum'])
     ->prefix('v1')
     ->group(function () {
@@ -13,6 +14,9 @@ Route::middleware(['query.token', 'auth:sanctum'])
 
         Route::post('resume-create/photo', [ResumeCreateController::class, 'uploadPhoto'])->name('resumecreate.photo.upload');
         Route::delete('resume-create/photo', [ResumeCreateController::class, 'deletePhoto'])->name('resumecreate.photo.delete');
-
-        Route::get('resume-create/pdf', [ResumeCreateController::class, 'downloadPdf'])->name('resumecreate.pdf');
     });
+
+// PDF download: token yoki cookie orqali authenticate qilamiz (ichkarida)
+Route::get('v1/resume-create/pdf', [ResumeCreateController::class, 'downloadPdf'])
+    ->middleware('query.token')
+    ->name('resumecreate.pdf');

@@ -5,6 +5,8 @@ namespace Modules\ResumeCreate\Http\Controllers;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use Illuminate\Support\Facades\Auth;
+use Laravel\Sanctum\PersonalAccessToken;
 use Modules\ResumeCreate\Http\Requests\ResumeWizardRequest;
 use Modules\ResumeCreate\Http\Requests\ResumePhotoRequest;
 use Modules\ResumeCreate\Services\ResumeCreateService;
@@ -76,6 +78,28 @@ class ResumeCreateController extends Controller
     public function downloadPdf(Request $request)
     {
         $lang = $request->query('lang', 'ru');
+
+        $user = $request->user();
+
+        if (! $user) {
+            $token = $request->bearerToken() ?: (string) $request->query('token');
+
+            if ($token !== '') {
+                $accessToken = PersonalAccessToken::findToken($token);
+
+                if ($accessToken && $accessToken->tokenable) {
+                    $user = $accessToken->tokenable;
+                    Auth::setUser($user);
+                }
+            }
+        }
+
+        if (! $user) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Unauthenticated',
+            ], 401);
+        }
 
         $resume = $this->service->getForCurrentUser();
 
