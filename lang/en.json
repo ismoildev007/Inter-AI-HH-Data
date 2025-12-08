@@ -37,5 +37,14 @@
     "admin.sidebar.hints.pricing_blueprints": "Pricing blueprints",
     "admin.sidebar.hints.revenue_stream": "Revenue stream",
     "admin.sidebar.hints.payments_ledger": "Payments ledger",
-    "elnurbek": "Elnurbek en"
+    "elnurbek": "Elnurbek en",
+
+    "resume.pdf.professional_summary": "PROFESSIONAL SUMMARY",
+    "resume.pdf.work_experience": "WORK EXPERIENCE",
+    "resume.pdf.education": "EDUCATION",
+    "resume.pdf.skills": "SKILLS",
+    "resume.pdf.preferences": "JOB PREFERENCES",
+    "resume.pdf.languages": "LANGUAGES",
+    "resume.pdf.certifications": "CERTIFICATIONS",
+    "resume.pdf.present": "Present"
 }

@@ -19,6 +19,38 @@ class Resume extends Model
         'file_size',
         'parsed_text',
         'is_primary',
+        'first_name',
+        'last_name',
+        'contact_email',
+        'phone',
+        'city',
+        'country',
+        'profile_photo_path',
+        'linkedin_url',
+        'github_url',
+        'portfolio_url',
+        'desired_position',
+        'desired_salary',
+        'citizenship',
+        'employment_types',
+        'work_schedules',
+        'ready_to_relocate',
+        'ready_for_trips',
+        'professional_summary',
+        'languages',
+        'certificates',
+        'translations',
+    ];
+
+    protected $casts = [
+        'is_primary' => 'bool',
+        'employment_types' => 'array',
+        'work_schedules' => 'array',
+        'ready_to_relocate' => 'bool',
+        'ready_for_trips' => 'bool',
+        'languages' => 'array',
+        'certificates' => 'array',
+        'translations' => 'array',
     ];
 
     public function user()
@@ -34,6 +66,21 @@ class Resume extends Model
     public function matchResults()
     {
         return $this->hasMany(MatchResult::class);
+    }
+
+    public function experiences()
+    {
+        return $this->hasMany(ResumeExperience::class);
+    }
+
+    public function educations()
+    {
+        return $this->hasMany(ResumeEducation::class);
+    }
+
+    public function skills()
+    {
+        return $this->hasMany(ResumeSkill::class);
     }
 
     public function careerTrackingPdf()

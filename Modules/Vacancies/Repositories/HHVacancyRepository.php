@@ -219,11 +219,11 @@ class HHVacancyRepository implements HHVacancyInterface
             ->values()
             ->all();
 
-        // Log::info('HH search completed', [
-        //     'original_query' => $query,
-        //     'search_terms'   => $searchTerms,
-        //     'total_items'    => count($mergedItems),
-        // ]);
+         Log::info('HH search completed', [
+             'original_query' => $query,
+             'search_terms'   => $searchTerms,
+             'total_items'    => count($mergedItems),
+         ]);
 
         return ['items' => $mergedItems];
     }

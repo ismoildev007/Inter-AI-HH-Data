@@ -1,0 +1,12 @@
+{
+    "name": "ResumeCreate",
+    "alias": "resumecreate",
+    "description": "",
+    "keywords": [],
+    "priority": 0,
+    "providers": [
+        "Modules\\ResumeCreate\\Providers\\ResumeCreateServiceProvider"
+    ],
+    "files": []
+}
+

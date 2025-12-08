@@ -98,7 +98,7 @@ class VacancyRepository implements VacancyInterface
             }
         });
 
-        
+
         $employerMap   = Employer::whereIn('external_id', array_keys($employers))->pluck('id', 'external_id');
         $areaMap       = Area::whereIn('external_id', array_keys($areas))->pluck('id', 'external_id');
         $scheduleMap   = HhSchedule::whereIn('external_id', array_keys($schedules))->pluck('id', 'external_id');
@@ -175,10 +175,6 @@ class VacancyRepository implements VacancyInterface
     public function createFromHH(array $hhVacancy, $category): Vacancy
     {
         $now = now();
-        // Log::info('repository is coming');
-        // Log::info("category for creating vacancy hh: " . $category);
-
-        // Employer
         $employerId = null;
         if (!empty($hhVacancy['employer'])) {
             $employer = Employer::updateOrCreate(
@@ -195,7 +191,6 @@ class VacancyRepository implements VacancyInterface
             $employerId = $employer->id;
         }
 
-        // Area
         $areaId = null;
         if (!empty($hhVacancy['area'])) {
             $area = Area::updateOrCreate(
@@ -211,7 +206,6 @@ class VacancyRepository implements VacancyInterface
             $areaId = $area->id;
         }
 
-        // Schedule
         $scheduleId = null;
         if (!empty($hhVacancy['schedule'])) {
             $schedule = HhSchedule::updateOrCreate(
@@ -224,7 +218,6 @@ class VacancyRepository implements VacancyInterface
             $scheduleId = $schedule->id;
         }
 
-        // Employment
         $employmentId = null;
         if (!empty($hhVacancy['employment'])) {
             $employment = HhEmployment::updateOrCreate(
@@ -237,11 +230,9 @@ class VacancyRepository implements VacancyInterface
             $employmentId = $employment->id;
         }
 
-        // Salary
         $salary = is_array($hhVacancy['salary'] ?? null) ? $hhVacancy['salary'] : [];
         $categorizer = app(\Modules\TelegramChannel\Services\VacancyCategoryService::class);
 
-        // Published date
         $publishedAt = null;
         if (!empty($hhVacancy['published_at'])) {
             try {
@@ -251,7 +242,6 @@ class VacancyRepository implements VacancyInterface
             }
         }
 
-        // ⚡ Eng muhim qism: updateOrCreate o‘rniga firstOrNew
         $vacancy = Vacancy::firstOrNew([
             'source'      => 'hh',
             'external_id' => $hhVacancy['id'],
@@ -277,24 +267,6 @@ class VacancyRepository implements VacancyInterface
             'status'          => 'publish',
             'category'          => $category,
         ]);
-
-//        $categoryRaw = '';
-//        if (!empty($hhVacancy['specializations']) && is_array($hhVacancy['specializations'])) {
-//            $categoryRaw = $hhVacancy['specializations'][0]['name'] ?? '';
-//        }
-//        if ($categoryRaw === '' && !empty($hhVacancy['professional_roles']) && is_array($hhVacancy['professional_roles'])) {
-//            $categoryRaw = $hhVacancy['professional_roles'][0]['name'] ?? '';
-//        }
-//        $shouldSetCategory = !$vacancy->exists || empty($vacancy->category) || mb_strtolower((string) $vacancy->category, 'UTF-8') === 'other';
-//        if ($shouldSetCategory) {
-//            $vacancy->category = $categorizer->categorize(
-//                $vacancy->category,
-//                $vacancy->title ?? '',
-//                $description ?? '',
-//                $categoryRaw
-//            );
-//        }
-
         $vacancy->save();
 
         return $vacancy;
