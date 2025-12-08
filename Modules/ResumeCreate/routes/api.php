@@ -3,7 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use Modules\ResumeCreate\Http\Controllers\ResumeCreateController;
 
-Route::middleware(['auth:sanctum'])
+Route::middleware(['query.token', 'auth:sanctum'])
     ->prefix('v1')
     ->group(function () {
         Route::get('resume-create/ping', [ResumeCreateController::class, 'ping'])->name('resumecreate.ping');
