@@ -6,6 +6,7 @@ use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
+use Telegram\Bot\FileUpload\InputFile;
 use Telegram\Bot\Keyboard\Keyboard;
 use Telegram\Bot\Laravel\Facades\Telegram;
 
@@ -113,5 +114,28 @@ class TelegramBotService
         ];
         return $texts[$lang] ?? 'Kirish';
     }
-}
 
+    /**
+     * Send a resume PDF file to a Telegram chat.
+     */
+    public function sendResumePdf(int|string $chatId, string $path, string $fileName = 'resume.pdf'): void
+    {
+        if (! is_file($path)) {
+            Log::warning("sendResumePdf: file not found", ['chat_id' => $chatId, 'path' => $path]);
+            return;
+        }
+
+        try {
+            Telegram::bot('mybot')->sendDocument([
+                'chat_id'  => $chatId,
+                'document' => InputFile::create($path, $fileName),
+                'caption'  => 'Sizning resume faylingiz',
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('sendResumePdf error: '.$e->getMessage(), [
+                'chat_id' => $chatId,
+                'path' => $path,
+            ]);
+        }
+    }
+}

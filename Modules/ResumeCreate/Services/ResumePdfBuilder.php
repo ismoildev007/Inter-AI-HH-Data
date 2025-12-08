@@ -22,6 +22,30 @@ class ResumePdfBuilder
         return $pdf->download($filename);
     }
 
+    /**
+     * Render PDF to a file on disk and return absolute path.
+     */
+    public function store(Resume $resume, string $lang = 'ru'): string
+    {
+        $lang = in_array($lang, ['ru', 'en'], true) ? $lang : 'ru';
+
+        $viewData = $this->buildViewData($resume, $lang);
+
+        $pdf = Pdf::loadView('resumecreate::pdf.resume', $viewData)->setPaper('a4');
+
+        $fileName = 'resume-'.$resume->id.'-'.$lang.'.pdf';
+        $dir = storage_path('app/resumes');
+
+        if (! is_dir($dir)) {
+            mkdir($dir, 0755, true);
+        }
+
+        $path = $dir.DIRECTORY_SEPARATOR.$fileName;
+        $pdf->save($path);
+
+        return $path;
+    }
+
     protected function buildViewData(Resume $resume, string $lang): array
     {
         $rawTranslations = $resume->translations;

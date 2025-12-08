@@ -20,3 +20,8 @@ Route::middleware(['query.token', 'auth:sanctum'])
 Route::get('v1/resume-create/pdf', [ResumeCreateController::class, 'downloadPdf'])
     ->middleware('query.token')
     ->name('resumecreate.pdf');
+
+// PDF ni Telegram chatiga fayl sifatida yuborish
+Route::post('v1/resume-create/pdf/send-to-telegram', [ResumeCreateController::class, 'sendPdfToTelegram'])
+    ->middleware('query.token')
+    ->name('resumecreate.pdf.telegram');

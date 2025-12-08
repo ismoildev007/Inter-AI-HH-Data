@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Auth;
 use Laravel\Sanctum\PersonalAccessToken;
+use Modules\TelegramBot\Services\TelegramBotService;
 use Modules\ResumeCreate\Http\Requests\ResumeWizardRequest;
 use Modules\ResumeCreate\Http\Requests\ResumePhotoRequest;
 use Modules\ResumeCreate\Services\ResumeCreateService;
@@ -79,21 +80,7 @@ class ResumeCreateController extends Controller
     {
         $lang = $request->query('lang', 'ru');
 
-        $user = $request->user();
-
-        if (! $user) {
-            $token = $request->bearerToken() ?: (string) $request->query('token');
-
-            if ($token !== '') {
-                $accessToken = PersonalAccessToken::findToken($token);
-
-                if ($accessToken && $accessToken->tokenable) {
-                    $user = $accessToken->tokenable;
-                    Auth::setUser($user);
-                }
-            }
-        }
-
+        $user = $this->resolveUserFromRequest($request);
         if (! $user) {
             return response()->json([
                 'status' => 'error',
@@ -108,6 +95,68 @@ class ResumeCreateController extends Controller
         }
 
         return $this->pdfBuilder->download($resume, $lang);
+    }
+
+    public function sendPdfToTelegram(Request $request): JsonResponse
+    {
+        $lang = $request->query('lang', 'ru');
+
+        $user = $this->resolveUserFromRequest($request);
+        if (! $user) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Unauthenticated',
+            ], 401);
+        }
+
+        if (! $user->chat_id) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Telegram chat_id not found for user',
+            ], 400);
+        }
+
+        $resume = $this->service->getForCurrentUser();
+        if (! $resume) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Resume not found',
+            ], 404);
+        }
+
+        $path = $this->pdfBuilder->store($resume, $lang);
+
+        /** @var TelegramBotService $bot */
+        $bot = app(TelegramBotService::class);
+        $bot->sendResumePdf($user->chat_id, $path, basename($path));
+
+        return response()->json([
+            'status' => 'ok',
+        ]);
+    }
+
+    protected function resolveUserFromRequest(Request $request): ?\App\Models\User
+    {
+        $user = $request->user();
+
+        if ($user) {
+            return $user;
+        }
+
+        $token = $request->bearerToken() ?: (string) $request->query('token');
+
+        if ($token !== '') {
+            $accessToken = PersonalAccessToken::findToken($token);
+
+            if ($accessToken && $accessToken->tokenable) {
+                $user = $accessToken->tokenable;
+                Auth::setUser($user);
+
+                return $user;
+            }
+        }
+
+        return null;
     }
 
     protected function transformResumeToWizardPayload($resume): array
