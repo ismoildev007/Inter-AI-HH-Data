@@ -33,6 +33,15 @@ class ResumeCreateController extends Controller
 
     public function show(): JsonResponse
     {
+        $user = $this->resolveUserFromRequest(request());
+
+        if (! $user) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Unauthenticated',
+            ], 401);
+        }
+
         $resume = $this->service->getForCurrentUser();
 
         if (! $resume) {
@@ -48,6 +57,15 @@ class ResumeCreateController extends Controller
 
     public function store(ResumeWizardRequest $request): JsonResponse
     {
+        $user = $this->resolveUserFromRequest($request);
+
+        if (! $user) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Unauthenticated',
+            ], 401);
+        }
+
         $resume = $this->service->saveForCurrentUser($request->validated());
 
         return response()->json([

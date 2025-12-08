@@ -30,7 +30,7 @@ Route::prefix('auth')->group(function () {
     Route::post('register', [AuthController::class, 'register']);
     Route::post('login', [AuthController::class, 'login'])->name('login');
     Route::post('chat-id-login', [AuthController::class, 'chatIdLogin'])->name('chat.id.login');
-    Route::get('check-token', [AuthController::class, 'checkToken']);
+    Route::get('check-token', [AuthController::class, 'checkToken'])->middleware('auth:sanctum');
 
     Route::middleware('auth:sanctum')->group(function () {
         Route::get('me', [AuthController::class, 'me']);
