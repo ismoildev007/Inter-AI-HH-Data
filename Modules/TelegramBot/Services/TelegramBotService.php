@@ -138,4 +138,28 @@ class TelegramBotService
             ]);
         }
     }
+
+    /**
+     * Send a resume DOCX file to a Telegram chat.
+     */
+    public function sendResumeDocx(int|string $chatId, string $path, string $fileName = 'resume.docx'): void
+    {
+        if (! is_file($path)) {
+            Log::warning("sendResumeDocx: file not found", ['chat_id' => $chatId, 'path' => $path]);
+            return;
+        }
+
+        try {
+            Telegram::bot('mybot')->sendDocument([
+                'chat_id'  => $chatId,
+                'document' => InputFile::create($path, $fileName),
+                'caption'  => 'Sizning resume faylingiz (DOCX)',
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('sendResumeDocx error: '.$e->getMessage(), [
+                'chat_id' => $chatId,
+                'path' => $path,
+            ]);
+        }
+    }
 }

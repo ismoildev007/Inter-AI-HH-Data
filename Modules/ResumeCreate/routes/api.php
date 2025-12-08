@@ -15,4 +15,6 @@ Route::prefix('v1')->middleware('query.token')->group(function () {
 
     Route::get('resume-create/pdf', [ResumeCreateController::class, 'downloadPdf'])->name('resumecreate.pdf');
     Route::post('resume-create/pdf/send-to-telegram', [ResumeCreateController::class, 'sendPdfToTelegram'])->name('resumecreate.pdf.telegram');
+    Route::get('resume-create/docx', [ResumeCreateController::class, 'downloadDocx'])->name('resumecreate.docx');
+    Route::post('resume-create/docx/send-to-telegram', [ResumeCreateController::class, 'sendDocxToTelegram'])->name('resumecreate.docx.telegram');
 });
