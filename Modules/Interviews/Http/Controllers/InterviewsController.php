@@ -42,9 +42,8 @@ class InterviewsController extends Controller
                 'created_at' => $i->created_at,
                 'vacancy' => [
                     'id' => $vacancy?->id ?? $i->application->vacancy_id ?? null,
-'title' => $vacancy?->title,
+                    'title' => $vacancy?->title,
                     'company' => $this->resolveVacancyCompany($vacancy),
-                    
                 ],
               
                 'questions_preview' => $preview,
