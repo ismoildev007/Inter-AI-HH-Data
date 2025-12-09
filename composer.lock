@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "4882410c99d6509d6ae06ace0434bbd0",
+    "content-hash": "36c80d73715bf1f3626c93703e4f6a06",
     "packages": [
         {
             "name": "agence104/livekit-server-sdk",
@@ -6815,7 +6815,7 @@
         },
         {
             "name": "opcodesio/log-viewer",
-            "version": "v3.21.1",
+            "version": "dev-main",
             "source": {
                 "type": "git",
                 "url": "https://github.com/opcodesio/log-viewer.git",
@@ -6848,6 +6848,7 @@
             "suggest": {
                 "guzzlehttp/guzzle": "Required for multi-host support. ^7.2"
             },
+            "default-branch": true,
             "type": "library",
             "extra": {
                 "laravel": {
@@ -6887,7 +6888,7 @@
             ],
             "support": {
                 "issues": "https://github.com/opcodesio/log-viewer/issues",
-                "source": "https://github.com/opcodesio/log-viewer/tree/v3.21.1"
+                "source": "https://github.com/opcodesio/log-viewer/tree/main"
             },
             "funding": [
                 {
@@ -14172,7 +14173,9 @@
     ],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": [],
+    "stability-flags": {
+        "opcodesio/log-viewer": 20
+    },
     "prefer-stable": true,
     "prefer-lowest": false,
     "platform": {

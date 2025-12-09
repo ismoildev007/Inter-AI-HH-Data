@@ -32,3 +32,10 @@ Route::fallback(function () {
 Route::get('info-test', function () {
     return php_sapi_name();
 });
+
+Route::middleware(['auth'])->group(function () {
+    Route::get('/admin/logs', function () {
+        return redirect()->to('/log-viewer');
+    });
+});
+
