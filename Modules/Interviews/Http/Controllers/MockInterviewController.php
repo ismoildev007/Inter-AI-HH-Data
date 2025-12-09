@@ -41,6 +41,7 @@ class MockInterviewController extends Controller
         }
 
         return response()->json([
+            "resume" => $resume,
             "eligible" => true,
             "message" => "You have a resume uploaded.",
         ]);
