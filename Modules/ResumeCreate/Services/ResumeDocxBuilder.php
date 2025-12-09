@@ -16,7 +16,7 @@ class ResumeDocxBuilder
         $phpWord = $this->buildDocument($viewData);
 
         $tmpPath = tempnam(sys_get_temp_dir(), 'resume-docx-');
-        $fileName = $this->buildDisplayFileName($resume, $lang, 'docx');
+        $fileName = 'resume-'.$resume->id.'-'.$lang.'.docx';
 
         $phpWord->save($tmpPath, 'Word2007', true);
 
@@ -443,33 +443,5 @@ class ResumeDocxBuilder
         }
 
         return Storage::disk('public')->path($path);
-    }
-
-    public function getDisplayFileName(Resume $resume, string $lang = 'ru'): string
-    {
-        $lang = in_array($lang, ['ru', 'en'], true) ? $lang : 'ru';
-
-        return $this->buildDisplayFileName($resume, $lang, 'docx');
-    }
-
-    protected function buildDisplayFileName(Resume $resume, string $lang, string $extension): string
-    {
-        $base = trim(($resume->first_name ?? '').' '.($resume->last_name ?? ''));
-
-        if ($base !== '') {
-            $base = preg_replace('~[^\pL\d]+~u', '-', $base);
-            $base = trim($base, '-');
-            $base = mb_strtolower($base);
-        } else {
-            $base = 'resume';
-        }
-
-        if ($lang === 'ru') {
-            $code = random_int(1000, 9999);
-        } else {
-            $code = random_int(10000, 99999);
-        }
-
-        return $base.'-'.$code.'.'.$extension;
     }
 }
