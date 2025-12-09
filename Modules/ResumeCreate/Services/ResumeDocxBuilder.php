@@ -4,6 +4,7 @@ namespace Modules\ResumeCreate\Services;
 
 use App\Models\Resume;
 use Illuminate\Support\Facades\Storage;
+use PhpOffice\PhpWord\Element\Section;
 use PhpOffice\PhpWord\PhpWord;
 
 class ResumeDocxBuilder
@@ -68,22 +69,25 @@ class ResumeDocxBuilder
         $italic = ['italic' => true];
 
         // Header: photo + main info (approximate to PDF layout)
-        $table = $section->addTable();
-        $table->addRow();
-
-        // Left cell: photo
-        $photoCell = $table->addCell(2000);
         $photoPath = $this->photoPathForDocx($resume);
         if ($photoPath) {
-            // 96x96 px approx (72 DPI → ~1.3 inch)
+            $table = $section->addTable();
+            $table->addRow();
+
+            // Left cell: photo
+            $photoCell = $table->addCell(2000);
             $photoCell->addImage($photoPath, [
                 'width' => 96,
                 'height' => 96,
             ]);
+
+            // Right cell: name, position, contacts
+            $infoCell = $table->addCell(8000);
+        } else {
+            // Hech qanday rasm bo'lmasa, barcha matnlar chapdan boshlab ketadi
+            $infoCell = $section;
         }
 
-        // Right cell: name, position, contacts
-        $infoCell = $table->addCell(8000);
         $infoCell->addText(trim($resume->first_name.' '.$resume->last_name), $h1);
 
         if ($resume->desired_position) {
@@ -120,15 +124,21 @@ class ResumeDocxBuilder
 
         $section->addTextBreak(1);
 
-        // Professional summary
-        $section->addText($labels['section_professional_summary'] ?? 'PROFESSIONAL SUMMARY', $h2);
-        $summaryText = $t['professional_summary'] ?? $resume->professional_summary;
-        if ($summaryText) {
+        // Qalin chiziq – header ostidagi ajratuvchi (PDF dagi birinchi hr)
+        $this->addThickSeparator($section);
+        $section->addTextBreak(1);
+
+        // Professional summary (only if not empty)
+        $summaryText = trim((string) ($t['professional_summary'] ?? $resume->professional_summary));
+        if ($summaryText !== '') {
+            $section->addText($labels['section_professional_summary'] ?? 'PROFESSIONAL SUMMARY', $h2);
             $section->addText($summaryText);
         }
 
         // Experiences
         if ($resume->experiences->isNotEmpty()) {
+            $section->addTextBreak(1);
+            $this->addThinSeparator($section);
             $section->addTextBreak(1);
             $section->addText($labels['section_work_experience'] ?? 'WORK EXPERIENCE', $h2);
 
@@ -136,8 +146,6 @@ class ResumeDocxBuilder
 
             foreach ($resume->experiences as $index => $exp) {
                 $txExp = is_array($txExpList) && array_key_exists($index, $txExpList) ? $txExpList[$index] : null;
-
-                $section->addText($exp->position ?? '', $bold);
 
                 $dateLine = '';
                 if ($exp->start_date) {
@@ -149,8 +157,16 @@ class ResumeDocxBuilder
                 } elseif ($exp->end_date) {
                     $dateLine .= $exp->end_date->format('M Y');
                 }
+
+                // Header row: position (left) and dates (right), similar to PDF
+                $expTable = $section->addTable();
+                $expTable->addRow();
+                $leftCell = $expTable->addCell(7000);
+                $rightCell = $expTable->addCell(3000);
+
+                $leftCell->addText($exp->position ?? '', $bold);
                 if (trim($dateLine) !== '-') {
-                    $section->addText($dateLine);
+                    $rightCell->addText($dateLine, null, ['alignment' => 'right']);
                 }
 
                 $company = $txExp['company'] ?? $exp->company;
@@ -172,6 +188,8 @@ class ResumeDocxBuilder
         // Education
         if ($resume->educations->isNotEmpty()) {
             $section->addTextBreak(1);
+            $this->addThinSeparator($section);
+            $section->addTextBreak(1);
             $section->addText($labels['section_education'] ?? 'EDUCATION', $h2);
 
             $txEduList = $t['educations'] ?? [];
@@ -179,10 +197,20 @@ class ResumeDocxBuilder
             foreach ($resume->educations as $index => $edu) {
                 $txEdu = is_array($txEduList) && array_key_exists($index, $txEduList) ? $txEduList[$index] : null;
 
-                $section->addText($edu->degree ?? '', $bold);
+                // Header row: degree (left) and year (right)
+                $eduTable = $section->addTable();
+                $eduTable->addRow();
+                $leftCell = $eduTable->addCell(7000);
+                $rightCell = $eduTable->addCell(3000);
 
+                $leftCell->addText($edu->degree ?? '', $bold);
+
+                $yearText = '';
                 if ($edu->start_date) {
-                    $section->addText($edu->start_date->format('Y'));
+                    $yearText = $edu->start_date->format('Y');
+                }
+                if ($yearText !== '') {
+                    $rightCell->addText($yearText, null, ['alignment' => 'right']);
                 }
 
                 $inst = $txEdu['institution'] ?? $edu->institution;
@@ -203,6 +231,8 @@ class ResumeDocxBuilder
 
         // Skills (grouped by level)
         if ($resume->skills->isNotEmpty()) {
+            $section->addTextBreak(1);
+            $this->addThinSeparator($section);
             $section->addTextBreak(1);
             $section->addText($labels['section_skills'] ?? 'SKILLS', $h2);
 
@@ -292,6 +322,8 @@ class ResumeDocxBuilder
             $resume->ready_for_trips
         ) {
             $section->addTextBreak(1);
+            $this->addThinSeparator($section);
+            $section->addTextBreak(1);
             $section->addText($labels['section_preferences'] ?? 'JOB PREFERENCES', $h2);
 
             if ($resume->desired_salary) {
@@ -315,8 +347,14 @@ class ResumeDocxBuilder
         }
 
         // Languages
-        $langItems = collect($resume->languages ?? []);
+        $langItems = collect($resume->languages ?? [])->filter(function ($item) {
+            $name = $item['name'] ?? '';
+            $level = $item['level'] ?? '';
+            return trim((string) $name) !== '' && trim((string) $level) !== '';
+        });
         if ($langItems->isNotEmpty()) {
+            $section->addTextBreak(1);
+            $this->addThinSeparator($section);
             $section->addTextBreak(1);
             $section->addText($labels['section_languages'] ?? 'LANGUAGES', $h2);
 
@@ -341,6 +379,8 @@ class ResumeDocxBuilder
         // Certifications
         $certItems = collect($resume->certificates ?? []);
         if ($certItems->isNotEmpty()) {
+            $section->addTextBreak(1);
+            $this->addThinSeparator($section);
             $section->addTextBreak(1);
             $section->addText($labels['section_certifications'] ?? 'CERTIFICATIONS', $h2);
 
@@ -445,5 +485,33 @@ class ResumeDocxBuilder
         }
 
         return Storage::disk('public')->path($path);
+    }
+
+    /**
+     * Qalin ajratuvchi chiziq (header ostidagi) – PDF dagi birinchi hr ga o‘xshash.
+     */
+    protected function addThickSeparator(Section $section): void
+    {
+        $table = $section->addTable([
+            'borderBottomSize' => 12,
+            'borderBottomColor' => '000000',
+            'cellMargin' => 0,
+        ]);
+        $table->addRow();
+        $table->addCell(12000)->addText('');
+    }
+
+    /**
+     * Ingichka ajratuvchi chiziq – bo‘lim sarlavhalari ustida.
+     */
+    protected function addThinSeparator(Section $section): void
+    {
+        $table = $section->addTable([
+            'borderBottomSize' => 4,
+            'borderBottomColor' => '000000',
+            'cellMargin' => 0,
+        ]);
+        $table->addRow();
+        $table->addCell(12000)->addText('');
     }
 }

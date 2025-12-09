@@ -258,14 +258,19 @@
     </div>
     <hr>
 
-    <div class="section">
-        <div class="section-header">
-            <div>{{ $labels['section_professional_summary'] ?? 'PROFESSIONAL SUMMARY' }}</div>
+    @php
+        $summaryText = trim((string) ($t['professional_summary'] ?? $resume->professional_summary));
+    @endphp
+    @if($summaryText !== '')
+        <div class="section">
+            <div class="section-header">
+                <div>{{ $labels['section_professional_summary'] ?? 'PROFESSIONAL SUMMARY' }}</div>
+            </div>
+            <div class="section-body">
+                {{ $summaryText }}
+            </div>
         </div>
-        <div class="section-body">
-            {{ $t['professional_summary'] ?? $resume->professional_summary }}
-        </div>
-    </div>
+    @endif
 
     @if($resume->experiences->isNotEmpty())
         <div class="section">
@@ -473,7 +478,15 @@
         </div>
     @endif
 
-    @if(collect($resume->languages ?? [])->isNotEmpty())
+    @php
+        $rawLanguages = collect($resume->languages ?? []);
+        $nonEmptyLanguages = $rawLanguages->filter(function ($item) {
+            $name = $item['name'] ?? '';
+            $level = $item['level'] ?? '';
+            return trim((string) $name) !== '' && trim((string) $level) !== '';
+        });
+    @endphp
+    @if($nonEmptyLanguages->isNotEmpty())
         <div class="section">
             <div class="section-header">
                 <div>{{ $labels['section_languages'] ?? 'TILLAR / LANGUAGES' }}</div>
@@ -483,7 +496,7 @@
                     $txLangs = $t['languages'] ?? [];
                     $langParts = [];
 
-                    foreach ($resume->languages as $index => $langItem) {
+                    foreach ($nonEmptyLanguages as $index => $langItem) {
                         $txLang = is_array($txLangs) && array_key_exists($index, $txLangs) ? $txLangs[$index] : null;
                         $name = $langItem['name'] ?? '';
                         $level = $txLang['level'] ?? ($langItem['level'] ?? '');
