@@ -207,7 +207,7 @@ class ResumeCreateController extends Controller
 
         /** @var TelegramBotService $bot */
         $bot = app(TelegramBotService::class);
-        $bot->sendResumeDocx($user->chat_id, $path, $this->docxBuilder->getDisplayFileName($resume, $lang));
+        $bot->sendResumeDocx($user->chat_id, $path, basename($path));
 
         return response()->json([
             'status' => 'ok',
