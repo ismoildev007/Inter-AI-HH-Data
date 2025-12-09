@@ -25,13 +25,17 @@ class MockInterviewController extends Controller
             "mock_interview" => $mockInterview
         ]);
     }
-    
+
     public function checkResumeEligibility(Request $request)
     {
         $user = Auth::user();
 
-        $resume = $user->resumes()->where('is_primary', true)->first()
+        $resume = $user->resumes()
+            ->where('is_primary', true)
+            ->whereNotNull('country')
+            ->first()
             ?? $user->resumes()->latest()->first();
+
 
         if (!$resume) {
             return response()->json([
@@ -46,7 +50,7 @@ class MockInterviewController extends Controller
             "message" => "You have a resume uploaded.",
         ]);
     }
-    
+
     public function generateQuestions(Request $request)
     {
         $user = Auth::user();
@@ -95,7 +99,7 @@ class MockInterviewController extends Controller
             "level" => $request->level ?? "Junior",
             "strengths" => $analysisRecord->strengths ?? [],
             "weaknesses" => $analysisRecord->weaknesses ?? [],
-            "growth_areas" => $analysisRecord->keywords ?? [], 
+            "growth_areas" => $analysisRecord->keywords ?? [],
         ];
 
         $parsedText = $this->buildResumePromptText($resume, $experiences, $skills, $education, $analysisRecord);
