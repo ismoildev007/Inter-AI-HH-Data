@@ -99,46 +99,68 @@ class VacancyMatchingController extends Controller
 
     protected function searchVacancies(string $query, $user)
     {
-        // 1️⃣ HH dan qidiruv
-        $hhResults = $this->hhRepository->search($query, 0, 100, ['area' => 97]);
-        Log::info('HH vacancies found result', ['Result' => count($hhResults['items'])]);
+        // 🔥 3 xil query varianti (asosiy, upper, lower)
+        $queries = [
+            $query,
+            mb_strtolower($query),
+            mb_strtoupper($query),
+        ];
 
-        // 2️⃣ HH natijalarini DB ga saqlash (bulkUpsertFromHH ishlatamiz)
-        $hhVacancies = [];
-        if (!empty($hhResults['items'])) {
-            $hhVacancies = $this->vacancyRepository->bulkUpsertFromHH($hhResults['items']);
+        $hhVacanciesCollection = collect();
+        $localVacanciesCollection = collect();
+
+        foreach ($queries as $q) {
+
+            // 1️⃣ HH Search
+            $hhResults = $this->hhRepository->search($q, 0, 100, ['area' => 97]);
+            Log::info('HH search completed', [
+                'original_query' => $query,
+                'used_query' => $q,
+                'count' => count($hhResults['items'] ?? [])
+            ]);
+
+            // HH dan kelgan natijalarni DB ga saqlash
+            if (!empty($hhResults['items'])) {
+                $saved = $this->vacancyRepository->bulkUpsertFromHH($hhResults['items']);
+                $hhVacanciesCollection = $hhVacanciesCollection->merge($saved);
+            }
+
+            // 2️⃣ LOCAL DB SEARCH
+            $local = \App\Models\Vacancy::with('employer')
+                ->where(function ($w) use ($q) {
+                    $w->where('title', 'LIKE', "%{$q}%")
+                        ->orWhere('description', 'LIKE', "%{$q}%");
+                })
+                ->orderByDesc('created_at')
+                ->get();
+
+            $localVacanciesCollection = $localVacanciesCollection->merge($local);
         }
 
-        // 3️⃣ Local DB dan qidiruv
-        $localResults = \App\Models\Vacancy::with('employer')
-            ->where(function ($q) use ($query) {
-                $q->where('title', 'LIKE', "%{$query}%")
-                    ->orWhere('description', 'LIKE', "%{$query}%");
-            })
-            ->orderByDesc('created_at')
-            ->get();
+        // 3️⃣ Ikkala natijani birlashtirish
+        $allVacancies = $hhVacanciesCollection
+            ->merge($localVacanciesCollection)
+            ->unique('id')
+            ->values();
 
-        // 4️⃣ Ikkalasini birlashtirish
-        $allVacancies = collect($hhVacancies)
-            ->merge($localResults)
-            ->unique('id');
-
-        // 5️⃣ Vacancy obyektlarini MatchResult formatiga o'tkazish
+        // 4️⃣ Vacancy → MatchResult formatiga o‘tkazish
         $results = $allVacancies->map(function ($vacancy) use ($user) {
-            // Agar allaqachon MatchResult bo'lsa, o'zini qaytaradi
+
             if ($vacancy instanceof \App\Models\MatchResult) {
                 return $vacancy;
             }
 
-            // Agar Vacancy bo'lsa, MatchResult formatiga o'giramiz
             $matchResult = new \App\Models\MatchResult();
-            $matchResult->id = null; // Yangi obyekt
+            $matchResult->id = null;
             $matchResult->vacancy_id = $vacancy->id;
-            $matchResult->resume_id = $user->resumes()->where('is_primary', true)->first()->id ?? null;
+            $matchResult->resume_id = optional(
+                $user->resumes()->where('is_primary', true)->first()
+            )->id;
+
             $matchResult->score_percent = 0;
             $matchResult->explanations = json_encode(['text' => 'Search result']);
-            $matchResult->setRelation('vacancy', $vacancy); // Relation o'rnatish
-            $matchResult->exists = false; // DB da mavjud emas
+            $matchResult->setRelation('vacancy', $vacancy);
+            $matchResult->exists = false;
 
             return $matchResult;
         });

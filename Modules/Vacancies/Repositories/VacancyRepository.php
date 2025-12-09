@@ -47,7 +47,7 @@ class VacancyRepository implements VacancyInterface
                 }
             }
 
-            if (!empty($data['employer'])) {
+            if (!empty($data['employer']) && !empty($data['employer']['id'])) {
                 $employers[$data['employer']['id']] = [
                     'source' => 'hh',
                     'external_id' => $data['employer']['id'],
@@ -57,7 +57,7 @@ class VacancyRepository implements VacancyInterface
                 ];
             }
 
-            if (!empty($data['area'])) {
+            if (!empty($data['area']) && !empty($data['area']['id'])) {
                 $areas[$data['area']['id']] = [
                     'source' => 'hh',
                     'external_id' => $data['area']['id'],
@@ -66,7 +66,7 @@ class VacancyRepository implements VacancyInterface
                 ];
             }
 
-            if (!empty($data['schedule'])) {
+            if (!empty($data['schedule']) && !empty($data['schedule']['id'])) {
                 $schedules[$data['schedule']['id']] = [
                     'external_id' => $data['schedule']['id'],
                     'name'        => $data['schedule']['name'] ?? '',
@@ -74,7 +74,7 @@ class VacancyRepository implements VacancyInterface
                 ];
             }
 
-            if (!empty($data['employment'])) {
+            if (!empty($data['employment']) && !empty($data['employment']['id'])) {
                 $employments[$data['employment']['id']] = [
                     'external_id' => $data['employment']['id'],
                     'name'        => $data['employment']['name'] ?? '',
