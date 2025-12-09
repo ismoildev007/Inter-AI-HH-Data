@@ -142,4 +142,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(Transaction::class);
     }
+
+    public function mockInterviews()
+    {
+        return $this->hasMany(MockInterview::class);
+    }
 }

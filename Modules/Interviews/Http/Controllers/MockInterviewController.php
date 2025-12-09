@@ -10,6 +10,22 @@ use Illuminate\Support\Facades\Auth;
 
 class MockInterviewController extends Controller
 {
+    public function getMockInterview()
+    {
+        $user = Auth::user();
+        $mockInterview = $user->mockInterviews()->orderBy('created_at', 'desc')->get();
+
+        if (!$mockInterview) {
+            return response()->json([
+                "message" => "No mock interview found."
+            ], 404);
+        }
+
+        return response()->json([
+            "mock_interview" => $mockInterview
+        ]);
+    }
+    
     public function checkResumeEligibility(Request $request)
     {
         $user = Auth::user();
