@@ -33,14 +33,12 @@ class MockInterviewController extends Controller
         $resume = $user->resumes()
             ->where('is_primary', true)
             ->whereNotNull('country')
-            ->first()
-            ?? $user->resumes()->latest()->first();
-
+            ->first();
 
         if (!$resume) {
             return response()->json([
                 "eligible" => false,
-                "message" => "You need to upload a resume first."
+                "message" => "You need to upload a complete resume first."
             ]);
         }
 
@@ -50,6 +48,7 @@ class MockInterviewController extends Controller
             "message" => "You have a resume uploaded.",
         ]);
     }
+
 
     public function generateQuestions(Request $request)
     {
