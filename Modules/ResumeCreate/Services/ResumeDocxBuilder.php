@@ -18,7 +18,8 @@ class ResumeDocxBuilder
         $tmpPath = tempnam(sys_get_temp_dir(), 'resume-docx-');
         $fileName = 'resume-'.$resume->id.'-'.$lang.'.docx';
 
-        $phpWord->save($tmpPath, 'Word2007', true);
+        // Faqat faylga saqlaymiz, HTTP javobni PhpWord emas, Laravel qaytaradi.
+        $phpWord->save($tmpPath, 'Word2007');
 
         return response()->download($tmpPath, $fileName)->deleteFileAfterSend(true);
     }
@@ -41,7 +42,8 @@ class ResumeDocxBuilder
         $fileName = 'resume-'.$resume->id.'-'.$lang.'.docx';
         $path = $dir.DIRECTORY_SEPARATOR.$fileName;
 
-        $phpWord->save($path, 'Word2007', true);
+        // Faqat diskka yozish, hech qanday download header yubormaslik uchun.
+        $phpWord->save($path, 'Word2007');
 
         return $path;
     }
