@@ -191,7 +191,7 @@ class GenerateMockInterviewsJob implements ShouldQueue
             MockInterviewQuestion::create([
                 "mock_interview_id" => $interview->id,
                 "order" => $index + 1,
-                "difficulty" => "medium",
+                "difficulty" => 1,
                 "question_text" => $q,
                 "question_audio_url" => $audioUrl,
                 "meta" => null,
