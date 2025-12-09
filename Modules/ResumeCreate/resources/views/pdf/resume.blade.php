@@ -4,12 +4,13 @@
     <meta charset="utf-8">
     <style>
         body {
-            font-family: Calibri, DejaVu Sans, sans-serif;
+            font-family: DejaVu Sans, sans-serif;
             font-size: 12px;
             color: #111827;
             margin: 0;
             padding: 32px 40px;
             position: relative;
+            background-color: #ffffff;
         }
         .top-logo {
             position: absolute;
@@ -64,6 +65,7 @@
         .name {
             font-size: 20px;
             font-weight: 700;
+            color: #111827;
             margin-bottom: 4px;
         }
         .position {
@@ -86,7 +88,7 @@
         }
         hr {
             border: none;
-            border-top: 2px solid #9ca3af; /* gray-400 */
+            border-top: 2px solid #000000; /* qalin chiziq qora */
             margin: 16px 0;
         }
         .section {
@@ -96,21 +98,25 @@
             display: flex;
             justify-content: space-between;
             align-items: baseline;
-            font-size: 12px;
-            font-weight: 400;
+            font-size: 13px;
+            font-weight: bold;
             letter-spacing: 0.05em;
-            font-family: 'Roboto', Calibri, DejaVu Sans, sans-serif;
-            color: #9ca3af; /* gray-400 */
+            color: #111827;
         }
         /* Faqat 2-bo'limdan boshlab chiziq chizish */
         .section + .section .section-header {
-            padding-top: 4px;
             margin-top: 8px;
-            border-top: 1px solid #9ca3af; /* gray-400 */
+            padding-bottom: 4px;
+            border-bottom: 1px solid #9ca3af; /* gray-400 */
         }
         .section-title-secondary {
             font-weight: 400;
             color: #6b7280;
+        }
+        .section-header .experience-total {
+            font-weight: normal;
+            color: #6b7280;
+            margin-left: 4px;
         }
         .section-body {
             font-size: 11px;
@@ -180,12 +186,14 @@
         }
         .skill-tag {
             display: inline-block;
-            padding: 2px 6px;
+            padding: 2px 6px; /* yozuv atrofida ixcham border, buttonga o'xshash */
             margin: 2px 3px 2px 0;
-            border-radius: 2px;
+            border-radius: 4px;
             background-color: #e5e7eb; /* gray-200 */
             border: 1px solid #d1d5db; /* gray-300 */
             color: #111827;
+            position: relative;
+            top: 0px; /* matnni biroz tepaga ko'taramiz */
         }
     </style>
 </head>
@@ -311,11 +319,30 @@
     @if($resume->experiences->isNotEmpty())
         <div class="section">
             <div class="section-header">
-                @php $expCount = $resume->experiences->count(); @endphp
+                @php
+                    $totalMonths = 0;
+                    foreach ($resume->experiences as $exp) {
+                        if ($exp->start_date) {
+                            $start = $exp->start_date;
+                            $end = $exp->is_current
+                                ? \Carbon\Carbon::now()
+                                : ($exp->end_date ?: $exp->start_date);
+                            $totalMonths += $start->diffInMonths($end);
+                        }
+                    }
+                    $totalYears = $totalMonths > 0 ? intdiv($totalMonths, 12) : 0;
+                @endphp
                 <div>
                     {{ $labels['section_work_experience'] ?? "ISH TAJRIBASI / WORK EXPERIENCE" }}
-                    @if($expCount > 0)
-                        - {{ $expCount }}
+                    @if($totalMonths > 0)
+                        <span class="experience-total">
+                            -
+                            @if($totalMonths < 12)
+                                {{ $lang === 'ru' ? 'менее 1 года' : 'less than 1 year' }}
+                            @else
+                                {{ $totalYears }} {{ $lang === 'ru' ? 'лет' : ($totalYears === 1 ? 'year' : 'years') }}
+                            @endif
+                        </span>
                     @endif
                 </div>
             </div>
