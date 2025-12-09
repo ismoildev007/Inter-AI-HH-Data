@@ -87,7 +87,6 @@ class AuthController extends Controller
     // }
     public function chatIdLogin(Request $request)
     {
-       // Log::info('Chat ID login request', ['request' => $request->all()]);
         $chatId = $request->input('chat_id');
 
         $user = User::where('chat_id', $chatId)->first();
@@ -98,13 +97,14 @@ class AuthController extends Controller
             ], 401);
         }
 
-        $token = $user->tokens()->latest()->first()?->plainTextToken ?? $user->createToken('api_token', ['*'], now()->addYears(22))->plainTextToken;
-       // Log::info('Chat ID login successful', ['user_id' => $user->id, 'token' => $token]);
+        // Always issue a valid Sanctum personal access token for the mini‑app.
+        $token = $user->createToken('telegram-mini-app', ['*'], now()->addYears(10))->plainTextToken;
+
         return response()->json([
             'status' => 'success',
             'data'   => [
                 'token' => $token,
-            ]
+            ],
         ], 200);
     }
 

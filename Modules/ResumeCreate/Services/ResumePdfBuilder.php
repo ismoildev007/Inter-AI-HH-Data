@@ -17,7 +17,7 @@ class ResumePdfBuilder
 
         $pdf = Pdf::loadView('resumecreate::pdf.resume', $viewData)->setPaper('a4');
 
-        $filename = 'resume-'.$resume->id.'-'.$lang.'.pdf';
+        $filename = $this->buildDisplayFileName($resume, $lang, 'pdf');
 
         return $pdf->download($filename);
     }
@@ -44,6 +44,13 @@ class ResumePdfBuilder
         $pdf->save($path);
 
         return $path;
+    }
+
+    public function getDisplayFileName(Resume $resume, string $lang = 'ru'): string
+    {
+        $lang = in_array($lang, ['ru', 'en'], true) ? $lang : 'ru';
+
+        return $this->buildDisplayFileName($resume, $lang, 'pdf');
     }
 
     protected function buildViewData(Resume $resume, string $lang): array
@@ -106,5 +113,33 @@ class ResumePdfBuilder
         }
 
         return 'data:'.$mime.';base64,'.base64_encode($contents);
+    }
+
+    /**
+     * Build human‑friendly file name for downloads/Telegram.
+     *
+     * Examples:
+     *   elnurbek-asqarov-1234.pdf (ru)
+     *   elnurbek-asqarov-12345.pdf (en)
+     */
+    protected function buildDisplayFileName(Resume $resume, string $lang, string $extension): string
+    {
+        $base = trim(($resume->first_name ?? '').' '.($resume->last_name ?? ''));
+
+        if ($base !== '') {
+            $base = preg_replace('~[^\pL\d]+~u', '-', $base);
+            $base = trim($base, '-');
+            $base = mb_strtolower($base);
+        } else {
+            $base = 'resume';
+        }
+
+        if ($lang === 'ru') {
+            $code = random_int(1000, 9999);     // 4 xonali
+        } else {
+            $code = random_int(10000, 99999);   // 5 xonali
+        }
+
+        return $base.'-'.$code.'.'.$extension;
     }
 }

@@ -13,6 +13,7 @@ use Modules\ResumeCreate\Http\Requests\ResumePhotoRequest;
 use Modules\ResumeCreate\Services\ResumeCreateService;
 use Modules\ResumeCreate\Services\ResumePhotoService;
 use Modules\ResumeCreate\Services\ResumePdfBuilder;
+use Modules\ResumeCreate\Services\ResumeDocxBuilder;
 
 class ResumeCreateController extends Controller
 {
@@ -20,6 +21,7 @@ class ResumeCreateController extends Controller
         protected ResumeCreateService $service,
         protected ResumePhotoService $photoService,
         protected ResumePdfBuilder $pdfBuilder,
+        protected ResumeDocxBuilder $docxBuilder,
     ) {
     }
 
@@ -33,6 +35,15 @@ class ResumeCreateController extends Controller
 
     public function show(): JsonResponse
     {
+        $user = $this->resolveUserFromRequest(request());
+
+        if (! $user) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Unauthenticated',
+            ], 401);
+        }
+
         $resume = $this->service->getForCurrentUser();
 
         if (! $resume) {
@@ -48,6 +59,15 @@ class ResumeCreateController extends Controller
 
     public function store(ResumeWizardRequest $request): JsonResponse
     {
+        $user = $this->resolveUserFromRequest($request);
+
+        if (! $user) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Unauthenticated',
+            ], 401);
+        }
+
         $resume = $this->service->saveForCurrentUser($request->validated());
 
         return response()->json([
@@ -97,6 +117,27 @@ class ResumeCreateController extends Controller
         return $this->pdfBuilder->download($resume, $lang);
     }
 
+    public function downloadDocx(Request $request)
+    {
+        $lang = $request->query('lang', 'ru');
+
+        $user = $this->resolveUserFromRequest($request);
+        if (! $user) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Unauthenticated',
+            ], 401);
+        }
+
+        $resume = $this->service->getForCurrentUser();
+
+        if (! $resume) {
+            return response()->json(['message' => 'Resume not found'], 404);
+        }
+
+        return $this->docxBuilder->download($resume, $lang);
+    }
+
     public function sendPdfToTelegram(Request $request): JsonResponse
     {
         $lang = $request->query('lang', 'ru');
@@ -128,7 +169,45 @@ class ResumeCreateController extends Controller
 
         /** @var TelegramBotService $bot */
         $bot = app(TelegramBotService::class);
-        $bot->sendResumePdf($user->chat_id, $path, basename($path));
+        $bot->sendResumePdf($user->chat_id, $path, $this->pdfBuilder->getDisplayFileName($resume, $lang));
+
+        return response()->json([
+            'status' => 'ok',
+        ]);
+    }
+
+    public function sendDocxToTelegram(Request $request): JsonResponse
+    {
+        $lang = $request->query('lang', 'ru');
+
+        $user = $this->resolveUserFromRequest($request);
+        if (! $user) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Unauthenticated',
+            ], 401);
+        }
+
+        if (! $user->chat_id) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Telegram chat_id not found for user',
+            ], 400);
+        }
+
+        $resume = $this->service->getForCurrentUser();
+        if (! $resume) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Resume not found',
+            ], 404);
+        }
+
+        $path = $this->docxBuilder->store($resume, $lang);
+
+        /** @var TelegramBotService $bot */
+        $bot = app(TelegramBotService::class);
+        $bot->sendResumeDocx($user->chat_id, $path, $this->docxBuilder->getDisplayFileName($resume, $lang));
 
         return response()->json([
             'status' => 'ok',
