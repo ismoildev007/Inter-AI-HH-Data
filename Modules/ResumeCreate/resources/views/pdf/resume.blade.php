@@ -4,19 +4,30 @@
     <meta charset="utf-8">
     <style>
         body {
-            font-family: DejaVu Sans, sans-serif;
+            font-family: Calibri, DejaVu Sans, sans-serif;
             font-size: 12px;
             color: #111827;
             margin: 0;
             padding: 32px 40px;
+            position: relative;
         }
         .top-logo {
             position: absolute;
-            top: 16px;
-            right: 40px;
+            top: -40px;
+            right: -30px;
         }
         .top-logo img {
-            height: 24px;
+            height: 70px;
+        }
+        .bg-izotip {
+            position: absolute;
+            top: -210px;
+            right: -200px; /* rasmning taxminan 30% qismi tashqarida qoladi */
+            opacity: 0.35; /* biroz ko'rinarliroq qilamiz */
+        }
+        .bg-izotip img {
+            width: 530px;
+            height: auto;
         }
         .header {
             margin-bottom: 24px;
@@ -75,7 +86,7 @@
         }
         hr {
             border: none;
-            border-top: 2px solid #000000; /* birinchi chiziq biroz qalinroq, qora rangda */
+            border-top: 2px solid #9ca3af; /* gray-400 */
             margin: 16px 0;
         }
         .section {
@@ -85,16 +96,17 @@
             display: flex;
             justify-content: space-between;
             align-items: baseline;
-            font-size: 11px;
-            font-weight: bold;
+            font-size: 12px;
+            font-weight: 400;
             letter-spacing: 0.05em;
-            color: #111827;
+            font-family: 'Roboto', Calibri, DejaVu Sans, sans-serif;
+            color: #9ca3af; /* gray-400 */
         }
         /* Faqat 2-bo'limdan boshlab chiziq chizish */
         .section + .section .section-header {
             padding-top: 4px;
             margin-top: 8px;
-            border-top: 1px solid #000000;
+            border-top: 1px solid #9ca3af; /* gray-400 */
         }
         .section-title-secondary {
             font-weight: 400;
@@ -123,6 +135,7 @@
         .certificate-header {
             font-weight: bold;
             font-size: 11px;
+            color: #374151; /* slightly softer than pure black */
         }
 
         .experience-header,
@@ -145,6 +158,11 @@
         .muted {
             color: #6b7280;
         }
+        /* Bold label matnlar uchun ham shu rang */
+        .section-body strong,
+        .section-meta strong {
+            color: #374151;
+        }
         .badge {
             display: inline-block;
             padding: 0 4px;
@@ -157,9 +175,27 @@
             font-weight: 700;
             margin-right: 4px;
         }
+        .skill-tags {
+            font-size: 11px;
+        }
+        .skill-tag {
+            display: inline-block;
+            padding: 2px 6px;
+            margin: 2px 3px 2px 0;
+            border-radius: 2px;
+            background-color: #e5e7eb; /* gray-200 */
+            border: 1px solid #d1d5db; /* gray-300 */
+            color: #111827;
+        }
     </style>
 </head>
 <body>
+    @php $izotip = public_path('pdf-icons/izotip.png'); @endphp
+    @if(file_exists($izotip))
+        <div class="bg-izotip">
+            <img src="{{ $izotip }}" alt="izotip background">
+        </div>
+    @endif
     <div class="top-logo">
         @php $companyLogo = public_path('pdf-icons/logo.svg'); @endphp
         @if(file_exists($companyLogo))
@@ -275,7 +311,13 @@
     @if($resume->experiences->isNotEmpty())
         <div class="section">
             <div class="section-header">
-                <div>{{ $labels['section_work_experience'] ?? "ISH TAJRIBASI / WORK EXPERIENCE" }}</div>
+                @php $expCount = $resume->experiences->count(); @endphp
+                <div>
+                    {{ $labels['section_work_experience'] ?? "ISH TAJRIBASI / WORK EXPERIENCE" }}
+                    @if($expCount > 0)
+                        - {{ $expCount }}
+                    @endif
+                </div>
             </div>
             <div class="section-body">
                 @foreach($resume->experiences as $index => $exp)
@@ -358,30 +400,19 @@
             <div class="section-body">
                 @php
                     $txSkills = $t['skills'] ?? [];
-                    $groupedSkills = [];
-
-                    foreach ($resume->skills as $index => $skill) {
-                        $txSkill = (is_array($txSkills) && array_key_exists($index, $txSkills)) ? $txSkills[$index] : null;
-                        $levelLabel = $txSkill['level'] ?? $skill->level;
-                        $name = $skill->name;
-
-                        if (! $levelLabel || ! $name) {
-                            continue;
-                        }
-
-                        if (! array_key_exists($levelLabel, $groupedSkills)) {
-                            $groupedSkills[$levelLabel] = [];
-                        }
-
-                        $groupedSkills[$levelLabel][] = $name;
-                    }
                 @endphp
 
-                @foreach($groupedSkills as $levelLabel => $names)
-                    <div>
-                        {{ $levelLabel }}: {{ implode(', ', $names) }}
-                    </div>
-                @endforeach
+                <div class="skill-tags">
+                    @foreach($resume->skills as $index => $skill)
+                        @php
+                            $txSkill = (is_array($txSkills) && array_key_exists($index, $txSkills)) ? $txSkills[$index] : null;
+                            $name = $skill->name ?? '';
+                        @endphp
+                        @if(trim((string) $name) !== '')
+                            <span class="skill-tag">{{ $name }}</span>
+                        @endif
+                    @endforeach
+                </div>
             </div>
         </div>
     @endif
@@ -494,8 +525,6 @@
             <div class="section-body">
                 @php
                     $txLangs = $t['languages'] ?? [];
-                    $langParts = [];
-
                     foreach ($nonEmptyLanguages as $index => $langItem) {
                         $txLang = is_array($txLangs) && array_key_exists($index, $txLangs) ? $txLangs[$index] : null;
                         $name = $langItem['name'] ?? '';
@@ -504,13 +533,9 @@
                         if (! $name || ! $level) {
                             continue;
                         }
-
-                        $langParts[] = $name.': '.$level;
+                        echo '<div><strong>'.e($name).'</strong> — '.e($level).'</div>';
                     }
                 @endphp
-                @if(!empty($langParts))
-                    <div>{{ implode(', ', $langParts) }}</div>
-                @endif
             </div>
         </div>
     @endif
