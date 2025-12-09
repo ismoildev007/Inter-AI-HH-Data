@@ -15,13 +15,21 @@ class MockInterview extends Model
         'started_at',
         'finished_at',
         'duration_seconds',
-        'overall_score',
+        'overall_score', 
+        'overall_percentage',
+        'strengths',
+        'weaknesses',
+        'work_on',
         'interview_type'
     ];
 
     protected $casts = [
         'started_at' => 'datetime',
         'finished_at' => 'datetime',
+
+        'strengths' => 'array',
+        'weaknesses' => 'array',
+        'work_on' => 'array',
     ];
 
     public function user()

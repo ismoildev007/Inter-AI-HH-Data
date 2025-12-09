@@ -9,4 +9,6 @@ Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
     Route::post('generate-questions', [MockInterviewController::class, 'generateQuestions'])->name('interviews.generate-questions');
     Route::get('check-resume-eligibility', [MockInterviewController::class, 'checkResumeEligibility'])->name('interviews.check-resume-eligibility');
     Route::get('mock-interviews', [MockInterviewController::class, 'getMockInterview'])->name('interviews.mock-interviews');
+    Route::post('mock-interviews/{id}/start', [MockInterviewController::class, 'startInterview']);
+    Route::post('mock-interviews/{id}/answer', [MockInterviewController::class, 'saveAnswer']);
 });

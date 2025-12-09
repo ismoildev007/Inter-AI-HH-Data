@@ -111,7 +111,90 @@ class MockInterviewController extends Controller
         ]);
     }
 
+    public function startInterview($id)
+    {
+        $user = Auth::user();
 
+        $interview = $user->mockInterviews()->where('id', $id)->firstOrFail();
+
+        if ($interview->status !== 'started') {
+            $interview->update([
+                'status' => 'started',
+                'started_at' => now(),
+            ]);
+        }
+
+        $firstQuestion = $interview->questions()->orderBy('order')->first();
+
+        return response()->json([
+            "status" => "started",
+            "interview_id" => $interview->id,
+            "question" => [
+                "id" => $firstQuestion->id,
+                "order" => $firstQuestion->order,
+                "question" => $firstQuestion->question_text,
+                "audio" => $firstQuestion->question_audio_url,
+            ]
+        ]);
+    }
+
+    public function saveAnswer(Request $request, $id)
+    {
+        $user = Auth::user();
+
+        $request->validate([
+            'question_id' => 'required|exists:mock_interview_questions,id',
+            'answer_text' => 'nullable|string',
+            'answer_audio' => 'nullable|file|mimes:mp3,wav,m4a',
+            'duration_seconds' => 'nullable|integer',
+            'skipped' => 'nullable|boolean',
+        ]);
+
+        $interview = $user->mockInterviews()->where('id', $id)->firstOrFail();
+
+        $audioPath = null;
+        if ($request->hasFile('answer_audio')) {
+            $audioPath = $request->file('answer_audio')->store('interview/audio', 'public');
+        }
+
+        $answer = $interview->answers()->create([
+            'mock_interview_question_id' => $request->question_id,
+            'user_id' => $user->id,
+
+            'answer_text' => $request->answer_text,
+            'answer_audio' => $audioPath,
+            'duration_seconds' => $request->duration_seconds,
+
+            'skipped' => $request->boolean('skipped'),
+            'status' => 'processing',
+        ]);
+
+        dispatch(new \App\Jobs\ProcessInterviewAnswer(
+            interviewAnswerId: $answer->id,
+            lang: $interview->language
+        ));
+
+        $next = $interview->questions()
+            ->where('order', '>', $answer->question->order)
+            ->orderBy('order')
+            ->first();
+
+        return response()->json([
+            "status" => "saved",
+            "answer_id" => $answer->id,
+            "next_question" => $next ? [
+                "id" => $next->id,
+                "order" => $next->order,
+                "question" => $next->question_text,
+                "audio" => $next->question_audio_url,
+            ] : null,
+            "message" => $next ? "Next question loaded" : "Interview completed"
+        ]);
+    }
+
+
+
+    // helper function
     private function buildResumePromptText($resume, $experiences, $skills, $education, $analysis)
     {
         $text = "User Resume Summary:\n\n";

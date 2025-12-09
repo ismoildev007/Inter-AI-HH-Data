@@ -2,9 +2,8 @@
 
 namespace App\Jobs;
 
-use App\Models\InterviewAnswer;
-use App\Services\GeminiTranscriptionService;
-use App\Services\WhisperTranscriptionService;
+use App\Models\MockInterview;
+use App\Models\MockInterviewAnswer;
 use Exception;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -14,9 +13,9 @@ use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Modules\Interviews\Services\AiEvaluationService;
+use App\Services\GeminiTranscriptionService;
+use App\Services\WhisperTranscriptionService;
 use App\Jobs\ProcessMockInterviewSummary;
-use App\Models\MockInterview;
-use App\Models\MockInterviewAnswer;
 
 class ProcessInterviewAnswer implements ShouldQueue
 {
@@ -28,21 +27,19 @@ class ProcessInterviewAnswer implements ShouldQueue
     public function __construct(
         public int $interviewAnswerId,
         public string $lang
-    ) {
-        $this->onQueue('interview-answer');
-    }
+    ) {}
 
     public function handle(): void
     {
-        Log::info('test');
-        $answer = MockInterviewAnswer::with('interviewQuestion', 'mockInterview')
+        $answer = MockInterviewAnswer::with('question', 'interview')
             ->findOrFail($this->interviewAnswerId);
 
-        $interview = $answer->mockInterview;
+        $interview = $answer->interview;
         $audioPath = $answer->answer_audio;
         $transcription = null;
 
 
+        // ➤ No audio
         if (!$audioPath) {
             $answer->update([
                 'answer_text'    => 'No answer',
@@ -58,11 +55,9 @@ class ProcessInterviewAnswer implements ShouldQueue
         $fullPath = storage_path("app/public/{$audioPath}");
 
         if (!file_exists($fullPath)) {
-            Log::error("Audio file not found", ['path' => $fullPath]);
-
             $answer->update([
                 'answer_text'    => 'No answer',
-                'recommendation' => "No answer provided.",
+                'recommendation' => "Audio file missing.",
                 'status'         => 'completed',
             ]);
 
@@ -70,6 +65,8 @@ class ProcessInterviewAnswer implements ShouldQueue
             return;
         }
 
+
+        // ➤ Transcribe
         if ($this->lang === 'uz') {
             $transcription = app(GeminiTranscriptionService::class)
                 ->transcribe($fullPath);
@@ -79,20 +76,19 @@ class ProcessInterviewAnswer implements ShouldQueue
         }
 
 
+        // ➤ Remove audio
         try {
             Storage::disk('public')->delete($audioPath);
         } catch (Exception $e) {
-            Log::error("Audio delete failed", [
-                'path'  => $audioPath,
-                'error' => $e->getMessage()
-            ]);
+            Log::error("Audio delete failed: ".$e->getMessage());
         }
 
 
+        // ➤ If transcription failed
         if (!$transcription) {
             $answer->update([
                 'answer_text'    => null,
-                'recommendation' => "No answer provided.",
+                'recommendation' => "Transcription failed.",
                 'status'         => 'completed',
                 'answer_audio'   => null,
             ]);
@@ -102,14 +98,16 @@ class ProcessInterviewAnswer implements ShouldQueue
         }
 
 
+        // ➤ Evaluate answer
         $evaluationService = app(AiEvaluationService::class);
         $recommendation = $evaluationService->evaluate(
-            question: $answer->interviewQuestion->question,
+            question: $answer->question->question_text,
             userAnswer: $transcription,
             lang: $this->lang
         );
 
 
+        // ➤ Save final result
         $answer->update([
             'answer_text'    => $transcription,
             'recommendation' => $recommendation,
@@ -123,12 +121,11 @@ class ProcessInterviewAnswer implements ShouldQueue
 
     private function checkIfAllCompleted(int $interviewId)
     {
-        $interview = MockInterview::with('user', 'interviewAnswers', 'interviewQuestions')
+        $interview = MockInterview::with('user', 'questions.answers')
             ->find($interviewId);
 
-
-        $total = $interview->interviewQuestions->count();
-        $completed = $interview->interviewAnswers()->where('status', 'completed')->count();
+        $total = $interview->questions->count();
+        $completed = $interview->answers()->where('status', 'completed')->count();
 
         if ($completed >= $total) {
             dispatch(new ProcessMockInterviewSummary(

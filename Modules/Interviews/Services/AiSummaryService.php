@@ -12,11 +12,11 @@ class AiSummaryService
     {
         $qaPairs = [];
 
-        foreach ($interview->interviewQuestions as $q) {
-            $answer = $q->interviewAnswers->first();
+        foreach ($interview->questions as $q) {
+            $answer = $q->answers->first();
 
             $qaPairs[] = [
-                "question" => $q->question,
+                "question" => $q->question_text,
                 "answer"   => $answer->answer_text ?? "No answer provided"
             ];
         }
@@ -24,7 +24,9 @@ class AiSummaryService
         $prompt = "
         You are an AI mock interview evaluator.
 
-        Analyze all Q&A and return ONLY this JSON:
+        Analyze the ENTIRE interview (all questions and all answers).
+
+        Return ONLY this JSON (valid, no comments):
 
         {
             \"overall_percentage\": number (0-100),
@@ -33,10 +35,12 @@ class AiSummaryService
             \"work_on\": [\"bullet\", \"bullet\"]
         }
 
-        Write analysis in {$lang}.
+        Write summary in {$lang}.
 
         Dataset:
         " . json_encode($qaPairs, JSON_PRETTY_PRINT);
+
+        Log::info('AI SUMMARY PROMPT', ['prompt' => $prompt]);
 
         $response = Http::withToken(env('OPENAI_API_KEY'))
             ->post("https://api.openai.com/v1/chat/completions", [
@@ -61,14 +65,15 @@ class AiSummaryService
         }
 
         $raw = trim($response->json('choices.0.message.content'));
-        $clean = str_replace(['```json', '```'], '', $raw);
-        $summary = json_decode($clean, true) ?: [];
+        $clean = str_replace(['```json','```'], '', $raw);
+
+        $json = json_decode($clean, true);
 
         return [
-            "overall_percentage" => $summary['overall_percentage'] ?? 0,
-            "strengths"          => $summary['strengths'] ?? [],
-            "weaknesses"         => $summary['weaknesses'] ?? [],
-            "work_on"            => $summary['work_on'] ?? [],
+            'overall_percentage' => $json['overall_percentage'] ?? 0,
+            'strengths'          => $json['strengths'] ?? [],
+            'weaknesses'         => $json['weaknesses'] ?? [],
+            'work_on'            => $json['work_on'] ?? [],
         ];
     }
 }

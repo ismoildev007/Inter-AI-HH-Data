@@ -8,7 +8,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
-use Modules\MockInterviews\Services\AiSummaryService;
+use Modules\Interviews\Services\AiSummaryService;
 
 class ProcessMockInterviewSummary implements ShouldQueue
 {
@@ -20,24 +20,21 @@ class ProcessMockInterviewSummary implements ShouldQueue
     public function __construct(
         public int $interviewId,
         public string $lang
-    ) {
-        $this->onQueue('interview-summary');
-    }
+    ) {}
 
     public function handle()
     {
-        $interview = MockInterview::with('interviewQuestions.interviewAnswers')
+        $interview = MockInterview::with('questions.answers')
             ->findOrFail($this->interviewId);
 
-        $summaryService = app(AiSummaryService::class);
-
-        $summary = $summaryService->generate($interview, $this->lang);
+        $summary = app(AiSummaryService::class)
+            ->generate($interview, $this->lang);
 
         $interview->update([
-            'overall_percentage' => $summary['overall_percentage'] ?? 0,
-            'strengths'          => json_encode($summary['strengths'] ?? []),
-            'weaknesses'         => json_encode($summary['weaknesses'] ?? []),
-            'work_on'            => json_encode($summary['work_on'] ?? []),
+            'overall_percentage' => $summary['overall_percentage'],
+            'strengths'          => $summary['strengths'],
+            'weaknesses'         => $summary['weaknesses'],
+            'work_on'            => $summary['work_on'],
         ]);
     }
 }
