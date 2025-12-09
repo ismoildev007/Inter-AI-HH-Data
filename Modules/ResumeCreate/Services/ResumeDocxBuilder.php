@@ -61,7 +61,36 @@ class ResumeDocxBuilder
         $labels = $viewData['labels'] ?? [];
 
         $phpWord = new PhpWord();
+        // PDF dagi kabi umumiy font sozlamalari
+        $phpWord->setDefaultFontName('DejaVu Sans');
+        $phpWord->setDefaultFontSize(12);
+
         $section = $phpWord->addSection();
+
+        // Header: kompaniya logosi va izotip (watermarkga o'xshash)
+        $header = $section->addHeader();
+
+        $logoPng = public_path('pdf-icons/logo.png');
+        if (file_exists($logoPng)) {
+            $header->addImage($logoPng, [
+                'width' => 40,
+                'height' => 40,
+                'alignment' => \PhpOffice\PhpWord\SimpleType\Jc::END,
+            ]);
+        }
+
+        $izotipPng = public_path('pdf-icons/izotip.png');
+        if (file_exists($izotipPng)) {
+            // Kichikroq, o'ng tepaga yaqin, matn ortida – PDF dagi izotipga o'xshash
+            $header->addImage($izotipPng, [
+                'width' => 30,
+                'height' => 30,
+                'alignment' => \PhpOffice\PhpWord\SimpleType\Jc::END,
+                'marginTop' => 10,
+                'marginLeft' => 40, // joylashgan nuqtasidan biroz o'ngga suramiz
+                'wrappingStyle' => 'behind',
+            ]);
+        }
 
         $h1 = ['bold' => true, 'size' => 20];
         $h2 = ['bold' => true, 'size' => 14];
