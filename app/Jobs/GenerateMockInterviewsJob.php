@@ -182,13 +182,14 @@ class GenerateMockInterviewsJob implements ShouldQueue
 
         $tts = new TextToSpeechService();
         $lang = $this->user->language;
+        Log::info(['block saving', $block]);
 
         foreach ($block["questions"] as $index => $q) {
 
             $filename = "mock_interviews/" . uniqid() . ".mp3";
             $audioUrl = $tts->generate($q, $lang, $filename);
 
-            MockInterviewQuestion::create([
+            $interview = MockInterviewQuestion::create([
                 "mock_interview_id" => $interview->id,
                 "order" => $index + 1,
                 "difficulty" => 1,
@@ -196,6 +197,7 @@ class GenerateMockInterviewsJob implements ShouldQueue
                 "question_audio_url" => $audioUrl,
                 "meta" => null,
             ]);
+            Log::info(['interview question saved', $interview]);
         }
     }
 }
