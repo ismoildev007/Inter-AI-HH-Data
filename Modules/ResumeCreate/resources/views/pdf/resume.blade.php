@@ -101,7 +101,7 @@
             font-size: 13px;
             font-weight: bold;
             letter-spacing: 0.05em;
-            color: #111827;
+            color: #394150;
         }
         /* Faqat 2-bo'limdan boshlab chiziq chizish */
         .section + .section .section-header {
