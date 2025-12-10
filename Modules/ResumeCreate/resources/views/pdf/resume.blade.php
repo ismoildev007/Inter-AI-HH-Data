@@ -22,8 +22,8 @@
         }
         .bg-izotip {
             position: absolute;
-            top: -210px;
-            right: -200px; /* rasmning taxminan 30% qismi tashqarida qoladi */
+            top: -150px;
+            right: -160px; /* rasmning taxminan 30% qismi tashqarida qoladi */
             opacity: 0.35; /* biroz ko'rinarliroq qilamiz */
         }
         .bg-izotip img {
