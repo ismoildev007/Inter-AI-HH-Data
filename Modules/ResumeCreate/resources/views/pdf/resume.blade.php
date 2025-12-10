@@ -580,7 +580,7 @@
                     $txLangs = $t['languages'] ?? [];
                     foreach ($nonEmptyLanguages as $index => $langItem) {
                         $txLang = is_array($txLangs) && array_key_exists($index, $txLangs) ? $txLangs[$index] : null;
-                        $name = $langItem['name'] ?? '';
+                        $name = $txLang['name'] ?? ($langItem['name'] ?? '');
                         $level = $txLang['level'] ?? ($langItem['level'] ?? '');
 
                         if (! $name || ! $level) {

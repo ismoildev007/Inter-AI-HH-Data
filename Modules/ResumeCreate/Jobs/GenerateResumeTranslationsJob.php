@@ -78,8 +78,8 @@ class GenerateResumeTranslationsJob implements ShouldQueue
                 })->values()->all(),
                 'languages' => collect($resume->languages ?? [])->map(function ($langItem) use ($translator) {
                     return [
-                        // til nomini tarjima qilmaymiz (uzbek, eng, rus va h.k.)
-                        'name' => (string) ($langItem['name'] ?? ''),
+                        // endi til nomini ham tarjima qilamiz (Uzbek, English, Russian va h.k.)
+                        'name' => $this->translateText($translator, (string) ($langItem['name'] ?? '')),
                         'level' => $this->translateText($translator, (string) ($langItem['level'] ?? '')),
                     ];
                 })->values()->all(),
