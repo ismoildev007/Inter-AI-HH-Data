@@ -248,6 +248,9 @@ class ResumeCreateController extends Controller
                 'phone' => $resume->phone,
                 'city' => $resume->city,
                 'country' => $resume->country,
+                'gender' => $resume->gender,
+                // Frontend kutilayotgan format: DD-MM-YYYY – bazaga qanday yozilgan bo'lsa shunday qaytaramiz.
+                'birth_date' => $resume->birth_date,
                 'photo_path' => $resume->profile_photo_path,
                 'linkedin_url' => $resume->linkedin_url,
                 'github_url' => $resume->github_url,

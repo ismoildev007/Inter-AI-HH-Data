@@ -60,6 +60,9 @@ class ResumeCreateRepository implements ResumeCreateInterface
             'city' => Arr::get($personal, 'city'),
             'country' => Arr::get($personal, 'country'),
             'gender' => $this->normalizeGender(Arr::get($personal, 'gender')),
+            // Front qanday yuborsa (masalan, 17-12-2000) shunday saqlaymiz,
+            // lekin yoshni hisoblash uchun alohida yil ham saqlanadi.
+            'birth_date' => Arr::get($personal, 'birth_date'),
             'birth_year' => $this->normalizeBirthYear(Arr::get($personal, 'birth_date')),
             'profile_photo_path' => Arr::get($personal, 'photo_path'),
             'linkedin_url' => Arr::get($personal, 'linkedin_url'),
@@ -182,11 +185,20 @@ class ResumeCreateRepository implements ResumeCreateInterface
     protected function normalizeBirthYear(?string $value): ?int
     {
         $value = $value !== null ? trim($value) : null;
-        if ($value === null || $value === '' || ! ctype_digit($value)) {
+        if ($value === null || $value === '') {
             return null;
         }
 
-        $year = (int) $value;
+        // Agar faqat yil kelgan bo'lsa (old format, masalan: "2000")
+        if (ctype_digit($value) && strlen($value) === 4) {
+            $year = (int) $value;
+        } elseif (preg_match('/^\d{2}-\d{2}-\d{4}$/', $value)) {
+            // Yangi format: "DD-MM-YYYY" – faqat yil qismini olamiz
+            $year = (int) substr($value, -4);
+        } else {
+            return null;
+        }
+
         if ($year < 1900 || $year > (int) date('Y')) {
             return null;
         }

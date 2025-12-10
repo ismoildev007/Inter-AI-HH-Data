@@ -23,7 +23,8 @@ class ResumeWizardRequest extends FormRequest
             'personal.city' => ['nullable', 'string', 'max:255'],
             'personal.country' => ['nullable', 'string', 'max:255'],
             'personal.gender' => ['nullable', 'in:male,female'],
-            'personal.birth_date' => ['nullable', 'digits:4'],
+            // Frontend endi "DD-MM-YYYY" ko‘rinishida yuboradi (masalan: 17-12-2000)
+            'personal.birth_date' => ['nullable', 'date_format:d-m-Y'],
             'personal.photo_path' => ['nullable', 'string', 'max:1024'],
             'personal.linkedin_url' => ['nullable', 'string', 'max:1024'],
             'personal.github_url' => ['nullable', 'string', 'max:1024'],

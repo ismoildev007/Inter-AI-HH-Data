@@ -27,6 +27,7 @@ class Resume extends Model
         'country',
         'gender',
         'birth_year',
+        'birth_date',
         'profile_photo_path',
         'linkedin_url',
         'github_url',

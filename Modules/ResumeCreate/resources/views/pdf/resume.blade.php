@@ -46,11 +46,12 @@
             vertical-align: top;
         }
         .photo {
-            width: 96px;
-            height: 96px;
+            width: 110px;
+            height: 100px;
             border-radius: 8px;
             overflow: hidden;
             background: #e5e7eb;
+            margin-top: 9px;
             margin-right: 24px;
             border: 1px solid #e5e7eb;
         }
