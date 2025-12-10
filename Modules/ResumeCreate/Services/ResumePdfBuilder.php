@@ -89,6 +89,9 @@ class ResumePdfBuilder
             'section_languages' => __('resume.pdf.languages'),
             'section_certifications' => __('resume.pdf.certifications'),
             'present' => __('resume.pdf.present'),
+            'age_years' => __('resume.pdf.age_years'),
+            'gender_male' => __('resume.pdf.gender_male'),
+            'gender_female' => __('resume.pdf.gender_female'),
         ];
     }
 

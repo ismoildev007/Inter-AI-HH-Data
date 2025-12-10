@@ -46,5 +46,8 @@
     "resume.pdf.preferences": "JOB PREFERENCES",
     "resume.pdf.languages": "LANGUAGES",
     "resume.pdf.certifications": "CERTIFICATIONS",
-    "resume.pdf.present": "Present"
+    "resume.pdf.present": "Present",
+    "resume.pdf.age_years": "years",
+    "resume.pdf.gender_male": "male",
+    "resume.pdf.gender_female": "female"
 }

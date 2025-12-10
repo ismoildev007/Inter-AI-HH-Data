@@ -25,6 +25,8 @@ class Resume extends Model
         'phone',
         'city',
         'country',
+        'gender',
+        'birth_year',
         'profile_photo_path',
         'linkedin_url',
         'github_url',
@@ -44,6 +46,7 @@ class Resume extends Model
 
     protected $casts = [
         'is_primary' => 'bool',
+        'birth_year' => 'integer',
         'employment_types' => 'array',
         'work_schedules' => 'array',
         'ready_to_relocate' => 'bool',

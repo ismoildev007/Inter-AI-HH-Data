@@ -22,6 +22,8 @@ class ResumeWizardRequest extends FormRequest
             'personal.phone' => ['nullable', 'string', 'max:32'],
             'personal.city' => ['nullable', 'string', 'max:255'],
             'personal.country' => ['nullable', 'string', 'max:255'],
+            'personal.gender' => ['nullable', 'in:male,female'],
+            'personal.birth_date' => ['nullable', 'digits:4'],
             'personal.photo_path' => ['nullable', 'string', 'max:1024'],
             'personal.linkedin_url' => ['nullable', 'string', 'max:1024'],
             'personal.github_url' => ['nullable', 'string', 'max:1024'],

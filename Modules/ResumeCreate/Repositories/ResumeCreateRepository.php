@@ -59,6 +59,8 @@ class ResumeCreateRepository implements ResumeCreateInterface
             'phone' => Arr::get($personal, 'phone'),
             'city' => Arr::get($personal, 'city'),
             'country' => Arr::get($personal, 'country'),
+            'gender' => $this->normalizeGender(Arr::get($personal, 'gender')),
+            'birth_year' => $this->normalizeBirthYear(Arr::get($personal, 'birth_date')),
             'profile_photo_path' => Arr::get($personal, 'photo_path'),
             'linkedin_url' => Arr::get($personal, 'linkedin_url'),
             'github_url' => Arr::get($personal, 'github_url'),
@@ -169,6 +171,27 @@ class ResumeCreateRepository implements ResumeCreateInterface
         }
 
         return null;
+    }
+
+    protected function normalizeGender(?string $value): ?string
+    {
+        $value = $value !== null ? strtolower(trim($value)) : null;
+        return in_array($value, ['male', 'female'], true ) ? $value : null;
+    }
+
+    protected function normalizeBirthYear(?string $value): ?int
+    {
+        $value = $value !== null ? trim($value) : null;
+        if ($value === null || $value === '' || ! ctype_digit($value)) {
+            return null;
+        }
+
+        $year = (int) $value;
+        if ($year < 1900 || $year > (int) date('Y')) {
+            return null;
+        }
+
+        return $year;
     }
 
     protected function isEmptyExperience(array $item): bool

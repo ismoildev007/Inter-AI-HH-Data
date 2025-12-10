@@ -46,5 +46,8 @@
     "resume.pdf.preferences": "ПРЕДПОЧТЕНИЯ ПО РАБОТЕ",
     "resume.pdf.languages": "ЯЗЫКИ",
     "resume.pdf.certifications": "СЕРТИФИКАТЫ И ЛИЦЕНЗИИ",
-    "resume.pdf.present": "По настоящее время"
+    "resume.pdf.present": "По настоящее время",
+    "resume.pdf.age_years": "лет",
+    "resume.pdf.gender_male": "мужчина",
+    "resume.pdf.gender_female": "женщина"
 }

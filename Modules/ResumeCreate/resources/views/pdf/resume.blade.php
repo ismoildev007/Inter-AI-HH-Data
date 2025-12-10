@@ -255,6 +255,31 @@
                                 </div>
                             @endif
 
+                            @php
+                                $ageParts = [];
+                                if ($resume->birth_year) {
+                                    $year = (int) $resume->birth_year;
+                                    $currentYear = (int) \Carbon\Carbon::now()->year;
+                                    $age = $currentYear - $year;
+                                    if ($age > 0 && $age < 120) {
+                                        $suffix = $labels['age_years'] ?? 'years';
+                                        $ageParts[] = $age.' '.$suffix;
+                                    }
+                                }
+
+                                if ($resume->gender) {
+                                    $genderKey = $resume->gender === 'female' ? 'gender_female' : 'gender_male';
+                                    $genderLabel = $labels[$genderKey] ?? $resume->gender;
+                                    $ageParts[] = $genderLabel;
+                                }
+                            @endphp
+
+                            @if(!empty($ageParts))
+                                <div class="contact-line">
+                                    {{ implode(', ', $ageParts) }}
+                                </div>
+                            @endif
+
                             @if($resume->city || $resume->country)
                                 <div class="contact-line">
                                     @php $locIcon = public_path('pdf-icons/location.png'); @endphp
