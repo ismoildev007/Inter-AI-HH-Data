@@ -142,10 +142,10 @@ try {
 } catch (\Throwable $e) {
     // Agar config hali merge bo'lmagan bo'lsa yoki modul yuklanmasa — schedule bosqichida yiqilmasin
 }
-
-Schedule::command('relay:run --once')
-    ->everyMinute()
-    ->withoutOverlapping();
+// o'zgarish -1
+// Schedule::command('relay:run --once')
+//     ->everyMinute()
+//     ->withoutOverlapping();
 
 // Schedule::command('linkedin:fetch')
 //     ->everyMinute();
@@ -192,43 +192,45 @@ Artisan::command('telegram:vacancies:requeue-failed {--limit=500}', function () 
 })->purpose('Re-queue failed vacancies for delivery');
 
 // Jadval: har daqiqada ishga tushadi
-Schedule::command('telegram:vacancies:requeue-failed')
-    ->everyMinute()
-    ->withoutOverlapping();
+// o'zgarish -2
+// Schedule::command('telegram:vacancies:requeue-failed')
+//     ->everyMinute()
+//     ->withoutOverlapping();
 
 // Queued (status=queued) vakansiyalarni qayta-dispatch qilish (safety net)
-Schedule::call(function () {
-    try {
-        $cfg = (array) config('telegramchannel_relay.dispatch', []);
-        $limit = (int) ($cfg['deliver_batch_size'] ?? 50);
-        if ($limit <= 0) {
-            $limit = 50;
-        }
-        $ids = Vacancy::query()
-            ->where('status', Vacancy::STATUS_QUEUED)
-            ->orderBy('id')
-            ->limit($limit)
-            ->pluck('id')
-            ->all();
-        foreach ($ids as $id) {
-            $lock = Cache::lock('tg:dispatch:v' . $id, 10);
-            if (!$lock->get()) {
-                continue;
-            }
-            try {
-                \Modules\TelegramChannel\Jobs\DeliverVacancyJob::dispatch($id)->onQueue('telegram-deliver');
-            } finally {
-                optional($lock)->release();
-            }
-        }
-    } catch (\Throwable $e) {
-        \Log::warning('dispatch-queued scheduler error', ['error' => $e->getMessage()]);
-    }
-})
-    ->everyThirtySeconds()
-    ->name('telegram:vacancies:dispatch-queued')
-    ->withoutOverlapping();
-
+// o'zgarish -3
+// Schedule::call(function () {
+//     try {
+//         $cfg = (array) config('telegramchannel_relay.dispatch', []);
+//         $limit = (int) ($cfg['deliver_batch_size'] ?? 50);
+//         if ($limit <= 0) {
+//             $limit = 50;
+//         }
+//         $ids = Vacancy::query()
+//             ->where('status', Vacancy::STATUS_QUEUED)
+//             ->orderBy('id')
+//             ->limit($limit)
+//             ->pluck('id')
+//             ->all();
+//         foreach ($ids as $id) {
+//             $lock = Cache::lock('tg:dispatch:v' . $id, 10);
+//             if (!$lock->get()) {
+//                 continue;
+//             }
+//             try {
+//                 \Modules\TelegramChannel\Jobs\DeliverVacancyJob::dispatch($id)->onQueue('telegram-deliver');
+//             } finally {
+//                 optional($lock)->release();
+//             }
+//         }
+//     } catch (\Throwable $e) {
+//         \Log::warning('dispatch-queued scheduler error', ['error' => $e->getMessage()]);
+//     }
+// })
+//     ->everyThirtySeconds()
+//     ->name('telegram:vacancies:dispatch-queued')
+//     ->withoutOverlapping();
+// tugadi
 
 Schedule::command('hh:telegram-send-negotiations')
     ->dailyAt('13:00')
