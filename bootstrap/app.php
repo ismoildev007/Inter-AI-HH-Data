@@ -1,12 +1,12 @@
 <?php
 
-use App\Http\Middleware\SetLocale;
-use App\Http\Middleware\TrustProxies;
+//use App\Http\Middleware\SetLocale;
+//use App\Http\Middleware\TrustProxies;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Middleware\HandleCors;
-use Illuminate\Foundation\Configuration\Scheduler;
+//use Illuminate\Foundation\Configuration\Scheduler;
 use Illuminate\Console\Scheduling\Schedule;
 
 return Application::configure(basePath: dirname(__DIR__))
@@ -18,13 +18,13 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
-            'auth' => \App\Http\Middleware\Authenticate::class, // override qilamiz
-            'auth.admin' => \App\Http\Middleware\AdminAuthenticate::class,
-            'query.token' => \App\Http\Middleware\AttachQueryToken::class,
+//            'auth' => \App\Http\Middleware\Authenticate::class, // override qilamiz
+//            'auth.admin' => \App\Http\Middleware\AdminAuthenticate::class,
+//            'query.token' => \App\Http\Middleware\AttachQueryToken::class,
         ]);
 
         $middleware->append([
-            TrustProxies::class,
+//            TrustProxies::class,
         ]);
 
 
@@ -41,14 +41,14 @@ return Application::configure(basePath: dirname(__DIR__))
             \Illuminate\View\Middleware\ShareErrorsFromSession::class,
 //            \App\Http\Middleware\VerifyCsrfToken::class,
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
-            SetLocale::class,
+//            SetLocale::class,
         ]);
     })
     // ->withSchedule(function (Schedule $schedule) {
     //     $schedule->command('linkedin:fetch')
     //         ->everyMinute()
     //         ->withoutOverlapping();
-    // })    
+    // })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
     })->create();

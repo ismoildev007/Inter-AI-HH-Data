@@ -9,14 +9,10 @@ Route::get('/', function () {
         : redirect()->route('admin.login');
 });
 
-Route::get('/tracking-info', function () {
-    return view('careerTracking.tracking');
-});
-
-Route::get('/set-commands', function (Modules\TelegramBot\Services\TelegramBotService $botService) {
-    $botService->setBotCommands();
-    return 'Commands set successfully!';
-});
+//Route::get('/set-commands', function (Modules\TelegramBot\Services\TelegramBotService $botService) {
+//    $botService->setBotCommands();
+//    return 'Commands set successfully!';
+//});
 
 Route::fallback(function () {
     if (request()->expectsJson()) {
